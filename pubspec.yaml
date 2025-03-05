@@ -1,0 +1,87 @@
+name: fun_edu
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ">=3.0.0-322.0.dev <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  another_flushbar: ^1.12.30
+  design_system_sl:
+    path: library/design_system_sl
+  flutter_svg: ^2.0.10+1
+  get_it: ^8.0.3
+  go_router: ^14.2.3
+  shared_preferences: ^2.2.3
+  rflutter_alert: ^2.0.7
+  intl: ^0.19.0
+  easy_audience_network: ^0.0.7
+  hive_flutter: ^1.1.0
+  lottie: ^3.1.3
+  get: ^4.6.6
+  animated_splash_screen: ^1.3.0
+  flutter_animate: ^4.5.2
+  modal_progress_hud_nsn: ^0.5.1
+  pdf: ^3.11.2
+  universal_html: ^2.2.4
+  syncfusion_flutter_pdfviewer:
+  printing: ^5.12.0
+  circular_countdown_timer: ^0.2.1
+  file: ^7.0.1
+  path_provider: ^2.0.10
+  font_awesome_flutter: ^10.8.0
+  dropdown_search: ^5.0.6
+  google_fonts: ^4.0.5
+  #flutter_gen: ^5.6.0
+  animated_notch_bottom_bar: ^1.0.3
+  curved_navigation_bar: ^1.0.6
+  carousel_slider: ^5.0.0
+  flutter_tts: 3.4.0
+  animated_widgets: ^1.1.0
+  audioplayers: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  flutter_gen_runner: ^5.5.0+1
+  flutter_gen_core: 5.8.0
+  build_runner: ^2.4.8
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/new_assets/icons/
+    - assets/new_assets/images/
+    - assets/splash/
+    - assets/animationSplashScreen/
+    - assets/lottie/
+    - assets/counters/
+    - assets/numbers/
+    - assets/number/
+
+flutter_native_splash:
+  image: "assets/splash/splash_logo.png"
+  background_image: "assets/splash/splash_background.png"
+  fullscreen: true
+  android_12:
+    image: "assets/splash/splash_logo_android12.png"
+    image_dark: "assets/splash/splash_logo_android12.png"
+  android: true
+  ios: true
+  web: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icons/ic_launcher_background.png"
+  remove_alpha_ios: false
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/icons/ic_launcher_background.png"
+
+flutter_gen:
+  output: lib/gen/
