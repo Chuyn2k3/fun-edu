@@ -26,7 +26,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Miroslava Saviskaya',
+                    'Miroslava Savi',
                     style: TextStyle(
                         fontSize: 22,
                         color: Colors.white,
