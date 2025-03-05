@@ -16,7 +16,7 @@ void main() async {
   // init hive
   await Pref.initialize();
   // for initializing facebook ads sdk
-  AdHelper.init();
+  //AdHelper.init();
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   await SystemChrome.setPreferredOrientations(
