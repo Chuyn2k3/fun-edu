@@ -42,6 +42,7 @@ dependencies:
   flutter_tts: 3.4.0
   animated_widgets: ^1.1.0
   audioplayers: ^5.0.0
+  flutter_inappwebview: ^5.8.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/math_feature/index.dart';
 import 'package:fun_edu/feature/number_feature/nums_screen.dart';
+import 'package:fun_edu/feature/operation_feature/operation_page.dart';
 import 'package:get/get.dart';
 
 enum HomeType { number, operation, math }
@@ -41,9 +42,12 @@ extension MyHomeType on HomeType {
       };
 
   //for navigation
-  VoidCallback get onTap => switch (this) {
-        HomeType.number => () => Get.to(() => const NumsScreen()),
-        HomeType.operation => () => Get.to(() {}),
-        HomeType.math => () => Get.to(() {}),
-      };
+  VoidCallback get onTap {
+    return switch (this) {
+      HomeType.number => () => Get.to(() => const NumsScreen()),
+      HomeType.operation => () => Get.to(() => const OperationPage()),
+      HomeType.math => () => Get.to(() => const MathFeature()),
+      //Get.snackbar("Thông báo", "Tính năng chưa hỗ trợ"),
+    };
+  }
 }

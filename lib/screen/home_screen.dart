@@ -194,13 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         itemCount: list.length,
         itemBuilder: (context, int index, int pageViewIndex) {
-          return GestureDetector(
-            onTap: () {
-              list[index].onTap();
-            },
-            child: HomeCard(
-              homeType: list[index],
-            ),
+          return HomeCard(
+            homeType: list[index],
           );
         },
       ),

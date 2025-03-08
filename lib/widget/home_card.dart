@@ -15,8 +15,10 @@ class HomeCard extends StatelessWidget {
     Animate.restartOnHotReload = true;
 
     return InkWell(
-        onTap: ()=>homeType.onTap,
-        //=> AdHelper.showInterstitialAd(homeType.onTap),
+        onTap: ()
+            //homeType.onTap,
+            =>
+            AdHelper.showInterstitialAd(homeType.onTap),
         child: _buildCard());
   }
 
@@ -40,8 +42,10 @@ class HomeCard extends StatelessWidget {
                   )),
               child: InkWell(
                 borderRadius: const BorderRadius.all(Radius.circular(20)),
-                onTap: () =>homeType.onTap,
-                //=> AdHelper.showInterstitialAd(homeType.onTap),
+                onTap: ()
+                    //homeType.onTap,
+                    =>
+                    AdHelper.showInterstitialAd(homeType.onTap),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -50,11 +54,11 @@ class HomeCard extends StatelessWidget {
                   child: Column(
                     children: [
                       const SizedBox(
-                        height: 8,
+                        height: 6,
                       ),
                       _buildTitle(),
                       SizedBox(
-                        height: mq.height * 0.02,
+                        height: mq.height * 0.018,
                       ),
                       _buildDesc()
                     ],
