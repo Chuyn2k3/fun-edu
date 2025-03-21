@@ -2,14 +2,13 @@ import 'package:design_system_sl/theme/colors.dart';
 import 'package:design_system_sl/theme/components/button/enums.dart';
 import 'package:design_system_sl/theme/components/button/sl_button.dart';
 import 'package:flutter/services.dart';
-import 'package:fun_edu/data/term/constants.dart';
-import 'package:flutter/material.dart';
 import 'package:fun_edu/tab_bar/tab_bar.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
 import 'package:get_it/get_it.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../helper/global.dart';
-import '../model/onboard.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -24,14 +23,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   List<Widget> _buildPageIndicator() {
-    List<Widget> list = [];
-    for (int i = 0; i < _numPages; i++) {
-      list.add(i == _currentPage ? _indicator(true) : _indicator(false));
-    }
-    return list;
+    return List.generate(
+      _numPages,
+      (i) => _indicator(i == _currentPage),
+    );
   }
 
-  void _comleteOnBoardind(BuildContext context) async {
+  void _completeOnboarding(BuildContext context) async {
     await GetIt.instance
         .get<SharedPreferencesManager>()
         .putBool("isFirstTime", false);
@@ -45,11 +43,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _indicator(bool isActive) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      height: 8.0,
-      width: isActive ? 24.0 : 16.0,
+      margin: const EdgeInsets.symmetric(horizontal: 6.0),
+      height: 12.0,
+      width: isActive ? 28.0 : 12.0,
       decoration: BoxDecoration(
-        color: isActive ? Colors.white : const Color(0xFF7B51D3),
+        color: isActive ? Colors.pinkAccent : Colors.white,
         borderRadius: const BorderRadius.all(Radius.circular(12)),
       ),
     );
@@ -58,28 +56,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     mq = MediaQuery.sizeOf(context);
-    final listOnBoard = [
-      //onboarding 1
-      Onboard(
-        title: 'Hỏi gì cũng được!',
-        subtitle:
-            'Mình có thể trở thành người bạn đồng hành của bạn. Hãy hỏi bất cứ điều gì, mình sẽ giúp bạn!',
-        lottie: 'ai_ask_me',
-      ),
 
-      Onboard(
-        title: 'Biến tưởng tượng thành hiện thực',
-        subtitle:
-            'Chỉ cần bạn tưởng tượng, mình sẽ giúp bạn tạo ra những điều tuyệt vời!',
-        lottie: 'ai_onboard2',
-      ),
-
-      Onboard(
-        title: 'Luôn bên bạn mọi lúc',
-        subtitle:
-            'Dù là học tập, giải trí hay làm việc, mình luôn sẵn sàng hỗ trợ bạn!',
-        lottie: 'ai_onboard1',
-      ),
+    final List<Map<String, dynamic>> onBoardingData = [
+      {
+        'title': 'Học chữ số',
+        'subtitle': 'Cùng học đếm số từ 1 đến 10 thật vui!',
+        'icon': FontAwesomeIcons.sortNumericDown,
+        'color': Colors.orange,
+      },
+      {
+        'title': 'Học phép so sánh',
+        'subtitle': 'So sánh số lớn hơn, bé hơn dễ ơi là dễ!',
+        'icon': FontAwesomeIcons.balanceScaleLeft,
+        'color': Colors.purple,
+      },
+      {
+        'title': 'Học phép cộng trừ',
+        'subtitle': 'Cộng trừ dễ dàng, vừa học vừa chơi!',
+        'icon': FontAwesomeIcons.plusMinus,
+        'color': Colors.green,
+      },
     ];
 
     return Scaffold(
@@ -88,117 +84,115 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.1, 0.4, 0.7, 0.9],
-              colors: [
-                Color(0xFF3594DD),
-                Color(0xFF4563DB),
-                Color(0xFF5036D5),
-                Color(0xFF5B16D0),
-              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFA3E7FC), Color(0xFFC3A5F6)],
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40.0),
+            padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Container(
-                  alignment: Alignment.centerRight,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          _comleteOnBoardind(context);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: const Color.fromARGB(255, 37, 96, 234),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Skip',
-                              style: style20White,
-                            ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    InkWell(
+                      onTap: () => _completeOnboarding(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: Colors.redAccent,
+                        ),
+                        child: Text(
+                          'Bỏ qua',
+                          style: GoogleFonts.baloo2(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                SizedBox(
-                  height: mq.height * .6,
-                  child: PageView(
-                    physics: const ClampingScrollPhysics(),
+                Expanded(
+                  child: PageView.builder(
                     controller: _pageController,
+                    itemCount: _numPages,
                     onPageChanged: (int page) {
                       setState(() {
                         _currentPage = page;
                       });
                     },
-                    children: listOnBoard.map((e) {
-                      return Column(children: [
-                        //lottie
-                        Lottie.asset('assets/lottie/${e.lottie}.json',
-                            height: mq.height * .4,
-                            width: _currentPage == _numPages
-                                ? mq.width * .7
-                                : null),
-
-                        //title
-                        Text(
-                          e.title,
-                          style: style18White,
+                    itemBuilder: (context, index) {
+                      final data = onBoardingData[index];
+                      return SingleChildScrollView(
+                        // Dùng Scroll để tránh lỗi overflow
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(30),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: data['color']!.withOpacity(0.2),
+                              ),
+                              child: FaIcon(
+                                data['icon'],
+                                size: 120,
+                                color: data['color'],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            Text(
+                              data['title']!,
+                              style: GoogleFonts.baloo2(
+                                fontSize: 34,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                data['subtitle']!,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.baloo2(
+                                  fontSize: 24,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-
-                        //for adding some space
-                        SizedBox(height: mq.height * .015),
-
-                        //subtitle
-                        SizedBox(
-                          width: mq.width * .7,
-                          child: Text(
-                            e.subtitle,
-                            textAlign: TextAlign.center,
-                            style: style16White,
-                          ),
-                        ),
-                      ]);
-                    }).toList(),
+                      );
+                    },
                   ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: _buildPageIndicator(),
                 ),
-                if (_currentPage == _numPages - 1) ...[
-                  const SizedBox(
-                    height: 16,
-                  ),
+                const SizedBox(height: 20),
+                if (_currentPage == _numPages - 1)
                   SLButton.brand(
-                    label: "Bắt đầu",
-                    onTap: () {
-                      _comleteOnBoardind(context);
-                    },
+                    label: "Bắt đầu học",
+                    onTap: () => _completeOnboarding(context),
                     isMaxWidth: true,
                     size: SLSize.large,
                     padding:
                         const EdgeInsetsDirectional.symmetric(horizontal: 16),
-                  ),
-                ] else ...[
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  )
+                else
                   Align(
-                    alignment: FractionalOffset.bottomCenter,
+                    alignment: Alignment.center,
                     child: InkWell(
                       onTap: () {
                         _pageController.nextPage(
@@ -207,25 +201,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         );
                       },
                       child: Container(
-                        width: 120,
+                        width: 160,
                         padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 12,
+                          vertical: 12,
+                          horizontal: 16,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: SLColor.blueLight,
+                          borderRadius: BorderRadius.circular(30),
+                          color: Colors.lightBlue,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'Tiếp tục',
-                            style: style20White,
+                            style: GoogleFonts.baloo2(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ]
+                const SizedBox(height: 30),
               ],
             ),
           ),

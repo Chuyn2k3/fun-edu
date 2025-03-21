@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/core/colors/app_colors.dart';
 import 'package:fun_edu/di/locator.dart';
 import 'package:fun_edu/helper/ad_helper.dart';
@@ -21,7 +22,7 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 final navigatorKey = GetIt.instance<NavigationService>().navigatorKey;

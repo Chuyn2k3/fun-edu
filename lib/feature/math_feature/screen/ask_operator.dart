@@ -64,41 +64,41 @@ class AskOperator extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 60),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        ButtonIcon(
-                          icon: FontAwesomeIcons.xmark,
-                          function: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => isQuiz
-                                    ? const QuizQuestionScreen(
-                                        icon: FontAwesomeIcons.xmark,
-                                        operator: 'multiplication')
-                                    : const PdfGenerationScreen(
-                                        icon: FontAwesomeIcons.xmark,
-                                        operator: 'multiplication'),
-                              )),
-                        ),
-                        ButtonIcon(
-                          icon: FontAwesomeIcons.divide,
-                          function: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => isQuiz
-                                    ? const QuizQuestionScreen(
-                                        icon: FontAwesomeIcons.divide,
-                                        operator: 'division',
-                                      )
-                                    : const PdfGenerationScreen(
-                                        icon: FontAwesomeIcons.divide,
-                                        operator: 'division',
-                                      ),
-                              )),
-                        ),
-                      ],
-                    ),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: <Widget>[
+                    //     ButtonIcon(
+                    //       icon: FontAwesomeIcons.xmark,
+                    //       function: () => Navigator.push(
+                    //           context,
+                    //           MaterialPageRoute(
+                    //             builder: (context) => isQuiz
+                    //                 ? const QuizQuestionScreen(
+                    //                     icon: FontAwesomeIcons.xmark,
+                    //                     operator: 'multiplication')
+                    //                 : const PdfGenerationScreen(
+                    //                     icon: FontAwesomeIcons.xmark,
+                    //                     operator: 'multiplication'),
+                    //           )),
+                    //     ),
+                    //     ButtonIcon(
+                    //       icon: FontAwesomeIcons.divide,
+                    //       function: () => Navigator.push(
+                    //           context,
+                    //           MaterialPageRoute(
+                    //             builder: (context) => isQuiz
+                    //                 ? const QuizQuestionScreen(
+                    //                     icon: FontAwesomeIcons.divide,
+                    //                     operator: 'division',
+                    //                   )
+                    //                 : const PdfGenerationScreen(
+                    //                     icon: FontAwesomeIcons.divide,
+                    //                     operator: 'division',
+                    //                   ),
+                    //           )),
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),

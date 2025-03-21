@@ -1,7 +1,6 @@
-
 import 'package:flutter/material.dart';
+import 'package:fun_edu/feature/game_feature/game_page.dart';
 import 'package:fun_edu/screen/home_screen.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
 class MainTabbarScreen extends StatefulWidget {
   const MainTabbarScreen({super.key});
@@ -11,11 +10,10 @@ class MainTabbarScreen extends StatefulWidget {
 }
 
 class _MainTabbarScreenState extends State<MainTabbarScreen> {
-
   bool isDrawerOpen = false;
   final List<Widget> pages = [];
-  bool isDrawerOpen1 = false;
   var _indexPages = 0;
+
   @override
   void initState() {
     super.initState();
@@ -27,43 +25,88 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
       },
     ));
     pages.add(
-        Container(color: Colors.green, child: const Center(child: Text('AI'))));
-    pages.add(Container(
-        color: Colors.red, child: const Center(child: Text('Trò chơi'))));
+      Container(
+        color: Colors.blue.shade100,
+        child: const Center(
+          child: Text(
+            'AI',
+            style: TextStyle(fontSize: 30, color: Colors.black),
+          ),
+        ),
+      ),
+    );
+    pages.add(const ListGamePage());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: pages[_indexPages],
-      bottomNavigationBar: isDrawerOpen
-          ? null
-          : CurvedNavigationBar(
-              buttonBackgroundColor: Colors.transparent,
-              backgroundColor: Colors.white,
-              color: const Color(0xFF007AFF).withOpacity(0.1),
-              animationCurve: Curves.easeOutSine, //kiểu của tabbar chuyển tabs
-              items: <Widget>[
-                _buildIconButtonBar("assets/images/numbers_tabbar.png"),
-                _buildIconButtonBar("assets/images/ai_1.png"),
-                _buildIconButtonBar("assets/images/game-controller.png"),
-              ],
-              onTap: ((int index) {
-                setState(() {
-                  _indexPages = index;
-                });
-              }),
-            ),
+      body: Stack(
+        children: [
+          // Container(
+          //   decoration: const BoxDecoration(
+          //     gradient: LinearGradient(
+          //       colors: [Color(0xFFE0F7FA), Color(0xFFB3E5FC)],
+          //       begin: Alignment.topCenter,
+          //       end: Alignment.bottomCenter,
+          //     ),
+          //   ),
+          // ),
+          pages[_indexPages],
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: isDrawerOpen ? null : _buildCustomNavBar(),
     );
   }
 
-  Widget _buildIconButtonBar(String image) {
-    return SizedBox(
-      height: 48,
-      width: 48,
-      child: Image.asset(
-        image,
+  Widget _buildCustomNavBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(Icons.home, 0),
+          _buildNavItem(Icons.memory, 1),
+          _buildNavItem(Icons.sports_esports, 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int index) {
+    final isSelected = _indexPages == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _indexPages = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.shade600 : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : Colors.blue.shade200,
+          size: 40,
+        ),
       ),
     );
   }

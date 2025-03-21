@@ -3,6 +3,8 @@ import 'package:fun_edu/data/term/app_colors.dart';
 import 'package:fun_edu/data/term/constants.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:animated_widgets/animated_widgets.dart';
+import 'package:fun_edu/feature/number_feature/match_image.dart';
+import 'package:fun_edu/feature/number_feature/sort_number.dart';
 
 class CustomCardModel {
   final String title, subImage, image;
@@ -40,19 +42,33 @@ class _ModelStyleState extends State<ModelStyle> {
               children: [
                 Positioned(
                   top: 30,
-                  child: Container(
-                    height: 180,
-                    width: ScreenSize(context).width * 0.9,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF03F0FF).withOpacity(0.03),
-                          const Color(0xFF007AFF).withOpacity(0.15),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MatchImage(),
+                          ));
+                      // Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(
+                      //       builder: (context) => const SortNumber(),
+                      //     ));
+                    },
+                    child: Container(
+                      height: 180,
+                      width: ScreenSize(context).width * 0.9,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF03F0FF).withOpacity(0.03),
+                            const Color(0xFF007AFF).withOpacity(0.15),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(32),
                       ),
-                      borderRadius: BorderRadius.circular(32),
                     ),
                   ),
                 ),
