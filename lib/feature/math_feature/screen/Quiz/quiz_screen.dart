@@ -819,6 +819,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
 import 'answer_screen.dart';
@@ -882,6 +883,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    Future.delayed(const Duration(milliseconds: 500));
     _generateQuestions();
     //_initializeSmallStars();
     _spaceshipController = AnimationController(
@@ -1747,6 +1754,11 @@ class _AnimatedStarState extends State<AnimatedStar>
 
   @override
   void dispose() {
+     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     _controller.dispose();
     super.dispose();
   }

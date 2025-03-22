@@ -90,6 +90,14 @@ class OfflineMultiplayerScreen extends ConsumerWidget {
                 .toList(),
           ),
         ),
+        const Text(
+          "= ?",
+          style: TextStyle(
+            fontSize: 50,
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
@@ -328,10 +336,3 @@ class HandButton extends ConsumerWidget {
     );
   }
 }
-
-// getOpacity(bool? isAnswering, bool isUser) {
-//   if (isAnswering != null && !isUser) {
-//     return .4;
-//   }
-//   return 1;
-// }
