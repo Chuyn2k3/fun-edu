@@ -6,7 +6,7 @@ import 'package:fun_edu/feature/game_feature/game/dino_run/game/audio_manager.da
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/enemy.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/models/player_data.dart';
-
+import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/collision.dart';
 
 /// This enum represents the animation states of [Dino].
 enum DinoAnimationStates {
@@ -151,7 +151,9 @@ class Dino extends SpriteAnimationGroupComponent<DinoAnimationStates>
     AudioManager.instance.playSfx('hurt7.wav');
     current = DinoAnimationStates.hit;
     _hitTimer.start();
-    playerData.lives -= 1;
+    game.pauseEngine();
+    game.overlays.add(CollisionOverlay.id);
+    // playerData.lives -= 1;
   }
 
   // This method reset some of the important properties

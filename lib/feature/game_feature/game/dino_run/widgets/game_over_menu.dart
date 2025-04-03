@@ -41,14 +41,14 @@ class GameOverMenu extends StatelessWidget {
                   spacing: 10,
                   children: [
                     const Text(
-                      'Game Over',
+                      'Trò chơi kết thúc',
                       style: TextStyle(fontSize: 40, color: Colors.white),
                     ),
                     Selector<PlayerData, int>(
                       selector: (_, playerData) => playerData.currentScore,
                       builder: (_, score, __) {
                         return Text(
-                          'You Score: $score',
+                          'Điểm của bạn: $score',
                           style: const TextStyle(
                               fontSize: 40, color: Colors.white),
                         );
@@ -56,7 +56,7 @@ class GameOverMenu extends StatelessWidget {
                     ),
                     ElevatedButton(
                       child: const Text(
-                        'Restart',
+                        'Chơi lại',
                         style: TextStyle(
                           fontSize: 30,
                         ),
@@ -72,7 +72,7 @@ class GameOverMenu extends StatelessWidget {
                     ),
                     ElevatedButton(
                       child: const Text(
-                        'Exit',
+                        'Thoát',
                         style: TextStyle(
                           fontSize: 30,
                         ),
@@ -83,6 +83,7 @@ class GameOverMenu extends StatelessWidget {
                         game.resumeEngine();
                         game.reset();
                         AudioManager.instance.resumeBgm();
+                       
                       },
                     ),
                   ],

@@ -7,7 +7,6 @@ import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/action_butto
 import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/logout_button.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/sound_toggle.dart';
 
-
 import '../../helper/colors.dart';
 
 class MainMenu extends ConsumerWidget {
@@ -36,10 +35,10 @@ class MainMenu extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  "assets/images/logo.png",
-                  width: 230,
-                ),
+                // Image.asset(
+                //   "assets/images/logo.png",
+                //   width: 230,
+                // ),
                 const SizedBox(height: 40),
                 state.isLoading
                     ? const CircularProgressIndicator(
@@ -55,7 +54,7 @@ class MainMenu extends ConsumerWidget {
                       ),
                 const SizedBox(height: 40),
                 ActionButton(
-                  title: 'play',
+                  title: 'Chơi',
                   onPressed: () => {
                     game.overlays.remove(MainMenu.id),
                     game.startGame(),
@@ -63,7 +62,7 @@ class MainMenu extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 ActionButton(
-                  title: 'INSTRUCTIONS',
+                  title: 'Hướng dẫn',
                   customColor: AppColors.green,
                   onPressed: () {
                     game.overlays.remove(MainMenu.id);

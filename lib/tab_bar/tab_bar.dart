@@ -1,4 +1,7 @@
+import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fun_edu/feature/digit_feature/page.dart';
 import 'package:fun_edu/feature/game_feature/game_page.dart';
 import 'package:fun_edu/screen/home_screen.dart';
 
@@ -17,54 +20,59 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
   @override
   void initState() {
     super.initState();
-    pages.add(HomeScreen(
-      onDrawerStateChanged: (isOpen) {
-        setState(() {
-          isDrawerOpen = isOpen;
-        });
-      },
-    ));
-    pages.add(
-      Container(
-        color: Colors.blue.shade100,
-        child: const Center(
-          child: Text(
-            'AI',
-            style: TextStyle(fontSize: 30, color: Colors.black),
-          ),
-        ),
-      ),
-    );
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    Flame.device.setPortrait();
+    pages.add(const HomeScreen(
+        // onDrawerStateChanged: (isOpen) {
+        //   setState(() {
+        //     isDrawerOpen = isOpen;
+        //   });
+        // },
+        ));
+    pages.add(const DigitRecogizePage());
     pages.add(const ListGamePage());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: Stack(
-        children: [
-          // Container(
-          //   decoration: const BoxDecoration(
-          //     gradient: LinearGradient(
-          //       colors: [Color(0xFFE0F7FA), Color(0xFFB3E5FC)],
-          //       begin: Alignment.topCenter,
-          //       end: Alignment.bottomCenter,
-          //     ),
-          //   ),
-          // ),
-          pages[_indexPages],
-        ],
+    return WillPopScope(
+      onWillPop: () async {
+        SystemNavigator.pop();
+        return false;
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: Stack(
+          children: [
+            // Container(
+            //   decoration: const BoxDecoration(
+            //     gradient: LinearGradient(
+            //       colors: [Color(0xFFE0F7FA), Color(0xFFB3E5FC)],
+            //       begin: Alignment.topCenter,
+            //       end: Alignment.bottomCenter,
+            //     ),
+            //   ),
+            // ),
+            pages[_indexPages],
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: isDrawerOpen ? null : _buildCustomNavBar(),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: isDrawerOpen ? null : _buildCustomNavBar(),
     );
   }
 
   Widget _buildCustomNavBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(
+        bottom: 12,
+        right: 12,
+        left: 12,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),

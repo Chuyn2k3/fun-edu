@@ -34,6 +34,7 @@ class _SoloPageState extends State<SoloPage> {
     return BaseScaffold(
       appBar: CustomAppbar.basic(
         onTap: () => Navigator.pop(context),
+        title: "Nhập tên người chơi",
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -82,8 +83,7 @@ class _SoloPageState extends State<SoloPage> {
       width: MediaQuery.of(context).size.width > 700 ? 500 : double.infinity,
       child: TextFormField(
         controller: userName,
-        style: TextStyle(
-            color: Pref.isDarkMode ? Colors.grey : Colors.black, fontSize: 20),
+        style: const TextStyle(color: Colors.black, fontSize: 20),
         decoration: InputDecoration(
           errorStyle: const TextStyle(color: redColorLight),
           errorBorder: OutlineInputBorder(

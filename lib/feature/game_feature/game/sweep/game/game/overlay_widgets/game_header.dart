@@ -66,33 +66,43 @@ class _GameHeaderState extends ConsumerState<GameHeader>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const LogoutButton(),
-                Row(
-                  children: [
-                    Text(
-                      'Highest Score:',
-                      style: subtitleStyle,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      highestScore.toString(),
-                      style:
-                          subtitleStyle.copyWith(fontSize: _controller.value),
-                    )
-                  ],
+                const SizedBox(
+                  height: 8,
                 ),
-                Row(
-                  children: [
-                    Text(
-                      'Score:',
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: subtitleStyle,
+                  child: RichText(
+                    text: TextSpan(
                       style: subtitleStyle,
+                      children: [
+                        const TextSpan(text: 'Điểm cao nhất: '),
+                        TextSpan(
+                            text: highestScore.toString(),
+                            style: subtitleStyle.copyWith(
+                                fontSize: _controller.value)),
+                      ],
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      currentScore.toString(),
-                      style:
-                          subtitleStyle.copyWith(fontSize: _controller.value),
-                    )
-                  ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 8,
+                ),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: subtitleStyle,
+                  child: RichText(
+                    text: TextSpan(
+                      style: subtitleStyle,
+                      children: [
+                        const TextSpan(text: 'Điểm: '),
+                        TextSpan(
+                            text: currentScore.toString(),
+                            style: subtitleStyle.copyWith(
+                                fontSize: _controller.value)),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

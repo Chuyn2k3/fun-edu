@@ -20,7 +20,7 @@ class _SoundToggleState extends ConsumerState<SoundToggle> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          'Sound:',
+          'Âm thanh:',
           style: subtitleStyle,
         ),
         const SizedBox(width: 10),

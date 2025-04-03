@@ -23,15 +23,17 @@ class InstructionsOverlay extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'instructions.title',
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
               style: titleTextStyle,
-            ).tr(),
+              child: Text('Hướng dẫn').tr(),
+            ),
             const SizedBox(height: 40),
-            Text(
-              'instructions.drag',
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
               style: titleTextStyle.copyWith(fontSize: 24),
-            ).tr(),
+              child: Text('Điều khiển').tr(),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
               child: Row(
@@ -56,10 +58,11 @@ class InstructionsOverlay extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              'instructions.avoid',
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
               style: titleTextStyle.copyWith(fontSize: 24),
-            ).tr(),
+              child: Text('Nguy hiểm').tr(),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -71,10 +74,11 @@ class InstructionsOverlay extends StatelessWidget {
                   .toList(),
             ),
             const SizedBox(height: 30),
-            Text(
-              'instructions.collect',
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
               style: titleTextStyle.copyWith(fontSize: 24),
-            ).tr(),
+              child: Text('Vật phẩm thu thập').tr(),
+            ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Image.asset(
@@ -82,12 +86,15 @@ class InstructionsOverlay extends StatelessWidget {
                 width: 70,
               ),
             ),
-            ActionButton(
-                title: 'dive_in',
+            Center(
+              child: ActionButton(
+                title: 'Quay lại',
                 onPressed: () {
                   game.overlays.remove(InstructionsOverlay.id);
                   game.overlays.add(MainMenu.id);
-                }),
+                },
+              ),
+            ),
           ],
         ),
       ),

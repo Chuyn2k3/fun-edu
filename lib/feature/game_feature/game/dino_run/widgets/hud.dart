@@ -1,27 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/audio_manager.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/models/player_data.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/pause_menu.dart';
 import 'package:provider/provider.dart';
 
-
-// This represents the head up display in game.
-// It consists of, current score, high score,
-// a pause button and number of remaining lives.
-class Hud extends StatelessWidget {
-  // An unique identified for this overlay.
+class Hud extends StatefulWidget {
   static const id = 'Hud';
-
-  // Reference to parent game.
   final DinoRun game;
 
   const Hud(this.game, {super.key});
 
   @override
+  State<Hud> createState() => _HudState();
+}
+
+class _HudState extends State<Hud> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _textSizeAnimation;
+  int _previousScore = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      lowerBound: 20,
+      upperBound: 30,
+    );
+
+    _controller.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
-      value: game.playerData,
+      value: widget.game.playerData,
       child: Padding(
         padding: const EdgeInsets.only(top: 10.0),
         child: Row(
@@ -29,32 +53,83 @@ class Hud extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Selector<PlayerData, int>(
                   selector: (_, playerData) => playerData.currentScore,
                   builder: (_, score, __) {
-                    return Text(
-                      'Score: $score',
-                      style: const TextStyle(fontSize: 20, color: Colors.white),
+                    // Kiểm tra nếu đạt mốc điểm thì chạy hiệu ứng
+                    if ((score ~/ 50) > (_previousScore ~/ 50)) {
+                      _controller.forward(from: 20).whenComplete(() {
+                        _controller.reverse();
+                      });
+                    }
+                    _previousScore = score;
+
+                    // Đổi màu chữ theo khoảng điểm
+                    Color scoreColor = Colors.white;
+                    if (score >= 50 && score < 100) {
+                      scoreColor = Colors.yellow; // Xanh biển nhạt
+                    } else if (score >= 100 && score < 200) {
+                      scoreColor = Colors.red;
+                    } else if (score >= 200 && score < 300) {
+                      scoreColor = Colors.blue;
+                    } else if (score >= 300) {
+                      scoreColor = Colors.green;
+                    }
+
+                    return AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 300),
+                      style: TextStyle(
+                        fontSize: _controller.value,
+                        color: scoreColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      child: Text('Điểm: $score'),
                     );
                   },
                 ),
-                Selector<PlayerData, int>(
-                  selector: (_, playerData) => playerData.highScore,
-                  builder: (_, highScore, __) {
-                    return Text(
-                      'High: $highScore',
-                      style: const TextStyle(color: Colors.white),
-                    );
-                  },
+                Expanded(
+                  child: Selector<PlayerData, int>(
+                    selector: (_, playerData) => playerData.highScore,
+                    builder: (_, highScore, __) {
+                      return AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 300),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20),
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20, // Đồng nhất kích thước với số điểm
+                            ),
+                            children: [
+                              const TextSpan(text: 'Điểm cao nhất: '),
+                              TextSpan(
+                                text: '$highScore',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.cyanAccent,
+                                  fontSize: 30,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
             TextButton(
               onPressed: () {
-                game.overlays.remove(Hud.id);
-                game.overlays.add(PauseMenu.id);
-                game.pauseEngine();
+                widget.game.overlays.remove(Hud.id);
+                widget.game.overlays.add(PauseMenu.id);
+                widget.game.pauseEngine();
                 AudioManager.instance.pauseBgm();
               },
               child: const Icon(Icons.pause, color: Colors.white),
@@ -78,7 +153,7 @@ class Hud extends StatelessWidget {
                   }),
                 );
               },
-            )
+            ),
           ],
         ),
       ),

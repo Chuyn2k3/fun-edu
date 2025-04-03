@@ -42,18 +42,19 @@ class _MyAppState extends State<MyApp> {
       themeMode: Pref.defaultTheme,
 
       //dark
-      darkTheme: ThemeData(
-          useMaterial3: false,
-          brightness: Brightness.dark,
-          appBarTheme: const AppBarTheme(
-            elevation: 1,
-            centerTitle: true,
-            titleTextStyle:
-                TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-          )),
+      // darkTheme: ThemeData(
+      //     useMaterial3: false,
+      //     brightness: Brightness.dark,
+      //     appBarTheme: const AppBarTheme(
+      //       elevation: 1,
+      //       centerTitle: true,
+      //       titleTextStyle:
+      //           TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+      //     )),
 
       //light
       theme: ThemeData(
+          fontFamily: 'Sukhumvit Set',
           useMaterial3: false,
           appBarTheme: const AppBarTheme(
             elevation: 1,

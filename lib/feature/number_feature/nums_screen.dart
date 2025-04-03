@@ -147,7 +147,7 @@ class _NumsScreenState extends State<NumsScreen> {
                   const SizedBox(width: 8),
                   Text(
                     "Học Chữ Số 🎈",
-                    style: GoogleFonts.bubblegumSans(
+                    style: TextStyle(
                       fontSize: 26,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -165,7 +165,7 @@ class _NumsScreenState extends State<NumsScreen> {
                 child: Text(
                   "Bé muốn học theo cách nào nhỉ? 🤩",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.bubblegumSans(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.blue,
@@ -248,7 +248,7 @@ class _NumsScreenState extends State<NumsScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.bubblegumSans(
+                    style: TextStyle(
                       fontSize: 24,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -257,7 +257,7 @@ class _NumsScreenState extends State<NumsScreen> {
                   const SizedBox(height: 6),
                   Text(
                     description,
-                    style: GoogleFonts.bubblegumSans(
+                    style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
                     ),

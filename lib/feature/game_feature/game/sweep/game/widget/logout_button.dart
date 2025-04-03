@@ -32,14 +32,12 @@ class LogoutButton extends ConsumerWidget {
         TextButton(
             onPressed: () {
               ref.read(scoreNotifierProvider.notifier).resetScore();
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ListGamePage(),
-                  ));
+              Navigator.pop(
+                context,
+              );
             },
             child: const Text(
-              'logout',
+              'Thoát',
               style: TextStyle(
                 color: AppColors.white,
                 fontSize: 18,

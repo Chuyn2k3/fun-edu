@@ -21,9 +21,15 @@ class QuizButtonIcon extends StatelessWidget {
           ? 50
           : MediaQuery.of(context).size.width / 7,
       child: Center(
-        child: Text(
-          option,
-          style: const TextStyle(color: baseColorLight, fontSize: 25),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 300),
+          style: TextStyle(
+            color: baseColorLight, // Bạn có thể thay đổi màu sắc khi lựa chọn
+            fontSize: 25,
+            fontWeight:
+                FontWeight.bold, // Thêm hiệu ứng chuyển trọng lượng font chữ
+          ),
+          child: Text(option),
         ),
       ),
     );

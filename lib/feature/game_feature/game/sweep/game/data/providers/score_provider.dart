@@ -34,16 +34,16 @@ class ScoreNotifier extends StateNotifier<ScoreState> {
 
   Future<void> loadScores() async {
     final currentScore = state.score;
-    final highScore = 
+    final highScore =
         GetIt.instance.get<SharedPreferencesManager>().getInt("high_score");
-    state.copyWith(
+    state = state.copyWith(
       highScore: highScore ?? 0,
     );
     if (currentScore > state.highScore) {
       state = state.copyWith(
         highScore: currentScore,
       );
-      GetIt.instance
+      await GetIt.instance
           .get<SharedPreferencesManager>()
           .putInt("high_score", currentScore);
     }
@@ -58,7 +58,7 @@ class ScoreNotifier extends StateNotifier<ScoreState> {
     final currentScore = state.score;
     final highScore =
         GetIt.instance.get<SharedPreferencesManager>().getInt("high_score");
-    state.copyWith(
+    state = state.copyWith(
       highScore: highScore ?? 0,
     );
     if (currentScore > state.highScore) {

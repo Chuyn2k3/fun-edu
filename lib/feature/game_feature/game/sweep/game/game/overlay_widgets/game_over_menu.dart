@@ -24,10 +24,12 @@ class GameOverMenu extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'game_over',
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
             style: titleTextStyle,
-          ).tr(),
+            child: const Text('Kết thúc trò chơi'),
+          ),
+
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 40),
             child: Container(
@@ -42,21 +44,23 @@ class GameOverMenu extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Score',
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 300),
                     style: titleTextStyle.copyWith(fontSize: 20),
+                    child: const Text('Điểm'),
                   ),
                   const SizedBox(width: 16),
-                  Text(
-                    '${state.score}',
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 300),
                     style: titleTextStyle.copyWith(fontSize: 22),
+                    child: Text('${state.score}'),
                   ),
                 ],
               ),
             ),
           ),
           ActionButton(
-            title: 'play_again',
+            title: 'Chơi lại',
             onPressed: () {
               game.reset();
               game.overlays.remove(GameOverMenu.id);
@@ -65,15 +69,6 @@ class GameOverMenu extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 20),
-          ActionButton(
-            title: 'leaderboard',
-            customColor: AppColors.green,
-            onPressed: () {
-              game.overlays.remove(GameOverMenu.id);
-              game.overlays.add(LeaderBoardOverlay.id);
-            },
-          ),
-          const SizedBox(height: 40),
           //const LogoutButton(),
         ],
       ),

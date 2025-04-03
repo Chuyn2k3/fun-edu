@@ -1,9 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/colors.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/styles.dart';
-
-
 
 class ActionButton extends StatelessWidget {
   const ActionButton({
@@ -31,7 +30,7 @@ class ActionButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: borderRadius,
         child: Container(
-          width: double.infinity,
+          width: kIsWeb ? 500 : double.infinity,
           decoration: BoxDecoration(
             color: color,
             borderRadius: borderRadius,

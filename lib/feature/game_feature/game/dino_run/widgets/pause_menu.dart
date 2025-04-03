@@ -8,7 +8,6 @@ import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/hud.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/main_menu.dart';
 import 'package:provider/provider.dart';
 
-
 // This represents the pause menu overlay.
 class PauseMenu extends StatelessWidget {
   // An unique identified for this overlay.
@@ -46,7 +45,7 @@ class PauseMenu extends StatelessWidget {
                         selector: (_, playerData) => playerData.currentScore,
                         builder: (_, score, __) {
                           return Text(
-                            'Score: $score',
+                            'Điểm: $score',
                             style: const TextStyle(
                                 fontSize: 40, color: Colors.white),
                           );
@@ -61,7 +60,7 @@ class PauseMenu extends StatelessWidget {
                         AudioManager.instance.resumeBgm();
                       },
                       child: const Text(
-                        'Resume',
+                        'Tiếp tục',
                         style: TextStyle(
                           fontSize: 30,
                         ),
@@ -77,7 +76,7 @@ class PauseMenu extends StatelessWidget {
                         AudioManager.instance.resumeBgm();
                       },
                       child: const Text(
-                        'Restart',
+                        'Chơi lại',
                         style: TextStyle(
                           fontSize: 30,
                         ),
@@ -92,7 +91,7 @@ class PauseMenu extends StatelessWidget {
                         AudioManager.instance.resumeBgm();
                       },
                       child: const Text(
-                        'Exit',
+                        'Thoát',
                         style: TextStyle(
                           fontSize: 30,
                         ),

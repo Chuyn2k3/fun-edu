@@ -132,7 +132,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                   const SizedBox(width: 8),
                   Text(
                     "So Sánh Vui Nhộn 🎉",
-                    style: GoogleFonts.bubblegumSans(
+                    style: TextStyle(
                       fontSize: 26,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -150,7 +150,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                 child: Text(
                   "Bạn muốn so sánh số hay so sánh hình ảnh? 🤩",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.bubblegumSans(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.deepPurple,
@@ -208,7 +208,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.bubblegumSans(
+                    style: TextStyle(
                       fontSize: 24,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -217,7 +217,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                   const SizedBox(height: 6),
                   Text(
                     description,
-                    style: GoogleFonts.bubblegumSans(
+                    style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
                     ),

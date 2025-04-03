@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fun_edu/feature/game_feature/game/dino_run/game/audio_manager.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/hud.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/settings_menu.dart';
@@ -52,7 +53,7 @@ class MainMenu extends StatelessWidget {
                       game.overlays.add(Hud.id);
                     },
                     child: const Text(
-                      'Play',
+                      'Chơi',
                       style: TextStyle(
                         fontSize: 30,
                       ),
@@ -64,7 +65,7 @@ class MainMenu extends StatelessWidget {
                       game.overlays.add(SettingsMenu.id);
                     },
                     child: const Text(
-                      'Settings',
+                      'Cài đặt',
                       style: TextStyle(
                         fontSize: 30,
                       ),
@@ -78,6 +79,7 @@ class MainMenu extends StatelessWidget {
                         DeviceOrientation.portraitDown,
                       ]);
                       Flame.device.setPortrait();
+                      AudioManager.instance.stopBgm();
                       Navigator.pop(context);
 // Chuyển sang màn hình khác
                       // Navigator.pushReplacement(

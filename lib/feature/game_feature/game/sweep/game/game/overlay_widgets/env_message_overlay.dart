@@ -52,26 +52,48 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
       ramImageIndex = Random().nextInt(listImage.length);
       ramOperatorIndex = Random().nextInt(operatorList.length);
 
-      correctAnswer =
-          operatorList[ramOperatorIndex] == "sum" ? val1 + val2 : val1 - val2;
+      if (operatorList[ramOperatorIndex] == "sum") {
+        correctAnswer = val1 + val2;
+      } else {
+        // Đảm bảo phép trừ không ra số âm
+        if (val1 < val2) {
+          int temp = val1;
+          val1 = val2;
+          val2 = temp;
+        }
+        correctAnswer = val1 - val2;
+      }
+      Set<int> tempOptions = {correctAnswer};
 
-      answerOptions = [
-        correctAnswer,
-        correctAnswer + Random().nextInt(5) + 1,
-        correctAnswer - Random().nextInt(5) - 1,
-        correctAnswer + Random().nextInt(10) + 1,
-      ];
-      answerOptions.shuffle();
+      while (tempOptions.length < 3) {
+        int wrongAnswer = correctAnswer + Random().nextInt(5) - 2;
+        if (wrongAnswer >= 0) {
+          tempOptions.add(wrongAnswer);
+        }
+      }
+      answerOptions = tempOptions.toList()..shuffle();
     });
   }
 
   Icon getOperation(String operator) {
     if (operator == "sum") {
-      return const Icon(FontAwesomeIcons.plus, size: 24);
+      return const Icon(
+        FontAwesomeIcons.plus,
+        size: 24,
+        color: Colors.white,
+      );
     } else if (operator == "minus") {
-      return const Icon(FontAwesomeIcons.minus, size: 24);
+      return const Icon(
+        FontAwesomeIcons.minus,
+        size: 24,
+        color: Colors.white,
+      );
     }
-    return const Icon(FontAwesomeIcons.plus, size: 24);
+    return const Icon(
+      FontAwesomeIcons.plus,
+      size: 24,
+      color: Colors.white,
+    );
   }
 
   Widget questionBuild() {
@@ -79,8 +101,9 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
     final imageList2 = List.generate(val2, (_) => listImage[ramImageIndex]);
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
+        Flexible(
           flex: 3,
           child: Wrap(
             spacing: 4,
@@ -94,7 +117,7 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
         const SizedBox(width: 4),
         getOperation(operatorList[ramOperatorIndex]),
         const SizedBox(width: 4),
-        Expanded(
+        Flexible(
           flex: 2,
           child: Wrap(
             spacing: 4,
@@ -110,7 +133,14 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
           fit: BoxFit.scaleDown,
           child: Row(
             children: [
-              const Text('= ?', style: TextStyle(fontSize: 26)),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 300),
+                style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+                child: const Text('= ?', style: TextStyle(fontSize: 26)),
+              ),
               Image.asset(listImage[ramImageIndex],
                   width: 48, height: 48, fit: BoxFit.cover),
             ],
@@ -130,7 +160,7 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
     } else {
       widget.game.overlays.remove(EnvMessageOverlay.id);
       widget.game.overlays.add(GameOverMenu.id);
-       widget.game.reset();
+      widget.game.reset();
     }
   }
 
@@ -145,21 +175,34 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('dive_deeper', style: titleTextStyle),
+            // 1. Animated Text
+            // AnimatedDefaultTextStyle(
+            //   duration: const Duration(milliseconds: 300),
+            //   style: titleTextStyle.copyWith(
+            //       color: Colors
+            //           .white), // Thêm hiệu ứng thay đổi font size hoặc màu sắc nếu cần
+            //   child: const Text('dive_deeper'),
+            // ),
+
             const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.white, width: 2),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/images/frame_$imageNumber.png',
-                  fit: BoxFit.fitHeight,
-                ),
-              ),
-            ),
+
+// 2. Animated Container
+            // AnimatedContainer(
+            //   duration: const Duration(milliseconds: 300),
+            //   decoration: BoxDecoration(
+            //     borderRadius: BorderRadius.circular(10),
+            //     border: Border.all(color: AppColors.white, width: 2),
+            //   ),
+            //   child: ClipRRect(
+            //     borderRadius: BorderRadius.circular(10),
+            //     child: Image.asset(
+            //       'assets/images/frame_$imageNumber.png',
+            //       fit: BoxFit.fitHeight,
+            //     ),
+            //   ),
+            // ),
+
+// 3. Animated Wrap for answer options
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: SingleChildScrollView(
@@ -167,14 +210,19 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
                   children: [
                     questionBuild(),
                     const SizedBox(height: 20),
-                    Wrap(
-                      spacing: 10,
-                      children: answerOptions.map((option) {
-                        return GestureDetector(
-                          onTap: () => _selectAnswer(option),
-                          child: QuizButtonIcon(option: option.toString()),
-                        );
-                      }).toList(),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Wrap(
+                        key: ValueKey<int>(answerOptions
+                            .length), // Dùng key để trigger animation mỗi khi options thay đổi
+                        spacing: 10,
+                        children: answerOptions.map((option) {
+                          return GestureDetector(
+                            onTap: () => _selectAnswer(option),
+                            child: QuizButtonIcon(option: option.toString()),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
                 ),
