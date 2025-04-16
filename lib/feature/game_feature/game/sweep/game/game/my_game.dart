@@ -12,7 +12,6 @@ import 'package:fun_edu/feature/game_feature/game/sweep/game/components/booster_
 import 'package:fun_edu/feature/game_feature/game/sweep/game/components/enemy_manager.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/components/player_component.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/components/trash_manager.dart';
-import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/message_provider.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/score_provider.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/overlay_widgets/env_message_overlay.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/overlay_widgets/game_header.dart';

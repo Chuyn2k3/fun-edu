@@ -5,18 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/audio_manager.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
-import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/hud.dart';
-import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/settings_menu.dart';
 
-// This represents the main menu overlay.
-class MainMenu extends StatelessWidget {
+// This represents the Logout menu overlay.
+class LogoutMenu extends StatelessWidget {
   // An unique identified for this overlay.
-  static const id = 'MainMenu';
+  static const id = 'LogoutMenu';
 
   // Reference to parent game.
   final DinoRun game;
 
-  const MainMenu(this.game, {super.key});
+  const LogoutMenu(this.game, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,31 +40,6 @@ class MainMenu extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 50,
                       color: Colors.white,
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      game.startGamePlay();
-                      game.overlays.remove(MainMenu.id);
-                      game.overlays.add(Hud.id);
-                    },
-                    child: const Text(
-                      'Chơi',
-                      style: TextStyle(
-                        fontSize: 30,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      game.overlays.remove(MainMenu.id);
-                      game.overlays.add(SettingsMenu.id);
-                    },
-                    child: const Text(
-                      'Cài đặt',
-                      style: TextStyle(
-                        fontSize: 30,
-                      ),
                     ),
                   ),
                   ElevatedButton(

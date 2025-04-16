@@ -1,66 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fun_edu/data/questions_data.dart';
-import 'package:fun_edu/model/question.dart';
-
-
-import 'questions.dart';
+import 'package:fun_edu/core/repositories/question_repository.dart';
+import 'package:fun_edu/di/locator.dart';
+import 'package:fun_edu/model/question_model.dart';
+import 'package:fun_edu/providers/questions.dart';
 
 final offlineProvider = ChangeNotifierProvider<Offline>((ref) {
   return Offline();
 });
 
 class Offline extends ChangeNotifier {
+  final QuestionRepository _questionRepository = serviceLocator();
+
   int currentQuestionIndex = 0;
   int? currentQuestionAnswerIndex;
   bool? isUserAnswering;
   bool isFinish = false;
+  String userName = "Người chơi thứ nhất";
+  String enermyName = "Người chơi thứ hai";
+  List<QuestionModel> _questions = [];
+  OfflineState state = OfflineState.initial;
+  String? errorMessage;
 
   int userScore = 0;
   int enemyScore = 0;
 
-  List<Question> get questions {
-    return questionsData
-        .sublist(0, 10)
-        .map((q) => Question.fromMap(q))
-        .toList();
+  List<QuestionModel> get questions => _questions;
+
+  QuestionModel? get currentQuestion =>
+      _questions.isNotEmpty ? _questions[currentQuestionIndex] : null;
+
+  List<String> get currentAnswers =>
+      currentQuestion?.answers?.map((e) => e.content ?? "").toList() ?? [];
+
+  int get isRightIndex {
+    final list = currentQuestion?.answers;
+    if (list == null || list.isEmpty) return -1;
+    return list.indexWhere((e) => e.isCorrect ?? false);
   }
-
-  Question get currentQuestion => questions[currentQuestionIndex];
-
-  List<String> get currentAnswers => currentQuestion.answersList;
 
   bool get isWinner => userScore > enemyScore;
 
   bool get isChoseAnswer => answersStatus.contains(AnswerCardStatus.right);
 
   List<AnswerCardStatus> get answersStatus {
-    if (currentQuestionAnswerIndex == null && isUserAnswering != null) {
-      return List.generate(currentQuestion.answersList.length,
-          (index) => AnswerCardStatus.normal);
-    } else if (currentQuestionAnswerIndex == null && isUserAnswering == null) {
-      return List.generate(currentQuestion.answersList.length,
-          (index) => AnswerCardStatus.disabled);
-    } else if (currentQuestionAnswerIndex ==
-        currentQuestion.rightAnswerIndex - 1) {
-      return List.generate(currentQuestion.answersList.length, (index) {
-        if (index == currentQuestionAnswerIndex) {
-          return AnswerCardStatus.right;
-        }
+    final answers = currentQuestion?.answers;
+    if (answers == null) return [];
+
+    return List.generate(answers.length, (index) {
+      if (currentQuestionAnswerIndex == null && isUserAnswering != null) {
+        return AnswerCardStatus.normal;
+      } else if (currentQuestionAnswerIndex == null &&
+          isUserAnswering == null) {
         return AnswerCardStatus.disabled;
-      });
-    } else {
-      return List.generate(currentQuestion.answersList.length, (index) {
+      } else if (currentQuestionAnswerIndex == isRightIndex) {
+        return index == currentQuestionAnswerIndex
+            ? AnswerCardStatus.right
+            : AnswerCardStatus.disabled;
+      } else {
         if (index == currentQuestionAnswerIndex) {
           return AnswerCardStatus.error;
         }
-
-        if (index == currentQuestion.rightAnswerIndex - 1) {
+        if (index == isRightIndex) {
           return AnswerCardStatus.right;
         }
         return AnswerCardStatus.disabled;
-      });
+      }
+    });
+  }
+
+  Future<void> loadQuestions() async {
+    state = OfflineState.loading;
+    notifyListeners();
+
+    try {
+      final result = await _questionRepository.getQuestion(null, null);
+      _questions = result.data?.content ?? [];
+
+      if (_questions.isEmpty) {
+        state = OfflineState.empty;
+      } else {
+        state = OfflineState.loaded;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      state = OfflineState.error;
     }
+
+    notifyListeners();
   }
 
   void chooseAnswerer(bool isUser) {
@@ -69,13 +96,13 @@ class Offline extends ChangeNotifier {
   }
 
   bool isRightAnswer(int index) {
-    return currentQuestion.rightAnswerIndex - 1 == index;
+    return isRightIndex == index;
   }
 
   void answerQuestion(int index) {
-    currentQuestionAnswerIndex = index;
+    if (currentQuestion == null) return;
 
-    notifyListeners();
+    currentQuestionAnswerIndex = index;
 
     if ((isUserAnswering! && isRightAnswer(index)) ||
         (!isUserAnswering! && !isRightAnswer(index))) {
@@ -83,11 +110,12 @@ class Offline extends ChangeNotifier {
     } else {
       enemyScore++;
     }
+
     notifyListeners();
   }
 
   void nextQuestion() {
-    if (currentQuestionIndex < 9) {
+    if (currentQuestionIndex < _questions.length - 1) {
       isUserAnswering = null;
       currentQuestionIndex++;
       currentQuestionAnswerIndex = null;
@@ -100,13 +128,12 @@ class Offline extends ChangeNotifier {
   void reset() {
     currentQuestionAnswerIndex = null;
     isUserAnswering = null;
-
     isFinish = false;
-
     currentQuestionIndex = 0;
-
     userScore = 0;
     enemyScore = 0;
     notifyListeners();
   }
 }
+
+enum OfflineState { initial, loading, loaded, empty, error }

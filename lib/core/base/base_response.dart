@@ -1,4 +1,4 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'base_response.g.dart';
 
@@ -6,103 +6,36 @@ part 'base_response.g.dart';
   genericArgumentFactories: true,
 )
 class BaseResponse<T> {
-  final List<T>? data;
-  final int? code;
-  final String? message;
-  final PageInfo? pageInfo;
-
-  BaseResponse(this.data, this.code, this.message, this.pageInfo);
-
-  int totalPage(int pageSize) =>
-      ((pageInfo?.totalRecord ?? 0) / pageSize).ceil();
-
-  factory BaseResponse.fromJson(
-    Map<String, dynamic> json,
-    T Function(Object? json) fromJsonT,
-  ) =>
-      _$BaseResponseFromJson(json, fromJsonT);
-
-  Map<String, dynamic> toJson(Object Function(T value) toJsonT) =>
-      _$BaseResponseToJson(this, toJsonT);
-}
-
-@JsonSerializable(
-  genericArgumentFactories: true,
-)
-class DioResponse<T> {
-  final T? data;
+  final DataResponse<T>? data;
   final int? code;
   final String? message;
 
-  DioResponse(
+  BaseResponse(
     this.data,
     this.code,
     this.message,
   );
 
-  factory DioResponse.fromJson(
-    Map<String, dynamic> json,
-    T Function(Object? json) fromJsonT,
-  ) => _$DioResponseFromJson(json, fromJsonT);
+  factory BaseResponse.fromJson(Map<String, dynamic> json,  T Function(Object? json) fromJsonT,) =>
+      _$BaseResponseFromJson(json, fromJsonT);
 
-  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
-      _$DioResponseToJson(this, toJsonT);
-}
-
-@JsonSerializable()
-class PageInfo {
-  int? limit;
-  int? totalRecord;
-  int? offset;
-  String? sort;
-  PageInfo(this.limit, this.offset, this.sort, this.totalRecord);
-
-  factory PageInfo.fromJson(Map<String, dynamic> json) =>
-      _$PageInfoFromJson(json);
-
-  Map<String, dynamic> toJson() => _$PageInfoToJson(this);
-}
-
-@JsonSerializable()
-class PageInfoRequest {
-  String? query;
-  int? offset;
-  int? limit;
-  String? sort;
-  PageInfoRequest({
-    this.query,
-    this.offset,
-    this.limit,
-    this.sort,
-  });
-
-  factory PageInfoRequest.fromJson(Map<String, dynamic> json) =>
-      _$PageInfoRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$PageInfoRequestToJson(this);
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) => _$BaseResponseToJson(this, toJsonT);
 }
 
 @JsonSerializable(
   genericArgumentFactories: true,
 )
-class BaseArrayResponse<T> {
-  final List<T>? data;
-  final int? totalElements;
-  final int? page;
-  final int? pageSize;
+class DataResponse<T> {
+  final List<T>? content;
 
-  BaseArrayResponse({
-    required this.data,
-    required this.totalElements,
-    required this.page,
-    required this.pageSize,
-  });
+  DataResponse(this.content);
 
-  factory BaseArrayResponse.fromJson(
+  factory DataResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Object? json) fromJsonT,
   ) =>
-      _$BaseArrayResponseFromJson(json, fromJsonT);
+      _$DataResponseFromJson(json, fromJsonT);
 
-  Map<String, dynamic> toJson(Object Function(T value) toJsonT) =>
-      _$BaseArrayResponseToJson(this, toJsonT);
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
+      _$DataResponseToJson(this, toJsonT);
 }

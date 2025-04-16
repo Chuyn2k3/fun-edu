@@ -3,7 +3,6 @@ import 'package:fun_edu/data/color/color.dart';
 import 'package:fun_edu/tab_bar/tab_bar.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
 import 'package:get_it/get_it.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ChooseAgeWidget extends StatefulWidget {
   const ChooseAgeWidget({super.key});
@@ -52,7 +51,7 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
                       'Rất vui được gặp bạn! \nBạn bao nhiêu tuổi?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: 'Sukhumvit Set',
+                        fontFamily: 'LilitaOne',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -125,7 +124,7 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
             child: Text(
               ageText,
               style: const TextStyle(
-                fontFamily: 'Sukhumvit Set',
+                fontFamily: 'LilitaOne',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: ColorBase.primaryBackground,

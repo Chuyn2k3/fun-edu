@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
@@ -6,7 +5,6 @@ import 'package:fun_edu/feature/game_feature/game/sweep/game/game/overlay_widget
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/styles.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/action_button.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/logout_button.dart';
-import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/sound_toggle.dart';
 
 class PauseMenu extends ConsumerWidget {
   static const id = 'PauseMenu';

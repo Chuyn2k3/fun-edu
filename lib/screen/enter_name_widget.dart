@@ -74,7 +74,7 @@ class _EnterNameWidgetState extends State<EnterNameWidget> {
                                 'Xin chào! Mình là Pippo\nTên bạn là gì?',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontFamily: 'Sukhumvit Set',
+                                  fontFamily: 'LilitaOne',
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
@@ -120,7 +120,7 @@ class _EnterNameWidgetState extends State<EnterNameWidget> {
                           ),
                         ),
                         style: TextStyle(
-                          fontFamily: 'Sukhumvit Set',
+                          fontFamily: 'LilitaOne',
                           fontSize: 16,
                           color: Colors.black,
                         ),
@@ -166,7 +166,7 @@ class _EnterNameWidgetState extends State<EnterNameWidget> {
                             child: Text(
                               'Bắt đầu',
                               style: TextStyle(
-                                fontFamily: 'Sukhumvit Set',
+                                fontFamily: 'LilitaOne',
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: Colors

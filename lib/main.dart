@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
 
       //light
       theme: ThemeData(
-          fontFamily: 'Sukhumvit Set',
+          fontFamily: 'LilitaOne',
           useMaterial3: false,
           appBarTheme: const AppBarTheme(
             elevation: 1,

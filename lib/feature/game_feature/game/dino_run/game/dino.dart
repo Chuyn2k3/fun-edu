@@ -7,6 +7,7 @@ import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/enemy.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/models/player_data.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/collision.dart';
+import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/hud.dart';
 
 /// This enum represents the animation states of [Dino].
 enum DinoAnimationStates {
@@ -152,6 +153,7 @@ class Dino extends SpriteAnimationGroupComponent<DinoAnimationStates>
     current = DinoAnimationStates.hit;
     _hitTimer.start();
     game.pauseEngine();
+    game.overlays.remove(Hud.id);
     game.overlays.add(CollisionOverlay.id);
     // playerData.lives -= 1;
   }

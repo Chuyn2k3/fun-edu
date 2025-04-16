@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
+import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/hud.dart';
 
 class CollisionOverlay extends StatefulWidget {
   final DinoRun game;
@@ -83,6 +84,7 @@ class _CollisionOverlayState extends State<CollisionOverlay>
   void _closeOverlay() {
     widget.game.resumeEngine();
     widget.game.overlays.remove(CollisionOverlay.id);
+    widget.game.overlays.add(Hud.id);
   }
 
   @override

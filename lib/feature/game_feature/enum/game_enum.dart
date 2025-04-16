@@ -5,6 +5,7 @@ import 'package:fun_edu/feature/game_feature/game/multi_player_quiz/offline_mult
 import 'package:fun_edu/feature/game_feature/game/multi_player_quiz/page.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/colors.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/pages/game_page.dart';
+import 'package:fun_edu/utils/game_time_manager.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
 
 enum GameEnum {
@@ -94,7 +95,14 @@ enum GameEnum {
   VoidCallback get onTap {
     switch (this) {
       case GameEnum.dinoRun:
-        return () {
+        return () async {
+          final manager = GameTimeManager("dinoRun");
+          final allowed = await manager.canPlay();
+
+          if (!allowed) {
+            _showDialog();
+            return;
+          }
           Navigator.push(
               getContext,
               MaterialPageRoute(
@@ -103,7 +111,14 @@ enum GameEnum {
         };
 
       case GameEnum.sweep:
-        return () {
+        return () async {
+          final manager = GameTimeManager("sweep");
+          final allowed = await manager.canPlay();
+
+          if (!allowed) {
+            _showDialog();
+            return;
+          }
           Navigator.push(
               getContext,
               MaterialPageRoute(
@@ -111,7 +126,15 @@ enum GameEnum {
               ));
         };
       case GameEnum.soloQuiz:
-        return () {
+        return () async {
+          final manager = GameTimeManager("soloQuiz");
+          final allowed = await manager.canPlay();
+
+          if (!allowed) {
+            _showDialog();
+
+            return;
+          }
           Navigator.push(
               getContext,
               MaterialPageRoute(
@@ -119,5 +142,72 @@ enum GameEnum {
               ));
         };
     }
+  }
+
+  void _showDialog() {
+    showDialog(
+      context: getContext,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.access_time_filled,
+                color: Colors.redAccent,
+                size: 60,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Hết giờ chơi!",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "Bé đã sử dụng hết 15 phút chơi hôm nay.\nHẹn gặp lại bé vào ngày mai nhé!",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(getContext).pop(); // đóng dialog
+                    //  Navigator.of(getContext).pop(); // thoát màn game
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Xác nhận",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

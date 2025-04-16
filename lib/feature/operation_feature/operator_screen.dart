@@ -43,7 +43,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildCustomHeader(context),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -92,7 +92,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
         Container(
           padding: EdgeInsets.only(
             top: MediaQuery.of(context).padding.top,
-            bottom: 40,
+            bottom: 16,
             left: 16,
             right: 16,
           ),
@@ -130,28 +130,28 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                     },
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  const Text(
                     "So Sánh Vui Nhộn 🎉",
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 22,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
+                child: const Text(
                   "Bạn muốn so sánh số hay so sánh hình ảnh? 🤩",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.deepPurple,
                   ),
@@ -175,7 +175,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [color.withOpacity(0.8), color.withOpacity(0.6)],
@@ -194,12 +194,12 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: FaIcon(icon, size: 38, color: color),
+              child: FaIcon(icon, size: 32, color: color),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -208,8 +208,8 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 24,
+                    style: const TextStyle(
+                      fontSize: 20,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),

@@ -44,14 +44,14 @@ class _NumsScreenState extends State<NumsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildCustomHeader(context),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: ListView(
                 children: [
                   _buildFeatureCard(
-                    title: "Học Âm Thanh & Hình Ảnh 🔊🎨",
+                    title: "Âm Thanh & Hình Ảnh 🔊",
                     description:
                         "Nghe và xem hình ảnh số từ 0 đến 9 (Vui nhộn & dễ nhớ! 🦕)",
                     color: Colors.orange,
@@ -60,7 +60,7 @@ class _NumsScreenState extends State<NumsScreen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SoundLearnScreen(),
+                            builder: (context) => const SoundLearnScreen(),
                           ));
                     },
                   ),
@@ -74,7 +74,7 @@ class _NumsScreenState extends State<NumsScreen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MatchImage(),
+                            builder: (context) => const MatchImage(),
                           ));
                     },
                   ),
@@ -88,7 +88,7 @@ class _NumsScreenState extends State<NumsScreen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SortNumber(),
+                            builder: (context) => const SortNumber(),
                           ));
                     },
                   ),
@@ -107,7 +107,7 @@ class _NumsScreenState extends State<NumsScreen> {
         Container(
           padding: EdgeInsets.only(
             top: MediaQuery.of(context).padding.top,
-            bottom: 40,
+            bottom: 16,
             left: 16,
             right: 16,
           ),
@@ -145,30 +145,32 @@ class _NumsScreenState extends State<NumsScreen> {
                     },
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  const Text(
                     "Học Chữ Số 🎈",
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 22,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "Bé muốn học theo cách nào nhỉ? 🤩",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+              const SizedBox(height: 8),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    "Bé muốn học theo cách nào nhỉ?\n🤩",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
               ),
@@ -208,7 +210,7 @@ class _NumsScreenState extends State<NumsScreen> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [color.withOpacity(0.8), color.withOpacity(0.6)],
@@ -227,7 +229,7 @@ class _NumsScreenState extends State<NumsScreen> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
@@ -239,7 +241,7 @@ class _NumsScreenState extends State<NumsScreen> {
                   ),
                 ],
               ),
-              child: FaIcon(icon, size: 38, color: color),
+              child: FaIcon(icon, size: 30, color: color),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -248,8 +250,8 @@ class _NumsScreenState extends State<NumsScreen> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 24,
+                    style: const TextStyle(
+                      fontSize: 20,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),

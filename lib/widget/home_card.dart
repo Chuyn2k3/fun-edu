@@ -291,12 +291,12 @@ class HomeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Color titleColor = _getContrastingTextColor(homeType.color);
     Color descColor = titleColor.withOpacity(0.8);
-
+    final size = MediaQuery.of(context).size;
     return GestureDetector(
       onTap: homeType.onTap,
       child: Container(
-        width: 100,
-        height: 150,
+        // width: size.height * 0.15,
+        height: size.height * 0.2,
         decoration: BoxDecoration(
           color: homeType.color,
           boxShadow: [
@@ -310,7 +310,7 @@ class HomeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
           child: Column(
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,8 +333,8 @@ class HomeCard extends StatelessWidget {
                       homeType.title,
                       maxLines: 2,
                       style: const TextStyle(
-                        fontFamily: 'Sukhumvit Set',
-                        fontSize: 20,
+                        fontFamily: 'LilitaOne',
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color:
                             ColorBase.primaryText, // Màu tự động đổi để nổi bật
@@ -348,11 +348,11 @@ class HomeCard extends StatelessWidget {
                 child: Text(
                   homeType.desc,
                   textAlign: TextAlign.start,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'Sukhumvit Set',
-                    fontSize: 18,
+                    fontFamily: 'LilitaOne',
+                    fontSize: 16,
                     fontWeight: FontWeight.w500,
                     color: descColor, // Màu mô tả nhẹ hơn tiêu đề
                   ),

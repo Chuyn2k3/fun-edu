@@ -116,25 +116,72 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 _buildTopButtons(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Spacer(),
+                    const SizedBox(
+                      width: kIsWeb ? 64 : 8,
+                    ),
                     _buildNavButton(Icons.chevron_left, "Lùi Lại", Colors.blue,
                         _previousNumber),
-                    const SizedBox(
-                      width: kIsWeb ? 64 : 16,
+                    // const SizedBox(
+                    //   width: kIsWeb ? 64 : 8,
+                    // ),
+                    Row(
+                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildNumberDisplay(currentNum),
+                        const SizedBox(
+                          width: kIsWeb ? 64 : 12,
+                        ),
+                        StatefulBuilder(builder: (context, setState) {
+                          return ShakeAnimatedWidget(
+                            enabled: flag,
+                            duration: const Duration(milliseconds: 1000),
+                            shakeAngle: Rotation.deg(z: 10),
+                            child: GestureDetector(
+                              onTap: () async {
+                                if (!flag) {
+                                  setState(() => flag = true);
+                                  _speak(currentNum.title);
+
+                                  // Wait for the animation to complete
+                                  try {
+                                    // Đợi animation hoàn thành trước khi thay đổi flag
+                                    await Future.delayed(
+                                        const Duration(milliseconds: 1000));
+                                  } catch (e) {
+                                    // Nếu widget bị huỷ giữa chừng, bỏ qua lỗi
+                                    return;
+                                  }
+
+                                  if (mounted) {
+                                    setState(() => flag = false);
+                                  }
+                                }
+                              },
+                              child: Image.asset(
+                                currentNum.subImage,
+                                height: 70,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
-                    _buildNumberDisplay(currentNum),
-                    const SizedBox(
-                      width: kIsWeb ? 64 : 16,
-                    ),
+                    // const SizedBox(
+                    //   width: kIsWeb ? 64 : 8,
+                    // ),
                     _buildNavButton(Icons.chevron_right, "Tiến Lên",
                         Colors.green, _nextNumber),
-                    const Spacer(),
+                    const SizedBox(
+                      width: kIsWeb ? 64 : 8,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -234,7 +281,7 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -251,7 +298,7 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
                 ),
               ],
             ),
-            child: FaIcon(icon, size: 30, color: Colors.white),
+            child: FaIcon(icon, size: 28, color: Colors.white),
           ),
         ),
         const SizedBox(height: 5),
@@ -315,7 +362,7 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
               }
             },
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
@@ -329,7 +376,7 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
               ),
               child: Image.asset(
                 currentNum.image,
-                height: 150,
+                height: 90,
                 fit: BoxFit.contain,
               ),
             ),
@@ -383,49 +430,49 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            StatefulBuilder(builder: (context, setState) {
-              return ShakeAnimatedWidget(
-                enabled: flag,
-                duration: const Duration(milliseconds: 1000),
-                shakeAngle: Rotation.deg(z: 10),
-                child: GestureDetector(
-                  onTap: () async {
-                    if (!flag) {
-                      setState(() => flag = true);
-                      _speak(currentNum.title);
+            // StatefulBuilder(builder: (context, setState) {
+            //   return ShakeAnimatedWidget(
+            //     enabled: flag,
+            //     duration: const Duration(milliseconds: 1000),
+            //     shakeAngle: Rotation.deg(z: 10),
+            //     child: GestureDetector(
+            //       onTap: () async {
+            //         if (!flag) {
+            //           setState(() => flag = true);
+            //           _speak(currentNum.title);
 
-                      // Wait for the animation to complete
-                      try {
-                        // Đợi animation hoàn thành trước khi thay đổi flag
-                        await Future.delayed(
-                            const Duration(milliseconds: 1000));
-                      } catch (e) {
-                        // Nếu widget bị huỷ giữa chừng, bỏ qua lỗi
-                        return;
-                      }
+            //           // Wait for the animation to complete
+            //           try {
+            //             // Đợi animation hoàn thành trước khi thay đổi flag
+            //             await Future.delayed(
+            //                 const Duration(milliseconds: 1000));
+            //           } catch (e) {
+            //             // Nếu widget bị huỷ giữa chừng, bỏ qua lỗi
+            //             return;
+            //           }
 
-                      if (mounted) {
-                        setState(() => flag = false);
-                      }
-                    }
-                  },
-                  child: Image.asset(
-                    currentNum.subImage,
-                    height: 80,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              );
-            }),
+            //           if (mounted) {
+            //             setState(() => flag = false);
+            //           }
+            //         }
+            //       },
+            //       child: Image.asset(
+            //         currentNum.subImage,
+            //         height: 80,
+            //         fit: BoxFit.contain,
+            //       ),
+            //     ),
+            //   );
+            // }),
             const SizedBox(height: 8),
-            const Text(
-              "Ví dụ bằng Emoji: ",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
-              ),
-            ),
+            // const Text(
+            //   "Ví dụ bằng Emoji: ",
+            //   style: TextStyle(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.blueAccent,
+            //   ),
+            // ),
             const SizedBox(height: 8),
             SizedBox(
               width: size.width,
@@ -448,14 +495,14 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
             const SizedBox(height: 30),
 
             // Image Example
-            const Text(
-              "Ví dụ bằng Hình ảnh: ",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
+            // const Text(
+            //   "Ví dụ bằng Hình ảnh: ",
+            //   style: TextStyle(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.green,
+            //   ),
+            // ),
             const SizedBox(height: 8),
             SizedBox(
               width: size.width,

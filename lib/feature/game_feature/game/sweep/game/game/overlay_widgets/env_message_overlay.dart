@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/overlay_widgets/game_header.dart';
-import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/colors.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/enums.dart';
-import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/styles.dart';
 import 'package:fun_edu/feature/math_feature/customWidget/QuizButtonIcon.dart';
 import 'game_over_menu.dart';
 import 'overlay_frame.dart';
@@ -133,13 +131,13 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
           fit: BoxFit.scaleDown,
           child: Row(
             children: [
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 300),
+              const AnimatedDefaultTextStyle(
+                duration: Duration(milliseconds: 300),
                 style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
-                child: const Text('= ?', style: TextStyle(fontSize: 26)),
+                child: Text('= ?', style: TextStyle(fontSize: 26)),
               ),
               Image.asset(listImage[ramImageIndex],
                   width: 48, height: 48, fit: BoxFit.cover),

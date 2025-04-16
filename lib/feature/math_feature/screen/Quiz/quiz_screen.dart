@@ -1144,6 +1144,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           // 🌌 Nút Back
           GestureDetector(
             onTap: () {
+              SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+              SystemChrome.setPreferredOrientations([
+                DeviceOrientation.portraitUp,
+                DeviceOrientation.portraitDown,
+              ]);
               Navigator.pop(context); // Trở lại màn hình chính
             },
             child: AnimatedContainer(
@@ -1293,68 +1298,84 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           if (isComplete) ...[
             _buildCelebrationScreen(),
           ] else ...[
-            Align(
-              alignment: Alignment.topCenter,
+            SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildEnergyBar(),
-                  const SizedBox(height: 20),
-                  Text(
-                    "🌟 Level $currentLevel",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      //crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildEnergyBar(),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "🌟 Level $currentLevel",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              _buildCustomCircularProgress(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildCustomCircularProgress(),
-                  // Câu hỏi nằm ngang
-                  const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _buildIcons(questions[j][0]), // Số đầu tiên
-                      const SizedBox(width: 12),
-                      Text(
-                        questions[j][2] == 'sum' ? "+" : "-",
-                        style: const TextStyle(
-                          fontSize: 50,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                  Align(
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Câu hỏi nằm ngang
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _buildIcons(questions[j][0]), // Số đầu tiên
+                            const SizedBox(width: 12),
+                            Text(
+                              questions[j][2] == 'sum' ? "+" : "-",
+                              style: const TextStyle(
+                                fontSize: 50,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            _buildIcons(questions[j][1]), // Số thứ hai
+                            const SizedBox(width: 12),
+                            const Text(
+                              "= ?",
+                              style: TextStyle(
+                                fontSize: 50,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      _buildIcons(questions[j][1]), // Số thứ hai
-                      const SizedBox(width: 12),
-                      const Text(
-                        "= ?",
-                        style: TextStyle(
-                          fontSize: 50,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+
+                        const SizedBox(height: 12),
+
+                        // Hàng đáp án bên dưới
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 16,
+                          runSpacing: 16,
+                          children: mcq[j]
+                              .map((value) => _buildOption(value))
+                              .toList(),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Hàng đáp án bên dưới
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 16,
-                    runSpacing: 16,
-                    children:
-                        mcq[j].map((value) => _buildOption(value)).toList(),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1433,6 +1454,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     text: "Thoát",
                     icon: FontAwesomeIcons.doorOpen,
                     onTap: () {
+                      SystemChrome.setEnabledSystemUIMode(
+                          SystemUiMode.edgeToEdge);
+                      SystemChrome.setPreferredOrientations([
+                        DeviceOrientation.portraitUp,
+                        DeviceOrientation.portraitDown,
+                      ]);
                       Navigator.pop(context); // Quay lại màn hình chính
                     },
                   ),
@@ -1496,8 +1523,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Widget _buildCustomCircularProgress() {
     return Center(
       child: Container(
-        width: 150,
-        height: 150,
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(
@@ -1527,8 +1554,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           children: [
             // 🌌 Vòng sáng bên ngoài
             Container(
-              width: 130,
-              height: 130,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -1544,8 +1571,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
             // 🔥 Vòng tròn đếm ngược
             SizedBox(
-              height: 90,
-              width: 90,
+              height: 60,
+              width: 60,
               child: CircularProgressIndicator(
                 value: _animation.value,
                 strokeWidth: 10,
@@ -1583,7 +1610,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             Text(
               '${timeLeft}s',
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -1596,6 +1623,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     _spaceshipController.dispose();
     super.dispose();
   }
@@ -1754,7 +1786,7 @@ class _AnimatedStarState extends State<AnimatedStar>
 
   @override
   void dispose() {
-     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,

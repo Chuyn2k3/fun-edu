@@ -4,6 +4,8 @@ import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/scor
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/styles.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/widget/logout_button.dart';
+import 'package:fun_edu/utils/game_time_manager.dart';
+import 'package:fun_edu/widget/game_count_down_time.dart';
 
 class GameHeader extends ConsumerStatefulWidget {
   static const id = 'GameHeader';
@@ -18,7 +20,7 @@ class GameHeader extends ConsumerStatefulWidget {
 class _GameHeaderState extends ConsumerState<GameHeader>
     with TickerProviderStateMixin {
   late AnimationController _controller;
-
+  late GameTimeManager _timeManager;
   @override
   void initState() {
     super.initState();
@@ -35,6 +37,23 @@ class _GameHeaderState extends ConsumerState<GameHeader>
         setState(() {});
       } catch (_) {}
     });
+    _timeManager = GameTimeManager("sweep");
+    _initGameTime();
+  }
+
+  Future<void> _initGameTime() async {
+    final canPlay = await _timeManager.canPlay();
+    if (!canPlay) {
+      _showTimeUpDialog();
+      return;
+    }
+
+    await _timeManager.startPlay();
+    setState(() {}); // để render GameCountdownTimer
+  }
+
+  void _showTimeUpDialog() {
+    widget.game.pauseEngine();
   }
 
   @override
@@ -66,6 +85,19 @@ class _GameHeaderState extends ConsumerState<GameHeader>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const LogoutButton(),
+                const SizedBox(
+                  height: 8,
+                ),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  child: GameCountdownTimer(
+                    timeManager: _timeManager,
+                    onTimeUp: _showTimeUpDialog,
+                  ),
+                ),
                 const SizedBox(
                   height: 8,
                 ),

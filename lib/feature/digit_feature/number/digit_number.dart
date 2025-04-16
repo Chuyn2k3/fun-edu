@@ -58,7 +58,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                 centerTitle: true,
                 title: const Text("Bé hãy viết số "),
                 titleTextStyle: const TextStyle(
-                    fontFamily: 'Sukhumvit Set',
+                    fontFamily: 'LilitaOne',
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.orange),
@@ -83,7 +83,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                           child: Text(
                             " $_targetNumber",
                             style: const TextStyle(
-                              fontFamily: 'Sukhumvit Set',
+                              fontFamily: 'LilitaOne',
                               fontSize: 100,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -157,7 +157,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
     //       const Text(
     //         'Trở lại ',
     //         style: TextStyle(
-    //           fontFamily: 'Sukhumvit Set',
+    //           fontFamily: 'LilitaOne',
     //           color: ColorBase.primaryBackground,
     //           fontSize: 24,
     //           letterSpacing: 0.0,
@@ -230,8 +230,9 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
             });
           }
         },
-        onPanEnd: (DragEndDetails details) {
+        onPanEnd: (DragEndDetails details) async {
           //_points.add(); // Thêm điểm ngắt thay vì (0,0)
+          await Future.delayed(Duration(seconds: 2));
           _recognize();
         },
         child: CustomPaint(
@@ -287,7 +288,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                 const Text(
                   "🎉 Chúc mừng!",
                   style: TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.green),
@@ -297,7 +298,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                   "Bé đã viết đúng số $targetNumber!",
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 18,
                       color: Colors.black87),
                 ),
@@ -316,7 +317,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text("Tiếp tục",
                         style: TextStyle(
-                            fontFamily: 'Sukhumvit Set',
+                            fontFamily: 'LilitaOne',
                             fontSize: 18,
                             color: Colors.white)),
                   ),
@@ -345,7 +346,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                 const Text(
                   "❌ Ôi không!",
                   style: TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.red),
@@ -355,7 +356,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                   "Bé hãy thử lại nào!",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 18,
                       color: Colors.black87),
                 ),
@@ -374,7 +375,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text("Thử lại",
                         style: TextStyle(
-                            fontFamily: 'Sukhumvit Set',
+                            fontFamily: 'LilitaOne',
                             fontSize: 18,
                             color: Colors.white)),
                   ),
@@ -404,7 +405,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
             return const Center(
                 child: Text('No Image',
                     style: TextStyle(
-                        fontFamily: 'Sukhumvit Set', color: Colors.white)));
+                        fontFamily: 'LilitaOne', color: Colors.white)));
           } else {
             return Image.memory(
               snapshot.data!,

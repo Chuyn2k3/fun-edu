@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/data/color/color.dart';
-import 'package:go_router/go_router.dart';
 import 'package:styled_divider/styled_divider.dart';
 
 class OfflineScreen extends StatefulWidget {
@@ -25,6 +24,7 @@ class _OfflineScreenState extends State<OfflineScreen>
   int currentQuestion = 1;
   final int totalQuestions = 10;
   int selectAnswer = -1;
+  bool isAnswered = false;
   @override
   void initState() {
     super.initState();
@@ -100,26 +100,63 @@ class _OfflineScreenState extends State<OfflineScreen>
     } else {
       showEndDialog();
     }
+    setState(() {
+      isAnswered = false;
+    });
   }
 
   void showEndDialog() {
     bool isSuccess = correctCount == totalQuestions;
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(isSuccess ? '🎉 Chúc mừng!' : '😅 Thử lại nhé!'),
-        content: Text(isSuccess
-            ? 'Bạn đã hoàn thành tất cả câu hỏi một cách xuất sắc!'
-            : 'Bạn chưa trả lời đúng hết. Hãy thử lại để đạt điểm tối đa!'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isSuccess ? '🎉 Chúc mừng!' : '😅 Thử lại nhé!',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Icon(
+              isSuccess ? Icons.emoji_events : Icons.refresh,
+              color: isSuccess ? Colors.green : Colors.orange,
+              size: 50,
+            ),
+          ],
+        ),
+        content: Text(
+          isSuccess
+              ? 'Bạn đã hoàn thành tất cả câu hỏi một cách xuất sắc!'
+              : 'Bạn chưa trả lời đúng hết. Hãy thử lại để đạt điểm tối đa!',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
-          TextButton(
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isSuccess ? Colors.green : Colors.orange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             onPressed: () {
               Navigator.pop(context);
               setState(() {
                 correctCount = 0;
                 currentQuestion = 1;
                 progress = 0.0;
-
+                selectAnswer = -1;
                 _controller.reset();
                 _progressAnimation =
                     Tween<double>(begin: 0.0, end: 0.0).animate(_controller);
@@ -127,7 +164,8 @@ class _OfflineScreenState extends State<OfflineScreen>
                 generateNewQuestion();
               });
             },
-            child: const Text('Chơi lại'),
+            icon: const Icon(Icons.replay),
+            label: const Text('Chơi lại'),
           ),
         ],
       ),
@@ -251,7 +289,7 @@ class _OfflineScreenState extends State<OfflineScreen>
           const Text(
             'Thử thách hằng ngày',
             style: TextStyle(
-              fontFamily: 'Sukhumvit Set',
+              fontFamily: 'LilitaOne',
               color: ColorBase.primaryBackground,
               fontSize: 24,
               letterSpacing: 0.0,
@@ -279,7 +317,7 @@ class _OfflineScreenState extends State<OfflineScreen>
                     TextSpan(
                       text: 'Câu hỏi $currentQuestion',
                       style: const TextStyle(
-                        fontFamily: 'Sukhumvit Set',
+                        fontFamily: 'LilitaOne',
                         color: ColorBase.primaryBackground,
                         fontSize: 30,
                         letterSpacing: 0.0,
@@ -296,7 +334,7 @@ class _OfflineScreenState extends State<OfflineScreen>
                     )
                   ],
                   style: const TextStyle(
-                    fontFamily: 'Sukhumvit Set',
+                    fontFamily: 'LilitaOne',
                     letterSpacing: 0.0,
                   ),
                 ),
@@ -318,7 +356,7 @@ class _OfflineScreenState extends State<OfflineScreen>
                         'Tiếp tục',
                         textAlign: TextAlign.end,
                         style: TextStyle(
-                          fontFamily: 'Sukhumvit Set',
+                          fontFamily: 'LilitaOne',
                           color: ColorBase.primaryBackground,
                           fontSize: 13,
                           letterSpacing: 0.0,
@@ -369,18 +407,21 @@ class _OfflineScreenState extends State<OfflineScreen>
             style: const TextStyle(
                 fontSize: 36,
                 color: Colors.black,
-                fontFamily: 'Sukhumvit Set',
+                fontFamily: 'LilitaOne',
                 fontWeight: FontWeight.w500),
           ),
           for (var answer in answers)
             AnswerCard(
               answer: answer,
-              onTap: () {
-                setState(() {
-                  selectAnswer = answer;
-                });
-                checkAnswer(answer);
-              },
+              onTap: isAnswered
+                  ? null
+                  : () {
+                      setState(() {
+                        selectAnswer = answer;
+                        isAnswered = true;
+                      });
+                      checkAnswer(answer);
+                    },
               status: checkAnswerStatus(answer),
             ),
         ],

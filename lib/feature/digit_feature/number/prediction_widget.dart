@@ -13,7 +13,7 @@ class PredictionWidget extends StatelessWidget {
         Text(
           '$num',
           style: TextStyle(
-            fontFamily: 'Sukhumvit Set',
+            fontFamily: 'LilitaOne',
             fontSize: 60,
             fontWeight: FontWeight.bold,
             color: prediction == null
@@ -27,7 +27,7 @@ class PredictionWidget extends StatelessWidget {
           prediction != null ? prediction.confidence.toStringAsFixed(3) : '',
           style: const TextStyle(
             fontSize: 14,
-            fontFamily: 'Sukhumvit Set',
+            fontFamily: 'LilitaOne',
             color: Colors.blue,
             fontWeight: FontWeight.bold,
           ),

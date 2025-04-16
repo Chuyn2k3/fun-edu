@@ -12,7 +12,6 @@ import 'package:fun_edu/feature/digit_feature/number/drawing_painter.dart';
 import 'package:fun_edu/feature/digit_feature/number/prediction.dart';
 import 'package:fun_edu/feature/digit_feature/number/prediction_widget.dart';
 import 'package:meta/meta.dart';
-import 'package:signature/signature.dart';
 import 'dart:ui' as ui;
 
 /// {@template index}
@@ -42,11 +41,7 @@ class _DigitMathState extends State<DigitMath> {
   String? numberAiResult;
   List<Prediction> _prediction = [];
   int _targetNumber = 0;
-  final SignatureController _controller = SignatureController(
-    penStrokeWidth: 5,
-    penColor: Colors.blue,
-    exportBackgroundColor: Colors.white, // Nền ảnh xuất ra
-  );
+
   late int number1;
   late int number2;
   bool _isAddition = true; // Mặc định là phép cộng
@@ -90,7 +85,6 @@ class _DigitMathState extends State<DigitMath> {
     setState(() {
       _generateNewNumbers(); // Tạo phép tính mới
       numberAiResult = null;
-      _controller.clear(); // Xóa chữ ký của người dùng
       _points.clear();
       _prediction.clear();
       setState(() {});
@@ -99,7 +93,6 @@ class _DigitMathState extends State<DigitMath> {
 
   void _clearSignature() {
     setState(() {
-      _controller.clear(); // Xóa nét vẽ nhưng giữ nguyên phép tính
       _points.clear();
       _prediction.clear();
       setState(() {});
@@ -115,11 +108,12 @@ class _DigitMathState extends State<DigitMath> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 10),
               _buildAppBar(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  const SizedBox(height: 10),
+                  // const SizedBox(height: 10),
                   _buildBody(),
                 ],
               ),
@@ -137,7 +131,7 @@ class _DigitMathState extends State<DigitMath> {
           Expanded(
               child: _buildAction(
             'assets/images/bookmark2.png',
-            "Kiểm tra đáp án",
+            "Kiểm tra",
             () async {
               try {
                 _recognize();
@@ -150,7 +144,7 @@ class _DigitMathState extends State<DigitMath> {
           Expanded(
               child: _buildAction(
             'assets/images/change.png',
-            "Đổi câu hỏi",
+            "Đổi câu",
             _generateNewQuestion, // Gọi hàm đổi câu hỏi
           )),
           Expanded(
@@ -197,7 +191,7 @@ class _DigitMathState extends State<DigitMath> {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       color: ColorBase.primaryBackground,
                       letterSpacing: 0.0,
                       fontWeight: FontWeight.w500,
@@ -225,41 +219,72 @@ class _DigitMathState extends State<DigitMath> {
   }
 
   Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: InkWell(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          height: 48,
-          width: 48,
-          decoration: BoxDecoration(
-            color: Colors.blueAccent, // Màu nền của nút
-            // shape: BoxShape.circle, // Hình dạng tròn
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(2, 4),
-              )
-            ],
-          ),
-          child: const Center(
-            child: FaIcon(
-              FontAwesomeIcons.arrowLeft,
-              color: Colors.white,
-              size: 16,
+    return Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: InkWell(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                color: Colors.blueAccent, // Màu nền của nút
+                // shape: BoxShape.circle, // Hình dạng tròn
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(2, 4),
+                  )
+                ],
+              ),
+              child: const Center(
+                child: FaIcon(
+                  FontAwesomeIcons.arrowLeft,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        // Column(
+        //   crossAxisAlignment: CrossAxisAlignment.center,
+        //   children: [
+        //     const Text("Kết quả nhận diện từ AI",
+        //         style: TextStyle(
+        //           fontSize: 20,
+        //           color: Colors.black,
+        //         )),
+        //     Container(
+        //       width: 90,
+        //       height: 90,
+        //       decoration: BoxDecoration(
+        //         border: Border.all(
+        //             color: Colors.blueAccent, width: Constants.borderSize),
+        //         borderRadius: BorderRadius.circular(10),
+        //         color: Colors.white,
+        //       ),
+        //       child: Center(
+        //         child: Text(numberAiResult ?? "",
+        //             style: const TextStyle(
+        //               fontSize: 60,
+        //               color: Colors.black,
+        //             )),
+        //       ),
+        //     ),
+        //   ],
+        // ),
+      ],
     );
   }
 
   Widget _buildBody() {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(32, 0, 0, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 0, 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         // crossAxisAlignment: CrossAxisAlignment.end,
@@ -277,70 +302,109 @@ class _DigitMathState extends State<DigitMath> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                //mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text("Kết quả nhận diện từ AI",
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.black,
-                          )),
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Colors.blueAccent,
-                              width: Constants.borderSize),
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.white,
-                        ),
-                        child: Center(
-                          child: Text(numberAiResult ?? "",
-                              style: const TextStyle(
-                                fontSize: 60,
-                                color: Colors.black,
-                              )),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              // Row(
+              //   mainAxisSize: MainAxisSize.min,
+              //   //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     Column(
+              //       crossAxisAlignment: CrossAxisAlignment.center,
+              //       children: [
+              //         const Text("Kết quả nhận diện từ AI",
+              //             style: TextStyle(
+              //               fontSize: 20,
+              //               color: Colors.black,
+              //             )),
+              //         Container(
+              //           width: 90,
+              //           height: 90,
+              //           decoration: BoxDecoration(
+              //             border: Border.all(
+              //                 color: Colors.blueAccent,
+              //                 width: Constants.borderSize),
+              //             borderRadius: BorderRadius.circular(10),
+              //             color: Colors.white,
+              //           ),
+              //           child: Center(
+              //             child: Text(numberAiResult ?? "",
+              //                 style: const TextStyle(
+              //                   fontSize: 60,
+              //                   color: Colors.black,
+              //                 )),
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //   ],
+              // ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FaIcon(
-                    _isAddition
-                        ? FontAwesomeIcons.plus
-                        : FontAwesomeIcons.minus, // Cập nhật icon
-                    color: const Color(0xFF600584),
-                    size: 50,
+                  Flexible(
+                    flex: 9,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text("AI nhận diện",
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.black,
+                            )),
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.blueAccent,
+                                width: Constants.borderSize),
+                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.white,
+                          ),
+                          child: Center(
+                            child: Text(numberAiResult ?? "",
+                                style: const TextStyle(
+                                  fontSize: 60,
+                                  color: Colors.black,
+                                )),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$number1', // Số ngẫu nhiên 1
-                        style: const TextStyle(
-                          fontSize: 81,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF600584),
+                  Spacer(),
+                  Flexible(
+                    flex: 9,
+                    child: Row(
+                      children: [
+                        FaIcon(
+                          _isAddition
+                              ? FontAwesomeIcons.plus
+                              : FontAwesomeIcons.minus, // Cập nhật icon
+                          color: const Color(0xFF600584),
+                          size: 50,
                         ),
-                      ),
-                      Text(
-                        '$number2', // Số ngẫu nhiên 2
-                        style: const TextStyle(
-                          fontSize: 81,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF600584),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$number1', // Số ngẫu nhiên 1
+                              style: const TextStyle(
+                                fontSize: 81,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF600584),
+                              ),
+                            ),
+                            Text(
+                              '$number2', // Số ngẫu nhiên 2
+                              style: const TextStyle(
+                                fontSize: 81,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF600584),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -470,7 +534,7 @@ class _DigitMathState extends State<DigitMath> {
                   "Bé đã viết đúng số $targetNumber!",
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 18,
                       color: Colors.black87),
                 ),
@@ -489,7 +553,7 @@ class _DigitMathState extends State<DigitMath> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text("Tiếp tục",
                         style: TextStyle(
-                            fontFamily: 'Sukhumvit Set',
+                            fontFamily: 'LilitaOne',
                             fontSize: 18,
                             color: Colors.white)),
                   ),
@@ -518,7 +582,7 @@ class _DigitMathState extends State<DigitMath> {
                 const Text(
                   "❌ Ôi không!",
                   style: TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.red),
@@ -528,7 +592,7 @@ class _DigitMathState extends State<DigitMath> {
                   "Bé hãy thử lại nào!",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontFamily: 'Sukhumvit Set',
+                      fontFamily: 'LilitaOne',
                       fontSize: 18,
                       color: Colors.black87),
                 ),
@@ -547,7 +611,7 @@ class _DigitMathState extends State<DigitMath> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text("Thử lại",
                         style: TextStyle(
-                            fontFamily: 'Sukhumvit Set',
+                            fontFamily: 'LilitaOne',
                             fontSize: 18,
                             color: Colors.white)),
                   ),

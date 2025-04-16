@@ -556,20 +556,20 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: ColorBase.secondaryBackground,
       body: Stack(
         children: [
-          BackgroundV2(),
+          const BackgroundV2(),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                vertical: 12,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildGreetingSection(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   _buildDailyTaskCard(context),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   Expanded(child: _buildHomeGrid()),
                 ],
               ),
@@ -598,19 +598,19 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Chào ${userName}!',
-          style: TextStyle(
-            fontFamily: 'Sukhumvit Set',
-            fontSize: 32,
+          'Chào $userName!',
+          style: const TextStyle(
+            fontFamily: 'LilitaOne',
+            fontSize: 30,
             fontWeight: FontWeight.bold,
             color: ColorBase.primaryText,
           ),
         ),
-        const SizedBox(height: 4),
+        //const SizedBox(height: 4),
         const Text(
           'Hãy cùng nhau học và chơi nhé!',
           style: TextStyle(
-            fontFamily: 'Sukhumvit Set',
+            fontFamily: 'LilitaOne',
             fontSize: 20,
             fontWeight: FontWeight.normal,
             color: ColorBase.secondaryText,
@@ -622,17 +622,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Widget hiển thị daily task card
   Widget _buildDailyTaskCard(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return InkWell(
       onTap: () {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OfflineScreen(),
+              builder: (context) => const OfflineScreen(),
             ));
       },
       child: Container(
         width: double.infinity,
-        height: 168,
+        height: size.height * 0.2,
         decoration: const BoxDecoration(
           image: DecorationImage(
             fit: BoxFit.fill,
@@ -640,20 +641,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(left: 13),
+          padding: const EdgeInsets.only(
+            left: 13,
+            bottom: 4,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
-                padding: EdgeInsets.only(bottom: 18),
+                padding: EdgeInsets.only(bottom: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Khám phá',
                       style: TextStyle(
-                        fontFamily: 'Sukhumvit Set',
+                        fontFamily: 'LilitaOne',
                         fontSize: 16,
                         color: ColorBase.primaryBackground,
                       ),
@@ -661,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       'Nhiệm vụ mỗi ngày',
                       style: TextStyle(
-                        fontFamily: 'Sukhumvit Set',
+                        fontFamily: 'LilitaOne',
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: ColorBase.primaryBackground,
@@ -671,8 +675,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Container(
-                width: 149,
-                height: 41,
+                width: 150,
+                height: 40,
                 decoration: BoxDecoration(
                   color: ColorBase.primary,
                   borderRadius: BorderRadius.circular(22),
@@ -693,7 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       'Bắt đầu chơi!',
                       style: TextStyle(
-                        fontFamily: 'Sukhumvit Set',
+                        fontFamily: 'LilitaOne',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: ColorBase.primaryText,

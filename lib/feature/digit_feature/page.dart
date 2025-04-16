@@ -46,7 +46,7 @@ class DigitRecogizePage extends StatelessWidget {
           child: Text(
             'Nhận diện thông minh',
             style: TextStyle(
-              fontFamily: 'Sukhumvit Set',
+              fontFamily: 'LilitaOne',
               fontSize: 28,
               letterSpacing: 0.0,
               color: Colors.black,
@@ -59,7 +59,7 @@ class DigitRecogizePage extends StatelessWidget {
           child: Text(
             'Cùng bé luyện viết số dễ dàng!',
             style: TextStyle(
-              fontFamily: 'Sukhumvit Set',
+              fontFamily: 'LilitaOne',
               fontSize: 18,
               letterSpacing: 0.0,
               color: Colors.black,
@@ -122,7 +122,7 @@ class DigitRecogizePage extends StatelessWidget {
                     child: Text(
                       digitRecogize.title,
                       style: const TextStyle(
-                        fontFamily: 'Sukhumvit Set',
+                        fontFamily: 'LilitaOne',
                         fontSize: 16,
                         letterSpacing: 0.0,
                         color: Colors.black,
@@ -148,7 +148,7 @@ class DigitRecogizePage extends StatelessWidget {
                           Text(
                             'Khám phá!',
                             style: TextStyle(
-                              fontFamily: 'Sukhumvit Set',
+                              fontFamily: 'LilitaOne',
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,

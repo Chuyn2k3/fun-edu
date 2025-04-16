@@ -3,12 +3,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/data/color/color.dart';
 import 'package:fun_edu/feature/digit_feature/math/index.dart';
 import 'package:fun_edu/feature/digit_feature/number/digit_number.dart';
-import 'package:fun_edu/feature/math_feature/index.dart';
-import 'package:fun_edu/feature/math_feature/screen/Quiz/quiz_screen.dart';
-import 'package:fun_edu/feature/operation_feature/compare_number.dart';
-import 'package:fun_edu/feature/number_feature/nums_screen.dart';
-import 'package:fun_edu/feature/operation_feature/operation_page.dart';
-import 'package:fun_edu/feature/operation_feature/operator_screen.dart';
 import 'package:get/get.dart';
 
 enum DigitRecogize { number, math }
