@@ -971,36 +971,37 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     mcq.clear();
 
     int numOfQuestions = levelQuestions[currentLevel] ?? 10;
+    final rand = Random();
+
     for (var i = 0; i < numOfQuestions; i++) {
-      String randomOperator = Random().nextBool() ? 'sum' : 'sub';
+      String randomOperator = rand.nextBool() ? 'sum' : 'sub';
       int val1, val2, correctAnswer;
 
       if (randomOperator == 'sum') {
-        // Tạo phép cộng đảm bảo tổng không vượt quá 9
         do {
-          val1 = Random().nextInt(10); // Random từ 0 đến 9
-          val2 = Random().nextInt(10); // Random từ 0 đến 9
+          val1 = rand.nextInt(10);
+          val2 = rand.nextInt(10);
           correctAnswer = val1 + val2;
-        } while (correctAnswer > 9); // Chỉ chấp nhận khi tổng <= 9
+        } while (correctAnswer > 9);
       } else {
-        // Tạo phép trừ đảm bảo không có kết quả âm
-        val1 = Random().nextInt(10); // Random từ 0 đến 9
-        val2 = Random()
-            .nextInt(val1 + 1); // Random từ 0 đến val1 (đảm bảo không âm)
+        val1 = rand.nextInt(10);
+        val2 = rand.nextInt(val1 + 1);
         correctAnswer = val1 - val2;
       }
 
       answers.add(correctAnswer);
       questions.add([val1, val2, randomOperator]);
 
-      // Tạo 4 đáp án (bao gồm đáp án đúng và 3 đáp án sai)
-      List<int> answerOptions = [
-        correctAnswer,
-        (correctAnswer + Random().nextInt(3) + 1) % 10,
-        (correctAnswer - Random().nextInt(3) - 1).abs(),
-        (correctAnswer + Random().nextInt(5) + 2) % 10,
-      ]..shuffle();
+      // Đáp án đúng + 3 đáp án sai (không trùng)
+      Set<int> answerSet = {correctAnswer};
+      while (answerSet.length < 4) {
+        int wrongAnswer = rand.nextInt(10);
+        if (wrongAnswer != correctAnswer) {
+          answerSet.add(wrongAnswer);
+        }
+      }
 
+      List<int> answerOptions = answerSet.toList()..shuffle();
       mcq.add(answerOptions);
     }
   }
@@ -1029,6 +1030,21 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 duration:
                     levelDurations[currentLevel]); // Cập nhật thời gian mới
           });
+          int duration =
+              levelDurations[currentLevel] ?? 30; // Thời gian theo từng level
+
+          _animationController = AnimationController(
+            vsync: this,
+            duration: Duration(seconds: duration),
+          );
+
+          _animation =
+              Tween<double>(begin: 1, end: 0).animate(_animationController)
+                ..addListener(() {
+                  setState(() {});
+                });
+          startTimer();
+          _controller.restart(duration: (levelDurations[currentLevel] ?? 30));
         }
       } else {
         // Thất bại ở level hiện tại

@@ -2,7 +2,7 @@ import 'package:fun_edu/utils/shared_preferences_manager.dart';
 import 'package:get_it/get_it.dart';
 
 class GameTimeManager {
-  static const _dailyLimitMinutes = 15;
+  static const _dailyLimitMinutes = 5;
 
   final String gameId;
   final prefs = GetIt.instance<SharedPreferencesManager>();

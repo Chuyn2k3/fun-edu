@@ -566,39 +566,126 @@ class _CompareNumberScreenState extends State<CompareNumberScreen> {
     final random = Random();
     draggableNumbers = [];
     Set<int> uniqueNumbers = {};
-
+    isShowingDialog = false;
     leftNumber = random.nextInt(10);
     rightNumber = random.nextInt(10);
+    comparisonSign = random.nextBool() ? null : _getCorrectSign();
+    bool isLeftMissing = random.nextBool();
 
-    // Randomly decide if the comparison sign is `=` or another sign
-    if (random.nextBool()) {
-      comparisonSign = null;
+    if (comparisonSign == null) {
+      while (uniqueNumbers.length < 4) {
+        uniqueNumbers.add(random.nextInt(10));
+      }
     } else {
-      comparisonSign = _getCorrectSign();
       if (comparisonSign == '=') {
-        // If the sign is "=", ensure there is a matching pair
-        rightNumber = leftNumber;
-
-        // Add two matching numbers to the draggable list
-        uniqueNumbers.add(leftNumber!);
-        uniqueNumbers.add(rightNumber!);
-      }
-
-      if (random.nextBool()) {
-        leftNumber = null;
+        // Trường hợp dấu "="
+        int fixedValue = random.nextInt(10);
+        leftNumber = fixedValue;
+        rightNumber = fixedValue;
+        uniqueNumbers.add(fixedValue);
+        while (uniqueNumbers.length < 4) {
+          int wrong = random.nextInt(10);
+          if (wrong != fixedValue) uniqueNumbers.add(wrong);
+        }
+        if (isLeftMissing) {
+          leftNumber = null;
+        } else {
+          rightNumber = null;
+        }
       } else {
-        rightNumber = null;
+        // Trường hợp dấu ">" hoặc "<"
+        bool isGreaterThan = comparisonSign == '>';
+        int knownNumber;
+
+        if (isLeftMissing) {
+          // left ? right → right là known
+          rightNumber = _generateKnownNumber(
+              isGreaterThan: isGreaterThan, isKnownRight: true);
+          leftNumber = null;
+          knownNumber = rightNumber!;
+        } else {
+          // left ? right → left là known
+          leftNumber = _generateKnownNumber(
+              isGreaterThan: isGreaterThan, isKnownRight: false);
+          rightNumber = null;
+          knownNumber = leftNumber!;
+        }
+
+        generateMissingNumber(
+          knownNumber: knownNumber,
+          isMissingLeft: isLeftMissing,
+          isGreaterThan: isGreaterThan,
+          uniqueNumbers: uniqueNumbers,
+        );
+      }
+    }
+    draggableNumbers = uniqueNumbers.toList()..shuffle();
+    setState(() {});
+  }
+
+  int _generateKnownNumber(
+      {required bool isGreaterThan, required bool isKnownRight}) {
+    final random = Random();
+    if (isGreaterThan) {
+      // cần known < missing
+      return isKnownRight
+          ? random
+              .nextInt(7) // right < left → right ∈ [0,6] ⇒ left ∈ [right+1,9]
+          : random.nextInt(7) + 3; // left là known ≥ 3 ⇒ right ∈ [0, left-1]
+    } else {
+      // cần known > missing
+      return isKnownRight
+          ? random.nextInt(7) + 3 // right ≥ 3 ⇒ left ∈ [0, right-1]
+          : random.nextInt(7); // left ∈ [0,6] ⇒ right ∈ [left+1, 9]
+    }
+  }
+
+  void generateMissingNumber({
+    required int knownNumber,
+    required bool isMissingLeft,
+    required bool isGreaterThan,
+    required Set<int> uniqueNumbers,
+  }) {
+    final random = Random();
+    List<int> correctCandidates = [];
+    List<int> wrongCandidates = [];
+
+    if (isMissingLeft) {
+      if (isGreaterThan) {
+        correctCandidates = [for (int i = knownNumber + 1; i < 10; i++) i];
+        wrongCandidates = [for (int i = 0; i <= knownNumber; i++) i];
+      } else {
+        correctCandidates = [for (int i = 0; i < knownNumber; i++) i];
+        wrongCandidates = [for (int i = knownNumber; i < 10; i++) i];
+      }
+    } else {
+      if (isGreaterThan) {
+        correctCandidates = [for (int i = 0; i < knownNumber; i++) i];
+        wrongCandidates = [for (int i = knownNumber; i < 10; i++) i];
+      } else {
+        correctCandidates = [for (int i = knownNumber + 1; i < 10; i++) i];
+        wrongCandidates = [for (int i = 0; i <= knownNumber; i++) i];
       }
     }
 
-    // Ensure there are 4 unique numbers in the draggable list
-    while (uniqueNumbers.length < 4) {
-      uniqueNumbers.add(random.nextInt(10));
+    if (correctCandidates.isEmpty) {
+      correctCandidates = wrongCandidates;
     }
 
-    draggableNumbers = uniqueNumbers.toList();
-    isShowingDialog = false;
-    setState(() {});
+    int correct = correctCandidates[random.nextInt(correctCandidates.length)];
+    uniqueNumbers.add(correct);
+
+    wrongCandidates.remove(correct);
+    wrongCandidates.shuffle();
+
+    for (int wrong in wrongCandidates) {
+      uniqueNumbers.add(wrong);
+      if (uniqueNumbers.length >= 4) break;
+    }
+
+    // while (uniqueNumbers.length < 4) {
+    //   uniqueNumbers.add(random.nextInt(10));
+    // }
   }
 
   String _getCorrectSign() {

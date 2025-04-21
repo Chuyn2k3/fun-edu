@@ -87,11 +87,11 @@ class _CompareImageScreenState extends State<CompareImageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            _buildAnimatedBackground(),
-            SingleChildScrollView(
+      body: Stack(
+        children: [
+          _buildAnimatedBackground(),
+          SingleChildScrollView(
+            child: SafeArea(
               child: Column(
                 children: [
                   const SizedBox(height: 20),
@@ -103,8 +103,8 @@ class _CompareImageScreenState extends State<CompareImageScreen> {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -216,18 +216,19 @@ class _CompareImageScreenState extends State<CompareImageScreen> {
   }
 
   Widget _buildComparisonRow() {
+    String imagePath = exampleImages[Random().nextInt(exampleImages.length)];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _buildImageBox(leftNumber),
+        _buildImageBox(leftNumber,imagePath,),
         _buildComparisonTile(),
-        _buildImageBox(rightNumber),
+        _buildImageBox(rightNumber,imagePath,),
       ],
     );
   }
 
-  Widget _buildImageBox(int number) {
-    String imagePath = exampleImages[Random().nextInt(exampleImages.length)];
+  Widget _buildImageBox(int number,String imagePath,) {
+    //String imagePath = exampleImages[Random().nextInt(exampleImages.length)];
     return Container(
       height: 150,
       width: 150,

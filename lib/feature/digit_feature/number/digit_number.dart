@@ -68,8 +68,11 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                 children: <Widget>[
                   const SizedBox(height: 10),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    //mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      const SizedBox(
+                        width: 16,
+                      ),
                       Container(
                         height: 150,
                         width: 120,
@@ -92,9 +95,57 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                         ),
                       ),
                       const SizedBox(
-                        width: 32,
+                        width: 16,
                       ),
                       _mnistPreviewImage(),
+                      const SizedBox(
+                        width: 16,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.orange, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _targetNumber,
+                            dropdownColor: Colors.orange[50],
+                            icon: const Icon(Icons.arrow_drop_down_rounded,
+                                color: Colors.orange, size: 32),
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontFamily: 'LilitaOne',
+                              color: Colors.black,
+                            ),
+                            onChanged: (int? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _targetNumber = newValue;
+                                  _speakNumber();
+                                  _points.clear();
+                                  _prediction.clear();
+                                });
+                              }
+                            },
+                            items: List.generate(10, (index) {
+                              return DropdownMenuItem<int>(
+                                value: index,
+                                child: Text('$index'),
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -124,6 +175,17 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
                 _points.clear();
                 _prediction.clear();
               });
+            },
+          ),
+          const SizedBox(width: 10),
+          FloatingActionButton(
+            backgroundColor: Colors.blue,
+            child: const Icon(FontAwesomeIcons.shuffle, color: Colors.white),
+            onPressed: () {
+              _generateRandomNumber();
+              _points.clear();
+              _prediction.clear();
+              setState(() {});
             },
           ),
         ],

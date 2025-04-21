@@ -178,74 +178,76 @@ class _OfflineScreenState extends State<OfflineScreen>
       body: Stack(
         children: [
           _buildBackground(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAppBar(),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Thanh năng lượng
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20, horizontal: 16),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF05518B),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            AnimatedBuilder(
-                              animation: _progressAnimation,
-                              builder: (context, child) {
-                                return FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor: progress,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      // 🌌 Thanh năng lượng
-                                      Container(
-                                        height: 28,
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            color: const Color(0xFF46D9BF)),
-                                      ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAppBar(),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Thanh năng lượng
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20, horizontal: 16),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF05518B),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              AnimatedBuilder(
+                                animation: _progressAnimation,
+                                builder: (context, child) {
+                                  return FractionallySizedBox(
+                                    alignment: Alignment.centerLeft,
+                                    widthFactor: progress,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        // 🌌 Thanh năng lượng
+                                        Container(
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              color: const Color(0xFF46D9BF)),
+                                        ),
 
-                                      // 🚀 Tên lửa (Đặt trong Stack với Positioned)
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                            const Positioned(
-                              right: 5, // Cờ nằm sát mép phải
-                              top: 3,
-                              child: FaIcon(
-                                FontAwesomeIcons
-                                    .flagCheckered, // 🏁 Biểu tượng cờ đích
-                                color: Colors.white,
-                                size: 16,
+                                        // 🚀 Tên lửa (Đặt trong Stack với Positioned)
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                          ],
+                              const Positioned(
+                                right: 5, // Cờ nằm sát mép phải
+                                top: 3,
+                                child: FaIcon(
+                                  FontAwesomeIcons
+                                      .flagCheckered, // 🏁 Biểu tượng cờ đích
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    _buildHeaderQuestion(),
-                    // Số câu hỏi
-                    Expanded(child: _buildContentQuestion())
-                  ],
+                      _buildHeaderQuestion(),
+                      // Số câu hỏi
+                      Expanded(child: _buildContentQuestion())
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -340,7 +342,11 @@ class _OfflineScreenState extends State<OfflineScreen>
                 ),
               ),
               InkWell(
-                onTap: () => nextQuestion(),
+                onTap: () {
+                  if (isAnswered == true) {
+                    nextQuestion();
+                  }
+                },
                 child: Container(
                   width: 82,
                   height: 32,

@@ -18,7 +18,7 @@ dependencies:
   shared_preferences: ^2.2.3
   rflutter_alert: ^2.0.7
   intl: ^0.18.1
-  easy_audience_network: ^0.0.7
+  # easy_audience_network: ^0.0.7
   hive_flutter: ^1.1.0
   lottie: ^3.1.3
   get: ^4.6.6
@@ -37,8 +37,6 @@ dependencies:
   carousel_slider: ^5.0.0
   flutter_tts: 3.4.0
   animated_widgets: ^1.1.0
-  audioplayers: ^5.0.0
-  flutter_inappwebview: ^5.8.0
   animator: ^3.1.0
   states_rebuilder: ^6.4.0
   flutter_riverpod: ^2.6.1
@@ -113,13 +111,18 @@ flutter_native_splash:
   ios: true
   web: true
 
-flutter_launcher_icons:
+flutter_icons:
   android: "launcher_icon"
-  ios: false
-  image_path: "assets/icons/ic_launcher_background.png"
+  ios: true
+  image_path: "assets/images/app_logo_blue_bg.png"
   remove_alpha_ios: false
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/icons/ic_launcher_background.png"
+  adaptive_icon_foreground: "assets/images/app_logo_blue_bg.png"
+  web:
+    generate: true
+    image_path: "assets/images/app_logo_blue_bg.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
 
 flutter_gen:
   output: lib/gen/

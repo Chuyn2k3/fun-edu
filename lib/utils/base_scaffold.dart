@@ -67,8 +67,10 @@ class BaseScaffold extends StatelessWidget {
         ),
         child: Padding(
           padding: EdgeInsets.only(
-            top: (appBar?.preferredSize.height ?? 0) +
-                MediaQuery.of(context).padding.top,
+            top: appBar != null
+                ? (appBar!.preferredSize.height +
+                    MediaQuery.of(context).padding.top)
+                : 0,
           ),
           child: body,
         ),

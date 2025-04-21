@@ -5,7 +5,6 @@ import 'package:fun_edu/feature/math_feature/index.dart';
 import 'package:fun_edu/feature/math_feature/screen/Quiz/quiz_screen.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number.dart';
 import 'package:fun_edu/feature/number_feature/nums_screen.dart';
-import 'package:fun_edu/feature/operation_feature/operation_page.dart';
 import 'package:fun_edu/feature/operation_feature/operator_screen.dart';
 import 'package:get/get.dart';
 

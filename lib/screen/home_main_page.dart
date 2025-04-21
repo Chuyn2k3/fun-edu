@@ -12,12 +12,7 @@ class HomeMainPage extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Stack(
-          children: <Widget>[
-            DrawerScreen(),
-            const MainTabbarScreen(),
-          ],
-        ),
+        body: MainTabbarScreen(),
       ),
     );
   }
