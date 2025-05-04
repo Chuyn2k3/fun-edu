@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fun_edu/data/color/color.dart';
+import 'package:fun_edu/feature/user/cubit/user_info/get_user_info_cubit.dart';
 import 'package:fun_edu/feature/user/cubit/user_info/save_user_info_cubit.dart';
 import 'package:fun_edu/model/user_info_by_device_id_model.dart';
 import 'package:fun_edu/tab_bar/tab_bar.dart';
@@ -22,10 +23,15 @@ class ChooseAgeWidget extends StatefulWidget {
 
 class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
   late SaveUserInfoCubit saveUserInfoCubit = SaveUserInfoCubit();
+  late GetUserInfoCubit getUserInfoCubit = GetUserInfoCubit();
+  bool _hasCalledGetUserInfo = false;
+
+  int? _age;
   @override
   void initState() {
     super.initState();
     saveUserInfoCubit = SaveUserInfoCubit();
+    getUserInfoCubit = GetUserInfoCubit();
   }
 
   @override
@@ -34,6 +40,9 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
       providers: [
         BlocProvider(
           create: (context) => saveUserInfoCubit,
+        ),
+        BlocProvider(
+          create: (context) => getUserInfoCubit,
         )
       ],
       child: MultiBlocListener(
@@ -46,6 +55,17 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
                     MaterialPageRoute(
                       builder: (context) => const MainTabbarScreen(),
                     ));
+              }
+            },
+          ),
+          BlocListener<GetUserInfoCubit, GetUserInfoState>(
+            listener: (context, state) {
+              if (state is GetUserInfoLoadedState) {
+                final userName = state.user.userName;
+                final userCoin = state.user.coin;
+                if (userName == null && userCoin == null) {
+                  updateUser();
+                }
               }
             },
           )
@@ -133,7 +153,7 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
   Widget _buildAgeButton(
     BuildContext context,
     String ageText,
-    void saveInfo,
+    Future<void> saveInfo,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 10),
@@ -144,14 +164,14 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
               .get<SharedPreferencesManager>()
               .putBool('isFirstTime', false);
           if (!mounted) return;
-          saveInfo;
-          if (kIsWeb) {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MainTabbarScreen(),
-                ));
-          }
+          await saveInfo;
+          //if (kIsWeb) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MainTabbarScreen(),
+              ));
+          //}
         },
         child: Container(
           width: double.infinity,
@@ -187,21 +207,34 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
     );
   }
 
-  void saveUserByDeviceId(int age) async {
-    final deviceId = await DeviceIdService.getDeviceId();
-    final pref = GetIt.instance<SharedPreferencesManager>();
-    if (deviceId != null) {
-      await pref.putString("deviceId", deviceId);
-    }
-    // final deviceId =
-    //     GetIt.instance.get<SharedPreferencesManager>().getString('deviceId');
+  Future<void> saveUserByDeviceId(int age) async {
+  final deviceId = await DeviceIdService.getDeviceId();
+  final pref = GetIt.instance<SharedPreferencesManager>();
+  if (deviceId != null) {
+    await pref.putString("deviceId", deviceId);
+  }
+
+  if (deviceId != null && !_hasCalledGetUserInfo) {
+    _hasCalledGetUserInfo = true; // ngăn gọi lại
+    getUserInfoCubit.getDeviceInfo(deviceId: deviceId);
+    setState(() {
+      _age = age;
+    });
+  }
+}
+
+
+  void updateUser() {
     final userName =
         GetIt.instance.get<SharedPreferencesManager>().getString('user_name');
+    final deviceId =
+        GetIt.instance.get<SharedPreferencesManager>().getString('deviceId');
     print(deviceId);
+
     final request = UserInfoByDeviceIdModel(
       deviceId: deviceId,
       userName: userName,
-      age: age,
+      age: _age,
     );
     saveUserInfoCubit.saveDeviceInfo(request: request);
   }
