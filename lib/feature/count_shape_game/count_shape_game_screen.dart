@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:fun_edu/data/term/app_colors.dart';
 import 'package:fun_edu/data/term/app_config.dart';
 import 'package:fun_edu/feature/even_old_game/widget/game_mode_selector.dart';
@@ -32,7 +33,7 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
   List<int> _options = [];
   String? _result;
   int _timeLeft = 0;
-
+  late FlutterTts _flutterTts;
   @override
   void initState() {
     super.initState();
@@ -41,6 +42,8 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
     //   DeviceOrientation.landscapeLeft,
     //   DeviceOrientation.landscapeRight,
     // ]);
+    // Initialize TTS engine
+    _initTts();
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
     );
@@ -66,6 +69,21 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
     });
   }
 
+  Future<void> _initTts() async {
+    _flutterTts = FlutterTts();
+    await _flutterTts.setLanguage("vi-VN");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+  }
+
+  // Speak the instruction
+  Future<void> _speakInstruction() async {
+    final instruction =
+        'Hãy đếm số lượng ${_targetColor != null ? '${_targetColor!.vietnameseName} ' : ''}${_targetShapeType.vietnameseName}';
+    await _flutterTts.speak(instruction);
+  }
+
   @override
   void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -75,6 +93,7 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
     ]);
     _confettiController.dispose();
     _timerController.dispose();
+    _flutterTts.stop();
     super.dispose();
   }
 
@@ -131,6 +150,10 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
         _timerController.duration = Duration(seconds: _timeLeft);
         _timerController.forward(from: 0.0);
       }
+    });
+    // Speak the instruction after a short delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _speakInstruction();
     });
   }
 
@@ -220,21 +243,31 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
             const SizedBox(height: 20),
 
             // Instruction
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                'Hãy đếm số lượng ${_targetColor != null ? '${_targetColor!.vietnameseName} ' : ''}${_targetShapeType.vietnameseName}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    'Hãy đếm số lượng ${_targetColor != null ? '${_targetColor!.vietnameseName} ' : ''}${_targetShapeType.vietnameseName}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
+                IconButton(
+                  icon: const Icon(Icons.volume_up, color: AppColors.primary),
+                  onPressed: _speakInstruction,
+                  tooltip: 'Đọc câu hỏi',
+                ),
+              ],
             ),
 
             const SizedBox(height: 20),
