@@ -9,11 +9,13 @@ part 'question_service.g.dart';
 abstract class QuestionService {
   factory QuestionService(Dio dio, {String baseUrl}) = _QuestionService;
   @GET("40/api/v1/question")
-  Future<BaseResponse<QuestionModel>> getQuestion(
+  Future<BaseListResponse<QuestionModel>> getQuestion(
     @Query("page") int page,
     @Query("size") int size,
     @Query("type") String? type,
     @Query("age") int? age,
   );
 
+  @GET("40/api/v1/question")
+  Future<BaseListResponse<QuestionModel>> getQuestionDaily();
 }

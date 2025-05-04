@@ -661,6 +661,18 @@ class $AssetsImagesGen {
   AssetGenImage get aiGenImage =>
       const AssetGenImage('assets/images/ai_gen_image.png');
 
+  /// File path: assets/images/app_logo.png
+  AssetGenImage get appLogo =>
+      const AssetGenImage('assets/images/app_logo.png');
+
+  /// File path: assets/images/app_logo_blue_bg.jpg
+  AssetGenImage get appLogoBlueBgJpg =>
+      const AssetGenImage('assets/images/app_logo_blue_bg.jpg');
+
+  /// File path: assets/images/app_logo_blue_bg.png
+  AssetGenImage get appLogoBlueBgPng =>
+      const AssetGenImage('assets/images/app_logo_blue_bg.png');
+
   /// File path: assets/images/award.png
   AssetGenImage get award => const AssetGenImage('assets/images/award.png');
 
@@ -873,6 +885,9 @@ class $AssetsImagesGen {
   AssetGenImage get numbersTabbar =>
       const AssetGenImage('assets/images/numbers_tabbar.png');
 
+  /// File path: assets/images/odd.png
+  AssetGenImage get odd => const AssetGenImage('assets/images/odd.png');
+
   /// Directory path: assets/images/parallax
   $AssetsImagesParallaxGen get parallax => const $AssetsImagesParallaxGen();
 
@@ -910,6 +925,9 @@ class $AssetsImagesGen {
   /// File path: assets/images/shadow_stones.png
   AssetGenImage get shadowStones =>
       const AssetGenImage('assets/images/shadow_stones.png');
+
+  /// File path: assets/images/shapes.png
+  AssetGenImage get shapes => const AssetGenImage('assets/images/shapes.png');
 
   /// File path: assets/images/shark_r.png
   AssetGenImage get sharkR => const AssetGenImage('assets/images/shark_r.png');
@@ -999,6 +1017,9 @@ class $AssetsImagesGen {
         splashScreen,
         ai1,
         aiGenImage,
+        appLogo,
+        appLogoBlueBgJpg,
+        appLogoBlueBgPng,
         award,
         back,
         background,
@@ -1060,6 +1081,7 @@ class $AssetsImagesGen {
         multiply,
         numbers,
         numbersTabbar,
+        odd,
         path,
         pearl,
         plasticBag,
@@ -1070,6 +1092,7 @@ class $AssetsImagesGen {
         rays,
         seaShell,
         shadowStones,
+        shapes,
         sharkR,
         sharkl,
         shield,

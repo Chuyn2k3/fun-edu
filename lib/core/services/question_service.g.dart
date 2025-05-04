@@ -19,7 +19,7 @@ class _QuestionService implements QuestionService {
   String? baseUrl;
 
   @override
-  Future<BaseResponse<QuestionModel>> getQuestion(
+  Future<BaseListResponse<QuestionModel>> getQuestion(
     page,
     size,
     type,
@@ -36,7 +36,7 @@ class _QuestionService implements QuestionService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<BaseResponse<QuestionModel>>(Options(
+        _setStreamType<BaseListResponse<QuestionModel>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -48,7 +48,33 @@ class _QuestionService implements QuestionService {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = BaseResponse<QuestionModel>.fromJson(
+    final value = BaseListResponse<QuestionModel>.fromJson(
+      _result.data!,
+      (json) => QuestionModel.fromJson(json as Map<String, dynamic>),
+    );
+    return value;
+  }
+
+  @override
+  Future<BaseListResponse<QuestionModel>> getQuestionDaily() async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<BaseListResponse<QuestionModel>>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              '40/api/v1/question',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = BaseListResponse<QuestionModel>.fromJson(
       _result.data!,
       (json) => QuestionModel.fromJson(json as Map<String, dynamic>),
     );

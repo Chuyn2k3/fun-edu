@@ -27,58 +27,56 @@ class UserAnswerScreen extends StatelessWidget {
         ),
         onTap: () => Navigator.pop(context),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 30),
-              SizedBox(
-                width: MediaQuery.of(context).size.width > 700
-                    ? 600
-                    : double.infinity,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
-                  itemBuilder: (c, i) {
-                    return Card(
-                      color: baseColor,
-                      elevation: 10,
-                      child: ListTile(
-                        leading:
-                            userAnswer[i].toString() == answers[i].toString()
-                                ? const CircleAvatar(
-                                    backgroundColor: Colors.white,
-                                    child: Icon(
-                                      FontAwesomeIcons.check,
-                                      color: baseColorLight,
-                                    ))
-                                : const CircleAvatar(
-                                    backgroundColor: Colors.white,
-                                    child: Icon(
-                                      FontAwesomeIcons.xmark,
-                                      color: redColorLight,
-                                    ),
-                                  ),
-                        title: Text(questions[i].toString(),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold)),
-                        subtitle: Text('Answer = ${answers[i].toString()}',
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 15)),
-                        trailing: Text(userAnswer[i].toString(),
-                            style: const TextStyle(
-                                fontSize: 20, color: Colors.orangeAccent)),
-                      ),
-                    );
-                  },
-                  itemCount: answers.length,
-                ),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: MediaQuery.of(context).size.width > 700
+                  ? 600
+                  : double.infinity,
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemBuilder: (c, i) {
+                  return Card(
+                    color: baseColor,
+                    elevation: 10,
+                    child: ListTile(
+                      leading: userAnswer[i].toString() == answers[i].toString()
+                          ? const CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                FontAwesomeIcons.check,
+                                color: baseColorLight,
+                              ))
+                          : const CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                FontAwesomeIcons.xmark,
+                                color: redColorLight,
+                              ),
+                            ),
+                      title: Text(questions[i].toString(),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold)),
+                      subtitle: Text('Answer = ${answers[i].toString()}',
+                          style: const TextStyle(
+                              color: Colors.white54, fontSize: 15)),
+                      trailing: Text(userAnswer[i].toString(),
+                          style: const TextStyle(
+                              fontSize: 20, color: Colors.orangeAccent)),
+                    ),
+                  );
+                },
+                itemCount: answers.length,
               ),
-              const SizedBox(height: 30),
-            ],
-          ),
+            ),
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );

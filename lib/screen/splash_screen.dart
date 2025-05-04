@@ -20,6 +20,9 @@ class _SplashScreenState extends State<SplashScreen> {
     final isFirstTime =
         GetIt.instance.get<SharedPreferencesManager>().getBool('isFirstTime') ??
             true;
+    final deviceId =
+        GetIt.instance.get<SharedPreferencesManager>().getString('deviceId');
+        
     Future.delayed(
       const Duration(seconds: 1),
       () {
@@ -27,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
           context,
           MaterialPageRoute(
             builder: (context) {
-              return isFirstTime
+              return (isFirstTime || deviceId == null)
                   ? const OnboardingScreen()
                   : const HomeMainPage();
             },

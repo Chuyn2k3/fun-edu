@@ -1,48 +1,48 @@
-// import 'package:flutter/material.dart';
-// import 'package:fun_edu/feature/math_feature/index.dart';
-// import 'package:fun_edu/feature/math_feature/screen/ask_operator.dart';
-// import 'package:fun_edu/feature/math_feature/watch_video/video_learn_math_screen.dart';
-// import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:fun_edu/feature/math_feature/game/space_game.dart';
+import 'package:fun_edu/feature/math_feature/index.dart';
+import 'package:fun_edu/feature/math_feature/screen/math_screen.dart';
+import 'package:get/get.dart';
 
-// enum MathLearnType { watchVideo, quiz }
+enum MathLearnType { spaceGame, quiz }
 
-// extension MyMathLearnType on MathLearnType {
-//   //title
-//   String get title => switch (this) {
-//         MathLearnType.watchVideo => 'XEM VIDEO',
-//         MathLearnType.quiz => 'LUYỆN PHÉP TÍNH',
-//       };
+extension MyMathLearnType on MathLearnType {
+  //title
+  String get title => switch (this) {
+        MathLearnType.spaceGame => 'CHINH PHỤC THỬ THÁCH',
+        MathLearnType.quiz => 'LUYỆN PHÉP TÍNH',
+      };
 
-//   //lottie
-//   String get image => switch (this) {
-//         MathLearnType.watchVideo => 'video_player.png',
-//         MathLearnType.quiz => 'quiz.png',
-//       };
+  //lottie
+  String get image => switch (this) {
+        MathLearnType.spaceGame => 'video_player.png',
+        MathLearnType.quiz => 'math.png',
+      };
 
-//   String get desc => switch (this) {
-//         MathLearnType.watchVideo => 'Học các chữ số từ 0 đến 9',
-//         MathLearnType.quiz => 'Luyện tập các phép toán cộng trừ',
-//       };
+  String get desc => switch (this) {
+        MathLearnType.spaceGame => 'Luyện tập phép cộng trừ trong phạm vi 10',
+        MathLearnType.quiz => 'Luyện tập các phép toán',
+      };
 
-//   //for alignment
-//   bool get leftAlign => switch (this) {
-//         MathLearnType.watchVideo => true,
-//         MathLearnType.quiz => false,
-//       };
+  //for alignment
+  bool get leftAlign => switch (this) {
+        MathLearnType.spaceGame => true,
+        MathLearnType.quiz => false,
+      };
 
-//   //for padding
-//   EdgeInsets get padding => switch (this) {
-//         MathLearnType.watchVideo => EdgeInsets.all(16),
-//         MathLearnType.quiz => EdgeInsets.all(16),
-//       };
+  //for padding
+  EdgeInsets get padding => switch (this) {
+        MathLearnType.spaceGame => EdgeInsets.all(16),
+        MathLearnType.quiz => EdgeInsets.all(16),
+      };
 
-//   //for navigation
-//   VoidCallback get onTap {
-//     return switch (this) {
-//       MathLearnType.watchVideo => () =>
-//           Get.to(() => const VideoLearnMathScreen()),
-//       MathLearnType.quiz => () => Get.to(() => const AskOperator(isQuiz: true)),
-//       //Get.snackbar("Thông báo", "Tính năng chưa hỗ trợ"),
-//     };
-//   }
-// }
+  //for navigation
+  VoidCallback get onTap {
+    return switch (this) {
+      MathLearnType.spaceGame => () =>
+          Get.to(() => const SpaceGameScreen()),
+      MathLearnType.quiz => () => Get.to(() => const MathScreen()),
+      //Get.snackbar("Thông báo", "Tính năng chưa hỗ trợ"),
+    };
+  }
+}

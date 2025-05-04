@@ -13,6 +13,8 @@ QuestionModel _$QuestionModelFromJson(Map<String, dynamic> json) =>
       content: json['content'] as String?,
       imageUrl: json['imageUrl'] as String?,
       type: $enumDecodeNullable(_$QuestionTypeEnumMap, json['type']),
+      createTime: json['createTime'] as String?,
+      updateTime: json['updateTime'] as String?,
       answers: (json['answers'] as List<dynamic>?)
           ?.map((e) => AnswerResList.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -25,6 +27,8 @@ Map<String, dynamic> _$QuestionModelToJson(QuestionModel instance) =>
       'content': instance.content,
       'imageUrl': instance.imageUrl,
       'type': _$QuestionTypeEnumMap[instance.type],
+      'createTime': instance.createTime,
+      'updateTime': instance.updateTime,
       'answers': instance.answers,
     };
 

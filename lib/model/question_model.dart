@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:fun_edu/utils/enum/question_type.dart';
 part 'question_model.g.dart';
+
 @JsonSerializable()
 class QuestionModel {
   int id;
@@ -8,6 +9,8 @@ class QuestionModel {
   String? content;
   String? imageUrl;
   QuestionType? type;
+  String? createTime;
+  String? updateTime;
   List<AnswerResList>? answers;
 
   QuestionModel({
@@ -16,6 +19,8 @@ class QuestionModel {
     this.content,
     this.imageUrl,
     this.type,
+    this.createTime,
+    this.updateTime,
     this.answers,
   });
 
@@ -26,13 +31,17 @@ class QuestionModel {
 
 @JsonSerializable()
 class AnswerResList {
-    int id;
-    String? content;
-    bool? isCorrect;
-    int questionId;
+  int id;
+  String? content;
+  bool? isCorrect;
+  int questionId;
 
-
-    AnswerResList({required this.id, this.content, this.isCorrect, required this.questionId,});
+  AnswerResList({
+    required this.id,
+    this.content,
+    this.isCorrect,
+    required this.questionId,
+  });
   factory AnswerResList.fromJson(Map<String, dynamic> json) =>
       _$AnswerResListFromJson(json);
   Map<String, dynamic> toJson() => _$AnswerResListToJson(this);

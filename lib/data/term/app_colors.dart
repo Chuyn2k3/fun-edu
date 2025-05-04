@@ -71,4 +71,31 @@ class AppColors {
   static const Color neutral = Color.fromRGBO(141, 151, 176, 1);
   static const Color mint = Color.fromRGBO(0, 199, 190, 1);
   static const Color magenta = Color.fromRGBO(175, 82, 222, 1);
+
+
+  // Primary colors
+  static const Color primary = Color(0xFF6A5AE0);
+  static const Color secondary = Color(0xFFFF8FA2);
+  static const Color accent = Color(0xFFFFD465);
+
+  // Background colors
+  static const Color background = Color(0xFFF5F5FA);
+  static const Color cardBackground = Colors.white;
+
+  // Text colors
+  static const Color textPrimary = Color(0xFF3A3A5A);
+  static const Color textSecondary = Color(0xFF8C8CA1);
+  
+  // Game specific colors
+  static const Color evenColor = Color(0xFF5DE0A9);
+  static const Color oddColor = Color(0xFFFF8FA2);
+
+  // Shape colors
+  static const List<Color> shapeColors = [
+    Color(0xFFFF8FA2), // Pink
+    Color(0xFF5DE0A9), // Green
+    Color(0xFF6A5AE0), // Purple
+    Color(0xFFFFD465), // Yellow
+    Color(0xFF5AC8FA), // Blue
+  ];
 }

@@ -31,11 +31,11 @@ class MainScreenCard extends StatelessWidget {
         keyboardType: TextInputType.number,
         validator: (val) {
           if (val!.isEmpty) {
-            return 'Please input something';
+            return 'Vui lòng nhập giá trị';
           } else if (int.parse(val) < 2) {
-            return 'Value must be >3';
+            return 'Giá trị phải lớn hơn hoặc bằng 2';
           } else if (int.parse(val) > maxValue) {
-            return '100 Question Only';
+            return 'Giá trị tối đa là $maxValue';
           }
           return null;
         },
