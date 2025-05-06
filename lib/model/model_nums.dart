@@ -86,11 +86,15 @@ class _ModelStyleState extends State<ModelStyle> {
                         borderRadius: BorderRadius.circular(15.0),
                       ),
                       child: InkWell(
-                        onTap: () {
+                        onTap: () async {
                           //Music().volDown();
-                          flutterTts.setLanguage("vi-VN");
+                          await flutterTts.setLanguage('vi-VN');
+                          await flutterTts.setSpeechRate(0.5);
+                          await flutterTts.setVolume(1.0);
+                          await flutterTts.setPitch(1.0);
+
                           flutterTts.speak(widget.cardModel.title);
-                          flutterTts.setPitch(1);
+
                           setState(() => flag = true);
 
                           Future.delayed(const Duration(milliseconds: 650), () {

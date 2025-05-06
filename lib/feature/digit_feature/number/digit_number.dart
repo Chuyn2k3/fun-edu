@@ -28,6 +28,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
   void initState() {
     super.initState();
     _initModel();
+    _initTts();
     _generateRandomNumber();
   }
 
@@ -36,6 +37,13 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
       _targetNumber = Random().nextInt(10);
       _speakNumber();
     });
+  }
+
+  void _initTts() async {
+    await _flutterTts.setLanguage("vi-VN");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
   }
 
   Future<void> _speakNumber() async {

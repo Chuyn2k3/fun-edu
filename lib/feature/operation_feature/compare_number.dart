@@ -539,11 +539,10 @@ class _CompareNumberScreenState extends State<CompareNumberScreen> {
   }
 
   void _setupTTS() async {
-    await flutterTts.setLanguage('vi-VN'); // Giọng nói tiếng Việt
-    await flutterTts.setSpeechRate(0.45); // Giảm tốc độ để nghe rõ ràng hơn
-    await flutterTts.setVolume(1.0); // Âm lượng tối đa
-    await flutterTts
-        .setPitch(1.8); // Tăng cao độ lên để nghe vui tươi và dễ thương hơn
+       await flutterTts.setLanguage('vi-VN');
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setPitch(1.0);
   }
 
   void _speakQuestion() async {

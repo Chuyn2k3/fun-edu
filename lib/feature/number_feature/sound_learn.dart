@@ -80,9 +80,9 @@ class _SoundLearnScreenState extends State<SoundLearnScreen> {
 
   void _speak(String text) async {
     await flutterTts.setLanguage('vi-VN');
-    await flutterTts.setSpeechRate(0.45);
+    await flutterTts.setSpeechRate(0.5);
     await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.1);
+    await flutterTts.setPitch(1.0);
     await flutterTts.speak(text);
   }
 

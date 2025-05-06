@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:fun_edu/data/term/app_colors.dart';
 import 'package:fun_edu/feature/even_old_game/widget/game_mode_selector.dart';
 import 'package:fun_edu/feature/provider/game_provider.dart';
@@ -32,6 +33,7 @@ class _EvenOddGameScreenState extends State<EvenOddGameScreen>
   Offset _dragOffset = Offset.zero;
   String? _result;
   int _timeLeft = 0;
+  final FlutterTts flutterTts = FlutterTts();
 
   @override
   void initState() {
@@ -81,6 +83,19 @@ class _EvenOddGameScreenState extends State<EvenOddGameScreen>
         _startGame(widget.mode);
       }
     });
+    _setupTTS();
+    _playVoice();
+  }
+
+  void _setupTTS() async {
+    await flutterTts.setLanguage('vi-VN');
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setPitch(1.00);
+  }
+
+  void _playVoice() async {
+    await flutterTts.speak("Kéo số vào ô chẵn hoặc lẻ");
   }
 
   @override

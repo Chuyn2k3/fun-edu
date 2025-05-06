@@ -21,8 +21,8 @@ class _NumsScreenState extends State<NumsScreen> {
   @override
   void initState() {
     super.initState();
-    _setupTTS();
-    _playVoice();
+   // _setupTTS();
+   // _playVoice();
   }
 
   void _setupTTS() async {

@@ -49,9 +49,9 @@ class _CompareImageScreenState extends State<CompareImageScreen> {
 
   void _setupTTS() async {
     await flutterTts.setLanguage('vi-VN');
-    await flutterTts.setSpeechRate(0.45);
+    await flutterTts.setSpeechRate(0.5);
     await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.8);
+    await flutterTts.setPitch(1.0);
   }
 
   void _generateImages() {

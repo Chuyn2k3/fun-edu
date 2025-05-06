@@ -48,8 +48,9 @@ class _SortNumberState extends State<SortNumber> {
 
   Future<void> _speakInstruction() async {
     await flutterTts.setLanguage('vi-VN');
-    await flutterTts.setSpeechRate(0.45);
-    await flutterTts.setPitch(1.2);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setPitch(1.0);
     String direction = isAscendingOrder ? 'tăng dần' : 'giảm dần';
     await flutterTts.speak('Hãy sắp xếp theo thứ tự $direction.');
   }

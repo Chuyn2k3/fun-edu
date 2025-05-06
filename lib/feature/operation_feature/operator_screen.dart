@@ -20,8 +20,8 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
   @override
   void initState() {
     super.initState();
-    _setupTTS();
-    _playVoice();
+   // _setupTTS();
+   // _playVoice();
   }
 
   void _setupTTS() async {
