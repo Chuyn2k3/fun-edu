@@ -35,7 +35,8 @@ class GameProvider extends ChangeNotifier {
 
   // Handle answer for even/odd game
   void checkEvenOddAnswer(int number, bool isEvenAnswer) {
-    bool correct = (isEven(number) && isEvenAnswer) || (!isEven(number) && !isEvenAnswer);
+    bool correct =
+        (isEven(number) && isEvenAnswer) || (!isEven(number) && !isEvenAnswer);
 
     if (correct) {
       _score += 1 + _combo;
@@ -56,7 +57,8 @@ class GameProvider extends ChangeNotifier {
     int totalShapes = min(5 + _level * 2, _maxShapes);
 
     // Select target shape and color
-    ShapeType targetShape = ShapeType.values[_random.nextInt(ShapeType.values.length)];
+    ShapeType targetShape =
+        ShapeType.values[_random.nextInt(ShapeType.values.length)];
     Color? targetColor = _level > 3
         ? Colors.primaries[_random.nextInt(Colors.primaries.length)]
         : null;
@@ -70,21 +72,24 @@ class GameProvider extends ChangeNotifier {
     for (int i = 0; i < targetCount; i++) {
       shapes.add(GameShape(
         type: targetShape,
-        color: targetColor ?? Colors.primaries[_random.nextInt(Colors.primaries.length)],
+        color: targetColor ??
+            Colors.primaries[_random.nextInt(Colors.primaries.length)],
         x: _random.nextDouble() * 0.8,
         y: _random.nextDouble() * 0.8,
         rotation: _random.nextDouble() * 2 * pi,
-        size: _random.nextDouble() * 20 + 30,
+        size: _random.nextDouble() * 30 + 50,
       ));
     }
 
     // Fill with other shapes
     while (shapes.length < totalShapes) {
-      ShapeType shapeType = ShapeType.values[_random.nextInt(ShapeType.values.length)];
+      ShapeType shapeType =
+          ShapeType.values[_random.nextInt(ShapeType.values.length)];
       Color color = Colors.primaries[_random.nextInt(Colors.primaries.length)];
 
       // Don't add more target shapes
-      if (shapeType == targetShape && (targetColor == null || color == targetColor)) {
+      if (shapeType == targetShape &&
+          (targetColor == null || color == targetColor)) {
         continue;
       }
 

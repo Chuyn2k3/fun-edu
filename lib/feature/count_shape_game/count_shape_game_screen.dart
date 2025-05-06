@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:fun_edu/data/term/app_colors.dart';
 import 'package:fun_edu/data/term/app_config.dart';
-import 'package:fun_edu/feature/even_old_game/widget/game_mode_selector.dart';
 import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/model/game.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
@@ -24,7 +23,7 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
   late ConfettiController _confettiController;
   late AnimationController _timerController;
 
-  bool _gameStarted = false;
+
   String _gameMode = 'practice';
   List<GameShape> _shapes = [];
   ShapeType _targetShapeType = ShapeType.circle;
@@ -50,11 +49,11 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
 
     _timerController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 30),
     )..addListener(() {
         if (_gameMode == 'challenge') {
           setState(() {
-            _timeLeft = (10 * (1 - _timerController.value)).ceil();
+            _timeLeft = (30 * (1 - _timerController.value)).ceil();
           });
 
           if (_timerController.isCompleted) {
@@ -102,7 +101,6 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
     gameProvider.resetGame();
 
     setState(() {
-      _gameStarted = true;
       _gameMode = mode;
     });
 
@@ -146,7 +144,7 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
 
       // Reset and start timer for challenge mode
       if (_gameMode == 'challenge') {
-        _timeLeft = math.max(10 - level, 5);
+        _timeLeft = math.max(30 - level, 5);
         _timerController.duration = Duration(seconds: _timeLeft);
         _timerController.forward(from: 0.0);
       }
@@ -246,20 +244,22 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    'Hãy đếm số lượng ${_targetColor != null ? '${_targetColor!.vietnameseName} ' : ''}${_targetShapeType.vietnameseName}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    textAlign: TextAlign.center,
+                    child: Text(
+                      'Hãy đếm số lượng ${_targetColor != null ? '${_targetColor!.vietnameseName} ' : ''}${_targetShapeType.vietnameseName}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
                 IconButton(
