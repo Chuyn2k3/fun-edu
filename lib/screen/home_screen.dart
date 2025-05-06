@@ -110,14 +110,16 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            Text(
-              'Chào $userName!',
-              style: const TextStyle(
-                fontFamily: 'LilitaOne',
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: ColorBase.primaryText,
-              ),
+            Flexible(
+              flex: 2,
+              child: Text('Chào $userName!',
+                  style: const TextStyle(
+                    fontFamily: 'LilitaOne',
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: ColorBase.primaryText,
+                  ),
+                  overflow: TextOverflow.ellipsis),
             ),
             SizedBox(
               width: 8,
