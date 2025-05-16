@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -51,24 +52,22 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Generate shapes for the counting game
-  List<GameShape> generateShapes() {
-    // Determine number of shapes based on level
+  List<GameShape> generateShapes(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final widthFactor = screenSize.width / 400; // scale theo 400px cơ sở
+
     int totalShapes = min(5 + _level * 2, _maxShapes);
 
-    // Select target shape and color
     ShapeType targetShape =
         ShapeType.values[_random.nextInt(ShapeType.values.length)];
     Color? targetColor = _level > 3
         ? Colors.primaries[_random.nextInt(Colors.primaries.length)]
         : null;
 
-    // Determine how many target shapes to create
     int targetCount = _random.nextInt(min(6, _level + 2)) + 2;
 
     List<GameShape> shapes = [];
 
-    // Create target shapes
     for (int i = 0; i < targetCount; i++) {
       shapes.add(GameShape(
         type: targetShape,
@@ -77,17 +76,15 @@ class GameProvider extends ChangeNotifier {
         x: _random.nextDouble() * 0.8,
         y: _random.nextDouble() * 0.8,
         rotation: _random.nextDouble() * 2 * pi,
-        size: _random.nextDouble() * 30 + 50,
+        size: (_random.nextDouble() * 20 + (kIsWeb ? 20 : 80)) * widthFactor,
       ));
     }
 
-    // Fill with other shapes
     while (shapes.length < totalShapes) {
       ShapeType shapeType =
           ShapeType.values[_random.nextInt(ShapeType.values.length)];
       Color color = Colors.primaries[_random.nextInt(Colors.primaries.length)];
 
-      // Don't add more target shapes
       if (shapeType == targetShape &&
           (targetColor == null || color == targetColor)) {
         continue;
@@ -99,7 +96,7 @@ class GameProvider extends ChangeNotifier {
         x: _random.nextDouble() * 0.8,
         y: _random.nextDouble() * 0.8,
         rotation: _random.nextDouble() * 2 * pi,
-        size: _random.nextDouble() * 20 + 30,
+        size: (_random.nextDouble() * 20 + (kIsWeb ? 20 : 80)) * widthFactor,
       ));
     }
 

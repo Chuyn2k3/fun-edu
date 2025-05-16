@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/score_provider.dart';
@@ -25,7 +25,7 @@ class LeaderBoardOverlay extends ConsumerWidget {
           Text(
             'leaderboard',
             style: titleTextStyle,
-          ).tr(),
+          ),
           const SizedBox(height: 40),
           state.isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -39,7 +39,7 @@ class LeaderBoardOverlay extends ConsumerWidget {
             child: Text(
               'back',
               style: exitTextstyle,
-            ).tr(),
+            ),
           ),
         ],
       ),

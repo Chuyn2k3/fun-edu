@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
@@ -26,13 +26,13 @@ class InstructionsOverlay extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 300),
               style: titleTextStyle,
-              child: Text('Hướng dẫn').tr(),
+              child: Text('Hướng dẫn'),
             ),
             const SizedBox(height: 40),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 300),
               style: titleTextStyle.copyWith(fontSize: 24),
-              child: Text('Điều khiển').tr(),
+              child: Text('Điều khiển'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
@@ -61,7 +61,7 @@ class InstructionsOverlay extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 300),
               style: titleTextStyle.copyWith(fontSize: 24),
-              child: Text('Nguy hiểm').tr(),
+              child: Text('Nguy hiểm'),
             ),
             const SizedBox(height: 20),
             Row(
@@ -77,7 +77,7 @@ class InstructionsOverlay extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 300),
               style: titleTextStyle.copyWith(fontSize: 24),
-              child: Text('Vật phẩm thu thập').tr(),
+              child: Text('Vật phẩm thu thập'),
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),

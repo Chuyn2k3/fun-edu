@@ -104,15 +104,15 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
       _gameMode = mode;
     });
 
-    _generateNewLevel();
+    _generateNewLevel(context);
   }
 
-  void _generateNewLevel() {
+  void _generateNewLevel(BuildContext context) {
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
     final level = gameProvider.level;
 
     // Generate shapes
-    final shapes = gameProvider.generateShapes();
+    final shapes = gameProvider.generateShapes(context);
 
     // Determine target shape and color
     final targetShape = shapes.first.type;
@@ -178,7 +178,7 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
     // Wait before showing next level
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        _generateNewLevel();
+        _generateNewLevel(context);
       }
     });
   }

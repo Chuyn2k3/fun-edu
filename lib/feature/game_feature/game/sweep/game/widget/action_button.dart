@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/colors.dart';
@@ -52,7 +52,7 @@ class ActionButton extends StatelessWidget {
               child: Text(
                 title,
                 style: titleTextStyle.copyWith(fontSize: 24),
-              ).tr(),
+              ),
             ),
           ),
         ),

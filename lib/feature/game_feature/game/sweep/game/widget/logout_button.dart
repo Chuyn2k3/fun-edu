@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/score_provider.dart';
@@ -43,7 +43,7 @@ class LogoutButton extends ConsumerWidget {
                 fontSize: 18,
                 fontFamily: "LilitaOne",
               ),
-            ).tr()),
+            )),
       ],
     );
   }
