@@ -13,7 +13,7 @@ class AnimatedButterfly extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _AnimatedButterflyState createState() => _AnimatedButterflyState();
+  State<AnimatedButterfly> createState() => _AnimatedButterflyState();
 }
 
 class _AnimatedButterflyState extends State<AnimatedButterfly> with SingleTickerProviderStateMixin {

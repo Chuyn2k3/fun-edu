@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/model/game_user.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -111,36 +111,36 @@ class Auth with ChangeNotifier {
     String? email,
     String? password,
   }) async {
-    switch (signinMethod) {
-      case SigninMethod.guest:
-        user.name = name!;
-        break;
-      case SigninMethod.email:
-      case SigninMethod.google:
-        final loginInfo = await GoogleSignIn().signIn();
+    // switch (signinMethod) {
+    //   case SigninMethod.guest:
+    //     user.name = name!;
+    //     break;
+    //   case SigninMethod.email:
+    //   case SigninMethod.google:
+    //     final loginInfo = await GoogleSignIn().signIn();
 
-        if (loginInfo == null) return;
+    //     if (loginInfo == null) return;
 
-        user.name = loginInfo.displayName;
-        user.email = loginInfo.email;
-        user.imageUrl = loginInfo.photoUrl;
+    //     user.name = loginInfo.displayName;
+    //     user.email = loginInfo.email;
+    //     user.imageUrl = loginInfo.photoUrl;
 
-        final isEmailExist = await isEmailAlreadyExist(user.email);
-        if (!isEmailExist) {
-          await addUserToLeaderboard(user);
-        }
-        break;
+    //     final isEmailExist = await isEmailAlreadyExist(user.email);
+    //     if (!isEmailExist) {
+    //       await addUserToLeaderboard(user);
+    //     }
+    //     break;
 
-      // default:
-      //   final loginInfo = await emailSignin(email!, password!);
-      //   if (loginInfo == null) return;
-      //   user.name = loginInfo.displayName;
-      //   user.email = loginInfo.email;
-      //   user.imageUrl = loginInfo.photoURL;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('user', user.toJson());
-    notifyListeners();
+    //   // default:
+    //   //   final loginInfo = await emailSignin(email!, password!);
+    //   //   if (loginInfo == null) return;
+    //   //   user.name = loginInfo.displayName;
+    //   //   user.email = loginInfo.email;
+    //   //   user.imageUrl = loginInfo.photoURL;
+    // }
+    // final prefs = await SharedPreferences.getInstance();
+    // prefs.setString('user', user.toJson());
+    // notifyListeners();
   }
 
   void nextOfflineLevel(int stars) {
@@ -191,7 +191,7 @@ class Auth with ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
 
-    if (user.isGoogleSignin) await GoogleSignIn().signOut();
+   // if (user.isGoogleSignin) await GoogleSignIn().signOut();
 
     user.clearUser();
 

@@ -1,98 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:fun_edu/feature/number_feature/match_image.dart';
-import 'package:fun_edu/feature/number_feature/sort_number.dart';
-import 'package:fun_edu/feature/number_feature/sound_learn.dart';
+import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-class NumsScreen extends StatefulWidget {
+class NumsScreen extends StatelessWidget {
   const NumsScreen({super.key});
 
   @override
-  State<NumsScreen> createState() => _NumsScreenState();
-}
-
-class _NumsScreenState extends State<NumsScreen> {
-  final FlutterTts flutterTts = FlutterTts();
-
-  @override
-  void initState() {
-    super.initState();
-   // _setupTTS();
-   // _playVoice();
-  }
-
-  void _setupTTS() async {
-    await flutterTts.setLanguage('vi-VN');
-    await flutterTts.setSpeechRate(0.5); // Tốc độ nói trung bình, dễ nghe
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.2); // Giọng cao nhẹ, không bị quá the thé
-  }
-
-  void _playVoice() async {
-    await flutterTts.speak(
-        "Bé muốn học theo cách nào nhỉ? Hãy chọn một hoạt động vui nhộn nhé! 🎉");
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final features = [
+      _FeatureItem(
+        title: "Âm Thanh & Hình Ảnh 🔊",
+        description:
+            "Nghe và xem hình ảnh số từ 0 đến 9 (Vui nhộn & dễ nhớ! 🦕)",
+        color: Colors.orange,
+        icon: FontAwesomeIcons.volumeHigh,
+        routeName: GoRouterName.numberByAudio.routeName,
+      ),
+      _FeatureItem(
+        title: "Trò Chơi Ghép Số & Ảnh 🧩",
+        description: "Tìm và ghép số với hình đúng (Thử thách vui nhộn! 🎲)",
+        color: Colors.green,
+        icon: FontAwesomeIcons.puzzlePiece,
+        routeName: GoRouterName.numberByMatchImage.routeName,
+      ),
+      _FeatureItem(
+        title: "Sắp Xếp Các Số 🔢",
+        description:
+            "Sắp xếp số theo thứ tự chính xác (Cùng đặt số về đúng chỗ! 🚀)",
+        color: Colors.lightBlue,
+        icon: FontAwesomeIcons.arrowDown19,
+        routeName: GoRouterName.numberBySort.routeName,
+      ),
+    ];
+
     return BaseScaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCustomHeader(context),
+          _CustomHeader(onBack: () {
+            context.pop(context);
+          }),
           const SizedBox(height: 8),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ListView(
-                children: [
-                  _buildFeatureCard(
-                    title: "Âm Thanh & Hình Ảnh 🔊",
-                    description:
-                        "Nghe và xem hình ảnh số từ 0 đến 9 (Vui nhộn & dễ nhớ! 🦕)",
-                    color: Colors.orange,
-                    icon: FontAwesomeIcons.volumeHigh,
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SoundLearnScreen(),
-                          ));
-                    },
-                  ),
-                  _buildFeatureCard(
-                    title: "Trò Chơi Ghép Số & Ảnh 🧩",
-                    description:
-                        "Tìm và ghép số với hình đúng (Thử thách vui nhộn! 🎲)",
-                    color: Colors.green,
-                    icon: FontAwesomeIcons.puzzlePiece,
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MatchImage(),
-                          ));
-                    },
-                  ),
-                  _buildFeatureCard(
-                    title: "Sắp Xếp Các Số 🔢",
-                    description:
-                        "Sắp xếp số theo thứ tự chính xác (Cùng đặt số về đúng chỗ! 🚀)",
-                    color: Colors.lightBlue,
-                    icon: FontAwesomeIcons.arrowDown19,
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SortNumber(),
-                          ));
-                    },
-                  ),
-                ],
+              child: ListView.builder(
+                itemCount: features.length,
+                itemBuilder: (context, index) {
+                  final item = features[index];
+                  return _FeatureCard(
+                    title: item.title,
+                    description: item.description,
+                    icon: item.icon,
+                    color: item.color,
+                    onTap: () => context.pushNamed(item.routeName),
+                  );
+                },
               ),
             ),
           ),
@@ -100,8 +66,15 @@ class _NumsScreenState extends State<NumsScreen> {
       ),
     );
   }
+}
 
-  Widget _buildCustomHeader(BuildContext context) {
+class _CustomHeader extends StatelessWidget {
+  final VoidCallback onBack;
+
+  const _CustomHeader({required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
     return Stack(
       children: [
         Container(
@@ -135,14 +108,8 @@ class _NumsScreenState extends State<NumsScreen> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      flutterTts.stop(); // Dừng âm thanh khi quay lại
-                      Navigator.pop(context);
-                    },
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    onPressed: onBack,
                   ),
                   const SizedBox(width: 8),
                   const Text(
@@ -180,32 +147,37 @@ class _NumsScreenState extends State<NumsScreen> {
         Positioned(
           right: 20,
           bottom: -20,
-          child: Icon(
-            Icons.cloud,
-            size: 50,
-            color: Colors.white.withOpacity(0.6),
-          ),
+          child:
+              Icon(Icons.cloud, size: 50, color: Colors.white.withOpacity(0.6)),
         ),
         Positioned(
           left: 10,
           top: -10,
-          child: Icon(
-            Icons.cloud,
-            size: 40,
-            color: Colors.white.withOpacity(0.4),
-          ),
+          child:
+              Icon(Icons.cloud, size: 40, color: Colors.white.withOpacity(0.4)),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2);
   }
+}
 
-  Widget _buildFeatureCard({
-    required String title,
-    required String description,
-    required Color color,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+class _FeatureCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _FeatureCard({
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -272,4 +244,20 @@ class _NumsScreenState extends State<NumsScreen> {
       ),
     );
   }
+}
+
+class _FeatureItem {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final String routeName;
+
+  _FeatureItem({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.routeName,
+  });
 }

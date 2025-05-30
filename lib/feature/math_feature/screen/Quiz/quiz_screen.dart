@@ -3,10 +3,11 @@ import 'dart:math';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fun_edu/feature/math_feature/customWidget/QuizButtonIcon.dart';
+import 'package:fun_edu/feature/math_feature/customWidget/quiz_button_icon.dart';
 import 'package:fun_edu/feature/math_feature/screen/Quiz/answer_screen.dart';
-import 'package:fun_edu/utils/colorConst.dart';
+import 'package:fun_edu/utils/color_const.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
+import 'package:go_router/go_router.dart';
 
 // ignore: must_be_immutable
 class QuizScreen extends StatefulWidget {
@@ -56,11 +57,11 @@ class _QuizScreenState extends State<QuizScreen> {
           val1 + val2 + Random().nextInt(16) + 1,
         ];
       } else if (widget.operator == 'minus') {
-         if (val1 < val2) {
-    final temp = val1;
-    val1 = val2;
-    val2 = temp;
-  }
+        if (val1 < val2) {
+          final temp = val1;
+          val1 = val2;
+          val2 = temp;
+        }
         questions.add('$val1  -  $val2 =  ? ');
         answers.add(val1 - val2);
         ansData = [
@@ -133,7 +134,7 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       appBar: CustomAppbar.basic(
         onTap: () {
-          Navigator.pop(context);
+          context.pop(context);
         },
       ),
       backgroundColor: Colors.white,

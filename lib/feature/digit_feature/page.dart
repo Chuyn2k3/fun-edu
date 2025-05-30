@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:fun_edu/data/color/color.dart';
 import 'package:fun_edu/feature/digit_feature/enum/digit_enum.dart';
-import 'package:fun_edu/feature/digit_feature/number/digit_number.dart';
 import 'package:fun_edu/widget/background_v2.dart';
 
 class DigitRecogizePage extends StatelessWidget {

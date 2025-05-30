@@ -1,9 +1,4 @@
 import 'package:flutter/widgets.dart';
-
-
-/// {@template background_v2}
-/// BackgroundV2 widget.
-/// {@endtemplate}
 class BackgroundV2 extends StatelessWidget {
   /// {@macro background_v2}
   const BackgroundV2({

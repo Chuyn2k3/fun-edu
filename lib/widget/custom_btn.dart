@@ -1,6 +1,4 @@
 import 'package:fun_edu/utils/extension.dart';
-
-import '../main.dart';
 import 'package:flutter/material.dart';
 
 import '../helper/global.dart';

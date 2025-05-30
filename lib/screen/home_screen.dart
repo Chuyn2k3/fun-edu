@@ -3,108 +3,155 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:fun_edu/data/color/color.dart';
 import 'package:fun_edu/feature/user/cubit/user_info/get_user_info_cubit.dart';
-import 'package:fun_edu/screen/offline_game_screen.dart';
+import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
 import 'package:fun_edu/widget/background_v2.dart';
 import 'package:fun_edu/widget/home_card.dart';
 import 'package:fun_edu/model/home_type.dart';
 import 'package:get_it/get_it.dart';
-import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-
-  static String routeName = 'HomePage';
-  static String routePath = '/HomePage';
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String userName = "bé";
-  int? userCoin;
-  late GetUserInfoCubit getUserInfoCubit;
-  String? deviceId;
+  late final GetUserInfoCubit _getUserInfoCubit;
+  late final String? _deviceId;
+  String _defaultUserName = "bé";
+
   @override
   void initState() {
     super.initState();
-    userName =
+    _defaultUserName =
         GetIt.instance.get<SharedPreferencesManager>().getString("user_name") ??
             "bé";
-    if (userName.isEmpty) {
-      userName = "bé";
+    if (_defaultUserName.isEmpty) {
+      // fallback nếu rỗng
+      _defaultUserName = "bé";
     }
-    final _deviceId =
+    _deviceId =
         GetIt.instance.get<SharedPreferencesManager>().getString("deviceId");
-    deviceId = _deviceId;
-    print(_deviceId);
-    getUserInfoCubit = GetUserInfoCubit();
+
+    _getUserInfoCubit = GetUserInfoCubit();
+
+    if (_deviceId != null) {
+      _getUserInfoCubit.getDeviceInfo(deviceId: _deviceId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _getUserInfoCubit.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => deviceId != null
-              ? (getUserInfoCubit..getDeviceInfo(deviceId: deviceId ?? ""))
-              : getUserInfoCubit,
-        )
-      ],
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<GetUserInfoCubit, GetUserInfoState>(
-            listener: (context, state) {
-              if (state is GetUserInfoLoadedState) {
-                final name = state.user.userName;
-                final coin = state.user.coin;
-                print(name ?? "" + "hehe");
-                print(coin ?? "" + "hehe");
-                setState(() {
-                  userName = name ?? userName;
-                  userCoin = coin ?? userCoin;
-                });
-              }
-            },
-          )
-        ],
-        child: Scaffold(
-          backgroundColor: ColorBase.secondaryBackground,
-          body: Stack(
-            children: [
-              const BackgroundV2(),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildGreetingSection(),
-                      const SizedBox(height: 8),
-                      _buildDailyTaskCard(context),
-                      const SizedBox(height: 12),
-                      Expanded(child: _buildHomeGrid()),
-                      const SizedBox(height: 72
-                          //MediaQuery.of(context).size.height * 0.12
-                          ),
-                    ],
-                  ),
+    final size = MediaQuery.of(context).size;
+
+    return BlocProvider.value(
+      value: _getUserInfoCubit,
+      child: Scaffold(
+        backgroundColor: ColorBase.secondaryBackground,
+        body: Stack(
+          children: [
+            const BackgroundV2(),
+            SafeArea(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BlocBuilder<GetUserInfoCubit, GetUserInfoState>(
+                      builder: (context, state) {
+                        final userName = (state is GetUserInfoLoadedState)
+                            ? state.user.userName ?? _defaultUserName
+                            : _defaultUserName;
+
+                        final userCoin = (state is GetUserInfoLoadedState)
+                            ? state.user.coin
+                            : null;
+
+                        return _GreetingSection(
+                          userName: userName,
+                          userCoin: userCoin,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _DailyTaskCard(
+                      height: size.height * 0.18,
+                      userCoin: context.select<GetUserInfoCubit, int?>((cubit) {
+                        final state = cubit.state;
+                        return state is GetUserInfoLoadedState
+                            ? state.user.coin
+                            : null;
+                      }),
+                      onTap: () {
+                        final coin = context.read<GetUserInfoCubit>().state
+                                is GetUserInfoLoadedState
+                            ? (context.read<GetUserInfoCubit>().state
+                                    as GetUserInfoLoadedState)
+                                .user
+                                .coin
+                            : null;
+                        context.pushNamed(
+                          GoRouterName.dailyTask.routeName,
+                          queryParams: {"userCoin": coin?.toString() ?? ""},
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          if (_deviceId != null) {
+                            _getUserInfoCubit.getDeviceInfo(
+                                deviceId: _deviceId);
+                          }
+                        },
+                        child: MasonryGridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2),
+                          itemCount: HomeType.values.length,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          itemBuilder: (context, index) {
+                            return HomeCard(homeType: HomeType.values[index]);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 72),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  /// Widget phần chào hỏi
-  Widget _buildGreetingSection() {
+class _GreetingSection extends StatelessWidget {
+  final String userName;
+  final int? userCoin;
+
+  const _GreetingSection({
+    required this.userName,
+    required this.userCoin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -112,19 +159,18 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Flexible(
               flex: 2,
-              child: Text('Chào $userName!',
-                  style: const TextStyle(
-                    fontFamily: 'LilitaOne',
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: ColorBase.primaryText,
-                  ),
-                  overflow: TextOverflow.ellipsis),
+              child: Text(
+                'Chào $userName!',
+                style: const TextStyle(
+                  fontFamily: 'LilitaOne',
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: ColorBase.primaryText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            SizedBox(
-              width: 8,
-            ),
-            // Coin display
+            const SizedBox(width: 8),
             Expanded(
               child: Container(
                 padding:
@@ -143,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      userCoin != null ? '${userCoin ?? 0}' : "-",
+                      userCoin?.toString() ?? "-",
                       style: const TextStyle(
                         fontFamily: 'LilitaOne',
                         fontSize: 20,
@@ -157,8 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-
-        //const SizedBox(height: 4),
+        const SizedBox(height: 4),
         const Text(
           'Hãy cùng nhau học và chơi nhé!',
           style: TextStyle(
@@ -171,21 +216,26 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
 
-  /// Widget hiển thị daily task card
-  Widget _buildDailyTaskCard(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+class _DailyTaskCard extends StatelessWidget {
+  final double height;
+  final int? userCoin;
+  final VoidCallback onTap;
+
+  const _DailyTaskCard({
+    required this.height,
+    required this.userCoin,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OfflineScreen(userCoin: userCoin ?? 0),
-            ));
-      },
+      onTap: onTap,
       child: Container(
         width: double.infinity,
-        height: size.height * 0.18,
+        height: height,
         decoration: const BoxDecoration(
           image: DecorationImage(
             fit: BoxFit.fill,
@@ -193,10 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(
-            left: 13,
-            bottom: 4,
-          ),
+          padding: const EdgeInsets.only(left: 13, bottom: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,29 +308,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// Widget hiển thị danh sách các mục học tập
-  Widget _buildHomeGrid() {
-    return RefreshIndicator(
-      onRefresh: () async {
-        if (deviceId != null) {
-          getUserInfoCubit.getDeviceInfo(deviceId: deviceId ?? "");
-        }
-      },
-      child: MasonryGridView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-        ),
-        itemCount: HomeType.values.length,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        itemBuilder: (context, index) {
-          return HomeCard(homeType: HomeType.values[index]);
-        },
       ),
     );
   }

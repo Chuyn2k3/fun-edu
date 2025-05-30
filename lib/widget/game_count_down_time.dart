@@ -78,7 +78,7 @@ class _GameCountdownTimerState extends State<GameCountdownTimer> {
         vertical: 4,
         horizontal: 4,
       ),
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.blueAccent.withOpacity(0.2), // Màu nền nhẹ nhàng
         borderRadius: BorderRadius.circular(8), // Bo góc
@@ -93,7 +93,7 @@ class _GameCountdownTimerState extends State<GameCountdownTimer> {
           ),
           const SizedBox(width: 4), // Khoảng cách giữa icon và text
           Text(
-            '${_formatTime(_remainingSeconds)}',
+            _formatTime(_remainingSeconds),
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,

@@ -9,12 +9,13 @@ import 'package:fun_edu/feature/digit_feature/number/drawing_painter.dart';
 import 'package:fun_edu/feature/digit_feature/number/prediction.dart';
 import 'package:fun_edu/feature/digit_feature/number/prediction_widget.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class DigitNumberScreen extends StatefulWidget {
   const DigitNumberScreen({super.key});
 
   @override
-  _DigitNumberScreenState createState() => _DigitNumberScreenState();
+  State<DigitNumberScreen> createState() => _DigitNumberScreenState();
 }
 
 class _DigitNumberScreenState extends State<DigitNumberScreen> {
@@ -171,8 +172,8 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
         children: [
           FloatingActionButton(
             backgroundColor: Colors.green,
-            child: const Icon(FontAwesomeIcons.volumeUp, color: Colors.white),
             onPressed: _speakNumber,
+            child: const Icon(FontAwesomeIcons.volumeUp, color: Colors.white),
           ),
           const SizedBox(width: 10),
           FloatingActionButton(
@@ -213,7 +214,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
     //         hoverColor: Colors.transparent,
     //         highlightColor: Colors.transparent,
     //         onTap: () {
-    //           Navigator.pop(context);
+    //           context.pop(context);
     //         },
     //         child: const Icon(
     //           Icons.arrow_back_ios_new,
@@ -240,7 +241,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
-        onTap: () => Navigator.pop(context),
+        onTap: () => context.pop(context),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -290,19 +291,19 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
       ),
       child: GestureDetector(
         onPanUpdate: (DragUpdateDetails details) {
-          Offset _localPosition = details.localPosition;
-          if (_localPosition.dx >= 0 &&
-              _localPosition.dx <= Constants.canvasSize &&
-              _localPosition.dy >= 0 &&
-              _localPosition.dy <= Constants.canvasSize) {
+          Offset localPosition = details.localPosition;
+          if (localPosition.dx >= 0 &&
+              localPosition.dx <= Constants.canvasSize &&
+              localPosition.dy >= 0 &&
+              localPosition.dy <= Constants.canvasSize) {
             setState(() {
-              _points.add(_localPosition);
+              _points.add(localPosition);
             });
           }
         },
         onPanEnd: (DragEndDetails details) async {
           //_points.add(); // Thêm điểm ngắt thay vì (0,0)
-          await Future.delayed(Duration(seconds: 2));
+          await Future.delayed(const Duration(seconds: 2));
           _recognize();
         },
         child: CustomPaint(
@@ -325,6 +326,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
 
       if (_prediction.isNotEmpty &&
           _prediction[0].label == _targetNumber.toString()) {
+        if (!mounted) return;
         _showSuccessDialog(context, _targetNumber, () {
           _generateRandomNumber();
           _points.clear();
@@ -332,6 +334,7 @@ class _DigitNumberScreenState extends State<DigitNumberScreen> {
           setState(() {});
         });
       } else {
+        if (!mounted) return;
         _showTryAgainDialog(context, () {
           _points.clear();
           _prediction.clear();

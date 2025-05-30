@@ -1,40 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:fun_edu/feature/operation_feature/compare_number.dart';
-import 'package:fun_edu/feature/operation_feature/compare_number_by_image.dart';
+import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
-class CompareMainScreen extends StatefulWidget {
+class CompareMainScreen extends StatelessWidget {
   const CompareMainScreen({Key? key}) : super(key: key);
-
-  @override
-  State<CompareMainScreen> createState() => _CompareMainScreenState();
-}
-
-class _CompareMainScreenState extends State<CompareMainScreen> {
-  final FlutterTts flutterTts = FlutterTts();
-
-  @override
-  void initState() {
-    super.initState();
-   // _setupTTS();
-   // _playVoice();
-  }
-
-  void _setupTTS() async {
-    await flutterTts.setLanguage('vi-VN');
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.2);
-  }
-
-  void _playVoice() async {
-    await flutterTts.speak(
-        "Hãy chọn một hoạt động vui nhộn! Bạn muốn so sánh số hay so sánh hình ảnh nhỉ?");
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,12 +26,7 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                     color: Colors.orange,
                     icon: FontAwesomeIcons.sortNumericAsc,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CompareNumberScreen(),
-                        ),
-                      );
+                      context.pushNamed(GoRouterName.compareNumber.routeName);
                     },
                   ),
                   _buildFeatureCard(
@@ -69,12 +35,8 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
                     color: Colors.purple,
                     icon: FontAwesomeIcons.images,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CompareImageScreen(),
-                        ),
-                      );
+                      context.pushNamed(
+                          GoRouterName.compareNumberByImage.routeName);
                     },
                   ),
                 ],
@@ -87,81 +49,76 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
   }
 
   Widget _buildCustomHeader(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top,
-            bottom: 16,
-            left: 16,
-            right: 16,
-          ),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF9575CD), Color(0xFF7986CB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(40),
-              bottomRight: Radius.circular(40),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.deepPurple.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      flutterTts.stop();
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "So Sánh Vui Nhộn 🎉",
-                    style: TextStyle(
-                      fontSize: 22,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  "Bạn muốn so sánh số hay so sánh hình ảnh? 🤩",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
-                  ),
-                ),
-              ),
-            ],
-          ),
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top,
+        bottom: 16,
+        left: 16,
+        right: 16,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF9575CD), Color(0xFF7986CB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ],
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2);
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  context.pop(context);
+                },
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                "So Sánh Vui Nhộn 🎉",
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              "Bạn muốn so sánh số hay so sánh hình ảnh? 🤩",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFeatureCard({
@@ -229,11 +186,5 @@ class _CompareMainScreenState extends State<CompareMainScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    flutterTts.stop();
-    super.dispose();
   }
 }

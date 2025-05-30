@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fun_edu/data/color/color.dart';
@@ -6,16 +5,12 @@ import 'package:fun_edu/feature/user/cubit/user_info/get_user_info_cubit.dart';
 import 'package:fun_edu/feature/user/cubit/user_info/save_user_info_cubit.dart';
 import 'package:fun_edu/model/user_info_by_device_id_model.dart';
 import 'package:fun_edu/tab_bar/tab_bar.dart';
-import 'package:fun_edu/utils/device_id.dart';
 import 'package:fun_edu/utils/device_id_service.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
 import 'package:get_it/get_it.dart';
 
 class ChooseAgeWidget extends StatefulWidget {
   const ChooseAgeWidget({super.key});
-
-  static String routeName = 'ChooseAge';
-  static String routePath = '/ChooseAge';
 
   @override
   State<ChooseAgeWidget> createState() => _ChooseAgeWidgetState();
@@ -208,21 +203,20 @@ class _ChooseAgeWidgetState extends State<ChooseAgeWidget> {
   }
 
   Future<void> saveUserByDeviceId(int age) async {
-  final deviceId = await DeviceIdService.getDeviceId();
-  final pref = GetIt.instance<SharedPreferencesManager>();
-  if (deviceId != null) {
-    await pref.putString("deviceId", deviceId);
-  }
+    final deviceId = await DeviceIdService.getDeviceId();
+    final pref = GetIt.instance<SharedPreferencesManager>();
+    if (deviceId != null) {
+      await pref.putString("deviceId", deviceId);
+    }
 
-  if (deviceId != null && !_hasCalledGetUserInfo) {
-    _hasCalledGetUserInfo = true; // ngăn gọi lại
-    getUserInfoCubit.getDeviceInfo(deviceId: deviceId);
-    setState(() {
-      _age = age;
-    });
+    if (deviceId != null && !_hasCalledGetUserInfo) {
+      _hasCalledGetUserInfo = true; // ngăn gọi lại
+      getUserInfoCubit.getDeviceInfo(deviceId: deviceId);
+      setState(() {
+        _age = age;
+      });
+    }
   }
-}
-
 
   void updateUser() {
     final userName =

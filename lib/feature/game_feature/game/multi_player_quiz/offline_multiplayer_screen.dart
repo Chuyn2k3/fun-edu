@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/feature/game_feature/game/multi_player_quiz/offline_multiplayer_result_screen.dart';
 import 'package:fun_edu/providers/offline.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
@@ -13,6 +10,7 @@ import 'package:fun_edu/utils/game_time_manager.dart';
 import 'package:fun_edu/widget/answer_card.dart';
 import 'package:fun_edu/widget/custom_button.dart';
 import 'package:fun_edu/widget/game_count_down_time.dart';
+import 'package:go_router/go_router.dart';
 
 class OfflineMultiplayerScreen extends ConsumerStatefulWidget {
   const OfflineMultiplayerScreen(this.user1Name, this.user2Name, {Key? key})
@@ -29,7 +27,6 @@ class OfflineMultiplayerScreen extends ConsumerStatefulWidget {
 class _OfflineMultiplayerScreenState
     extends ConsumerState<OfflineMultiplayerScreen> {
   late GameTimeManager _timeManager;
-
 
   @override
   void initState() {
@@ -48,7 +45,6 @@ class _OfflineMultiplayerScreenState
     await _timeManager.startPlay();
     setState(() {}); // để render GameCountdownTimer
   }
-
 
   void _showTimeUpDialog() {
     showDialog(
@@ -120,7 +116,6 @@ class _OfflineMultiplayerScreenState
 
   @override
   void dispose() {
-
     _timeManager.endPlay(); // Lưu thời gian đã chơi
     super.dispose();
   }
@@ -154,8 +149,8 @@ class _OfflineMultiplayerScreenState
       child: BaseScaffold(
         appBar: CustomAppbar.basic(
           onTap: () {
-            Navigator.pop(context);
-            Navigator.pop(context);
+            context.pop(context);
+            context.pop(context);
           },
           title: "Đố vui đọ não",
           actions: [

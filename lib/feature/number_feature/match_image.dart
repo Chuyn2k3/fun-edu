@@ -1,15 +1,13 @@
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:fun_edu/data/term/app_colors.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_butterfly.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_clound.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_star.dart';
 import 'package:fun_edu/feature/number_feature/widget/animated_balloon.dart';
-import 'package:vibration/vibration.dart';
+import 'package:go_router/go_router.dart';
 
 class MatchImage extends StatefulWidget {
   const MatchImage({super.key});
@@ -41,7 +39,7 @@ class _MatchImageState extends State<MatchImage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-     Future.delayed(const Duration(milliseconds: 500));
+    Future.delayed(const Duration(milliseconds: 500));
     _generateRandomNumbers();
   }
 
@@ -172,7 +170,7 @@ class _MatchImageState extends State<MatchImage> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavButton(FontAwesomeIcons.house, "Về Trang Chủ", Colors.red,
-              () => Navigator.pop(context)),
+              () => context.pop(context)),
           _buildNavButton(
               FontAwesomeIcons.arrowsRotate, "Đổi Câu Hỏi", Colors.blue, () {
             score.clear();
@@ -288,7 +286,7 @@ class _MatchImageState extends State<MatchImage> {
             if (!mounted) return;
             _showCongratsDialog(context);
             Future.delayed(const Duration(seconds: 1), () {
-              Navigator.pop(context);
+              context.pop(context);
             });
             score.clear();
             _generateRandomNumbers();

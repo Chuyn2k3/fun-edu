@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/audio_manager.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
+import 'package:go_router/go_router.dart';
 
 // This represents the Logout menu overlay.
 class LogoutMenu extends StatelessWidget {
@@ -51,7 +52,7 @@ class LogoutMenu extends StatelessWidget {
                       ]);
                       Flame.device.setPortrait();
                       AudioManager.instance.stopBgm();
-                      Navigator.pop(context);
+                      context.pop(context);
 // Chuyển sang màn hình khác
                       // Navigator.pushReplacement(
                       //   context,

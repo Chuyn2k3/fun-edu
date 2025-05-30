@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -8,6 +8,7 @@ import 'package:fun_edu/feature/number_feature/widget/animate_butterfly.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_clound.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_star.dart';
 import 'package:fun_edu/feature/number_feature/widget/animated_balloon.dart';
+import 'package:go_router/go_router.dart';
 
 class SortNumber extends StatefulWidget {
   const SortNumber({super.key});
@@ -192,7 +193,7 @@ class _SortNumberState extends State<SortNumber> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           _buildNavButton(FontAwesomeIcons.house, "Về Trang Chủ", Colors.red,
-              () => Navigator.pop(context)),
+              () => context.pop(context)),
           const SizedBox(
             width: 12,
           ),
@@ -460,7 +461,7 @@ class _SortNumberState extends State<SortNumber> {
       Future.delayed(
         const Duration(seconds: 1),
         () {
-          Navigator.pop(context);
+          context.pop(context);
         },
       );
       _generateNumbers();
@@ -471,7 +472,7 @@ class _SortNumberState extends State<SortNumber> {
       Future.delayed(
         const Duration(seconds: 1),
         () {
-          Navigator.pop(context);
+          context.pop(context);
           setState(
             () {
               for (int i = 0; i < placedNumbers.length; i++) {

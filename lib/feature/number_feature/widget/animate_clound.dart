@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 class AnimatedCloud extends StatefulWidget {
@@ -15,7 +13,7 @@ class AnimatedCloud extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _AnimatedCloudState createState() => _AnimatedCloudState();
+  State<AnimatedCloud> createState() => _AnimatedCloudState();
 }
 
 class _AnimatedCloudState extends State<AnimatedCloud>

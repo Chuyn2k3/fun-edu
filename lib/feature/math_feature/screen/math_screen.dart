@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:fun_edu/feature/math_feature/customWidget/DisplayButton.dart';
+import 'package:fun_edu/feature/math_feature/customWidget/display_button.dart';
 import 'package:fun_edu/feature/math_feature/screen/Quiz/ask_operator.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
 import 'package:go_router/go_router.dart';
 
-/// {@template math_screen}
-/// MathScreen widget.
-/// {@endtemplate}
 class MathScreen extends StatelessWidget {
-  /// {@macro math_screen}
   const MathScreen({
-    super.key, // ignore: unused_element
+    super.key,
   });
 
   @override
@@ -20,7 +15,7 @@ class MathScreen extends StatelessWidget {
     return BaseScaffold(
       appBar: CustomAppbar.basic(
         onTap: () {
-          Navigator.pop(context);
+          context.pop(context);
         },
         title: "Phép tính",
       ),
@@ -49,8 +44,7 @@ class MathScreen extends StatelessWidget {
                   function: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AskOperator(isQuiz: true),
-                      settings: RouteSettings(name: '/askOperator'),
+                      builder: (_) => const AskOperator(isQuiz: true),
                     ),
                   ),
                 ),

@@ -7,6 +7,7 @@ import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/model/game.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import 'package:confetti/confetti.dart';
@@ -23,7 +24,6 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
   late ConfettiController _confettiController;
   late AnimationController _timerController;
 
-
   String _gameMode = 'practice';
   List<GameShape> _shapes = [];
   ShapeType _targetShapeType = ShapeType.circle;
@@ -36,12 +36,6 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
   @override
   void initState() {
     super.initState();
-    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    // SystemChrome.setPreferredOrientations([
-    //   DeviceOrientation.landscapeLeft,
-    //   DeviceOrientation.landscapeRight,
-    // ]);
-    // Initialize TTS engine
     _initTts();
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
@@ -199,7 +193,7 @@ class _CountShapesGameScreenState extends State<CountShapesGameScreen>
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
           ]);
-          Navigator.pop(context);
+          context.pop(context);
         },
       ),
       body: _buildGameContent(),

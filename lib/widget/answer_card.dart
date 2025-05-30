@@ -68,8 +68,6 @@ class AnswerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, ref) {
-    final questions = ref.watch(questionsProvider);
-
     return InkWell(
       onTap: onTap,
       child: AnimatedContainer(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/data/color/color.dart';
-import 'package:fun_edu/screen/enter_name_widget.dart';
+import 'package:fun_edu/router/go_router_name_enum.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -12,164 +13,106 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentIndex = 0;
+  final PageController _controller = PageController();
+  final ValueNotifier<int> _pageIndex = ValueNotifier(0);
+
+  final List<Widget> _pages = const [
+    OnboardingPage(
+      icon: FontAwesomeIcons.handsClapping,
+      iconColor: Colors.orangeAccent,
+      title: "Chào mừng bạn!",
+      subtitle: "Khám phá thế giới toán học đầy thú vị và thử thách hấp dẫn!",
+    ),
+    OnboardingPage(
+      icon: FontAwesomeIcons.brain,
+      iconColor: Colors.orangeAccent,
+      title: "Học toán thật dễ!",
+      subtitle:
+          "Phương pháp học hiện đại, giúp bạn tiếp thu nhanh và hiệu quả.",
+    ),
+    OnboardingPage(
+      icon: FontAwesomeIcons.flagCheckered,
+      iconColor: Colors.orangeAccent,
+      title: "Tiến bộ mỗi ngày!",
+      subtitle:
+          "Luyện tập thông minh với bài tập sáng tạo và hệ thống đánh giá chi tiết.",
+    ),
+    FinalOnboardingPage(),
+  ];
 
   void _nextPage() {
-    if (_currentIndex < 3) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.ease,
+    final index = _pageIndex.value;
+    if (index < _pages.length - 1) {
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
       );
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const EnterNameWidget()),
-      );
+      _goToHome();
     }
   }
 
-  void _skipToEnd() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const EnterNameWidget()),
-    );
+  void _goToHome() {
+    context.pushReplacementNamed(GoRouterName.nameScreen.routeName);
   }
 
-  void _previousPage() {
-    if (_currentIndex > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.ease,
-      );
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    _pageIndex.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/start.png'),
-            fit: BoxFit.fill, // Hiển thị toàn bộ ảnh nền
+            fit: BoxFit.fill,
           ),
         ),
         child: Stack(
           children: [
-            // Nội dung onboarding
             PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              children: [
-                _buildPage(
-                  icon: FontAwesomeIcons
-                      .handsClapping, // 👏 Chào mừng vui vẻ, thân thiện
-                  iconColor: Colors
-                      .orangeAccent, // Màu cam tạo cảm giác ấm áp, năng lượng tích cực
-                  title: "Chào mừng bạn!",
-                  subtitle:
-                      "Khám phá thế giới toán học đầy thú vị và thử thách hấp dẫn!",
-                ),
-                _buildPage(
-                  icon: FontAwesomeIcons.brain, // 🧠 Trí tuệ, sáng tạo
-                  iconColor: Colors
-                      .orangeAccent, // Cam trung tính, gần với orangeAccent nhưng dễ chịu hơn
-                  title: "Học toán thật dễ!",
-                  subtitle:
-                      "Phương pháp học hiện đại, giúp bạn tiếp thu nhanh và hiệu quả.",
-                ),
-                _buildPage(
-                  icon: FontAwesomeIcons
-                      .flagCheckered, // 🏁 Đích đến, tượng trưng cho sự thành công
-                  iconColor: Colors
-                      .orangeAccent, // Cam đậm, thể hiện sự quyết tâm và tiến bộ
-                  title: "Tiến bộ mỗi ngày!",
-                  subtitle:
-                      "Luyện tập thông minh với bài tập sáng tạo và hệ thống đánh giá chi tiết.",
-                ),
-
-                _buildFinalPage(), // Trang cuối giống StartWidget
-              ],
+              controller: _controller,
+              onPageChanged: (index) => _pageIndex.value = index,
+              children: _pages,
             ),
             Positioned(
               top: 50,
-              left: _currentIndex > 0 ? 20 : null,
+              left: 20,
               right: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (_currentIndex > 0)
-                    _buildTextButton("Quay lại", _previousPage),
-                  if (_currentIndex < 3) _buildTextButton("Bỏ qua", _skipToEnd),
-                ],
+              child: ValueListenableBuilder<int>(
+                valueListenable: _pageIndex,
+                builder: (_, index, __) => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (index > 0)
+                      OnboardingTextButton(
+                          text: "Quay lại",
+                          onPressed: () {
+                            _controller.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          }),
+                    if (index < _pages.length - 1)
+                      OnboardingTextButton(
+                          text: "Bỏ qua", onPressed: _goToHome),
+                  ],
+                ),
               ),
             ),
-            // Indicator & Button
             Positioned(
               bottom: 80,
               left: 0,
               right: 0,
-              child: Column(
-                children: [
-                  SmoothPageIndicator(
-                    controller: _pageController,
-                    count: 4,
-                    effect: const WormEffect(
-                      dotHeight: 10,
-                      dotWidth: 10,
-                      activeDotColor: ColorBase.primary,
-                      dotColor: ColorBase.secondaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  InkWell(
-                    splashColor: Colors.transparent,
-                    focusColor: Colors.transparent,
-                    hoverColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: _nextPage,
-                    child: Container(
-                      width: 180,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: ColorBase.primary, // Sử dụng màu từ ColorBase
-                        boxShadow: [
-                          BoxShadow(
-                            //blurRadius: 8, // Tăng để tạo hiệu ứng bóng rõ hơn
-                            color:
-                                Colors.black.withOpacity(0.8), // Màu đen rõ hơn
-                            offset:
-                                const Offset(4, 4), // Điều chỉnh hướng đổ bóng
-                            spreadRadius: 0, // Giúp bóng đổ lan rộng hơn
-                          ),
-                        ],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: ColorBase.primaryText,
-                          width: 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _currentIndex < 3 ? 'Tiếp tục' : "Bắt đầu",
-                          style: const TextStyle(
-                            fontFamily: 'LilitaOne',
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              child: _BottomNavigation(
+                controller: _controller,
+                pageIndex: _pageIndex,
+                onNext: _nextPage,
               ),
             ),
           ],
@@ -177,114 +120,191 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+}
 
-  Widget _buildPage(
-      {required IconData icon,
-      required Color iconColor,
-      required String title,
-      required String subtitle}) {
+class OnboardingPage extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+
+  const OnboardingPage({
+    super.key,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FaIcon(
-            icon,
-            size: 100,
-            color: iconColor, // Thêm màu sắc cho icon
-          ),
-          const SizedBox(height: 20),
-          Text(
-            title,
-            style: TextStyle(
-              fontFamily: 'LilitaOne',
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: iconColor, // Chữ có cùng màu với icon
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Text(
-              subtitle,
-              style: const TextStyle(
-                fontFamily: 'LilitaOne',
-                fontSize: 20,
-                color: Colors.black87, // Giữ màu chữ phụ dễ đọc
-                fontWeight: FontWeight.w700,
-              ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(icon, size: 100, color: iconColor),
+            const SizedBox(height: 20),
+            Text(
+              title,
               textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFinalPage() {
-    return SafeArea(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/images/logo3.png',
-            height: 100,
-            fit: BoxFit.cover,
-          ),
-          const SizedBox(height: 20),
-          // const Text(
-          //   "Sẵn sàng bắt đầu!",
-          //   style: TextStyle(
-          //     fontFamily: 'LilitaOne',
-          //     fontSize: 32,
-          //     fontWeight: FontWeight.bold,
-          //     color: Colors.black,
-          //   ),
-          //   textAlign: TextAlign.center,
-          // ),
-          const SizedBox(height: 10),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30),
-            child: Text(
-              "Học toán thông minh, vui vẻ và hiệu quả ngay hôm nay!",
               style: TextStyle(
                 fontFamily: 'LilitaOne',
-                fontSize: 20,
-                color: Colors.black87,
-                fontWeight: FontWeight.w700,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: iconColor,
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'LilitaOne',
+                  fontSize: 20,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildTextButton(String text, VoidCallback onPressed) {
+class FinalOnboardingPage extends StatelessWidget {
+  const FinalOnboardingPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/logo3.png', height: 100),
+            const SizedBox(height: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Text(
+                "Học toán thông minh, vui vẻ và hiệu quả ngay hôm nay!",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'LilitaOne',
+                  fontSize: 20,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class OnboardingTextButton extends StatelessWidget {
+  final String text;
+  final VoidCallback onPressed;
+
+  const OnboardingTextButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(30), // Giữ hiệu ứng nhấn đẹp hơn
+      borderRadius: BorderRadius.circular(30),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 10,
-          horizontal: 18,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          color: ColorBase.accent1B, // Màu nền mới
+          color: ColorBase.accent1B,
         ),
         child: Text(
           text,
           style: const TextStyle(
             fontFamily: 'LilitaOne',
             fontSize: 18,
-            color: Colors.white, // Màu chữ dễ đọc hơn trên nền vàng
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BottomNavigation extends StatelessWidget {
+  final PageController controller;
+  final ValueNotifier<int> pageIndex;
+  final VoidCallback onNext;
+
+  const _BottomNavigation({
+    required this.controller,
+    required this.pageIndex,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: pageIndex,
+      builder: (_, index, __) {
+        final isLast = index == 3;
+        return Column(
+          children: [
+            SmoothPageIndicator(
+              controller: controller,
+              count: 4,
+              effect: const WormEffect(
+                dotHeight: 10,
+                dotWidth: 10,
+                activeDotColor: ColorBase.primary,
+                dotColor: ColorBase.secondaryText,
+              ),
+            ),
+            const SizedBox(height: 20),
+            InkWell(
+              onTap: onNext,
+              child: Container(
+                width: 180,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: ColorBase.primary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.8),
+                      offset: const Offset(4, 4),
+                    ),
+                  ],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: ColorBase.primaryText, width: 1),
+                ),
+                child: Center(
+                  child: Text(
+                    isLast ? 'Bắt đầu' : 'Tiếp tục',
+                    style: const TextStyle(
+                      fontFamily: 'LilitaOne',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

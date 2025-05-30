@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 //import 'package:fluttertoast/fluttertoast.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
+
 Future showDialogCustomize(
     BuildContext context, AlertType alerType, String desc) {
   return Alert(
@@ -10,7 +12,7 @@ Future showDialogCustomize(
     style: const AlertStyle(descStyle: TextStyle(fontSize: 15)),
     buttons: [
       DialogButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.pop(context),
         width: 120,
         child: const Text(
           "Xác nhận",

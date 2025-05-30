@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
-import 'package:fun_edu/utils/colorConst.dart';
+import 'package:fun_edu/utils/color_const.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
 import 'package:fun_edu/utils/extension.dart';
+import 'package:go_router/go_router.dart';
 
 class UserAnswerScreen extends StatelessWidget {
   const UserAnswerScreen({
@@ -25,7 +26,7 @@ class UserAnswerScreen extends StatelessWidget {
         styleTitle: TextStyle(
           color: Theme.of(context).lightTextColor,
         ),
-        onTap: () => Navigator.pop(context),
+        onTap: () => context.pop(context),
       ),
       body: SingleChildScrollView(
         child: Column(

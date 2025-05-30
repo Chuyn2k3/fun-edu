@@ -1,4 +1,3 @@
-
 import 'package:another_flushbar/flushbar.dart';
 import 'package:design_system_sl/typography/typography.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fun_edu/data/term/app_colors.dart';
 import 'package:fun_edu/service/gen/assets.gen.dart';
 import 'package:fun_edu/utils/common_app.dart';
-
 
 extension Snackbar on BuildContext {
   void showSnackBarFail({required String text, bool? positionTop}) => Flushbar(
@@ -117,7 +115,7 @@ extension Snackbar on BuildContext {
             ),
             GestureDetector(
                 onTap: () {
-                  //  Navigator.pop(context);
+                  //  context.pop(context);
                 },
                 child: SvgPicture.asset(Assets.icon.closeAction,
                     colorFilter:

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:fun_edu/providers/offline.dart';
 import 'package:fun_edu/widget/custom_button.dart';
+import 'package:go_router/go_router.dart';
 
 class OfflineMultiplayerResultScreen extends ConsumerWidget {
   const OfflineMultiplayerResultScreen({Key? key}) : super(key: key);
@@ -79,15 +79,6 @@ class OfflineMultiplayerResultScreen extends ConsumerWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Positioned(
-                    //   bottom: -5,
-                    //   left: -10,
-                    //   right: -10,
-                    //   child: SvgPicture.asset(
-                    //     'assets/images/score-circles.svg',
-                    //     fit: BoxFit.fitWidth,
-                    //   ),
-                    // ),
                     Column(
                       children: [
                         const Text(
@@ -121,7 +112,7 @@ class OfflineMultiplayerResultScreen extends ConsumerWidget {
                   padding: 0,
                   text: '🏠 Về trang chủ',
                   onPressed: () {
-                    Navigator.pop(context);
+                    context.pop(context);
                     offline.reset();
                   },
                 ),

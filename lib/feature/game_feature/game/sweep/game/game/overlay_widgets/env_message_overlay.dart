@@ -1,11 +1,10 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/overlay_widgets/game_header.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/enums.dart';
-import 'package:fun_edu/feature/math_feature/customWidget/QuizButtonIcon.dart';
+import 'package:fun_edu/feature/math_feature/customWidget/quiz_button_icon.dart';
 import 'game_over_menu.dart';
 import 'overlay_frame.dart';
 
@@ -164,8 +163,6 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    int imageNumber = Random().nextInt(6) + 1;
-
     return OverlayFrame(
       child: SizedBox(
         width: MediaQuery.of(context).size.width - 40,
@@ -173,34 +170,7 @@ class _EnvMessageOverlayState extends State<EnvMessageOverlay> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 1. Animated Text
-            // AnimatedDefaultTextStyle(
-            //   duration: const Duration(milliseconds: 300),
-            //   style: titleTextStyle.copyWith(
-            //       color: Colors
-            //           .white), // Thêm hiệu ứng thay đổi font size hoặc màu sắc nếu cần
-            //   child: const Text('dive_deeper'),
-            // ),
-
             const SizedBox(height: 20),
-
-// 2. Animated Container
-            // AnimatedContainer(
-            //   duration: const Duration(milliseconds: 300),
-            //   decoration: BoxDecoration(
-            //     borderRadius: BorderRadius.circular(10),
-            //     border: Border.all(color: AppColors.white, width: 2),
-            //   ),
-            //   child: ClipRRect(
-            //     borderRadius: BorderRadius.circular(10),
-            //     child: Image.asset(
-            //       'assets/images/frame_$imageNumber.png',
-            //       fit: BoxFit.fitHeight,
-            //     ),
-            //   ),
-            // ),
-
-// 3. Animated Wrap for answer options
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: SingleChildScrollView(

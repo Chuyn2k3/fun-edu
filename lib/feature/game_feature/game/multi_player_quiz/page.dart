@@ -1,39 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:fun_edu/feature/game_feature/game/multi_player_quiz/offline_multiplayer_screen.dart';
-import 'package:fun_edu/helper/pref.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
-import 'package:fun_edu/utils/colorConst.dart';
+import 'package:fun_edu/utils/color_const.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
+import 'package:go_router/go_router.dart';
 
-class SoloPage extends StatefulWidget {
-  /// {@macro page}
-  const SoloPage({
-    super.key, // ignore: unused_element
+class MultiPlayerQuizScreen extends StatefulWidget {
+  const MultiPlayerQuizScreen({
+    super.key,
   });
 
   @override
-  State<SoloPage> createState() => _SoloPageState();
+  State<MultiPlayerQuizScreen> createState() => _MultiPlayerQuizScreenState();
 }
 
-/// State for widget SoloPage.
-class _SoloPageState extends State<SoloPage> {
+/// State for widget MultiPlayerQuizScreen.
+class _MultiPlayerQuizScreenState extends State<MultiPlayerQuizScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _user1 = TextEditingController();
 
   final TextEditingController _user2 = TextEditingController();
-  /* #region Lifecycle */
-  @override
-  void initState() {
-    super.initState();
-    // Initial state initialization
-  }
 
   @override
   Widget build(BuildContext context) {
     return BaseScaffold(
       appBar: CustomAppbar.basic(
-        onTap: () => Navigator.pop(context),
+        onTap: () => context.pop(context),
         title: "Nhập tên người chơi",
       ),
       body: Padding(

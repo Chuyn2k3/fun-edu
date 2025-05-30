@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:fun_edu/data/term/app_colors.dart';
-import 'package:fun_edu/feature/even_old_game/widget/game_mode_selector.dart';
 import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
 import 'package:fun_edu/widget/dashed_border_painter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import 'package:confetti/confetti.dart';
@@ -25,8 +25,6 @@ class _EvenOddGameScreenState extends State<EvenOddGameScreen>
   late Animation<double> _bounceAnimation;
   late AnimationController _timerController;
   late ConfettiController _confettiController;
-
-  bool _gameStarted = false;
   String _gameMode = 'practice';
   int _currentNumber = 0;
   bool _isDragging = false;
@@ -117,7 +115,6 @@ class _EvenOddGameScreenState extends State<EvenOddGameScreen>
     gameProvider.resetGame();
 
     setState(() {
-      _gameStarted = true;
       _gameMode = mode;
     });
     _generateNewNumber();
@@ -186,18 +183,10 @@ class _EvenOddGameScreenState extends State<EvenOddGameScreen>
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
           ]);
-          Navigator.pop(context);
+          context.pop(context);
         },
       ),
       body: _buildGameContent(),
-    );
-  }
-
-  Widget _buildModeSelector() {
-    return GameModeSelector(
-      onSelectMode: _startGame,
-      practiceDescription: 'Không giới hạn thời gian',
-      challengeDescription: 'Độ khó tăng dần',
     );
   }
 

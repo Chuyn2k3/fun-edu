@@ -15,7 +15,7 @@ class AnimatedBalloon extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _AnimatedBalloonState createState() => _AnimatedBalloonState();
+  State<AnimatedBalloon> createState() => _AnimatedBalloonState();
 }
 
 class _AnimatedBalloonState extends State<AnimatedBalloon>
@@ -76,7 +76,7 @@ class _AnimatedBalloonState extends State<AnimatedBalloon>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
                       blurRadius: 4,

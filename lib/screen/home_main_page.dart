@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fun_edu/screen/custom_drawer/drawScreen.dart';
 import 'package:fun_edu/tab_bar/tab_bar.dart';
 
 class HomeMainPage extends StatelessWidget {
@@ -9,7 +8,7 @@ class HomeMainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return const SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
         body: MainTabbarScreen(),

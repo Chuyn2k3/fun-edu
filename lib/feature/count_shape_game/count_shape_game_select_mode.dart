@@ -1,58 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:fun_edu/feature/count_shape_game/count_shape_game_screen.dart';
-// import 'package:fun_edu/feature/even_old_game/even_odd_game_screen.dart';
-// import 'package:fun_edu/feature/even_old_game/widget/game_mode_selector.dart';
-// import 'package:fun_edu/feature/provider/game_provider.dart';
-// import 'package:fun_edu/utils/base_scaffold.dart';
-// import 'package:fun_edu/utils/custom_app_bar.dart';
-// import 'package:fun_edu/utils/navigation_service.dart';
-// import 'package:provider/provider.dart';
-
-// class CountShapeGameSelectMode extends StatelessWidget {
-//   /// {@macro even_old_game_select_mode}
-//   const CountShapeGameSelectMode({
-//     super.key, // ignore: unused_element
-//   });
-//   void onSelectMode(String mode) {
-//     Navigator.push(
-//       getContext,
-//       MaterialPageRoute(
-//         builder: (context) => ChangeNotifierProvider(
-//           create: (_) => GameProvider(),
-//           child: CountShapesGameScreen(mode: mode),
-//         ),
-//       ),
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-//     SystemChrome.setPreferredOrientations([
-//       DeviceOrientation.portraitUp,
-//       DeviceOrientation.portraitDown,
-//     ]);
-//     return BaseScaffold(
-//       appBar: CustomAppbar.basic(
-//         onTap: () {
-//           Navigator.pop(context);
-//         },
-//         title: 'Đuổi Hình Bắt Số',
-//         styleTitle: const TextStyle(
-//           color: Colors.pink,
-//           fontSize: 18,
-//         ),
-//       ),
-//       body: GameModeSelector(
-//         onSelectMode: onSelectMode,
-//         practiceDescription: 'Không giới hạn thời gian',
-//         challengeDescription: 'Độ khó tăng dần',
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -60,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/feature/count_shape_game/count_shape_game_screen.dart';
 import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class CountShapeGameSelectMode extends StatelessWidget {
@@ -123,76 +69,78 @@ class CountShapeGameSelectMode extends StatelessWidget {
     );
   }
 
- Widget _buildCustomHeader(BuildContext context) {
-  return Container(
-    padding: EdgeInsets.only(
-      top: MediaQuery.of(context).padding.top,
-      bottom: 16,
-      left: 16,
-      right: 16,
-    ),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFFB2EBF2), Color(0xFFFFF9C4)], // xanh mint -> vàng nhạt
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+  Widget _buildCustomHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top,
+        bottom: 16,
+        left: 16,
+        right: 16,
       ),
-      borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(40),
-        bottomRight: Radius.circular(40),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.teal.withOpacity(0.15),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFB2EBF2),
+            Color(0xFFFFF9C4)
+          ], // xanh mint -> vàng nhạt
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              "Đếm Hình Nhanh",
-              style: TextStyle(
-                fontSize: 22,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () => context.pop(context),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              "Bé muốn chơi theo cách nào nhỉ?\n🧠",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.teal,
+              const SizedBox(width: 8),
+              const Text(
+                "Đếm Hình Nhanh",
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                "Bé muốn chơi theo cách nào nhỉ?\n🧠",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal,
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2);
-}
-
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2);
+  }
 
   Widget _buildFeatureCard({
     required BuildContext context,

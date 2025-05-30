@@ -1,12 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:fun_edu/feature/math_feature/customWidget/custom_app_bar.dart';
-import 'package:fun_edu/feature/math_feature/index.dart';
-import 'package:fun_edu/feature/math_feature/screen/Quiz/ask_operator.dart';
-import 'package:fun_edu/screen/home_screen.dart';
 import 'package:fun_edu/utils/base_scaffold.dart';
-import 'package:fun_edu/utils/colorConst.dart';
+import 'package:fun_edu/utils/color_const.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'user_answer_screen.dart';
 
@@ -36,12 +33,12 @@ class AnswerScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: CustomAppbar.basic(onTap: () => Navigator.pop(context)),
+                child: CustomAppbar.basic(onTap: () => context.pop(context)),
               ),
             )
           : PreferredSize(
               preferredSize: AppBar().preferredSize,
-              child: CustomAppbar.basic(onTap: () => Navigator.pop(context)),
+              child: CustomAppbar.basic(onTap: () => context.pop(context)),
             ),
       body: Center(
         child: Column(
@@ -55,7 +52,7 @@ class AnswerScreen extends StatelessWidget {
               )
             else if (score * 100 / maxScore > 40 == true)
               Lottie.asset(
-                'assets/nice-try.gif',
+                'assets/animation/nice-try.gif',
                 width: 300,
                 height: 300,
               )
@@ -88,12 +85,8 @@ class AnswerScreen extends StatelessWidget {
             ),
             MaterialButton(
               onPressed: () {
-
-Navigator.popUntil(context, ModalRoute.withName('/askOperator'));
-                // Navigator.pushReplacement(
-                //     context,
-                //     MaterialPageRoute(
-                //         builder: (context) => AskOperator(isQuiz: true)));
+                Navigator.popUntil(
+                    context, ModalRoute.withName('/askOperator'));
               },
               child: const Text('Trở về màn chính ->',
                   style: TextStyle(color: Colors.blueAccent)),

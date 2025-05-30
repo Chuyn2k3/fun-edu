@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/score_provider.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/colors.dart';
-import 'package:fun_edu/feature/game_feature/game_page.dart';
 
 class LogoutButton extends ConsumerWidget {
   const LogoutButton({super.key});

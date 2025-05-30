@@ -10,6 +10,7 @@ class TileCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const TileCard({
+    super.key,
     this.isActive = false,
     required this.title,
     this.textColor = const Color(0xFF303030),
@@ -22,16 +23,16 @@ class TileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      margin: EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         color: backgroundColor,
         boxShadow: [
           BoxShadow(
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
             blurRadius: 20,
-            color: Color(0xFF4056C6).withOpacity(.15),
+            color: const Color(0xFF4056C6).withOpacity(.15),
           ),
         ],
       ),

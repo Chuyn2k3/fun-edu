@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/math_feature/screen/Quiz/quiz_screen.dart';
-import 'package:fun_edu/utils/colorConst.dart';
+import 'package:fun_edu/utils/color_const.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
-import 'package:fun_edu/widget/MainScreenCard.dart';
+import 'package:fun_edu/widget/main_screen_card.dart';
+import 'package:go_router/go_router.dart';
 
 class QuizQuestionScreen extends StatefulWidget {
   const QuizQuestionScreen({
@@ -14,7 +15,7 @@ class QuizQuestionScreen extends StatefulWidget {
   final String operator;
 
   @override
-  _QuizQuestionScreenState createState() => _QuizQuestionScreenState();
+  State<QuizQuestionScreen> createState() => _QuizQuestionScreenState();
 }
 
 class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
@@ -32,7 +33,7 @@ class _QuizQuestionScreenState extends State<QuizQuestionScreen> {
     return Scaffold(
       appBar: CustomAppbar.basic(
         onTap: () {
-          Navigator.pop(context);
+          context.pop(context);
         },
       ),
       body: Center(

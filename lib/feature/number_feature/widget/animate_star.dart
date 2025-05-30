@@ -13,7 +13,7 @@ class AnimatedStar extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _AnimatedStarState createState() => _AnimatedStarState();
+  State<AnimatedStar> createState() => _AnimatedStarState();
 }
 
 class _AnimatedStarState extends State<AnimatedStar>

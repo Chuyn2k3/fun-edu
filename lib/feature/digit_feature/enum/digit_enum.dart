@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fun_edu/data/color/color.dart';
-import 'package:fun_edu/feature/digit_feature/math/index.dart';
-import 'package:fun_edu/feature/digit_feature/number/digit_number.dart';
-import 'package:get/get.dart';
+import 'package:fun_edu/router/go_router_name_enum.dart';
+import 'package:fun_edu/utils/navigation_service.dart';
+import 'package:go_router/go_router.dart';
 
 enum DigitRecogize { number, math }
 
@@ -57,8 +57,8 @@ extension MyDigitRecogize on DigitRecogize {
   //for navigation
   VoidCallback get onTap {
     return switch (this) {
-      DigitRecogize.number => () => Get.to(() => const DigitNumberScreen()),
-      DigitRecogize.math => () => Get.to(() => const DigitMath()),
+      DigitRecogize.number => () => getContext.pushNamed(GoRouterName.digitNumber.routeName),
+      DigitRecogize.math => () => getContext.pushNamed(GoRouterName.digitMath.routeName),
       //Get.snackbar("Thông báo", "Tính năng chưa hỗ trợ"),
     };
   }

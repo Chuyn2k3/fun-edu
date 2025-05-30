@@ -7,6 +7,7 @@ import 'package:fun_edu/feature/game_feature/game/dino_run/game/audio_manager.da
 import 'package:fun_edu/feature/game_feature/game/dino_run/game/dino_run.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/hud.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/settings_menu.dart';
+import 'package:go_router/go_router.dart';
 
 // This represents the main menu overlay.
 class MainMenu extends StatelessWidget {
@@ -78,7 +79,7 @@ class MainMenu extends StatelessWidget {
                       ]);
                       Flame.device.setPortrait();
                       AudioManager.instance.stopBgm();
-                      Navigator.pop(context);
+                      context.pop(context);
 // Chuyển sang màn hình khác
                       // Navigator.pushReplacement(
                       //   context,

@@ -25,13 +25,7 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
       DeviceOrientation.portraitDown,
     ]);
     Flame.device.setPortrait();
-    pages.add(const HomeScreen(
-        // onDrawerStateChanged: (isOpen) {
-        //   setState(() {
-        //     isDrawerOpen = isOpen;
-        //   });
-        // },
-        ));
+    pages.add(const HomeScreen());
     pages.add(const DigitRecogizePage());
     pages.add(const ListGamePage());
   }
@@ -45,20 +39,7 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
       },
       child: Scaffold(
         extendBody: true,
-        body: Stack(
-          children: [
-            // Container(
-            //   decoration: const BoxDecoration(
-            //     gradient: LinearGradient(
-            //       colors: [Color(0xFFE0F7FA), Color(0xFFB3E5FC)],
-            //       begin: Alignment.topCenter,
-            //       end: Alignment.bottomCenter,
-            //     ),
-            //   ),
-            // ),
-            pages[_indexPages],
-          ],
-        ),
+        body: pages[_indexPages],
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: isDrawerOpen ? null : _buildCustomNavBar(),
       ),
