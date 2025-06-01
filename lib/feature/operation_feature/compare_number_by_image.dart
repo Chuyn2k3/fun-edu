@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -7,6 +8,7 @@ import 'package:fun_edu/feature/number_feature/widget/animate_butterfly.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_clound.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_star.dart';
 import 'package:fun_edu/feature/number_feature/widget/animated_balloon.dart';
+import 'package:fun_edu/widget/menu/portal_master_layout.dart';
 import 'package:go_router/go_router.dart';
 
 // Optimized state management
@@ -296,38 +298,42 @@ class _CompareImageScreenState extends State<CompareImageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          const _OptimizedAnimatedBackground(),
-          SingleChildScrollView(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  _TopButtonsWidget(
-                    onHomePressed: () => context.pop(context),
-                    onSpeakPressed: () => _speak("Hãy chọn dấu phù hợp"),
-                    onRefreshPressed: _generateNewGame,
-                    isDisabled:
-                        _gameState.isSpeaking || _gameState.isShowingDialog,
-                  ),
-                  const SizedBox(height: 20),
-                  _ComparisonRow(
-                    gameState: _gameState,
+      body: kIsWeb ? PortalMasterLayout(body: _buildBody()) : _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return Stack(
+      children: [
+        const _OptimizedAnimatedBackground(),
+        SingleChildScrollView(
+          child: SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _TopButtonsWidget(
+                  onHomePressed: () => context.pop(context),
+                  onSpeakPressed: () => _speak("Hãy chọn dấu phù hợp"),
+                  onRefreshPressed: _generateNewGame,
+                  isDisabled:
+                      _gameState.isSpeaking || _gameState.isShowingDialog,
+                ),
+                const SizedBox(height: 20),
+                _ComparisonRow(
+                  gameState: _gameState,
+                  onSignSelected: _onSignSelected,
+                ),
+                const SizedBox(height: 20),
+                if (!_gameState.isComplete)
+                  _ComparisonSigns(
                     onSignSelected: _onSignSelected,
+                    isDisabled: _gameState.isShowingDialog,
                   ),
-                  const SizedBox(height: 20),
-                  if (!_gameState.isComplete)
-                    _ComparisonSigns(
-                      onSignSelected: _onSignSelected,
-                      isDisabled: _gameState.isShowingDialog,
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -421,12 +427,13 @@ class _TopButtonsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _NavButton(
-            icon: FontAwesomeIcons.house,
-            text: "Trang Chủ",
-            color: Colors.red,
-            onTap: onHomePressed,
-          ),
+          if (!kIsWeb)
+            _NavButton(
+              icon: FontAwesomeIcons.house,
+              text: "Trang Chủ",
+              color: Colors.red,
+              onTap: onHomePressed,
+            ),
           Row(
             children: [
               _NavButton(

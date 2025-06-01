@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum GoRouterName {
   splashScreen,
   onboard,
@@ -22,7 +24,8 @@ enum GoRouterName {
   digitMath,
   dinoRun,
   multiPlayerQuiz,
-  sweep
+  sweep,
+  overView
 }
 
 extension GoRouterNameX on GoRouterName {
@@ -31,7 +34,7 @@ extension GoRouterNameX on GoRouterName {
   String get routePath {
     switch (this) {
       case GoRouterName.splashScreen:
-        return "/";
+        return kIsWeb ? "/splash-screen" : "/";
       case GoRouterName.onboard:
         return "/onboard";
       case GoRouterName.nameScreen:
@@ -78,6 +81,8 @@ extension GoRouterNameX on GoRouterName {
         return "/multi-player-quiz";
       case GoRouterName.sweep:
         return "/sweep";
+      case GoRouterName.overView:
+        return kIsWeb ? "/" : "/overview";
     }
   }
 }

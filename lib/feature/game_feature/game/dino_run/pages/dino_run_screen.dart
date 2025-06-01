@@ -16,6 +16,7 @@ import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/main_menu.dar
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/pause_menu.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/widgets/settings_menu.dart';
 import 'package:fun_edu/utils/game_time_manager.dart';
+import 'package:fun_edu/widget/menu/portal_master_layout.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart';
@@ -129,43 +130,45 @@ class _DinoRunScreenState extends State<DinoRunScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
-        Flame.device.setPortrait();
-        AudioManager.instance.stopBgm();
-        return true;
-      },
-      child: GameWidget<DinoRun>.controlled(
-        // This will dislpay a loading bar until [DinoRun] completes
-        // its onLoad method.
-        loadingBuilder: (conetxt) => const Center(
-          child: SizedBox(
-            width: 200,
-            child: LinearProgressIndicator(),
-          ),
-        ),
-        // Register all the overlays that will be used by this game.
-        overlayBuilderMap: {
-          MainMenu.id: (_, game) => MainMenu(game),
-          CollisionOverlay.id: (_, game) => CollisionOverlay(game),
-          PauseMenu.id: (_, game) => PauseMenu(game),
-          Hud.id: (_, game) => Hud(game),
-          GameOverMenu.id: (_, game) => GameOverMenu(game),
-          SettingsMenu.id: (_, game) => SettingsMenu(game),
-          LogoutMenu.id: (_, game) => LogoutMenu(game),
+    return PortalMasterLayout(
+      body: WillPopScope(
+        onWillPop: () async {
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+          Flame.device.setPortrait();
+          AudioManager.instance.stopBgm();
+          return true;
         },
-        // By default MainMenu overlay will be active.
-        initialActiveOverlays: const [MainMenu.id],
-        gameFactory: () => DinoRun(
-          // Use a fixed resolution camera to avoid manually
-          // scaling and handling different screen sizes.
-          camera: CameraComponent.withFixedResolution(
-            width: 360,
-            height: 180,
+        child: GameWidget<DinoRun>.controlled(
+          // This will dislpay a loading bar until [DinoRun] completes
+          // its onLoad method.
+          loadingBuilder: (conetxt) => const Center(
+            child: SizedBox(
+              width: 200,
+              child: LinearProgressIndicator(),
+            ),
+          ),
+          // Register all the overlays that will be used by this game.
+          overlayBuilderMap: {
+            MainMenu.id: (_, game) => MainMenu(game),
+            CollisionOverlay.id: (_, game) => CollisionOverlay(game),
+            PauseMenu.id: (_, game) => PauseMenu(game),
+            Hud.id: (_, game) => Hud(game),
+            GameOverMenu.id: (_, game) => GameOverMenu(game),
+            SettingsMenu.id: (_, game) => SettingsMenu(game),
+            LogoutMenu.id: (_, game) => LogoutMenu(game),
+          },
+          // By default MainMenu overlay will be active.
+          initialActiveOverlays: const [MainMenu.id],
+          gameFactory: () => DinoRun(
+            // Use a fixed resolution camera to avoid manually
+            // scaling and handling different screen sizes.
+            camera: CameraComponent.withFixedResolution(
+              width: 360,
+              height: 180,
+            ),
           ),
         ),
       ),

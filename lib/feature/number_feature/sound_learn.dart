@@ -9,6 +9,7 @@ import 'package:fun_edu/feature/number_feature/widget/animate_clound.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_star.dart';
 import 'package:fun_edu/feature/number_feature/widget/animated_balloon.dart';
 import 'package:fun_edu/model/model_nums.dart';
+import 'package:fun_edu/widget/menu/portal_master_layout.dart';
 import 'package:go_router/go_router.dart';
 
 // Optimized state management
@@ -254,44 +255,50 @@ class _SoundLearnScreenState extends State<SoundLearnScreen>
     final currentNum = numsList[_state.currentIndex];
 
     return Scaffold(
-      body: Stack(
-        children: [
-          const _OptimizedAnimatedBackground(),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 16),
-                _TopButtonsWidget(
-                  onHomePressed: () => context.pop(context),
-                  onSpeakPressed: _speakCurrentNumber,
-                  isDisabled: _state.isSpeaking,
-                ),
-                const SizedBox(height: 16),
-                _NavigationRow(
+      body: kIsWeb
+          ? PortalMasterLayout(body: _buildBody(currentNum))
+          : _buildBody(currentNum),
+    );
+  }
+
+  Widget _buildBody(CustomCardModel currentNum) {
+    return Stack(
+      children: [
+        const _OptimizedAnimatedBackground(),
+        SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 16),
+              _TopButtonsWidget(
+                onHomePressed: () => context.pop(context),
+                onSpeakPressed: _speakCurrentNumber,
+                isDisabled: _state.isSpeaking,
+              ),
+              const SizedBox(height: 16),
+              _NavigationRow(
+                currentNum: currentNum,
+                shakeAnimation: _shakeAnimation,
+                onPrevious: _previousNumber,
+                onNext: _nextNumber,
+                onTap: _playShakeAnimation,
+                canGoPrevious: _state.currentIndex > 0,
+                canGoNext: _state.currentIndex < numsList.length - 1,
+                isAnimating: _state.isAnimating,
+              ),
+              const SizedBox(height: 20),
+              _TitleWidget(currentNum: currentNum),
+              const SizedBox(height: 20),
+              Expanded(
+                child: _ExamplesWidget(
                   currentNum: currentNum,
-                  shakeAnimation: _shakeAnimation,
-                  onPrevious: _previousNumber,
-                  onNext: _nextNumber,
-                  onTap: _playShakeAnimation,
-                  canGoPrevious: _state.currentIndex > 0,
-                  canGoNext: _state.currentIndex < numsList.length - 1,
-                  isAnimating: _state.isAnimating,
+                  randomImages: _state.randomImages,
                 ),
-                const SizedBox(height: 20),
-                _TitleWidget(currentNum: currentNum),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: _ExamplesWidget(
-                    currentNum: currentNum,
-                    randomImages: _state.randomImages,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -383,12 +390,13 @@ class _TopButtonsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _NavButton(
-            icon: Icons.home,
-            text: "Quay Lại",
-            color: Colors.red,
-            onTap: onHomePressed,
-          ),
+          if (!kIsWeb)
+            _NavButton(
+              icon: Icons.home,
+              text: "Quay Lại",
+              color: Colors.red,
+              onTap: onHomePressed,
+            ),
           _NavButton(
             icon: Icons.volume_up,
             text: "Nghe",

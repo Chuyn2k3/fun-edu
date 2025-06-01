@@ -517,286 +517,101 @@ var numsList = [
   ),
 ];
 
-//ANIMALS LIST
-const animalsList = [
-  {
-    'imagePath': 'assets/animals/leo.png',
-    'voice': 'voices/leo.mp3',
-    'name': 'أسد',
-  },
-  {
-    'imagePath': 'assets/animals/duck.png',
-    'voice': 'voices/duck.mp3',
-    'name': 'بطة',
-  },
-  {
-    'imagePath': 'assets/animals/chicken.png',
-    'voice': 'voices/chicken.mp3',
-    'name': 'دجاجة',
-  },
-  {
-    'imagePath': 'assets/animals/horse.png',
-    'voice': 'voices/horse.mp3',
-    'name': 'حصان',
-  },
-  {
-    'imagePath': 'assets/animals/goat.png',
-    'voice': 'voices/goat.mp3',
-    'name': 'ماعز',
-  },
-  {
-    'imagePath': 'assets/animals/cat.png',
-    'voice': 'voices/cat.mp3',
-    'name': 'قطة',
-  },
-  {
-    'imagePath': 'assets/animals/mouse.png',
-    'voice': 'voices/mouse.mp3',
-    'name': 'فأر',
-  },
-  {
-    'imagePath': 'assets/animals/frog.png',
-    'voice': 'voices/frog.mp3',
-    'name': 'ضفدع',
-  },
-  {
-    'imagePath': 'assets/animals/dog.png',
-    'voice': 'voices/dog.mp3',
-    'name': 'كلب',
-  },
-  {
-    'imagePath': 'assets/animals/cow.png',
-    'voice': 'voices/cow.mp3',
-    'name': 'بقرة',
-  },
-];
+class Const {
+  Const._();
 
-//LETTERS LIST
-const lettersList = [
-  {
-    'imagePath': 'assets/letters/أ.png',
-    'subImage': 'assets/letters/avatars/أرنب.png',
-    'name': 'أ',
-  },
-  {
-    'imagePath': 'assets/letters/ب.png',
-    'subImage': 'assets/letters/avatars/بطة.png',
-    'name': 'ب',
-  },
-  {
-    'imagePath': 'assets/letters/ت.png',
-    'subImage': 'assets/letters/avatars/تفاح.png',
-    'name': 'ت',
-  },
-  {
-    'imagePath': 'assets/letters/ث.png',
-    'subImage': 'assets/letters/avatars/ثلج.png',
-    'name': 'ث',
-  },
-  {
-    'imagePath': 'assets/letters/ج.png',
-    'subImage': 'assets/letters/avatars/جَزَر.png',
-    'name': 'ج',
-  },
-  {
-    'imagePath': 'assets/letters/ح.png',
-    'subImage': 'assets/letters/avatars/حصان.png',
-    'name': 'ح',
-  },
-  {
-    'imagePath': 'assets/letters/خ.png',
-    'subImage': 'assets/letters/avatars/خيمة.png',
-    'name': 'خ',
-  },
-  {
-    'imagePath': 'assets/letters/د.png',
-    'subImage': 'assets/letters/avatars/دولفين.png',
-    'name': 'د',
-  },
-  {
-    'imagePath': 'assets/letters/ذ.png',
-    'subImage': 'assets/letters/avatars/ذُره.png',
-    'name': 'ذ',
-  },
-  {
-    'imagePath': 'assets/letters/ر.png',
-    'subImage': 'assets/letters/avatars/ريشة.png',
-    'name': 'ر',
-  },
-  {
-    'imagePath': 'assets/letters/ز.png',
-    'subImage': 'assets/letters/avatars/زرافة.png',
-    'name': 'ز',
-  },
-  {
-    'imagePath': 'assets/letters/س.png',
-    'subImage': 'assets/letters/avatars/سلحفاة.png',
-    'name': 'س',
-  },
-  {
-    'imagePath': 'assets/letters/ش.png',
-    'subImage': 'assets/letters/avatars/شمعة.png',
-    'name': 'ش',
-  },
-  {
-    'imagePath': 'assets/letters/ص.png',
-    'subImage': 'assets/letters/avatars/صقر.png',
-    'name': 'ص',
-  },
-  {
-    'imagePath': 'assets/letters/ض.png',
-    'subImage': 'assets/letters/avatars/ضفدع.png',
-    'name': 'ض',
-  },
-  {
-    'imagePath': 'assets/letters/ط.png',
-    'subImage': 'assets/letters/avatars/طائرة.png',
-    'name': 'ط',
-  },
-  {
-    'imagePath': 'assets/letters/ظ.png',
-    'subImage': 'assets/letters/avatars/ظرف.png',
-    'name': 'ظ',
-  },
-  {
-    'imagePath': 'assets/letters/ع.png',
-    'subImage': 'assets/letters/avatars/عصفور.png',
-    'name': 'ع',
-  },
-  {
-    'imagePath': 'assets/letters/غ.png',
-    'subImage': 'assets/letters/avatars/غزالة.png',
-    'name': 'غ',
-  },
-  {
-    'imagePath': 'assets/letters/ف.png',
-    'subImage': 'assets/letters/avatars/فراولة.png',
-    'name': 'ف',
-  },
-  {
-    'imagePath': 'assets/letters/ق.png',
-    'subImage': 'assets/letters/avatars/قلم.png',
-    'name': 'ق',
-  },
-  {
-    'imagePath': 'assets/letters/ك.png',
-    'subImage': 'assets/letters/avatars/كرة.png',
-    'name': 'ك',
-  },
-  {
-    'imagePath': 'assets/letters/ل.png',
-    'subImage': 'assets/letters/avatars/لمبة.png',
-    'name': 'ل',
-  },
-  {
-    'imagePath': 'assets/letters/م.png',
-    'subImage': 'assets/letters/avatars/موز.png',
-    'name': 'م',
-  },
-  {
-    'imagePath': 'assets/letters/ن.png',
-    'subImage': 'assets/letters/avatars/نجمة.png',
-    'name': 'ن',
-  },
-  {
-    'imagePath': 'assets/letters/ه.png',
-    'subImage': 'assets/letters/avatars/هرم.png',
-    'name': 'ه',
-  },
-  {
-    'imagePath': 'assets/letters/و.png',
-    'subImage': 'assets/letters/avatars/وردة.png',
-    'name': 'و',
-  },
-  {
-    'imagePath': 'assets/letters/ي.png',
-    'subImage': 'assets/letters/avatars/يد.png',
-    'name': 'ي',
-  },
-];
+  static const slUsername = "SL_USERNAME";
+  static const slPassword = "SL_PASSWORD";
+  static const slRememberPassword = "SL_REMEMBER_PASSWORD";
+  static const defaultLimit = 20;
+  static const defaultPage = 1;
+  static const lstSize = [20, 30, 50, 100];
+  static const sizeSmall = 600;
 
-//FAMILY LIST
-const familyList = [
-  {
-    'imagePath': 'assets/family/0.png',
-    'name': 'الجد',
-  },
-  {
-    'imagePath': 'assets/family/1.png',
-    'name': 'الجدة',
-  },
-  {
-    'imagePath': 'assets/family/2.png',
-    'name': 'الأب',
-  },
-  {
-    'imagePath': 'assets/family/3.png',
-    'name': 'الأم',
-  },
-  {
-    'imagePath': 'assets/family/4.png',
-    'name': 'العم/الخال',
-  },
-  {
-    'imagePath': 'assets/family/5.png',
-    'name': 'العمة/الخالة',
-  },
-  {
-    'imagePath': 'assets/family/6.png',
-    'name': 'الابن',
-  },
-  {
-    'imagePath': 'assets/family/7.png',
-    'name': 'الابنة',
-  },
-  {
-    'imagePath': 'assets/family/8.png',
-    'name': 'ابن/ابنة العم',
-  },
-];
+  //Payment type
+  static const subscriptionPay = 'SUBSCRIPTION';
+  static const onlinePayment = 'ONLINE_PAYMENT';
+  static const directPay = 'DIRECT_PAY';
 
-const fruitsList = [
-  {
-    'imagePath': 'assets/fruits/مانجو.png',
-    'name': 'مانجو',
-  },
-  {
-    'imagePath': 'assets/fruits/بطيخ.png',
-    'name': 'بطيخ',
-  },
-  {
-    'imagePath': 'assets/fruits/كيوي.png',
-    'name': 'كيوي',
-  },
-  {
-    'imagePath': 'assets/fruits/عنب.png',
-    'name': 'عنب',
-  },
-  {
-    'imagePath': 'assets/fruits/أناناس.png',
-    'name': 'أناناس',
-  },
-];
+  //Status swapping
+  static const inProcessStatus = 'IN_PROCESS';
+  static const waitPaymentStatus = 'WAIT_PAYMENT';
+  static const timeOutStatus = 'TIME_OUT';
+  static const completeStatus = 'COMPLETE';
+  static const waitConfirmStatus = 'WAIT_CONFIRM';
+  static const cancelStatus = 'CANCEL';
+  static const refundStatus = 'REFUND';
 
-const vegetablesList = [
-  {
-    'imagePath': 'assets/vegetables/بطاطس.png',
-    'name': 'بطاطس',
-  },
-  {
-    'imagePath': 'assets/vegetables/بازلاء.png',
-    'name': 'بازلاء',
-  },
-  {
-    'imagePath': 'assets/vegetables/فلفل.png',
-    'name': 'فلفل',
-  },
-  {
-    'imagePath': 'assets/vegetables/باذنجان.png',
-    'name': 'باذنجان',
-  },
-  {
-    'imagePath': 'assets/vegetables/خيار.png',
-    'name': 'خيار',
-  },
-];
+  //Bss type
+  static const bssManual = 'MANUAL';
+  static const bssAuto = 'AUTOMATION';
+
+  //Message
+  static const int messageError = 2;
+  static const int messageSuccess = 1;
+
+  static final dateDeploy = (time) => "${"Cập nhật lúc"}: $time";
+
+  static var qrCodeBanking = (bank, accountNumber, amount, txnRef,
+          accountOwner) =>
+      "https://img.vietqr.io/image/$bank-$accountNumber-compact.png?amount=$amount&addInfo=$txnRef&accountName=$accountOwner";
+
+  static const String keyPreorder = "reserve_battery_function";
+
+// DEFINE KEY FILETER FOR VEHICLE COLUMNS
+
+  static const columnsVehicleskey = 'columnsVehicleskey';
+  static const columnsSummaryVehicleskey = 'columnsSummaryVehicleskey';
+
+  static const columnsBssesskey = 'columnsBsseskey';
+
+  static const columnsBatteriesKey = 'columnsBatterieskey';
+  static const columnsBatteriesOfBssKey = 'columnsBatteriesOfBssKey';
+
+  static const columnPreorderKey = 'columnPreorderKey';
+  static const columnsBookingkey = 'columnsBookingkey';
+  static const columnsNotificationkey = 'columnsNotificationkey';
+  static const columnsGroupNotificationkey = 'columnsGroupNotificationkey';
+  static const columnsMarketClaimListKey = 'columnsMarketClaimListKey';
+  static const columnsErrorListKey = 'columnsErrorListKey';
+  static const columnsListUserkey = 'columnsListUserkey';
+  static const columnsHistoryControlBssKey = 'columnsHistoryControlBssKey';
+  static const columnsBatteryOperationHistoryKey =
+      'columnsBatteryOperationHistoryKey';
+  static const columnsBatteryExchangeHistoryInBssKey =
+      'columnsBatteryExchangeHistoryInBssKey';
+  static const columnsBatteriesOfVehicleKey = 'columnsBatteriesOfVehicleKey';
+  static const columnsBatteryExchangeHistoryInVehicleKey =
+      'columnsBatteryExchangeHistoryInVehicleKey';
+  static const columnsBatteryExchangeHistoryListKey =
+      'columnsBatteryExchangeHistoryListKey';
+  static const columnsSubscriptionServiceListKey =
+      'columnsSubscriptionServiceListKey';
+  static const columnsPackageListKey = 'columnsPackageListKey';
+  static const columnsBillListKey = 'columnsBillListKey';
+  static const columnsActivationListKey = 'columnsActivationListKey';
+  static const columnsVehicleBatteryExchangeHistoryKey =
+      'columnsVehicleBatteryExchangeHistoryKey';
+
+  ////////////////////////
+  ///Dashboard information
+
+  static const dashboardName =
+      "Giới thiệu hệ thống quản lý dạy và học ngôn ngữ ký hiệu tiếng Việt (WeSign)";
+  static const dashboardSummary =
+      "Hệ thống (Phần mềm) Dashboard quản lý dạy và học ngôn ngữ ký hiệu tiếng Việt (WeSign) là một nền tảng hỗ trợ cho người đứng đầu quản lý hoặc giáo viên có thể theo dõi về việc học ngôn ngữ ký hiệu tiếng Việt. Hệ thống cung cấp dữ liệu về người sử dụng, dánh sách lớp học, chủ đề, bài học, danh sách người thực hiện hay đang tiến hành bài học. Phần mềm có thể được dùng trực tiếp từ trình duyệt trên máy tính và trên điện thoại.";
+  static const dashboardView =
+      "Wesign Dashboard hiện tại là phiên bản thử nghiệm. Phần mềm được phát triển bởi nhóm nghiên cứu iBME lab, Đại học Bách Khoa Hà Nội.";
+  static const linkAppAndoirdText =
+      "Link tải phần mềm học tập trên di động(Android): ";
+  static const linkAppIosText = "Link tải phần mềm học tập trên di động(Ios): ";
+  static const linkAppWebText = "Link phần mềm học tập trên Web: ";
+  static const linkAppAndoird =
+      "https://drive.google.com/drive/folders/1nX4IK4-MydQ891C4_DKE8llHkuxruB0D?usp=drive_link";
+  static const linkAppIos = "Vui lòng liên hệ Ibme Lab";
+  static const linkAppWeb = "https://we-sign-app.vercel.app";
+  static const dashboardGuide = "Hướng dẫn sử dụng phần mềm hỗ trợ học tập";
+  static const dashboardGuideLink = "https://bit.ly/wesign_hdsd";
+  static const labInfomation =
+      "Nếu cần hỗ trợ sử dụng hoặc có góp ý, có thể liên lạc qua ibme.lab@gmail.com hoặc 0912834422.";
+}

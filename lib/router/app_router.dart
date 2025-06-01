@@ -1,13 +1,21 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fun_edu/cubit/sidebar/sidebar_cubit.dart';
+import 'package:fun_edu/di/locator.dart';
+import 'package:fun_edu/feature/count_shape_game/count_shape_game_screen_web.dart';
 import 'package:fun_edu/feature/count_shape_game/count_shape_game_select_mode.dart';
 import 'package:fun_edu/feature/digit_feature/math/index.dart';
 import 'package:fun_edu/feature/digit_feature/number/digit_number.dart';
+import 'package:fun_edu/feature/even_old_game/even-odd-game-screen_web.dart';
 import 'package:fun_edu/feature/even_old_game/even_odd_game_select_mode.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/pages/dino_run_screen.dart';
 import 'package:fun_edu/feature/game_feature/game/multi_player_quiz/page.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/pages/sweep_screen.dart';
 import 'package:fun_edu/feature/math_feature/game/space_game.dart';
 import 'package:fun_edu/feature/math_feature/index.dart';
+import 'package:fun_edu/feature/math_feature/screen/Quiz/ask_operator.dart';
 import 'package:fun_edu/feature/number_feature/match_image.dart';
 import 'package:fun_edu/feature/number_feature/nums_screen.dart';
 import 'package:fun_edu/feature/number_feature/sort_number.dart';
@@ -15,16 +23,19 @@ import 'package:fun_edu/feature/number_feature/sound_learn.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number_by_image.dart';
 import 'package:fun_edu/feature/operation_feature/operator_screen.dart';
+import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/screen/choose_age.dart';
 import 'package:fun_edu/screen/daily_task_screen.dart';
 import 'package:fun_edu/screen/enter_name_widget.dart';
 import 'package:fun_edu/screen/home_main_page.dart';
 import 'package:fun_edu/screen/onboarding_screen.dart';
+import 'package:fun_edu/screen/overview.dart';
 import 'package:fun_edu/screen/splash_screen.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
+import 'package:provider/provider.dart';
 
 class AppRouter {
   late final GoRouter router = GoRouter(
@@ -127,32 +138,40 @@ class AppRouter {
         pageBuilder: (context, state) =>
             const MaterialPage<void>(child: SpaceGameScreen()),
       ),
-//       GoRoute(
-//         path: GoRouterName.pdf.routePath,
-//         name: GoRouterName.pdf.routeName,
-//         pageBuilder: (context, state) {
-// final isQuiz= state.queryParams
-//           return const MaterialPage<void>(child: AskOperator()),
-//         }
-
-//       ),
-//       GoRoute(
-//         path: GoRouterName.quiz.routePath,
-//         name: GoRouterName.quiz.routeName,
-//         pageBuilder: (context, state) =>
-//             const MaterialPage<void>(child: QuizScreen()),
-//       ),
+      GoRoute(
+          path: GoRouterName.pdf.routePath,
+          name: GoRouterName.pdf.routeName,
+          pageBuilder: (context, state) {
+            return const MaterialPage<void>(child: AskOperator(isQuiz: false));
+          }),
+      GoRoute(
+          path: GoRouterName.quiz.routePath,
+          name: GoRouterName.quiz.routeName,
+          pageBuilder: (context, state) =>
+              const MaterialPage<void>(child: AskOperator(isQuiz: true))),
       GoRoute(
         path: GoRouterName.evenOdd.routePath,
         name: GoRouterName.evenOdd.routeName,
-        pageBuilder: (context, state) =>
-            const MaterialPage<void>(child: EvenOddGameSelectMode()),
+        pageBuilder: (context, state) => MaterialPage<void>(
+          child: kIsWeb
+              ? ChangeNotifierProvider(
+                  create: (_) => GameProvider(),
+                  child: const EvenOddGameScreenWeb(),
+                )
+              : const EvenOddGameSelectMode(),
+        ),
       ),
       GoRoute(
         path: GoRouterName.countShape.routePath,
         name: GoRouterName.countShape.routeName,
-        pageBuilder: (context, state) =>
-            const MaterialPage<void>(child: CountShapeGameSelectMode()),
+        pageBuilder: (context, state) => MaterialPage<void>(
+          child: kIsWeb
+              ? ChangeNotifierProvider(
+                  create: (_) => GameProvider(),
+                  child: const CountShapesGameScreenWeb(),
+                )
+              : const CountShapeGameSelectMode(),
+        ),
       ),
       GoRoute(
         path: GoRouterName.digitNumber.routePath,
@@ -184,6 +203,39 @@ class AppRouter {
         pageBuilder: (context, state) =>
             const MaterialPage<void>(child: SweepScreen()),
       ),
+      GoRoute(
+        path: GoRouterName.overView.routePath,
+        name: GoRouterName.overView.routeName,
+        pageBuilder: (context, state) =>
+            const MaterialPage<void>(child: OverviewScreen()),
+      ),
     ],
+    redirect: (_, state) {
+      _handleSelectRoute(state);
+
+      //  return GoRouterName.overView.routePath;
+    },
   );
+  void _handleSelectRoute(GoRouterState state) {
+    final subloc = state.subloc;
+    final sidebarCubit = serviceLocator<SidebarCubit>();
+    sidebarCubit.selectSidebarBy(subloc);
+  }
+}
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+          (dynamic _) => notifyListeners(),
+        );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
 }

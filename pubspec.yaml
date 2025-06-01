@@ -64,6 +64,9 @@ dependencies:
   flutter_bloc: ^8.1.1
   json_annotation: ^4.9.0
   toastification: ^2.3.0
+  adaptive_scrollbar: ^2.1.2
+  package_info_plus: ^5.0.1
+  logger: ^2.5.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -85,6 +88,8 @@ flutter:
     - assets/new_assets/images/
     - assets/splash/
     - assets/animation/
+    - assets/icons/
+    - assets/svgs/
     - assets/lottie/
     - assets/counters/
     - assets/number/
@@ -95,7 +100,8 @@ flutter:
     - assets/audio/
     - assets/image_math/
     - assets/model_ai/
-
+    - assets/file_time.txt
+    
   fonts:
     - family: CabinSketch
       fonts:

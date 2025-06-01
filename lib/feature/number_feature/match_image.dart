@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flame_audio/flame_audio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -7,6 +8,7 @@ import 'package:fun_edu/feature/number_feature/widget/animate_butterfly.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_clound.dart';
 import 'package:fun_edu/feature/number_feature/widget/animate_star.dart';
 import 'package:fun_edu/feature/number_feature/widget/animated_balloon.dart';
+import 'package:fun_edu/widget/menu/portal_master_layout.dart';
 import 'package:go_router/go_router.dart';
 
 class MatchImage extends StatefulWidget {
@@ -67,21 +69,25 @@ class _MatchImageState extends State<MatchImage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          _buildAnimatedBackground(),
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                _buildTopButtons(),
-                const SizedBox(height: 20),
-                _buildGameBoard(),
-              ],
-            ),
+      body: kIsWeb ? PortalMasterLayout(body: _buildBody()) : _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return Stack(
+      children: [
+        _buildAnimatedBackground(),
+        SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              _buildTopButtons(),
+              const SizedBox(height: 20),
+              _buildGameBoard(),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -169,8 +175,9 @@ class _MatchImageState extends State<MatchImage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavButton(FontAwesomeIcons.house, "Về Trang Chủ", Colors.red,
-              () => context.pop(context)),
+          if (!kIsWeb)
+            _buildNavButton(FontAwesomeIcons.house, "Về Trang Chủ", Colors.red,
+                () => context.pop(context)),
           _buildNavButton(
               FontAwesomeIcons.arrowsRotate, "Đổi Câu Hỏi", Colors.blue, () {
             score.clear();

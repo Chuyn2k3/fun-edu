@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flame/parallax.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/helper/enums.dart';
-
 
 class MyParallaxComponent extends Component with HasGameRef<MyGame> {
   ParallaxComponent? _parallaxComponent;
@@ -27,8 +27,8 @@ class MyParallaxComponent extends Component with HasGameRef<MyGame> {
   }
 
   updateSpeed(SpeedMode gameSpeed) {
-    _parallaxComponent?.parallax!.baseVelocity = Vector2(
-        0, -15 - (gameSpeed == SpeedMode.slow ? 0 : gameSpeed.speed / 100 + 12));
+    _parallaxComponent?.parallax!.baseVelocity = Vector2(0,
+        -15 - (gameSpeed == SpeedMode.slow ? 0 : gameSpeed.speed / 100 + 12));
   }
 
   reset() {
@@ -40,7 +40,9 @@ class BackgroundComponent extends PositionComponent with HasGameRef<MyGame> {
   Color baseBackground = getBackgroundColor(1);
   @override
   void render(Canvas canvas) {
-    canvas.drawColor(getBackgroundColor(gameRef.level), BlendMode.src);
+    if (!kIsWeb) {
+      canvas.drawColor(getBackgroundColor(gameRef.level), BlendMode.src);
+    }
   }
 }
 

@@ -44,8 +44,8 @@ class MyGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    await Flame.device.fullScreen();
-    //await Flame.device.setLandscape();
+    //await Flame.device.fullScreen();
+    await Flame.device.setLandscape();
     gameSize = size;
     add(backgroundComponent);
     add(parallaxComponent);
