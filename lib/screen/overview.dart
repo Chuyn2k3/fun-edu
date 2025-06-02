@@ -46,7 +46,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               children: [
                 _buildIntroSection(),
                 const SizedBox(height: 32),
-                _buildFeatureSection(),
+                Center(child: _buildFeatureSection()),
                 const SizedBox(height: 32),
                 _buildContactSection(),
               ],
@@ -96,6 +96,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   Widget _buildFeatureSection() {
     return const Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 24,
       runSpacing: 24,
       children: [
@@ -148,7 +150,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         SizedBox(height: 8),
         Text(
           "• Email: ibmelab@gmail.com\n"
-          "• Webside: https://lab.ibme.edu.vn\n",
+          "• Website: https://lab.ibme.edu.vn\n",
           style: TextStyle(fontSize: 16, color: Colors.black87),
         ),
         SizedBox(height: 16),

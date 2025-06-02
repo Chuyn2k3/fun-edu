@@ -306,6 +306,7 @@ class _SortNumberState extends State<SortNumber> {
         }
       },
       child: Draggable<int>(
+        dragAnchorStrategy: pointerDragAnchorStrategy,
         data: number,
         feedback: _buildStyledNumber(number),
         childWhenDragging: Opacity(
