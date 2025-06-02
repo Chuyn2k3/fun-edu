@@ -407,16 +407,16 @@ class _PdfGenerationScreenState extends State<PdfGenerationScreen> {
 
   void _navigateToPDFViewer(String fileName,
       {String? path, Uint8List? pdfBytes}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PdfViewer(
-          pdfName: fileName,
-          path: path,
-          pdfSave: pdfBytes,
-        ),
-      ),
-    );
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => PdfViewer(
+    //       pdfName: fileName,
+    //       path: path,
+    //       pdfSave: pdfBytes,
+    //     ),
+    //   ),
+    // );
   }
 
   void _showErrorSnackBar(String message) {

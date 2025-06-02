@@ -57,7 +57,7 @@ dependencies:
   provider: ^6.1.4
   pdf: ^3.8.4
   universal_html: ^2.2.4
-  syncfusion_flutter_pdfviewer: ^24.2.8
+  #syncfusion_flutter_pdfviewer: ^24.2.8
   printing: ^5.12.0
   device_info_plus: ^9.1.2
   equatable: ^2.0.5
@@ -101,7 +101,7 @@ flutter:
     - assets/image_math/
     - assets/model_ai/
     - assets/file_time.txt
-    
+
   fonts:
     - family: CabinSketch
       fonts:
