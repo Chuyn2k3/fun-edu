@@ -1,1046 +1,3 @@
-// import 'dart:async';
-// import 'dart:math';
-// import 'package:flutter/foundation.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-// import 'package:fun_edu/widget/menu/portal_master_layout.dart';
-// import 'package:go_router/go_router.dart';
-
-// // Data models for better structure
-// class GameLevel {
-//   final int level;
-//   final int questionCount;
-//   final int duration;
-
-//   const GameLevel({
-//     required this.level,
-//     required this.questionCount,
-//     required this.duration,
-//   });
-// }
-
-// class MathQuestion {
-//   final int operand1;
-//   final int operand2;
-//   final String operation;
-//   final int correctAnswer;
-//   final List<int> choices;
-
-//   MathQuestion({
-//     required this.operand1,
-//     required this.operand2,
-//     required this.operation,
-//     required this.correctAnswer,
-//     required this.choices,
-//   });
-// }
-
-// class GameState {
-//   final GameLevel currentLevel;
-//   final List<MathQuestion> questions;
-//   final int currentQuestionIndex;
-//   final int score;
-//   final double progress;
-//   final bool isComplete;
-//   final bool isCorrect;
-//   final int timeLeft;
-
-//   const GameState({
-//     required this.currentLevel,
-//     this.questions = const [],
-//     this.currentQuestionIndex = 0,
-//     this.score = 0,
-//     this.progress = 0.0,
-//     this.isComplete = false,
-//     this.isCorrect = false,
-//     this.timeLeft = 30,
-//   });
-
-//   GameState copyWith({
-//     GameLevel? currentLevel,
-//     List<MathQuestion>? questions,
-//     int? currentQuestionIndex,
-//     int? score,
-//     double? progress,
-//     bool? isComplete,
-//     bool? isCorrect,
-//     int? timeLeft,
-//   }) {
-//     return GameState(
-//       currentLevel: currentLevel ?? this.currentLevel,
-//       questions: questions ?? this.questions,
-//       currentQuestionIndex: currentQuestionIndex ?? this.currentQuestionIndex,
-//       score: score ?? this.score,
-//       progress: progress ?? this.progress,
-//       isComplete: isComplete ?? this.isComplete,
-//       isCorrect: isCorrect ?? this.isCorrect,
-//       timeLeft: timeLeft ?? this.timeLeft,
-//     );
-//   }
-
-//   MathQuestion get currentQuestion => questions[currentQuestionIndex];
-//   bool get hasMoreQuestions => currentQuestionIndex < questions.length - 1;
-//   bool get isLevelComplete => score == currentLevel.questionCount;
-//   bool get isGameComplete => currentLevel.level == 4 && isLevelComplete;
-// }
-
-// // Service for generating questions
-// class QuestionGenerator {
-//   static final Random _random = Random();
-
-//   static List<MathQuestion> generateQuestions(int count) {
-//     final questions = <MathQuestion>[];
-
-//     for (int i = 0; i < count; i++) {
-//       final operation = _random.nextBool() ? 'sum' : 'sub';
-//       late int operand1, operand2, correctAnswer;
-
-//       if (operation == 'sum') {
-//         do {
-//           operand1 = _random.nextInt(10);
-//           operand2 = _random.nextInt(10);
-//           correctAnswer = operand1 + operand2;
-//         } while (correctAnswer > 9);
-//       } else {
-//         operand1 = _random.nextInt(10);
-//         operand2 = _random.nextInt(operand1 + 1);
-//         correctAnswer = operand1 - operand2;
-//       }
-
-//       // Generate unique choices
-//       final choicesSet = <int>{correctAnswer};
-//       while (choicesSet.length < 4) {
-//         final wrongAnswer = _random.nextInt(10);
-//         choicesSet.add(wrongAnswer);
-//       }
-
-//       final choices = choicesSet.toList()..shuffle(_random);
-
-//       questions.add(MathQuestion(
-//         operand1: operand1,
-//         operand2: operand2,
-//         operation: operation,
-//         correctAnswer: correctAnswer,
-//         choices: choices,
-//       ));
-//     }
-
-//     return questions;
-//   }
-// }
-
-// // Game configuration
-// class GameConfig {
-//   static const List<GameLevel> levels = [
-//     GameLevel(level: 1, questionCount: 5, duration: 30),
-//     GameLevel(level: 2, questionCount: 10, duration: 25),
-//     GameLevel(level: 3, questionCount: 15, duration: 20),
-//     GameLevel(level: 4, questionCount: 20, duration: 15),
-//   ];
-
-//   static GameLevel getLevelConfig(int level) {
-//     return levels.firstWhere((l) => l.level == level,
-//         orElse: () => levels.first);
-//   }
-// }
-
-// class SpaceGameScreen extends StatefulWidget {
-//   const SpaceGameScreen({super.key});
-
-//   @override
-//   State<SpaceGameScreen> createState() => _SpaceGameScreenState();
-// }
-
-// class _SpaceGameScreenState extends State<SpaceGameScreen>
-//     with TickerProviderStateMixin {
-//   // Animation controllers
-//   late final AnimationController _spaceshipController;
-//   late final AnimationController _celebrationController;
-//   late final AnimationController _timerController;
-
-//   // Animations
-//   late final Animation<double> _spaceshipAnimation;
-//   late final Animation<double> _timerAnimation;
-
-//   // Game state
-//   GameState _gameState = GameState(
-//     currentLevel: GameConfig.levels.first,
-//     questions: QuestionGenerator.generateQuestions(
-//         GameConfig.levels.first.questionCount),
-//   );
-
-//   // Timer
-//   Timer? _gameTimer;
-//   bool _isDisposed = false;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _initializeScreen();
-//     _initializeAnimations();
-//     _startNewLevel();
-//   }
-
-//   void _initializeScreen() {
-//     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-//     SystemChrome.setPreferredOrientations([
-//       DeviceOrientation.landscapeLeft,
-//       DeviceOrientation.landscapeRight,
-//     ]);
-//   }
-
-//   void _initializeAnimations() {
-//     _spaceshipController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(milliseconds: 700),
-//     );
-
-//     _celebrationController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(seconds: 3),
-//     );
-
-//     _timerController = AnimationController(
-//       vsync: this,
-//       duration: Duration(seconds: _gameState.currentLevel.duration),
-//     );
-
-//     _spaceshipAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-//       CurvedAnimation(parent: _spaceshipController, curve: Curves.easeInOut),
-//     );
-
-//     _timerAnimation =
-//         Tween<double>(begin: 1.0, end: 0.0).animate(_timerController);
-
-//     // Add status listener for timer
-//     _timerController.addStatusListener((status) {
-//       if (status == AnimationStatus.completed && !_isDisposed) {
-//         _handleTimeOut();
-//       }
-//     });
-//   }
-
-//   void _startNewLevel() {
-//     _gameTimer?.cancel();
-
-//     if (!_isDisposed) {
-//       setState(() {
-//         _gameState = _gameState.copyWith(
-//           timeLeft: _gameState.currentLevel.duration,
-//         );
-//       });
-
-//       _timerController.duration =
-//           Duration(seconds: _gameState.currentLevel.duration);
-//       _timerController.reset();
-//       _timerController.forward();
-//       _startTimer();
-//     }
-//   }
-
-//   void _startTimer() {
-//     _gameTimer?.cancel();
-//     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-//       if (_isDisposed) {
-//         timer.cancel();
-//         return;
-//       }
-
-//       if (_gameState.timeLeft > 0) {
-//         setState(() {
-//           _gameState = _gameState.copyWith(timeLeft: _gameState.timeLeft - 1);
-//         });
-//       } else {
-//         timer.cancel();
-//         _handleTimeOut();
-//       }
-//     });
-//   }
-
-//   void _handleTimeOut() {
-//     if (_isDisposed) return;
-//     _handleAnswer(-1); // Invalid answer for timeout
-//   }
-
-//   void _handleAnswer(int selectedAnswer) {
-//     if (_isDisposed) return;
-
-//     _gameTimer?.cancel();
-
-//     final isCorrect =
-//         selectedAnswer == _gameState.currentQuestion.correctAnswer;
-
-//     setState(() {
-//       _gameState = _gameState.copyWith(
-//         isCorrect: isCorrect,
-//         score: isCorrect ? _gameState.score + 1 : _gameState.score,
-//         progress: isCorrect
-//             ? _gameState.progress +
-//                 (1.0 / _gameState.currentLevel.questionCount)
-//             : _gameState.progress,
-//       );
-//     });
-
-//     if (isCorrect && !_isDisposed) {
-//       _spaceshipController.forward(from: 0);
-//     }
-
-//     // Move to next question or complete level
-//     Future.delayed(const Duration(milliseconds: 500), () {
-//       if (_isDisposed) return;
-
-//       if (_gameState.hasMoreQuestions) {
-//         _nextQuestion();
-//       } else {
-//         _completeLevel();
-//       }
-//     });
-//   }
-
-//   void _nextQuestion() {
-//     if (_isDisposed) return;
-
-//     setState(() {
-//       _gameState = _gameState.copyWith(
-//         currentQuestionIndex: _gameState.currentQuestionIndex + 1,
-//         isCorrect: false,
-//       );
-//     });
-
-//     _startNewLevel();
-//   }
-
-//   void _completeLevel() {
-//     if (_isDisposed) return;
-
-//     if (_gameState.isLevelComplete) {
-//       if (_gameState.isGameComplete) {
-//         _showCelebration();
-//       } else {
-//         _advanceToNextLevel();
-//       }
-//     } else {
-//       _showCelebration();
-//     }
-//   }
-
-//   void _advanceToNextLevel() {
-//     if (_isDisposed) return;
-
-//     final nextLevel =
-//         GameConfig.getLevelConfig(_gameState.currentLevel.level + 1);
-//     final newQuestions =
-//         QuestionGenerator.generateQuestions(nextLevel.questionCount);
-
-//     setState(() {
-//       _gameState = GameState(
-//         currentLevel: nextLevel,
-//         questions: newQuestions,
-//         currentQuestionIndex: 0,
-//         score: 0,
-//         progress: 0.0,
-//       );
-//     });
-
-//     _startNewLevel();
-//   }
-
-//   void _showCelebration() {
-//     if (_isDisposed) return;
-
-//     setState(() {
-//       _gameState = _gameState.copyWith(isComplete: true);
-//     });
-
-//     _celebrationController.forward();
-//   }
-
-//   void _resetGame() {
-//     if (_isDisposed) return;
-
-//     final firstLevel = GameConfig.levels.first;
-//     final newQuestions =
-//         QuestionGenerator.generateQuestions(firstLevel.questionCount);
-
-//     setState(() {
-//       _gameState = GameState(
-//         currentLevel: firstLevel,
-//         questions: newQuestions,
-//       );
-//     });
-
-//     _celebrationController.reset();
-//     _startNewLevel();
-//   }
-
-//   void _exitGame() {
-//     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-//     SystemChrome.setPreferredOrientations([
-//       DeviceOrientation.portraitUp,
-//       DeviceOrientation.portraitDown,
-//     ]);
-//     if (mounted) {
-//       context.pop();
-//     }
-//   }
-
-//   Color _getTimerColor() {
-//     final ratio = _gameState.timeLeft / _gameState.currentLevel.duration;
-//     if (ratio > 0.6) return Colors.green;
-//     if (ratio > 0.3) return Colors.orange;
-//     return Colors.red;
-//   }
-
-//   @override
-//   void dispose() {
-//     _isDisposed = true;
-//     _gameTimer?.cancel();
-//     _spaceshipController.dispose();
-//     _celebrationController.dispose();
-//     _timerController.dispose();
-
-//     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-//     SystemChrome.setPreferredOrientations([
-//       DeviceOrientation.portraitUp,
-//       DeviceOrientation.portraitDown,
-//     ]);
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: kIsWeb ? PortalMasterLayout(body: _buildBody()) : _buildBody(),
-//     );
-//   }
-
-//   Widget _buildBody() {
-//     return Stack(
-//       children: [
-//         const _AnimatedBackground(),
-//         if (_gameState.isComplete) ...[
-//           _CelebrationScreen(
-//             gameState: _gameState,
-//             celebrationAnimation: _celebrationController,
-//             onReset: _resetGame,
-//             onExit: _exitGame,
-//           ),
-//         ] else ...[
-//           _GameContent(
-//             gameState: _gameState,
-//             spaceshipAnimation: _spaceshipAnimation,
-//             timerAnimation: _timerAnimation,
-//             timerColor: _getTimerColor(),
-//             onAnswerSelected: _handleAnswer,
-//             onExit: _exitGame,
-//           ),
-//         ],
-//       ],
-//     );
-//   }
-// }
-
-// // Separate widgets for better performance and lifecycle management
-// class _AnimatedBackground extends StatelessWidget {
-//   const _AnimatedBackground();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       decoration: const BoxDecoration(
-//         gradient: LinearGradient(
-//           colors: [
-//             Color(0xFF1A2240),
-//             Color(0xFF1E2755),
-//             Color(0xFF3C3B92),
-//             Color(0xFF5A47B6),
-//           ],
-//           begin: Alignment.topCenter,
-//           end: Alignment.bottomCenter,
-//         ),
-//       ),
-//       child: const Stack(
-//         children: [
-//           // Reduced number of animated elements for better performance
-//           Positioned(
-//             bottom: 200,
-//             right: 200,
-//             child: _AnimatedStar(size: 25, duration: 14000),
-//           ),
-//           Positioned(
-//             bottom: 120,
-//             left: 180,
-//             child: _AnimatedStar(size: 22, duration: 12000),
-//           ),
-//           Positioned(
-//             top: 150,
-//             left: 60,
-//             child: _AnimatedStar(size: 18, duration: 18000),
-//           ),
-//           Positioned(
-//             top: 80,
-//             right: 100,
-//             child: _AnimatedStar(size: 20, duration: 16000),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class _GameContent extends StatelessWidget {
-//   final GameState gameState;
-//   final Animation<double> spaceshipAnimation;
-//   final Animation<double> timerAnimation;
-//   final Color timerColor;
-//   final Function(int) onAnswerSelected;
-//   final VoidCallback onExit;
-
-//   const _GameContent({
-//     required this.gameState,
-//     required this.spaceshipAnimation,
-//     required this.timerAnimation,
-//     required this.timerColor,
-//     required this.onAnswerSelected,
-//     required this.onExit,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return SingleChildScrollView(
-//       child: Column(
-//         children: [
-//           _EnergyBar(
-//             progress: gameState.progress,
-//             spaceshipAnimation: spaceshipAnimation,
-//             onExit: onExit,
-//           ),
-//           const SizedBox(height: 8),
-//           Center(
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.center,
-//               children: [
-//                 Text(
-//                   "🌟 Level ${gameState.currentLevel.level}",
-//                   style: const TextStyle(
-//                     color: Colors.white,
-//                     fontSize: 24,
-//                     fontWeight: FontWeight.bold,
-//                   ),
-//                 ),
-//                 const SizedBox(width: 20),
-//                 _CustomCircularProgress(
-//                   timeLeft: gameState.timeLeft,
-//                   timerAnimation: timerAnimation,
-//                   timerColor: timerColor,
-//                 ),
-//               ],
-//             ),
-//           ),
-//           const SizedBox(height: 12),
-//           _QuestionDisplay(
-//             question: gameState.currentQuestion,
-//             onAnswerSelected: onAnswerSelected,
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class _EnergyBar extends StatelessWidget {
-//   final double progress;
-//   final Animation<double> spaceshipAnimation;
-//   final VoidCallback onExit;
-
-//   const _EnergyBar({
-//     required this.progress,
-//     required this.spaceshipAnimation,
-//     required this.onExit,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.only(top: 4, left: 16, right: 16, bottom: 8),
-//       child: Row(
-//         children: [
-//           if (!kIsWeb)
-//             GestureDetector(
-//               onTap: onExit,
-//               child: Container(
-//                 padding: const EdgeInsets.all(10),
-//                 margin: const EdgeInsets.only(right: 32),
-//                 decoration: BoxDecoration(
-//                   shape: BoxShape.circle,
-//                   gradient: const LinearGradient(
-//                     colors: [Color(0xFF4A90E2), Color(0xFF9013FE)],
-//                     begin: Alignment.topLeft,
-//                     end: Alignment.bottomRight,
-//                   ),
-//                   boxShadow: [
-//                     BoxShadow(
-//                       color: Colors.blue.withOpacity(0.6),
-//                       blurRadius: 12,
-//                       spreadRadius: 1,
-//                       offset: const Offset(0, 4),
-//                     ),
-//                   ],
-//                 ),
-//                 child: Transform.rotate(
-//                   angle: -pi / 2,
-//                   child: const FaIcon(
-//                     FontAwesomeIcons.rocket,
-//                     color: Colors.white,
-//                     size: 28,
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           Expanded(
-//             child: Padding(
-//               padding: const EdgeInsets.only(top: 36),
-//               child: Container(
-//                 height: 40,
-//                 decoration: BoxDecoration(
-//                   color: Colors.grey.withOpacity(0.2),
-//                   borderRadius: BorderRadius.circular(20),
-//                   border: Border.all(color: Colors.white, width: 2),
-//                 ),
-//                 child: Stack(
-//                   clipBehavior: Clip.none,
-//                   children: [
-//                     AnimatedBuilder(
-//                       animation: spaceshipAnimation,
-//                       builder: (context, child) {
-//                         return FractionallySizedBox(
-//                           alignment: Alignment.centerLeft,
-//                           widthFactor: progress,
-//                           child: Stack(
-//                             clipBehavior: Clip.none,
-//                             children: [
-//                               Container(
-//                                 height: 40,
-//                                 decoration: BoxDecoration(
-//                                   borderRadius: BorderRadius.circular(20),
-//                                   gradient: const LinearGradient(
-//                                     colors: [
-//                                       Colors.green,
-//                                       Colors.yellow,
-//                                       Colors.red
-//                                     ],
-//                                   ),
-//                                 ),
-//                               ),
-//                               Positioned(
-//                                 right: -20,
-//                                 child: Container(
-//                                   decoration: BoxDecoration(
-//                                     shape: BoxShape.circle,
-//                                     boxShadow: [
-//                                       BoxShadow(
-//                                         color: Colors.lightBlueAccent
-//                                             .withOpacity(0.6),
-//                                         blurRadius: 15,
-//                                         spreadRadius: 2,
-//                                       ),
-//                                     ],
-//                                   ),
-//                                   child: ShaderMask(
-//                                     shaderCallback: const LinearGradient(
-//                                       colors: [
-//                                         Colors.blue,
-//                                         Colors.cyanAccent,
-//                                         Colors.white
-//                                       ],
-//                                     ).createShader,
-//                                     child: const FaIcon(
-//                                       FontAwesomeIcons.shuttleSpace,
-//                                       size: 30,
-//                                       color: Colors.white,
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         );
-//                       },
-//                     ),
-//                     Positioned(
-//                       right: -15,
-//                       top: -28,
-//                       child: Image.asset(
-//                         "assets/images/earth.png",
-//                         width: 96,
-//                         height: 96,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class _CustomCircularProgress extends StatelessWidget {
-//   final int timeLeft;
-//   final Animation<double> timerAnimation;
-//   final Color timerColor;
-
-//   const _CustomCircularProgress({
-//     required this.timeLeft,
-//     required this.timerAnimation,
-//     required this.timerColor,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       width: 80,
-//       height: 80,
-//       decoration: BoxDecoration(
-//         shape: BoxShape.circle,
-//         gradient: RadialGradient(
-//           colors: [
-//             Colors.black.withOpacity(0.6),
-//             const Color(0xFF1A2240),
-//             const Color(0xFF3C3B92),
-//             const Color(0xFF5A47B6),
-//           ],
-//           radius: 1.0,
-//         ),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.blueAccent.withOpacity(0.5),
-//             blurRadius: 20,
-//             spreadRadius: 5,
-//           ),
-//         ],
-//       ),
-//       child: Stack(
-//         alignment: Alignment.center,
-//         children: [
-//           SizedBox(
-//             height: 60,
-//             width: 60,
-//             child: AnimatedBuilder(
-//               animation: timerAnimation,
-//               builder: (context, child) {
-//                 return CircularProgressIndicator(
-//                   value: timerAnimation.value,
-//                   strokeWidth: 10,
-//                   valueColor: AlwaysStoppedAnimation<Color>(timerColor),
-//                   backgroundColor: Colors.blueGrey.withOpacity(0.3),
-//                 );
-//               },
-//             ),
-//           ),
-//           Text(
-//             '${timeLeft}s',
-//             style: const TextStyle(
-//               fontSize: 20,
-//               fontWeight: FontWeight.bold,
-//               color: Colors.white,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class _QuestionDisplay extends StatelessWidget {
-//   final MathQuestion question;
-//   final Function(int) onAnswerSelected;
-
-//   const _QuestionDisplay({
-//     required this.question,
-//     required this.onAnswerSelected,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       mainAxisAlignment: MainAxisAlignment.center,
-//       children: [
-//         Row(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: [
-//             _buildIcon(question.operand1),
-//             const SizedBox(width: 12),
-//             Text(
-//               question.operation == 'sum' ? "+" : "-",
-//               style: const TextStyle(
-//                 fontSize: 50,
-//                 color: Colors.white,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//             const SizedBox(width: 12),
-//             _buildIcon(question.operand2),
-//             const SizedBox(width: 12),
-//             const Text(
-//               "= ?",
-//               style: TextStyle(
-//                 fontSize: 50,
-//                 color: Colors.white,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//           ],
-//         ),
-//         const SizedBox(height: 12),
-//         Wrap(
-//           alignment: WrapAlignment.center,
-//           spacing: 16,
-//           runSpacing: 16,
-//           children: question.choices
-//               .map((value) => _buildOption(value, onAnswerSelected))
-//               .toList(),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildIcon(int number) {
-//     return Image.asset(
-//       'assets/number/$number.png',
-//       width: 64,
-//       height: 64,
-//       fit: BoxFit.cover,
-//     );
-//   }
-
-//   Widget _buildOption(int value, Function(int) onTap) {
-//     return GestureDetector(
-//       onTap: () => onTap(value),
-//       child: Container(
-//         margin: const EdgeInsets.all(8),
-//         padding: const EdgeInsets.all(12),
-//         decoration: BoxDecoration(
-//           borderRadius: BorderRadius.circular(30),
-//           gradient: const LinearGradient(
-//             colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-//             begin: Alignment.topLeft,
-//             end: Alignment.bottomRight,
-//           ),
-//           border: Border.all(
-//             color: Colors.white.withOpacity(0.4),
-//             width: 2,
-//           ),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.blue.withOpacity(0.5),
-//               blurRadius: 12,
-//               spreadRadius: 2,
-//               offset: const Offset(0, 4),
-//             ),
-//           ],
-//         ),
-//         child: ClipRRect(
-//           borderRadius: BorderRadius.circular(20),
-//           child: _buildIcon(value),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class _CelebrationScreen extends StatelessWidget {
-//   final GameState gameState;
-//   final AnimationController celebrationAnimation;
-//   final VoidCallback onReset;
-//   final VoidCallback onExit;
-
-//   const _CelebrationScreen({
-//     required this.gameState,
-//     required this.celebrationAnimation,
-//     required this.onReset,
-//     required this.onExit,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return AnimatedBuilder(
-//       animation: celebrationAnimation,
-//       builder: (context, child) {
-//         return Opacity(
-//           opacity: celebrationAnimation.value,
-//           child: Container(
-//             color: Colors.black.withOpacity(0.85),
-//             child: Center(
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   Icon(
-//                     gameState.isLevelComplete
-//                         ? FontAwesomeIcons.trophy
-//                         : FontAwesomeIcons.rocket,
-//                     color: gameState.isLevelComplete
-//                         ? Colors.amber
-//                         : Colors.lightBlueAccent,
-//                     size: 80,
-//                   ),
-//                   const SizedBox(height: 20),
-//                   Text(
-//                     _getCelebrationMessage(),
-//                     style: const TextStyle(
-//                       color: Colors.white,
-//                       fontSize: 26,
-//                       fontWeight: FontWeight.bold,
-//                     ),
-//                     textAlign: TextAlign.center,
-//                   ),
-//                   const SizedBox(height: 40),
-//                   _CustomButton(
-//                     text: gameState.isGameComplete ? "Chơi Lại" : "Thử Lại",
-//                     icon: FontAwesomeIcons.redo,
-//                     onTap: onReset,
-//                   ),
-//                   const SizedBox(height: 20),
-//                   _CustomButton(
-//                     text: "Thoát",
-//                     icon: FontAwesomeIcons.doorOpen,
-//                     onTap: onExit,
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         );
-//       },
-//     );
-//   }
-
-//   String _getCelebrationMessage() {
-//     if (gameState.isLevelComplete) {
-//       if (gameState.isGameComplete) {
-//         return "🎉 Chúc mừng! Bạn đã hoàn thành tất cả Level! 🎉";
-//       } else {
-//         return "⭐ Hoàn thành Level ${gameState.currentLevel.level}! Chuẩn bị sang Level ${gameState.currentLevel.level + 1}!";
-//       }
-//     } else {
-//       return "🚀 Cố gắng hơn nhé! Thử lại Level ${gameState.currentLevel.level}!";
-//     }
-//   }
-// }
-
-// class _CustomButton extends StatelessWidget {
-//   final String text;
-//   final IconData icon;
-//   final VoidCallback onTap;
-
-//   const _CustomButton({
-//     required this.text,
-//     required this.icon,
-//     required this.onTap,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: onTap,
-//       child: Container(
-//         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-//         decoration: BoxDecoration(
-//           borderRadius: BorderRadius.circular(30),
-//           gradient: const LinearGradient(
-//             colors: [Color(0xFF4A90E2), Color(0xFF9013FE)],
-//             begin: Alignment.topLeft,
-//             end: Alignment.bottomRight,
-//           ),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.blueAccent.withOpacity(0.4),
-//               blurRadius: 15,
-//               spreadRadius: 2,
-//             ),
-//           ],
-//         ),
-//         child: Row(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             FaIcon(icon, color: Colors.white, size: 20),
-//             const SizedBox(width: 10),
-//             Text(
-//               text,
-//               style: const TextStyle(
-//                 color: Colors.white,
-//                 fontSize: 18,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// // Optimized animated star widget
-// class _AnimatedStar extends StatefulWidget {
-//   final double size;
-//   final int duration;
-
-//   const _AnimatedStar({
-//     required this.size,
-//     required this.duration,
-//   });
-
-//   @override
-//   State<_AnimatedStar> createState() => _AnimatedStarState();
-// }
-
-// class _AnimatedStarState extends State<_AnimatedStar>
-//     with SingleTickerProviderStateMixin {
-//   late AnimationController _controller;
-//   bool _isDisposed = false;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _controller = AnimationController(
-//       vsync: this,
-//       duration: Duration(milliseconds: widget.duration),
-//     );
-
-//     // Add listener to check if widget is still mounted
-//     _controller.addListener(() {
-//       if (_isDisposed) return;
-//     });
-
-//     _controller.repeat(reverse: true);
-//   }
-
-//   @override
-//   void dispose() {
-//     _isDisposed = true;
-//     _controller.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return FadeTransition(
-//       opacity: _controller,
-//       child: Icon(
-//         Icons.star,
-//         size: widget.size,
-//         color: Colors.white,
-//       ),
-//     );
-//   }
-// }
-/////////////////////////////
-
 import 'dart:async';
 import 'dart:math';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
@@ -1068,33 +25,39 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
   int j = 0;
   int score = 0;
   double progress = 0.0;
-  int currentLevel = 1; // Level hiện tại
-  final Map<int, int> levelQuestions = {
-    1: 5,
-    2: 10,
-    3: 15,
-    4: 20
-  }; // Số câu hỏi mỗi level
-  final Map<int, int> levelDurations = {
-    1: 30,
-    2: 25,
-    3: 20,
-    4: 15
-  }; // Thời gian tương ứng cho mỗi level
+  int currentLevel = 1;
+
+  // Cơ chế điểm đạt mới
+  final Map<int, int> levelQuestions = {1: 5, 2: 8, 3: 12, 4: 15};
+
+  final Map<int, double> levelPassRates = {
+    1: 0.60, // 60% = 3/5 câu đúng
+    2: 0.65, // 65% = 5-6/8 câu đúng
+    3: 0.70, // 70% = 8-9/12 câu đúng
+    4: 0.75, // 75% = 11-12/15 câu đúng
+  };
+
+  final Map<int, int> levelDurations = {1: 30, 2: 25, 3: 22, 4: 20};
+
   bool isMarked = false;
   bool isCorrect = false;
   bool isComplete = false;
-  late AnimationController _spaceshipController;
-  late Animation<double> _spaceshipAnimation;
-  late AnimationController _celebrationController;
+  bool isProcessing = false;
+  int starsEarned = 0;
+
+  // Nullable controllers để tránh late initialization error
+  AnimationController? _spaceshipController;
+  Animation<double>? _spaceshipAnimation;
+  AnimationController? _celebrationController;
+  AnimationController? _starController;
+  Animation<double>? _starAnimation;
   final CountDownController _controller = CountDownController();
 
-  //
-  late AnimationController _animationController;
-
-  late Animation<double> _animation;
+  AnimationController? _animationController;
+  Animation<double>? _animation;
   Timer? timer;
   int timeLeft = 30;
+
   Color valueColorCountdown() {
     if (timeLeft > (levelDurations[currentLevel] ?? 30) * 0.6) {
       return Colors.green;
@@ -1107,6 +70,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
   }
 
   List<Widget> smallStars = [];
+
   @override
   void initState() {
     super.initState();
@@ -1115,9 +79,16 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    Future.delayed(const Duration(milliseconds: 500));
+
+    _initializeControllers();
     _generateQuestions();
-    //_initializeSmallStars();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startNewQuestion();
+    });
+  }
+
+  void _initializeControllers() {
     _spaceshipController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
@@ -1126,34 +97,54 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     );
-    _spaceshipAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _spaceshipController, curve: Curves.easeInOut),
+    _starController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
     );
-    int duration =
-        levelDurations[currentLevel] ?? 30; // Thời gian theo từng level
 
+    _spaceshipAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _spaceshipController!, curve: Curves.easeInOut),
+    );
+
+    _starAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _starController!, curve: Curves.elasticOut),
+    );
+
+    _initializeTimerController();
+  }
+
+  void _initializeTimerController() {
+    _animationController?.dispose();
+
+    int duration = levelDurations[currentLevel] ?? 30;
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(seconds: duration),
     );
-    _animation = Tween<double>(begin: 1, end: 0).animate(_animationController)
+
+    _animation = Tween<double>(begin: 1, end: 0).animate(_animationController!)
       ..addListener(() {
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       });
-    _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed && !isMarked) {
-        _changeQuestion('TimeOut');
+
+    _animationController!.addStatusListener((status) {
+      if (status == AnimationStatus.completed &&
+          !isMarked &&
+          !isProcessing &&
+          mounted) {
+        _handleTimeout();
       }
     });
-
-    _animationController.forward();
-    startTimer();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _initializeSmallStars(); // Gọi hàm tạo ngôi sao nhỏ khi MediaQuery đã sẵn sàng
+    if (smallStars.isEmpty) {
+      _initializeSmallStars();
+    }
   }
 
   void _initializeSmallStars() {
@@ -1173,23 +164,48 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
     });
   }
 
-  void startTimer() {
+  void _startNewQuestion() {
+    if (!mounted) return;
+
+    setState(() {
+      isMarked = false;
+      isProcessing = false;
+    });
+
+    _startTimer();
+  }
+
+  void _startTimer() {
+    if (!mounted) return;
+
     timer?.cancel();
-    timeLeft = (levelDurations[currentLevel] ?? 30);
-    _animationController.reset();
-    _animationController.forward();
+    timeLeft = levelDurations[currentLevel] ?? 30;
+
+    _animationController?.reset();
+    _animationController?.forward();
+
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       if (timeLeft > 0) {
         setState(() {
           timeLeft--;
         });
       } else {
         timer.cancel();
-        if (!isMarked) {
-          _changeQuestion('TimeOut');
+        if (!isMarked && !isProcessing) {
+          _handleTimeout();
         }
       }
     });
+  }
+
+  void _handleTimeout() {
+    if (isProcessing || !mounted) return;
+    _changeQuestion('TimeOut');
   }
 
   void _generateQuestions() {
@@ -1201,25 +217,145 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
     final rand = Random();
 
     for (var i = 0; i < numOfQuestions; i++) {
-      String randomOperator = rand.nextBool() ? 'sum' : 'sub';
+      String randomOperator;
       int val1, val2, correctAnswer;
 
-      if (randomOperator == 'sum') {
-        do {
-          val1 = rand.nextInt(10);
-          val2 = rand.nextInt(10);
-          correctAnswer = val1 + val2;
-        } while (correctAnswer > 9);
-      } else {
-        val1 = rand.nextInt(10);
-        val2 = rand.nextInt(val1 + 1);
-        correctAnswer = val1 - val2;
+      // Tăng độ khó theo level với phép nhân được giới hạn
+      switch (currentLevel) {
+        case 1:
+          // Level 1: Chỉ phép cộng 0-5
+          randomOperator = 'sum';
+          do {
+            val1 = rand.nextInt(6);
+            val2 = rand.nextInt(6);
+            correctAnswer = val1 + val2;
+          } while (correctAnswer > 9);
+          break;
+
+        case 2:
+          // Level 2: Phép cộng/trừ 0-10
+          randomOperator = rand.nextBool() ? 'sum' : 'sub';
+          if (randomOperator == 'sum') {
+            do {
+              val1 = rand.nextInt(8);
+              val2 = rand.nextInt(8);
+              correctAnswer = val1 + val2;
+            } while (correctAnswer > 9);
+          } else {
+            val1 = rand.nextInt(10);
+            val2 = rand.nextInt(val1 + 1);
+            correctAnswer = val1 - val2;
+          }
+          break;
+
+        case 3:
+          // Level 3: Phép cộng/trừ + nhân đơn giản (kết quả ≤ 9)
+          List<String> operators = ['sum', 'sub', 'mul'];
+          randomOperator = operators[rand.nextInt(operators.length)];
+
+          if (randomOperator == 'sum') {
+            do {
+              val1 = rand.nextInt(8);
+              val2 = rand.nextInt(8);
+              correctAnswer = val1 + val2;
+            } while (correctAnswer > 9);
+          } else if (randomOperator == 'sub') {
+            val1 = rand.nextInt(10);
+            val2 = rand.nextInt(val1 + 1);
+            correctAnswer = val1 - val2;
+          } else {
+            // Phép nhân: chỉ tạo các phép tính có kết quả ≤ 9
+            List<List<int>> validMultiplications = [
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [1, 4],
+              [1, 5],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [2, 2],
+              [2, 3],
+              [2, 4],
+              [3, 3]
+            ];
+            var selectedPair =
+                validMultiplications[rand.nextInt(validMultiplications.length)];
+            val1 = selectedPair[0];
+            val2 = selectedPair[1];
+            correctAnswer = val1 * val2;
+          }
+          break;
+
+        case 4:
+          // Level 4: Tất cả phép tính với phép nhân được giới hạn
+          List<String> operators = ['sum', 'sub', 'mul'];
+          randomOperator = operators[rand.nextInt(operators.length)];
+
+          if (randomOperator == 'sum') {
+            do {
+              val1 = rand.nextInt(8);
+              val2 = rand.nextInt(8);
+              correctAnswer = val1 + val2;
+            } while (correctAnswer > 9);
+          } else if (randomOperator == 'sub') {
+            val1 = rand.nextInt(10);
+            val2 = rand.nextInt(val1 + 1);
+            correctAnswer = val1 - val2;
+          } else {
+            // Phép nhân: mở rộng thêm một số phép tính
+            List<List<int>> validMultiplications = [
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [1, 4],
+              [1, 5],
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [1, 9],
+              [2, 2],
+              [2, 3],
+              [2, 4],
+              [3, 3],
+              [3, 2],
+              [3, 1],
+              [4, 2],
+              [4, 1],
+              [5, 1],
+              [6, 1],
+              [7, 1],
+              [8, 1],
+              [9, 1]
+            ];
+            var selectedPair =
+                validMultiplications[rand.nextInt(validMultiplications.length)];
+            val1 = selectedPair[0];
+            val2 = selectedPair[1];
+            correctAnswer = val1 * val2;
+          }
+          break;
+
+        default:
+          randomOperator = rand.nextBool() ? 'sum' : 'sub';
+          if (randomOperator == 'sum') {
+            do {
+              val1 = rand.nextInt(10);
+              val2 = rand.nextInt(10);
+              correctAnswer = val1 + val2;
+            } while (correctAnswer > 9);
+          } else {
+            val1 = rand.nextInt(10);
+            val2 = rand.nextInt(val1 + 1);
+            correctAnswer = val1 - val2;
+          }
       }
 
       answers.add(correctAnswer);
       questions.add([val1, val2, randomOperator]);
 
-      // Đáp án đúng + 3 đáp án sai (không trùng)
+      // Tạo đáp án sai trong khoảng 0-9
       Set<int> answerSet = {correctAnswer};
       while (answerSet.length < 4) {
         int wrongAnswer = rand.nextInt(10);
@@ -1233,76 +369,87 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
     }
   }
 
+  // Tính số sao dựa trên tỷ lệ đúng
+  int _calculateStars(double accuracy) {
+    if (accuracy >= 1.0) return 3; // 100% = 3 sao
+    if (accuracy >= 0.8) return 2; // 80-99% = 2 sao
+    if (accuracy >= (levelPassRates[currentLevel] ?? 0.6))
+      return 1; // Đạt tỷ lệ tối thiểu = 1 sao
+    return 0; // Không đạt
+  }
+
   void _changeQuestion(String answer) {
+    if (isProcessing || !mounted) return;
+
+    setState(() {
+      isProcessing = true;
+      isMarked = true;
+    });
+
+    timer?.cancel();
+    _animationController?.stop();
+
     userAnswer.add(answer);
 
-    if (j + 1 >= questions.length) {
-      if (score == levelQuestions[currentLevel]) {
-        if (currentLevel == 4) {
-          // Đã hoàn thành tất cả các level
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      if (j + 1 >= questions.length) {
+        double accuracy = score / (levelQuestions[currentLevel] ?? 10);
+        double requiredRate = levelPassRates[currentLevel] ?? 0.6;
+        starsEarned = _calculateStars(accuracy);
+
+        if (accuracy >= requiredRate) {
+          if (currentLevel == 4) {
+            setState(() {
+              isComplete = true;
+            });
+            _celebrationController?.forward();
+            _starController?.forward();
+          } else {
+            _nextLevel();
+          }
+        } else {
           setState(() {
             isComplete = true;
           });
-          _celebrationController.forward();
-        } else {
-          // Chuyển qua level tiếp theo
-          setState(() {
-            currentLevel++;
-            score = 0;
-            progress = 0.0;
-            userAnswer.clear();
-            j = 0;
-            _generateQuestions();
-            _controller.restart(
-                duration:
-                    levelDurations[currentLevel]); // Cập nhật thời gian mới
-          });
-          int duration =
-              levelDurations[currentLevel] ?? 30; // Thời gian theo từng level
-
-          _animationController = AnimationController(
-            vsync: this,
-            duration: Duration(seconds: duration),
-          );
-
-          _animation =
-              Tween<double>(begin: 1, end: 0).animate(_animationController)
-                ..addListener(() {
-                  setState(() {});
-                });
-          startTimer();
-          _controller.restart(duration: (levelDurations[currentLevel] ?? 30));
+          _celebrationController?.forward();
         }
       } else {
-        // Thất bại ở level hiện tại
-        setState(() {
-          isComplete = true; // Thất bại và hiển thị thông báo cố gắng lại
-        });
-        _celebrationController.forward();
+        _nextQuestion();
       }
-    } else {
-      setState(() {
-        j++;
-        isMarked = false;
-      });
-      int duration =
-          levelDurations[currentLevel] ?? 30; // Thời gian theo từng level
-
-      _animationController = AnimationController(
-        vsync: this,
-        duration: Duration(seconds: duration),
-      );
-
-      _animation = Tween<double>(begin: 1, end: 0).animate(_animationController)
-        ..addListener(() {
-          setState(() {});
-        });
-      startTimer();
-      _controller.restart(duration: (levelDurations[currentLevel] ?? 30));
-    }
+    });
   }
 
-// Hàm hiển thị số lượng biểu tượng của câu hỏi
+  void _nextLevel() {
+    if (!mounted) return;
+
+    setState(() {
+      currentLevel++;
+      score = 0;
+      progress = 0.0;
+      userAnswer.clear();
+      j = 0;
+    });
+
+    _generateQuestions();
+    _initializeTimerController();
+    _startNewQuestion();
+    _controller.restart(duration: (levelDurations[currentLevel] ?? 30));
+  }
+
+  void _nextQuestion() {
+    if (!mounted) return;
+
+    setState(() {
+      j++;
+    });
+
+    _initializeTimerController();
+    _startNewQuestion();
+    _controller.restart(duration: (levelDurations[currentLevel] ?? 30));
+  }
+
   Widget _buildIcons(int number) {
     return Image.asset(
       'assets/number/$number.png',
@@ -1314,33 +461,37 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
 
   Widget _buildOption(int value) {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          isCorrect = value == answers[j];
-          if (isCorrect) {
-            score++;
-            progress += 1 / (levelQuestions[currentLevel] ?? 10);
-            _spaceshipController.forward(from: 0);
-          }
-          _changeQuestion(value.toString());
-        });
-      },
+      onTap: isProcessing
+          ? null
+          : () {
+              if (isMarked || isProcessing || !mounted) return;
+
+              setState(() {
+                isCorrect = value == answers[j];
+                if (isCorrect) {
+                  score++;
+                  progress += 1 / (levelQuestions[currentLevel] ?? 10);
+                  _spaceshipController?.forward(from: 0);
+                }
+              });
+
+              _changeQuestion(value.toString());
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         margin: const EdgeInsets.all(8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF6A11CB),
-              Color(0xFF2575FC)
-            ], // Gradient xanh-tím đẹp hơn
+          gradient: LinearGradient(
+            colors: isProcessing
+                ? [Colors.grey, Colors.grey.shade400]
+                : [Color(0xFF6A11CB), Color(0xFF2575FC)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           border: Border.all(
-            color: Colors.white.withOpacity(0.4), // Border trắng nhẹ bao quanh
+            color: Colors.white.withOpacity(0.4),
             width: 2,
           ),
           boxShadow: [
@@ -1371,6 +522,117 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
     );
   }
 
+  Widget _buildScoreDisplay() {
+    double currentAccuracy = j > 0 ? score / j : 0.0;
+    double requiredRate = levelPassRates[currentLevel] ?? 0.6;
+    int totalQuestions = levelQuestions[currentLevel] ?? 10;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Colors.black.withOpacity(0.3),
+            Colors.purple.withOpacity(0.2),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Column(
+            children: [
+              Text(
+                '$score/$totalQuestions',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Điểm',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              Text(
+                '${(currentAccuracy * 100).toInt()}%',
+                style: TextStyle(
+                  color: currentAccuracy >= requiredRate
+                      ? Colors.green
+                      : Colors.orange,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Hiện tại',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              Text(
+                '${(requiredRate * 100).toInt()}%',
+                style: const TextStyle(
+                  color: Colors.yellow,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Cần đạt',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(3, (index) {
+                  int predictedStars = _calculateStars(currentAccuracy);
+                  return Icon(
+                    Icons.star,
+                    size: 16,
+                    color: index < predictedStars
+                        ? Colors.amber
+                        : Colors.white.withOpacity(0.3),
+                  );
+                }),
+              ),
+              Text(
+                'Sao dự kiến',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEnergyBar() {
     double barWidth = MediaQuery.of(context).size.width * 0.65;
 
@@ -1382,9 +644,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
         bottom: 8,
       ),
       child: Row(
-        // mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 🌌 Nút Back
           if (!kIsWeb)
             GestureDetector(
               onTap: () {
@@ -1393,7 +653,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                   DeviceOrientation.portraitUp,
                   DeviceOrientation.portraitDown,
                 ]);
-                Navigator.pop(context); // Trở lại màn hình chính
+                Navigator.pop(context);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
@@ -1422,8 +682,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                   ],
                 ),
                 child: Transform.rotate(
-                  angle: -pi /
-                      2, // Xoay tên lửa nằm ngang (ngược chiều kim đồng hồ)
+                  angle: -pi / 2,
                   child: const FaIcon(
                     FontAwesomeIcons.rocket,
                     color: Colors.white,
@@ -1432,8 +691,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 ),
               ),
             ),
-
-          // ⚡ Thanh năng lượng
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 36),
@@ -1448,71 +705,66 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // Thanh năng lượng đầy màu
-                    AnimatedBuilder(
-                      animation: _spaceshipAnimation,
-                      builder: (context, child) {
-                        return FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: progress,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              // 🌌 Thanh năng lượng
-                              Container(
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Colors.green,
-                                      Colors.yellow,
-                                      Colors.red,
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // 🚀 Tên lửa (Đặt trong Stack với Positioned)
-                              Positioned(
-                                right: -20, // Đẩy tên lửa ra ngoài một chút
-                                child: Container(
+                    if (_spaceshipAnimation != null)
+                      AnimatedBuilder(
+                        animation: _spaceshipAnimation!,
+                        builder: (context, child) {
+                          return FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: progress,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  height: 40,
                                   decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.lightBlueAccent
-                                            .withOpacity(0.6),
-                                        blurRadius: 15,
-                                        spreadRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  child: ShaderMask(
-                                    shaderCallback: (Rect bounds) {
-                                      return const LinearGradient(
-                                        colors: [
-                                          Colors.blue,
-                                          Colors.cyanAccent,
-                                          Colors.white,
-                                        ],
-                                      ).createShader(bounds);
-                                    },
-                                    child: const FaIcon(
-                                      FontAwesomeIcons.shuttleSpace,
-                                      size: 30,
-                                      color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Colors.green,
+                                        Colors.yellow,
+                                        Colors.red,
+                                      ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-
-                    // 🌍 Trái đất
+                                Positioned(
+                                  right: -20,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.lightBlueAccent
+                                              .withOpacity(0.6),
+                                          blurRadius: 15,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: ShaderMask(
+                                      shaderCallback: (Rect bounds) {
+                                        return const LinearGradient(
+                                          colors: [
+                                            Colors.blue,
+                                            Colors.cyanAccent,
+                                            Colors.white,
+                                          ],
+                                        ).createShader(bounds);
+                                      },
+                                      child: const FaIcon(
+                                        FontAwesomeIcons.shuttleSpace,
+                                        size: 30,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     Positioned(
                       right: -15,
                       top: -28,
@@ -1540,9 +792,30 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
   }
 
   Widget _buildBody() {
+    if (questions.isEmpty || j >= questions.length) {
+      return Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1A2240),
+              Color(0xFF1E2755),
+              Color(0xFF3C3B92),
+              Color(0xFF5A47B6),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
     return Stack(
       children: [
-        // Nền động dễ thương
         _buildAnimatedBackground(),
         if (isComplete) ...[
           _buildCelebrationScreen(),
@@ -1553,7 +826,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 Align(
                   alignment: Alignment.topCenter,
                   child: Column(
-                    //crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       _buildEnergyBar(),
                       const SizedBox(height: 8),
@@ -1574,6 +846,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                           ],
                         ),
                       ),
+                      _buildScoreDisplay(),
                     ],
                   ),
                 ),
@@ -1582,16 +855,15 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Câu hỏi nằm ngang
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _buildIcons(questions[j][0]), // Số đầu tiên
+                          _buildIcons(questions[j][0]),
                           const SizedBox(width: 12),
                           Text(
-                            questions[j][2] == 'sum' ? "+" : "-",
+                            _getOperatorSymbol(questions[j][2]),
                             style: const TextStyle(
                               fontSize: 50,
                               color: Colors.white,
@@ -1599,7 +871,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                             ),
                           ),
                           const SizedBox(width: 12),
-                          _buildIcons(questions[j][1]), // Số thứ hai
+                          _buildIcons(questions[j][1]),
                           const SizedBox(width: 12),
                           const Text(
                             "= ?",
@@ -1611,10 +883,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 12),
-
-                      // Hàng đáp án bên dưới
                       Wrap(
                         alignment: WrapAlignment.center,
                         spacing: 16,
@@ -1633,12 +902,31 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
     );
   }
 
+  String _getOperatorSymbol(String operator) {
+    switch (operator) {
+      case 'sum':
+        return '+';
+      case 'sub':
+        return '-';
+      case 'mul':
+        return '×';
+      case 'div':
+        return '÷';
+      default:
+        return '+';
+    }
+  }
+
   Widget _buildCelebrationScreen() {
+    double accuracy = score / (levelQuestions[currentLevel] ?? 10);
+    double requiredRate = levelPassRates[currentLevel] ?? 0.6;
+    bool passed = accuracy >= requiredRate;
+
     return AnimatedBuilder(
-      animation: _celebrationController,
+      animation: _celebrationController ?? AlwaysStoppedAnimation(1.0),
       builder: (context, child) {
         return Opacity(
-          opacity: _celebrationController.value,
+          opacity: _celebrationController?.value ?? 1.0,
           child: Container(
             color: Colors.black.withOpacity(0.85),
             child: Center(
@@ -1646,70 +934,183 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    progress >= 1.0
-                        ? FontAwesomeIcons.trophy
-                        : FontAwesomeIcons.rocket,
-                    color:
-                        progress >= 1.0 ? Colors.amber : Colors.lightBlueAccent,
+                    passed
+                        ? (currentLevel == 4 && passed
+                            ? FontAwesomeIcons.trophy
+                            : FontAwesomeIcons.rocket)
+                        : FontAwesomeIcons.redo,
+                    color: passed
+                        ? (currentLevel == 4 && passed
+                            ? Colors.amber
+                            : Colors.lightBlueAccent)
+                        : Colors.orange,
                     size: 80,
                   ),
                   const SizedBox(height: 20),
-
+                  if (passed) ...[
+                    AnimatedBuilder(
+                      animation: _starAnimation ?? AlwaysStoppedAnimation(1.0),
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _starAnimation?.value ?? 1.0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(3, (index) {
+                              return AnimatedContainer(
+                                duration:
+                                    Duration(milliseconds: 200 * (index + 1)),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                child: Icon(
+                                  Icons.star,
+                                  size: 40,
+                                  color: index < starsEarned
+                                      ? Colors.amber
+                                      : Colors.white.withOpacity(0.3),
+                                ),
+                              );
+                            }),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '$starsEarned/3 Sao',
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withOpacity(0.3),
+                          Colors.purple.withOpacity(0.2),
+                        ],
+                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Level $currentLevel - Kết Quả',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Column(
+                              children: [
+                                Text(
+                                  '$score/${levelQuestions[currentLevel]}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Điểm',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                Text(
+                                  '${(accuracy * 100).toInt()}%',
+                                  style: TextStyle(
+                                    color: passed ? Colors.green : Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Đạt được',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                Text(
+                                  '${(requiredRate * 100).toInt()}%',
+                                  style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Yêu cầu',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   Text(
-                    (score == levelQuestions[currentLevel])
+                    passed
                         ? (currentLevel == 4
                             ? "🎉 Chúc mừng! Bạn đã hoàn thành tất cả Level! 🎉"
                             : "⭐ Hoàn thành Level $currentLevel! Chuẩn bị sang Level ${currentLevel + 1}!")
-                        : "🚀 Cố gắng hơn nhé! Thử lại Level $currentLevel!",
+                        : "🚀 Cần ${(requiredRate * 100).toInt()}% để qua level! Thử lại nhé!",
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 26,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-
-                  // 🔄 Nút Chơi Lại hoặc Tiếp Tục
                   _buildCustomButton(
-                    text: (score == levelQuestions[currentLevel] &&
-                            currentLevel == 4)
-                        ? "Chơi Lại"
-                        : "Thử Lại",
+                    text: passed && currentLevel == 4 ? "Chơi Lại" : "Thử Lại",
                     icon: FontAwesomeIcons.redo,
                     onTap: () {
-                      setState(() {
-                        if (score == levelQuestions[currentLevel] &&
-                            currentLevel == 4) {
-                          currentLevel =
-                              1; // Reset lại tất cả nếu hoàn thành hết
-                        }
-                        score = 0;
-                        progress = 0.0;
-                        userAnswer.clear();
-                        j = 0;
-                        _generateQuestions();
-                        isComplete = false;
-                      });
-                      _celebrationController.reset();
+                      _resetGame(passed && currentLevel == 4);
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // ❌ Nút Thoát
-                  _buildCustomButton(
-                    text: "Thoát",
-                    icon: FontAwesomeIcons.doorOpen,
-                    onTap: () {
-                      SystemChrome.setEnabledSystemUIMode(
-                          SystemUiMode.edgeToEdge);
-                      SystemChrome.setPreferredOrientations([
-                        DeviceOrientation.portraitUp,
-                        DeviceOrientation.portraitDown,
-                      ]);
-                      Navigator.pop(context); // Quay lại màn hình chính
-                    },
-                  ),
+                  if (!kIsWeb)
+                    _buildCustomButton(
+                      text: "Thoát",
+                      icon: FontAwesomeIcons.doorOpen,
+                      onTap: () {
+                        SystemChrome.setEnabledSystemUIMode(
+                            SystemUiMode.edgeToEdge);
+                        SystemChrome.setPreferredOrientations([
+                          DeviceOrientation.portraitUp,
+                          DeviceOrientation.portraitDown,
+                        ]);
+                        Navigator.pop(context);
+                      },
+                    ),
                 ],
               ),
             ),
@@ -1717,6 +1118,34 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
         );
       },
     );
+  }
+
+  void _resetGame(bool resetToLevel1) {
+    timer?.cancel();
+    _animationController?.stop();
+
+    setState(() {
+      if (resetToLevel1) {
+        currentLevel = 1;
+      }
+      score = 0;
+      progress = 0.0;
+      userAnswer.clear();
+      j = 0;
+      starsEarned = 0;
+      isComplete = false;
+      isProcessing = false;
+      isMarked = false;
+    });
+
+    _generateQuestions();
+    _initializeTimerController();
+    _celebrationController?.reset();
+    _starController?.reset();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startNewQuestion();
+    });
   }
 
   Widget _buildCustomButton({
@@ -1799,7 +1228,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // 🌌 Vòng sáng bên ngoài
             Container(
               width: 80,
               height: 80,
@@ -1815,13 +1243,11 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 ),
               ),
             ),
-
-            // 🔥 Vòng tròn đếm ngược
             SizedBox(
               height: 60,
               width: 60,
               child: CircularProgressIndicator(
-                value: _animation.value,
+                value: _animation?.value ?? 1.0,
                 strokeWidth: 10,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   valueColorCountdown(),
@@ -1829,11 +1255,9 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 backgroundColor: Colors.blueGrey.withOpacity(0.3),
               ),
             ),
-
-            // 🌠 Hiệu ứng ánh sáng xoay nhẹ
             RotationTransition(
-              turns: AlwaysStoppedAnimation(
-                  _animation.value / (levelDurations[currentLevel] ?? 30)),
+              turns: AlwaysStoppedAnimation((_animation?.value ?? 1.0) /
+                  (levelDurations[currentLevel] ?? 30)),
               child: Container(
                 width: 130,
                 height: 130,
@@ -1852,8 +1276,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
                 ),
               ),
             ),
-
-            // ⏳ Text hiển thị thời gian còn lại
             Text(
               '${timeLeft}s',
               style: const TextStyle(
@@ -1870,12 +1292,17 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
 
   @override
   void dispose() {
+    timer?.cancel();
+    _spaceshipController?.dispose();
+    _celebrationController?.dispose();
+    _starController?.dispose();
+    _animationController?.dispose();
+
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-    _spaceshipController.dispose();
     super.dispose();
   }
 
@@ -1884,10 +1311,10 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF1A2240), // Xanh đen dịu (Không quá tối - làm nền chính)
-            Color(0xFF1E2755), // Xanh đen ánh tím (Tạo chiều sâu vừa phải)
-            Color(0xFF3C3B92), // Xanh tím mờ (Ánh sáng vũ trụ dịu nhẹ)
-            Color(0xFF5A47B6), // Tím xanh nhạt (Tinh vân sáng hơn)
+            Color(0xFF1A2240),
+            Color(0xFF1E2755),
+            Color(0xFF3C3B92),
+            Color(0xFF5A47B6),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -1895,7 +1322,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
       ),
       child: Stack(
         children: [
-          // 🌌 Nền Gradient đẹp hơn
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -1910,8 +1336,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
               ),
             ),
           ),
-
-          // 🌟 Ngôi sao lấp lánh lớn
           const Positioned(
             bottom: 200,
             right: 200,
@@ -1932,11 +1356,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
             right: 100,
             child: AnimatedStar(size: 20, duration: 16000),
           ),
-
-          // 🌌 Thêm rất nhiều ngôi sao nhỏ
           ...smallStars,
-
-          // 🌑 Hành tinh di chuyển
           const Positioned(
             top: 100,
             left: -100,
@@ -1955,8 +1375,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
               image: 'assets/images/universe.png',
             ),
           ),
-
-          // ☄️ Thiên thạch bay chậm
           const Positioned(
             top: 50,
             right: -100,
@@ -1966,8 +1384,6 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
               image: 'assets/images/meteor.png',
             ),
           ),
-
-          // 🌠 Sao băng
           const Positioned(
             top: 20,
             left: 50,
@@ -1992,6 +1408,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
   }
 }
 
+// Các widget animation giữ nguyên
 class AnimatedStar extends StatefulWidget {
   final double size;
   final int duration;
@@ -2033,11 +1450,6 @@ class _AnimatedStarState extends State<AnimatedStar>
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
     _controller.dispose();
     super.dispose();
   }
@@ -2094,7 +1506,7 @@ class AnimatedMeteor extends StatelessWidget {
       duration: Duration(milliseconds: duration),
       builder: (context, value, child) {
         return Transform.translate(
-          offset: Offset(value * 400, value * 200), // Di chuyển chéo
+          offset: Offset(value * 400, value * 200),
           child: Image.asset(
             image,
             width: size,
@@ -2142,8 +1554,8 @@ class _AnimatedShootingStarState extends State<AnimatedShootingStar>
       animation: _controller,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(_controller.value * 400 - 200,
-              _controller.value * 150 - 75), // Di chuyển chéo
+          offset: Offset(
+              _controller.value * 400 - 200, _controller.value * 150 - 75),
           child: Icon(
             Icons.star,
             size: widget.size,

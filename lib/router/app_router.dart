@@ -100,7 +100,7 @@ class AppRouter {
         path: GoRouterName.numberByMatchImage.routePath,
         name: GoRouterName.numberByMatchImage.routeName,
         pageBuilder: (context, state) =>
-            const MaterialPage<void>(child: MatchImage()),
+            const MaterialPage<void>(child: EnhancedMatchImage()),
       ),
       GoRoute(
         path: GoRouterName.numberBySort.routePath,
@@ -124,7 +124,7 @@ class AppRouter {
         path: GoRouterName.compareNumberByImage.routePath,
         name: GoRouterName.compareNumberByImage.routeName,
         pageBuilder: (context, state) =>
-            const MaterialPage<void>(child: CompareImageScreen()),
+            const MaterialPage<void>(child: EnhancedCompareGameScreen()),
       ),
       GoRoute(
         path: GoRouterName.mathStudy.routePath,
