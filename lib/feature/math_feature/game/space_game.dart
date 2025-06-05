@@ -290,7 +290,7 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
 
         case 4:
           // Level 4: Tất cả phép tính với phép nhân được giới hạn
-          List<String> operators = ['sum', 'sub', 'mul'];
+          List<String> operators = ['sum', 'sub'];
           randomOperator = operators[rand.nextInt(operators.length)];
 
           if (randomOperator == 'sum') {

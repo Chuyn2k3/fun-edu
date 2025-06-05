@@ -25,50 +25,93 @@ class _MultiPlayerQuizScreenState extends State<MultiPlayerQuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PortalMasterLayout(
-      body: BaseScaffold(
-        appBar: CustomAppbar.basic(
-          isLeading: !kIsWeb,
-          onTap: kIsWeb ? () => context.pop(context) : null,
-          title: "Nhập tên người chơi",
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _buildTextForm(_user1, "Nhập tên người chơi thứ nhất"),
-                  _buildTextForm(_user2, "Nhập tên người chơi thứ hai"),
-                ],
+    return kIsWeb
+        ? PortalMasterLayout(
+            body: BaseScaffold(
+              appBar: CustomAppbar.basic(
+                isLeading: !kIsWeb,
+                onTap: !kIsWeb ? () => context.pop(context) : null,
+                title: "Nhập tên người chơi",
+              ),
+              body: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(children: [
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        _buildTextForm(_user1, "Nhập tên người chơi thứ nhất"),
+                        _buildTextForm(_user2, "Nhập tên người chơi thứ hai"),
+                      ],
+                    ),
+                  ),
+                  MaterialButton(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => OfflineMultiplayerScreen(
+                                  _user1.text, _user2.text)),
+                        );
+                      }
+                    },
+                    elevation: 20,
+                    color: baseColor,
+                    child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Bắt đầu',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.w600))),
+                  ),
+                ]),
               ),
             ),
-            MaterialButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            OfflineMultiplayerScreen(_user1.text, _user2.text)),
-                  );
-                }
-              },
-              elevation: 20,
-              color: baseColor,
-              child: const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text('Bắt đầu',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.w600))),
+          )
+        : BaseScaffold(
+            appBar: CustomAppbar.basic(
+              isLeading: !kIsWeb,
+              onTap: !kIsWeb ? () => context.pop(context) : null,
+              title: "Nhập tên người chơi",
             ),
-          ]),
-        ),
-      ),
-    );
+            body: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(children: [
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildTextForm(_user1, "Nhập tên người chơi thứ nhất"),
+                      _buildTextForm(_user2, "Nhập tên người chơi thứ hai"),
+                    ],
+                  ),
+                ),
+                MaterialButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => OfflineMultiplayerScreen(
+                                _user1.text, _user2.text)),
+                      );
+                    }
+                  },
+                  elevation: 20,
+                  color: baseColor,
+                  child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text('Bắt đầu',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w600))),
+                ),
+              ]),
+            ),
+          );
   }
 
   Widget _buildTextForm(

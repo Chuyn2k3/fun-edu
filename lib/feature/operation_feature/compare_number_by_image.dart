@@ -1025,6 +1025,13 @@ class _EnhancedCompareGameScreenState extends State<EnhancedCompareGameScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          if (!kIsWeb)
+            _buildActionButton(
+              icon: FontAwesomeIcons.house,
+              label: "Trang Chủ",
+              color: Color(0xFFFF6E40),
+              onTap: () => Navigator.of(context).pop(),
+            ),
           _buildStatCard(
               "Level", currentLevel.toString(), Icons.star, Colors.amber),
           _buildTimerCard(),
@@ -1034,6 +1041,51 @@ class _EnhancedCompareGameScreenState extends State<EnhancedCompareGameScreen>
               Icons.local_fire_department, Colors.red),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.7), color],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: FaIcon(icon, size: 20, color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 

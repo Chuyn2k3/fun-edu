@@ -1,5 +1,7 @@
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/my_game.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/game/overlay_widgets/booster_progress_overlay.dart';
@@ -27,6 +29,10 @@ class _SweepScreenState extends ConsumerState<SweepScreen> {
   Timer? _timer;
   @override
   void initState() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     // Kiểm tra định kỳ mỗi 1 phút
     _timer = Timer?.periodic(const Duration(seconds: 1), (_) async {
       final canPlay = await GameTimeManager("sweep").canPlay();
@@ -107,28 +113,55 @@ class _SweepScreenState extends ConsumerState<SweepScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PortalMasterLayout(
-      body: GameWidget.controlled(
-        loadingBuilder: (context) => const Center(
-          child: SizedBox(
-            width: 200,
-            child: LinearProgressIndicator(),
-          ),
-        ),
-        gameFactory: () => MyGame(context, ref),
-        overlayBuilderMap: {
-          MainMenu.id: (_, MyGame game) => MainMenu(game),
-          PauseMenu.id: (_, MyGame game) => PauseMenu(game),
-          GameOverMenu.id: (_, MyGame game) => GameOverMenu(game),
-          GameHeader.id: (_, MyGame game) => GameHeader(game),
-          EnvMessageOverlay.id: (_, MyGame game) => EnvMessageOverlay(game),
-          LeaderBoardOverlay.id: (_, MyGame game) => LeaderBoardOverlay(game),
-          InstructionsOverlay.id: (_, MyGame game) => InstructionsOverlay(game),
-          BoosterProgressOverlay.id: (_, MyGame game) =>
-              BoosterProgressOverlay(game),
-        },
-        initialActiveOverlays: const [MainMenu.id],
-      ),
-    );
+    return kIsWeb
+        ? PortalMasterLayout(
+            body: GameWidget.controlled(
+              loadingBuilder: (context) => const Center(
+                child: SizedBox(
+                  width: 200,
+                  child: LinearProgressIndicator(),
+                ),
+              ),
+              gameFactory: () => MyGame(context, ref),
+              overlayBuilderMap: {
+                MainMenu.id: (_, MyGame game) => MainMenu(game),
+                PauseMenu.id: (_, MyGame game) => PauseMenu(game),
+                GameOverMenu.id: (_, MyGame game) => GameOverMenu(game),
+                GameHeader.id: (_, MyGame game) => GameHeader(game),
+                EnvMessageOverlay.id: (_, MyGame game) =>
+                    EnvMessageOverlay(game),
+                LeaderBoardOverlay.id: (_, MyGame game) =>
+                    LeaderBoardOverlay(game),
+                InstructionsOverlay.id: (_, MyGame game) =>
+                    InstructionsOverlay(game),
+                BoosterProgressOverlay.id: (_, MyGame game) =>
+                    BoosterProgressOverlay(game),
+              },
+              initialActiveOverlays: const [MainMenu.id],
+            ),
+          )
+        : GameWidget.controlled(
+            loadingBuilder: (context) => const Center(
+              child: SizedBox(
+                width: 200,
+                child: LinearProgressIndicator(),
+              ),
+            ),
+            gameFactory: () => MyGame(context, ref),
+            overlayBuilderMap: {
+              MainMenu.id: (_, MyGame game) => MainMenu(game),
+              PauseMenu.id: (_, MyGame game) => PauseMenu(game),
+              GameOverMenu.id: (_, MyGame game) => GameOverMenu(game),
+              GameHeader.id: (_, MyGame game) => GameHeader(game),
+              EnvMessageOverlay.id: (_, MyGame game) => EnvMessageOverlay(game),
+              LeaderBoardOverlay.id: (_, MyGame game) =>
+                  LeaderBoardOverlay(game),
+              InstructionsOverlay.id: (_, MyGame game) =>
+                  InstructionsOverlay(game),
+              BoosterProgressOverlay.id: (_, MyGame game) =>
+                  BoosterProgressOverlay(game),
+            },
+            initialActiveOverlays: const [MainMenu.id],
+          );
   }
 }

@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flame/components.dart' as cp;
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/components/audio_manager.dart';
@@ -45,7 +46,10 @@ class MyGame extends FlameGame {
   Future<void> onLoad() async {
     super.onLoad();
     //await Flame.device.fullScreen();
-    await Flame.device.setLandscape();
+    if (kIsWeb) {
+      await Flame.device.setLandscape();
+    }
+
     gameSize = size;
     add(backgroundComponent);
     add(parallaxComponent);
