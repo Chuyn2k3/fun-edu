@@ -250,7 +250,10 @@ class _SpaceGameScreenState extends State<SpaceGameScreen>
 
         case 3:
           // Level 3: Phép cộng/trừ + nhân đơn giản (kết quả ≤ 9)
-          List<String> operators = ['sum', 'sub', 'mul'];
+          List<String> operators = [
+            'sum',
+            'sub',
+          ];
           randomOperator = operators[rand.nextInt(operators.length)];
 
           if (randomOperator == 'sum') {
