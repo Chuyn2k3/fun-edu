@@ -382,7 +382,7 @@ class _OfflineMultiplayerScreenState
           children: [
             Center(
               child: Text(
-                'Lỗi ${error ?? "không xác định"}',
+                'Đã xảy ra lỗi, vui lòng thử lại',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,

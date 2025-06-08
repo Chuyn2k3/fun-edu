@@ -8,16 +8,16 @@ part 'user_service.g.dart';
 @RestApi()
 abstract class UserServices {
   factory UserServices(Dio dio, {String baseUrl}) = _UserServices;
-  @POST("40/api/v1/user")
+  @POST("/api/v1/user")
   Future<void> saveUserByDeviceId(@Body() UserInfoByDeviceIdModel request);
 
-  @GET("40/api/v1/user/{deviceId}")
+  @GET("/api/v1/user/{deviceId}")
   Future<BaseResponse<UserInfoByDeviceIdModel>> getUserInfo(
       @Path("deviceId") String deviceId);
 
-  @PUT("40/api/v1/user/update-coin")
+  @PUT("/api/v1/user/update-coin")
   Future<void> updateUserCoin(@Body() UserInfoByDeviceIdModel request);
 
-  @GET("40/api/v1/user/get-all")
+  @GET("/api/v1/user/get-all")
   Future<BaseResponseList<UserInfoByDeviceIdModel>> getAllUser();
 }

@@ -20,8 +20,8 @@ Future<void> setupLocator() async {
   serviceLocator.registerLazySingleton(
       () => SharedPreferencesManager(sharedPreferences: sharedPreferences));
 
-  final Dio dio =
-      await setupDio(baseUrl: "http://202.191.56.11:80", isHaveToken: true);
+  final Dio dio = await setupDio(
+      baseUrl: "https://wesign.ibme.edu.vn/chuyen/datn", isHaveToken: true);
   serviceLocator.registerLazySingleton<SidebarCubit>(() => SidebarCubit());
   serviceLocator
       .registerLazySingleton<GetAllUserCubit>(() => GetAllUserCubit());

@@ -43,7 +43,7 @@ class _QuestionService implements QuestionService {
     )
             .compose(
               _dio.options,
-              '40/api/v1/question',
+              '/api/v1/question',
               queryParameters: queryParameters,
               data: _data,
             )
@@ -69,7 +69,7 @@ class _QuestionService implements QuestionService {
     )
             .compose(
               _dio.options,
-              '40/api/v1/question',
+              '/api/v1/question',
               queryParameters: queryParameters,
               data: _data,
             )

@@ -32,7 +32,7 @@ class _UserServices implements UserServices {
     )
         .compose(
           _dio.options,
-          '40/api/v1/user',
+          '/api/v1/user',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -54,7 +54,7 @@ class _UserServices implements UserServices {
     )
             .compose(
               _dio.options,
-              '40/api/v1/user/${deviceId}',
+              '/api/v1/user/${deviceId}',
               queryParameters: queryParameters,
               data: _data,
             )
@@ -80,7 +80,7 @@ class _UserServices implements UserServices {
     )
         .compose(
           _dio.options,
-          '40/api/v1/user/update-coin',
+          '/api/v1/user/update-coin',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -102,7 +102,7 @@ class _UserServices implements UserServices {
     )
             .compose(
               _dio.options,
-              '40/api/v1/user/get-all',
+              '/api/v1/user/get-all',
               queryParameters: queryParameters,
               data: _data,
             )
