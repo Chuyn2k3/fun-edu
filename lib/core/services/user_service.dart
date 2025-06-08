@@ -17,4 +17,7 @@ abstract class UserServices {
 
   @PUT("40/api/v1/user/update-coin")
   Future<void> updateUserCoin(@Body() UserInfoByDeviceIdModel request);
+
+  @GET("40/api/v1/user/get-all")
+  Future<BaseResponseList<UserInfoByDeviceIdModel>> getAllUser();
 }

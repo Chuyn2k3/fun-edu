@@ -13,6 +13,8 @@ import 'package:fun_edu/feature/even_old_game/even_odd_game_select_mode.dart';
 import 'package:fun_edu/feature/game_feature/game/dino_run/pages/dino_run_screen.dart';
 import 'package:fun_edu/feature/game_feature/game/multi_player_quiz/page.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/pages/sweep_screen.dart';
+import 'package:fun_edu/feature/manager_user/page/index.dart';
+import 'package:fun_edu/feature/manager_user/screen/index.dart';
 import 'package:fun_edu/feature/math_feature/game/space_game.dart';
 import 'package:fun_edu/feature/math_feature/index.dart';
 import 'package:fun_edu/feature/math_feature/screen/Quiz/ask_operator.dart';
@@ -208,6 +210,18 @@ class AppRouter {
         name: GoRouterName.overView.routeName,
         pageBuilder: (context, state) =>
             const MaterialPage<void>(child: OverviewScreen()),
+      ),
+      GoRoute(
+        path: GoRouterName.managerUser.routePath,
+        name: GoRouterName.managerUser.routeName,
+        pageBuilder: (context, state) =>
+            const MaterialPage<void>(child: ManagerUserPage()),
+      ),
+      GoRoute(
+        path: GoRouterName.users.routePath,
+        name: GoRouterName.users.routeName,
+        pageBuilder: (context, state) =>
+            const MaterialPage<void>(child: ManagerUserScreen()),
       ),
     ],
     redirect: (_, state) {

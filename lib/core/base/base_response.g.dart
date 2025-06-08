@@ -78,3 +78,23 @@ Map<String, dynamic> _$DataResponseToJson<T>(
     <String, dynamic>{
       'content': instance.content?.map(toJsonT).toList(),
     };
+
+BaseResponseList<T> _$BaseResponseListFromJson<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT,
+) =>
+    BaseResponseList<T>(
+      (json['data'] as List<dynamic>?)?.map(fromJsonT).toList(),
+      (json['code'] as num?)?.toInt(),
+      json['message'] as String?,
+    );
+
+Map<String, dynamic> _$BaseResponseListToJson<T>(
+  BaseResponseList<T> instance,
+  Object? Function(T value) toJsonT,
+) =>
+    <String, dynamic>{
+      'data': instance.data?.map(toJsonT).toList(),
+      'code': instance.code,
+      'message': instance.message,
+    };

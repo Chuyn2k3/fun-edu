@@ -7,6 +7,7 @@ import 'package:fun_edu/core/colors/app_colors.dart';
 import 'package:fun_edu/core/theme/app_themes.dart';
 import 'package:fun_edu/cubit/sidebar/sidebar_cubit.dart';
 import 'package:fun_edu/di/locator.dart';
+import 'package:fun_edu/feature/manager_user/cubit/get_user_all_cubit.dart';
 import 'package:fun_edu/feature/user/cubit/user_info/get_user_info_cubit.dart';
 import 'package:fun_edu/helper/pref.dart';
 import 'package:fun_edu/router/app_router.dart';
@@ -96,6 +97,9 @@ class _MyAppState extends State<MyApp> {
           ),
           BlocProvider(
             create: (context) => serviceLocator<SidebarCubit>(),
+          ),
+          BlocProvider(
+            create: (context) => serviceLocator<GetAllUserCubit>(),
           ),
         ],
         child: ToastificationWrapper(

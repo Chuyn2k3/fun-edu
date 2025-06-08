@@ -114,10 +114,10 @@ final sidebarMenuConfigs = [
       ),
     ],
   ),
-  // SidebarMenuConfig(
-  //   uri: GoRouterName.pdf.routePath,
-  //   iconData: FontAwesomeIcons.filePdf,
-  //   isFlutterAwesome: true,
-  //   title: (context) => "Tài liệu PDF",
-  // ),
+  SidebarMenuConfig(
+    uri: GoRouterName.managerUser.routePath,
+    iconData: FontAwesomeIcons.user,
+    isFlutterAwesome: true,
+    title: (context) => "Người dùng",
+  ),
 ];

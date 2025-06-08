@@ -702,7 +702,7 @@ class _SidebarState extends State<Sidebar> with TickerProviderStateMixin {
                     GoRouter.of(context).go(uri);
                   } else {
                     // Đã ở đúng màn, chỉ đóng Drawer
-                    Navigator.of(context).pop();
+                    GoRouter.of(context).pop();
                   }
                 }
               },

@@ -25,7 +25,9 @@ enum GoRouterName {
   dinoRun,
   multiPlayerQuiz,
   sweep,
-  overView
+  overView,
+  managerUser,
+  users,
 }
 
 extension GoRouterNameX on GoRouterName {
@@ -83,6 +85,10 @@ extension GoRouterNameX on GoRouterName {
         return "/sweep";
       case GoRouterName.overView:
         return kIsWeb ? "/" : "/overview";
+      case GoRouterName.managerUser:
+        return "/manager-user";
+      case GoRouterName.users:
+        return "/users";
     }
   }
 }

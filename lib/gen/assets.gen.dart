@@ -390,6 +390,9 @@ class $AssetsImagesGen {
   AssetGenImage get image9081 =>
       const AssetGenImage('assets/images/image_9081.png');
 
+  /// File path: assets/images/jelly.png
+  AssetGenImage get jelly => const AssetGenImage('assets/images/jelly.png');
+
   /// File path: assets/images/logo.png
   AssetGenImage get logo => const AssetGenImage('assets/images/logo.png');
 
@@ -588,6 +591,7 @@ class $AssetsImagesGen {
         iconCurrentOdo,
         image2,
         image9081,
+        jelly,
         logo,
         logo3,
         math,
@@ -804,6 +808,7 @@ class Assets {
   static const $AssetsAnimationGen animation = $AssetsAnimationGen();
   static const $AssetsAudioGen audio = $AssetsAudioGen();
   static const $AssetsCountersGen counters = $AssetsCountersGen();
+  static const String fileTime = 'assets/file_time.txt';
   static const $AssetsIconsGen icons = $AssetsIconsGen();
   static const $AssetsImageMathGen imageMath = $AssetsImageMathGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
@@ -813,6 +818,9 @@ class Assets {
   static const $AssetsNumberGen number = $AssetsNumberGen();
   static const $AssetsSplashGen splash = $AssetsSplashGen();
   static const $AssetsSvgsGen svgs = $AssetsSvgsGen();
+
+  /// List of all assets
+  static List<String> get values => [fileTime];
 }
 
 class AssetGenImage {

@@ -88,6 +88,32 @@ class _UserServices implements UserServices {
     return null;
   }
 
+  @override
+  Future<BaseResponseList<UserInfoByDeviceIdModel>> getAllUser() async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<BaseResponseList<UserInfoByDeviceIdModel>>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              '40/api/v1/user/get-all',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = BaseResponseList<UserInfoByDeviceIdModel>.fromJson(
+      _result.data!,
+      (json) => UserInfoByDeviceIdModel.fromJson(json as Map<String, dynamic>),
+    );
+    return value;
+  }
+
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&
         !(requestOptions.responseType == ResponseType.bytes ||

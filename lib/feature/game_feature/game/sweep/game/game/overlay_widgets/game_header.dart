@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fun_edu/feature/game_feature/game/sweep/game/data/providers/score_provider.dart';
@@ -84,7 +85,7 @@ class _GameHeaderState extends ConsumerState<GameHeader>
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const LogoutButton(),
+                if (!kIsWeb) const LogoutButton(),
                 const SizedBox(
                   height: 8,
                 ),

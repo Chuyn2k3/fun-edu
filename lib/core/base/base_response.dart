@@ -16,10 +16,14 @@ class BaseResponse<T> {
     this.message,
   );
 
-  factory BaseResponse.fromJson(Map<String, dynamic> json,  T Function(Object? json) fromJsonT,) =>
+  factory BaseResponse.fromJson(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT,
+  ) =>
       _$BaseResponseFromJson(json, fromJsonT);
 
-  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) => _$BaseResponseToJson(this, toJsonT);
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
+      _$BaseResponseToJson(this, toJsonT);
 }
 
 @JsonSerializable(
@@ -36,11 +40,16 @@ class BaseListResponse<T> {
     this.message,
   );
 
-  factory BaseListResponse.fromJson(Map<String, dynamic> json,  T Function(Object? json) fromJsonT,) =>
+  factory BaseListResponse.fromJson(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT,
+  ) =>
       _$BaseListResponseFromJson(json, fromJsonT);
 
-  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) => _$BaseListResponseToJson(this, toJsonT);
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
+      _$BaseListResponseToJson(this, toJsonT);
 }
+
 @JsonSerializable(
   genericArgumentFactories: true,
 )
@@ -57,4 +66,28 @@ class DataResponse<T> {
 
   Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
       _$DataResponseToJson(this, toJsonT);
+}
+
+@JsonSerializable(
+  genericArgumentFactories: true,
+)
+class BaseResponseList<T> {
+  final List<T>? data;
+  final int? code;
+  final String? message;
+
+  BaseResponseList(
+    this.data,
+    this.code,
+    this.message,
+  );
+
+  factory BaseResponseList.fromJson(
+    Map<String, dynamic> json,
+    T Function(Object? json) fromJsonT,
+  ) =>
+      _$BaseResponseListFromJson(json, fromJsonT);
+
+  Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
+      _$BaseResponseListToJson(this, toJsonT);
 }

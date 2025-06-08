@@ -4,6 +4,7 @@ import 'package:fun_edu/core/repositories/user_repository.dart';
 import 'package:fun_edu/core/services/question_service.dart';
 import 'package:fun_edu/core/services/user_service.dart';
 import 'package:fun_edu/cubit/sidebar/sidebar_cubit.dart';
+import 'package:fun_edu/feature/manager_user/cubit/get_user_all_cubit.dart';
 import 'package:fun_edu/utils/http_services.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
@@ -22,6 +23,8 @@ Future<void> setupLocator() async {
   final Dio dio =
       await setupDio(baseUrl: "http://202.191.56.11:80", isHaveToken: true);
   serviceLocator.registerLazySingleton<SidebarCubit>(() => SidebarCubit());
+  serviceLocator
+      .registerLazySingleton<GetAllUserCubit>(() => GetAllUserCubit());
   serviceLocator
       .registerLazySingleton<QuestionService>(() => QuestionService(dio));
   serviceLocator.registerLazySingleton<UserServices>(() => UserServices(dio));
