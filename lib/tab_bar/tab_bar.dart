@@ -26,7 +26,7 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
     ]);
     Flame.device.setPortrait();
     pages.add(const HomeScreen());
-    pages.add(const DigitRecogizePage());
+   // pages.add(const DigitRecogizePage());
     pages.add(const ListGamePage());
   }
 
@@ -69,8 +69,8 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home, 0),
-          _buildNavItem(Icons.memory, 1),
-          _buildNavItem(Icons.sports_esports, 2),
+         // _buildNavItem(Icons.memory, 1),
+          _buildNavItem(Icons.sports_esports, 1),
         ],
       ),
     );

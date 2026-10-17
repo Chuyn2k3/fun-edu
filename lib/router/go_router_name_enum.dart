@@ -44,7 +44,7 @@ extension GoRouterNameX on GoRouterName {
       case GoRouterName.tabbar:
         return "/tabbar";
       case GoRouterName.dailyTask:
-        return "/daily-task/:userCoin";
+        return "/daily-task";
       case GoRouterName.numberStudy:
         return "/number-study";
       case GoRouterName.numberByAudio:

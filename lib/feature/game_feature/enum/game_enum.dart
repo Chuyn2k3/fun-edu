@@ -4,6 +4,7 @@ import 'package:fun_edu/data/color/color.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/utils/game_time_manager.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
+import 'package:fun_edu/utils/snack_bar.dart';
 import 'package:go_router/go_router.dart';
 
 enum GameEnum {
@@ -70,15 +71,16 @@ enum GameEnum {
     switch (this) {
       case GameEnum.dinoRun:
         return () async {
-          final manager = GameTimeManager("dinoRun");
-          final allowed = await manager.canPlay();
+          getContext.showSnackBarFail(text: "Tính năng đang phát triển");
+          // final manager = GameTimeManager("dinoRun");
+          // final allowed = await manager.canPlay();
 
-          if (!allowed) {
-            _showDialog();
-            return;
-          }
+          // if (!allowed) {
+          //   _showDialog();
+          //   return;
+          // }
 
-          getContext.pushNamed(GoRouterName.dinoRun.routeName);
+          // getContext.pushNamed(GoRouterName.dinoRun.routeName);
         };
 
       case GameEnum.sweep:
@@ -94,6 +96,7 @@ enum GameEnum {
         };
       case GameEnum.soloQuiz:
         return () async {
+          // getContext.showSnackBarFail(text: "Tính năng đang phát triển");
           final manager = GameTimeManager("soloQuiz");
           final allowed = await manager.canPlay();
 

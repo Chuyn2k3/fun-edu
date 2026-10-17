@@ -1,4 +1,4 @@
-package com.example.fun_edu
+package com.ibme.funedu
 
 import io.flutter.embedding.android.FlutterActivity
 

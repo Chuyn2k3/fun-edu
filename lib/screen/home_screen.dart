@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             : null;
                         context.pushNamed(
                           GoRouterName.dailyTask.routeName,
-                          queryParams: {"userCoin": coin?.toString() ?? ""},
+                          queryParams: {"userCoin": coin?.toString() ?? "9999"},
                         );
                       },
                     ),
@@ -236,12 +236,54 @@ class _DailyTaskCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: height,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            fit: BoxFit.fill,
-            image: AssetImage('assets/images/dailyTask.png'),
+        //margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // Phiên bản 1: Gradient tím-hồng hiện đại
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF667eea), // Tím nhạt
+              Color(0xFF764ba2), // Tím đậm
+              Color(0xFFf093fb), // Hồng nhạt
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          
+          // Phiên bản 2: Gradient xanh dương-xanh lá (bỏ comment để dùng)
+          // gradient: const LinearGradient(
+          //   colors: [
+          //     Color(0xFF4facfe), // Xanh dương nhạt
+          //     Color(0xFF00f2fe), // Xanh cyan
+          //   ],
+          //   begin: Alignment.topLeft,
+          //   end: Alignment.bottomRight,
+          // ),
+          
+          // Phiên bản 3: Gradient cam-hồng hoàng hôn (bỏ comment để dùng)
+          // gradient: const LinearGradient(
+          //   colors: [
+          //     Color(0xFFfa709a), // Hồng
+          //     Color(0xFFfee140), // Vàng cam
+          //   ],
+          //   begin: Alignment.topLeft,
+          //   end: Alignment.bottomRight,
+          // ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(2, 4),
+            ),
+          ],
         ),
+        // decoration: const BoxDecoration(
+        //   image: DecorationImage(
+        //     fit: BoxFit.fill,
+        //     image: AssetImage('assets/images/dailyTask.png'),
+        //   ),
+        // ),
         child: Padding(
           padding: const EdgeInsets.only(left: 13, bottom: 4),
           child: Column(

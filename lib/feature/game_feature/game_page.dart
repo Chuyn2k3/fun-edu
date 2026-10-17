@@ -75,7 +75,8 @@ class ListGamePage extends StatelessWidget {
   Widget _buildBody(
     BuildContext context,
   ) {
-    const digitEnum = GameEnum.values;
+    // const digitEnum = GameEnum.values;
+        const digitEnum = [GameEnum.soloQuiz];
     return Column(
         children: digitEnum
             .map((e) => _buildItem(

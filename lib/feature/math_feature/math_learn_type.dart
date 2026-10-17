@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fun_edu/feature/math_feature/screen/math_screen.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
+import 'package:fun_edu/utils/snack_bar.dart';
 import 'package:go_router/go_router.dart';
 
 enum MathLearnType { spaceGame, quiz }
@@ -42,11 +43,12 @@ extension MyMathLearnType on MathLearnType {
       MathLearnType.spaceGame => () =>
           getContext.pushNamed(GoRouterName.mathGame.routeName),
       MathLearnType.quiz => () {
-          Navigator.push(
-              getContext,
-              MaterialPageRoute(
-                builder: (context) => const MathScreen(),
-              ));
+          getContext.showSnackBarFail(text: "Tính năng đang phát triển");
+          // Navigator.push(
+          //     getContext,
+          //     MaterialPageRoute(
+          //       builder: (context) => const MathScreen(),
+          //     ));
           // => Get.to(() => const MathScreen()),
         }
     };

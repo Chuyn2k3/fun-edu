@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:fun_edu/utils/color_const.dart';
 import 'package:fun_edu/utils/custom_app_bar.dart';
+import 'package:fun_edu/utils/snack_bar.dart';
 import 'package:fun_edu/widget/main_screen_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
@@ -417,6 +418,7 @@ class _PdfGenerationScreenState extends State<PdfGenerationScreen> {
     //     ),
     //   ),
     // );
+    context.showSnackBarFail(text: "Chức năng đang phát triển");
   }
 
   void _showErrorSnackBar(String message) {

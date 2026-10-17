@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyTracking</key>
+  <false/>
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array>
+    <!-- device_info_plus -->
+    <dict>
+      <key>NSPrivacyDataType</key>
+      <string>Device ID</string>
+      <key>NSPrivacyDataUse</key>
+      <string>App Functionality</string>
+      <key>NSPrivacyAccessedVia</key>
+      <string>APIs</string>
+      <key>NSPrivacyUserTracking</key>
+      <false/>
+    </dict>
+
+    <!-- package_info_plus -->
+    <dict>
+      <key>NSPrivacyDataType</key>
+      <string>App Info</string>
+      <key>NSPrivacyDataUse</key>
+      <string>App Functionality</string>
+      <key>NSPrivacyAccessedVia</key>
+      <string>APIs</string>
+      <key>NSPrivacyUserTracking</key>
+      <false/>
+    </dict>
+  </array>
+</dict>
+</plist>
