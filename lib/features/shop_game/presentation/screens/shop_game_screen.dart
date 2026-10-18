@@ -5,6 +5,7 @@ import 'package:fun_edu/di/locator.dart';
 import 'package:fun_edu/features/shop_game/data/datasources/shop_game_levels_data.dart';
 import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_cubit.dart';
 import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_state.dart';
+import 'package:fun_edu/features/shop_game/presentation/widgets/dialogs/level_summary_dialog.dart';
 import 'package:fun_edu/features/shop_game/presentation/widgets/layers/ambient_particles_layer.dart';
 import 'package:fun_edu/features/shop_game/presentation/widgets/layers/background_scenery_layer.dart';
 import 'package:fun_edu/features/shop_game/presentation/widgets/layers/countertop_layer.dart';
@@ -68,7 +69,27 @@ class _ShopGameScreenState extends State<ShopGameScreen> {
       child: BlocConsumer<ShopGameCubit, ShopGameState>(
         listener: (context, state) {
           if (state.phase == GamePhase.levelComplete) {
-            // Level summary will be triggered here
+            final levelNumber = int.tryParse(state.levelId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+            final avgStars = state.orderStarsHistory.isNotEmpty
+                ? (state.orderStarsHistory.fold<int>(0, (a, b) => a + b) / state.orderStarsHistory.length).round()
+                : 3;
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => LevelSummaryDialog(
+                levelNumber: levelNumber,
+                starsEarned: avgStars,
+                coinsEarned: state.starCount * 5,
+                onReplay: () {
+                  Navigator.of(ctx).pop();
+                  _cubit.startGame(widget.levelId);
+                },
+                onNext: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).maybePop();
+                },
+              ),
+            );
           }
         },
         builder: (context, state) {
