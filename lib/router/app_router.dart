@@ -23,7 +23,8 @@ import 'package:fun_edu/feature/number_feature/sound_learn.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number_by_image.dart';
 import 'package:fun_edu/feature/operation_feature/operator_screen.dart';
-import 'package:fun_edu/feature/provider/game_provider.dart';
+import 'package:fun_edu/features/shop_game/presentation/screens/level_select_screen.dart';
+import 'package:fun_edu/features/shop_game/presentation/screens/shop_game_screen.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/screen/choose_age.dart';
 import 'package:fun_edu/screen/daily_task_screen.dart';
@@ -202,6 +203,22 @@ class AppRouter {
         name: GoRouterName.sweep.routeName,
         pageBuilder: (context, state) =>
             const MaterialPage<void>(child: SweepScreen()),
+      ),
+      GoRoute(
+        path: GoRouterName.shopGameLevelSelect.routePath,
+        name: GoRouterName.shopGameLevelSelect.routeName,
+        pageBuilder: (context, state) =>
+            const MaterialPage<void>(child: LevelSelectScreen()),
+      ),
+      GoRoute(
+        path: GoRouterName.shopGamePlay.routePath,
+        name: GoRouterName.shopGamePlay.routeName,
+        pageBuilder: (context, state) {
+          final levelId = state.params['levelId'] ?? 'level_1';
+          return MaterialPage<void>(
+            child: ShopGameScreen(levelId: levelId),
+          );
+        },
       ),
       GoRoute(
         path: GoRouterName.overView.routePath,
