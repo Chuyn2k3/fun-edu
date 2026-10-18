@@ -4,7 +4,6 @@ import 'package:fun_edu/features/shop_game/data/datasources/local_shop_datasourc
 import 'package:fun_edu/features/shop_game/data/models/child_profile_model.dart';
 import 'package:fun_edu/features/shop_game/data/models/play_session_model.dart';
 import 'package:fun_edu/features/shop_game/data/repositories/shop_game_repository_impl.dart';
-import 'package:fun_edu/features/shop_game/domain/entities/child_profile_entity.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/play_session_entity.dart';
 
 class MockLocalShopDataSource extends Mock implements LocalShopDataSource {}

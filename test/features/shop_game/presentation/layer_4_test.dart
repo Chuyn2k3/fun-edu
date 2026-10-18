@@ -6,8 +6,6 @@ import 'package:fun_edu/features/shop_game/presentation/widgets/layers/counterto
 
 void main() {
   testWidgets('BasketDragTarget accepts item on drop callback', (tester) async {
-    ItemEntity? droppedItem;
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -15,7 +13,7 @@ void main() {
             children: [
               CountertopLayer(
                 basketItems: const [],
-                onItemDropped: (item) => droppedItem = item,
+                onItemDropped: (_) {},
               ),
             ],
           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_cubit.dart';
 import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_state.dart';
 import 'package:fun_edu/features/shop_game/presentation/widgets/hud/floating_counting_text.dart';
 import 'package:fun_edu/features/shop_game/presentation/widgets/hud/top_hud_bar.dart';

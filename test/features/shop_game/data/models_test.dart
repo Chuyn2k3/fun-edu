@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fun_edu/features/shop_game/data/models/item_model.dart';
-import 'package:fun_edu/features/shop_game/data/models/order_model.dart';
 import 'package:fun_edu/features/shop_game/data/models/child_profile_model.dart';
 import 'package:fun_edu/features/shop_game/data/models/play_session_model.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/item_entity.dart';

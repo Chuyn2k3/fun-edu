@@ -1,11 +1,8 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:fun_edu/features/shop_game/domain/entities/child_profile_entity.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/item_entity.dart';
-import 'package:fun_edu/features/shop_game/domain/entities/level_entity.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/order_entity.dart';
 import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_cubit.dart';
 import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_state.dart';
@@ -24,23 +21,6 @@ void main() {
   final testOrders = [
     const OrderEntity(id: 'o1', requiredItem: ItemType.redApple, requiredQuantity: 2),
   ];
-
-  final testLevel = LevelEntity(
-    id: 'level_1',
-    shopName: 'Tiệm Tạp Hóa Nhí',
-    starsToUnlock: 0,
-    orders: testOrders,
-  );
-
-  final testProfile = ChildProfileEntity(
-    id: 'c1',
-    name: 'Bé Na',
-    age: 4,
-    totalStars: 0,
-    totalCoins: 10,
-    levelStars: const {},
-    createdAt: DateTime.now(),
-  );
 
   setUp(() {
     mockCubit = MockShopGameCubit();

@@ -1,9 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/item_entity.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/order_entity.dart';
-import 'package:fun_edu/features/shop_game/domain/entities/level_entity.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/child_profile_entity.dart';
-import 'package:fun_edu/features/shop_game/domain/entities/play_session_entity.dart';
 
 void main() {
   group('Domain Entities Tests', () {
