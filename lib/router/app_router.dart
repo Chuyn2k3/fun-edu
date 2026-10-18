@@ -23,6 +23,7 @@ import 'package:fun_edu/feature/number_feature/sound_learn.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number.dart';
 import 'package:fun_edu/feature/operation_feature/compare_number_by_image.dart';
 import 'package:fun_edu/feature/operation_feature/operator_screen.dart';
+import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/features/shop_game/presentation/screens/level_select_screen.dart';
 import 'package:fun_edu/features/shop_game/presentation/screens/shop_game_screen.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
@@ -229,8 +230,7 @@ class AppRouter {
     ],
     redirect: (_, state) {
       _handleSelectRoute(state);
-
-      //  return GoRouterName.overView.routePath;
+      return null;
     },
   );
   void _handleSelectRoute(GoRouterState state) {
