@@ -45,6 +45,8 @@ class ShopGameLevelsData {
     ),
   ];
 
+  static List<ItemEntity> get shelfEntities => shelfItems.map((m) => m.toEntity()).toList();
+
   static const List<LevelModel> levels = [
     // Level 1: Tiệm Trái Cây (⭐ Dễ, mở khóa: 0 sao)
     LevelModel(

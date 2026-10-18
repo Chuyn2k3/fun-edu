@@ -87,6 +87,14 @@ class ShopGameCubit extends Cubit<ShopGameState> {
     _startIdleTimer();
   }
 
+  bool get isMuted => _audioService.isMuted;
+
+  void toggleMute() {
+    _audioService.toggleMute();
+  }
+
+  void onItemDroppedToBasket(ItemEntity item) => addItemToBasket(item);
+
   void addItemToBasket(ItemEntity item) {
     hideHandTutor();
 

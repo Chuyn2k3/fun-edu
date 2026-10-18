@@ -11,6 +11,7 @@ import 'package:fun_edu/features/shop_game/data/repositories/shop_game_repositor
 import 'package:fun_edu/features/shop_game/domain/repositories/i_shop_game_repository.dart';
 import 'package:fun_edu/features/shop_game/domain/usecases/generate_order_usecase.dart';
 import 'package:fun_edu/features/shop_game/domain/usecases/record_play_log_usecase.dart';
+import 'package:fun_edu/features/shop_game/presentation/cubit/shop_game_cubit.dart';
 import 'package:fun_edu/utils/http_services.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
@@ -18,6 +19,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 GetIt serviceLocator = GetIt.instance;
+GetIt get locator => serviceLocator;
 
 Future<void> setupShopGameLocator() async {
   final localDataSource = LocalShopDataSource();
@@ -34,6 +36,12 @@ Future<void> setupShopGameLocator() async {
 
   serviceLocator.registerLazySingleton<TtsService>(() => TtsService());
   serviceLocator.registerLazySingleton<AudioService>(() => AudioService());
+
+  serviceLocator.registerFactory<ShopGameCubit>(() => ShopGameCubit(
+        repository: serviceLocator<IShopGameRepository>(),
+        ttsService: serviceLocator<TtsService>(),
+        audioService: serviceLocator<AudioService>(),
+      ));
 }
 
 Future<void> setupLocator() async {
