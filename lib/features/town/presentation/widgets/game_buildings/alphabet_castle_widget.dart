@@ -50,16 +50,17 @@ class _AlphabetCastleBuildingWidgetState extends State<AlphabetCastleBuildingWid
 
   @override
   Widget build(BuildContext context) {
-    final width = 190.0 * widget.scale;
-    final height = 240.0 * widget.scale;
+    final s = widget.scale;
+    final width = 210.0 * s;
+    final height = 250.0 * s;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => _handleTap(),
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedScale(
-        scale: _isPressed ? 0.93 : 1.0,
-        duration: const Duration(milliseconds: 100),
+        scale: _isPressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 120),
         curve: Curves.easeOutBack,
         child: SizedBox(
           width: width,
@@ -68,62 +69,94 @@ class _AlphabetCastleBuildingWidgetState extends State<AlphabetCastleBuildingWid
             clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
-              // 1. Ground Shadow (Bóng lâu đài)
+              // 1. Soft 135° Directional Castle Ground Shadow
               Positioned(
-                bottom: 4 * widget.scale,
+                bottom: 2 * s,
                 child: Container(
-                  width: 170 * widget.scale,
-                  height: 28 * widget.scale,
+                  width: 185 * s,
+                  height: 30 * s,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.18),
-                    borderRadius: BorderRadius.all(Radius.elliptical(170 * widget.scale, 28 * widget.scale)),
+                    color: Colors.black.withOpacity(0.25),
+                    borderRadius: BorderRadius.all(Radius.elliptical(185 * s, 30 * s)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10 * s,
+                        offset: Offset(-6 * s, 8 * s),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              // 2. Castle Central Keep (Tòa lâu đài đá trung tâm)
+              // 2. Central Fortress Keep (Tòa lâu đài đá tráng lệ)
               Positioned(
-                bottom: 16 * widget.scale,
+                bottom: 18 * s,
                 child: Container(
-                  width: 154 * widget.scale,
-                  height: 120 * widget.scale,
+                  width: 160 * s,
+                  height: 126 * s,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF90CAF9), Color(0xFF1E88E5)],
+                      colors: [
+                        Color(0xFF90CAF9), // Đá xanh dương sáng
+                        Color(0xFF1E88E5), // Đá cẩm thạch hoàng gia
+                        Color(0xFF0D47A1), // Chân thành vững chãi
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(20 * widget.scale),
-                    border: Border.all(color: Colors.white, width: 3.5 * widget.scale),
+                    borderRadius: BorderRadius.circular(24 * s),
+                    border: Border.all(color: Colors.white, width: 3.5 * s),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0D47A1).withOpacity(0.4),
-                        offset: Offset(0, 8 * widget.scale),
-                        blurRadius: 10 * widget.scale,
+                        color: const Color(0xFF0D47A1).withOpacity(0.55),
+                        offset: Offset(0, 10 * s),
+                        blurRadius: 14 * s,
                       ),
                     ],
                   ),
                   child: Stack(
                     children: [
-                      // Glowing Magical Arched Gate
+                      // Crenellations / Battlements at top
+                      Positioned(
+                        top: 4 * s,
+                        left: 12 * s,
+                        right: 12 * s,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: List.generate(
+                            4,
+                            (_) => Container(
+                              width: 16 * s,
+                              height: 10 * s,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFBBDEFB),
+                                borderRadius: BorderRadius.circular(2 * s),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Glowing Golden Arched Gate
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: Container(
-                          width: 50 * widget.scale,
-                          height: 64 * widget.scale,
-                          margin: EdgeInsets.only(bottom: 2 * widget.scale),
+                          width: 54 * s,
+                          height: 70 * s,
+                          margin: EdgeInsets.only(bottom: 2 * s),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [Color(0xFFFFF59D), Color(0xFFFFB300)],
+                              colors: [Color(0xFFFFF9C4), Color(0xFFFFB300)],
                             ),
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(25 * widget.scale)),
-                            border: Border.all(color: Colors.white, width: 2.5 * widget.scale),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(27 * s)),
+                            border: Border.all(color: Colors.white, width: 2.8 * s),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.amber.withOpacity(0.6),
-                                blurRadius: 10 * widget.scale,
+                                color: Colors.amber.withOpacity(0.7),
+                                blurRadius: 12 * s,
                               ),
                             ],
                           ),
@@ -132,9 +165,10 @@ class _AlphabetCastleBuildingWidgetState extends State<AlphabetCastleBuildingWid
                               'A B C',
                               style: TextStyle(
                                 fontFamily: 'LilitaOne',
-                                fontSize: 13 * widget.scale,
+                                fontSize: 14 * s,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFFE65100),
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ),
@@ -145,98 +179,136 @@ class _AlphabetCastleBuildingWidgetState extends State<AlphabetCastleBuildingWid
                 ),
               ),
 
-              // 3. Left & Right Turrets (2 Tháp canh 2 bên với mái nhọn hoàng gia)
+              // 3. Left & Right Sentry Turrets (Tháp canh hai bên)
               Positioned(
-                bottom: 30 * widget.scale,
-                left: 6 * widget.scale,
-                child: _buildTurret(widget.scale),
+                bottom: 32 * s,
+                left: 6 * s,
+                child: _buildTurret(s),
               ),
               Positioned(
-                bottom: 30 * widget.scale,
-                right: 6 * widget.scale,
-                child: _buildTurret(widget.scale),
+                bottom: 32 * s,
+                right: 6 * s,
+                child: _buildTurret(s),
               ),
 
-              // 4. Center High Tower & Fluttering Pennant Flag (Tháp chính và cờ đuôi nheo)
+              // 4. Center High Pinnacle Spire with Fluttering Flag
               Positioned(
-                top: 26 * widget.scale,
+                top: 28 * s,
                 child: Column(
                   children: [
-                    // Golden Pennant Flag fluttering
+                    // Fluttering Golden Pennant
                     AnimatedBuilder(
                       animation: _flagController,
                       builder: (context, child) {
-                        final wave = math.sin(_flagController.value * math.pi * 2) * 0.12;
+                        final wave = math.sin(_flagController.value * math.pi * 2) * 0.14;
                         return Transform.rotate(
                           angle: wave,
                           alignment: Alignment.bottomLeft,
                           child: Container(
-                            width: 28 * widget.scale,
-                            height: 14 * widget.scale,
+                            width: 30 * s,
+                            height: 15 * s,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFD54F),
-                              borderRadius: BorderRadius.only(
-                                topRight: Radius.circular(4 * widget.scale),
-                                bottomRight: Radius.circular(8 * widget.scale),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFD54F), Color(0xFFFF8F00)],
                               ),
+                              borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(4 * s),
+                                bottomRight: Radius.circular(10 * s),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.amber.withOpacity(0.6),
+                                  blurRadius: 4 * s,
+                                ),
+                              ],
                             ),
                             child: Center(
-                              child: Text('⭐', style: TextStyle(fontSize: 8 * widget.scale)),
+                              child: Container(
+                                width: 5 * s,
+                                height: 5 * s,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
-                    // Conical Roof
+                    // Conical Royal Sapphire Roof
                     Container(
-                      width: 58 * widget.scale,
-                      height: 38 * widget.scale,
+                      width: 62 * s,
+                      height: 42 * s,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [Color(0xFF42A5F5), Color(0xFF1565C0)],
                         ),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(29 * widget.scale)),
-                        border: Border.all(color: Colors.white, width: 2.5 * widget.scale),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(31 * s)),
+                        border: Border.all(color: Colors.white, width: 2.8 * s),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            offset: Offset(0, 4 * s),
+                            blurRadius: 6 * s,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // 5. Title Signboard (Biển tên Lâu Đài Chữ Cái)
+              // 5. Carved Wooden Name Signboard: "Lâu Đài Chữ Cái"
               Positioned(
-                top: 10 * widget.scale,
+                top: 8 * s,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14 * widget.scale, vertical: 5 * widget.scale),
+                  padding: EdgeInsets.symmetric(horizontal: 18 * s, vertical: 6 * s),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+                      colors: [Color(0xFF8D6E63), Color(0xFF4E342E)],
                     ),
-                    borderRadius: BorderRadius.circular(14 * widget.scale),
-                    border: Border.all(color: const Color(0xFFFFD54F), width: 2.5 * widget.scale),
+                    borderRadius: BorderRadius.circular(16 * s),
+                    border: Border.all(color: const Color(0xFFFFD54F), width: 2.5 * s),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        offset: Offset(0, 4 * widget.scale),
-                        blurRadius: 6 * widget.scale,
+                        color: Colors.black.withOpacity(0.35),
+                        offset: Offset(0, 5 * s),
+                        blurRadius: 8 * s,
                       ),
                     ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('🏰', style: TextStyle(fontSize: 16 * widget.scale)),
-                      SizedBox(width: 4 * widget.scale),
+                      Container(
+                        width: 8 * s,
+                        height: 8 * s,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF42A5F5),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 6 * s),
                       Text(
                         'Lâu Đài Chữ Cái',
                         style: TextStyle(
                           fontFamily: 'LilitaOne',
-                          fontSize: 15 * widget.scale,
+                          fontSize: 16 * s,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      SizedBox(width: 6 * s),
+                      Container(
+                        width: 8 * s,
+                        height: 8 * s,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF42A5F5),
+                          shape: BoxShape.circle,
                         ),
                       ),
                     ],
@@ -244,37 +316,57 @@ class _AlphabetCastleBuildingWidgetState extends State<AlphabetCastleBuildingWid
                 ),
               ),
 
-              // 6. Action Button Pill (Nút sắp ra mắt)
+              // 6. Tactile 3D Jelly Action Button: "KHÁM PHÁ"
               Positioned(
                 bottom: 0,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14 * widget.scale, vertical: 4 * widget.scale),
+                  padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 5 * s),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF64B5F6), Color(0xFF1976D2)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFF64B5F6), // Lam ngọc
+                        Color(0xFF1E88E5), // Lam hoàng gia
+                        Color(0xFF0D47A1), // Chân đế
+                      ],
+                      stops: [0.0, 0.6, 1.0],
                     ),
-                    borderRadius: BorderRadius.circular(16 * widget.scale),
-                    border: Border.all(color: Colors.white, width: 2 * widget.scale),
+                    borderRadius: BorderRadius.circular(18 * s),
+                    border: Border.all(color: Colors.white, width: 2.2 * s),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0D47A1).withOpacity(0.6),
-                        offset: Offset(0, 3 * widget.scale),
-                        blurRadius: 4 * widget.scale,
+                        color: const Color(0xFF0D47A1).withOpacity(0.65),
+                        offset: Offset(0, 4 * s),
+                        blurRadius: 6 * s,
+                      ),
+                      const BoxShadow(
+                        color: Colors.white70,
+                        offset: Offset(0, -1),
+                        blurRadius: 2,
                       ),
                     ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('✨', style: TextStyle(fontSize: 12 * widget.scale)),
-                      SizedBox(width: 4 * widget.scale),
+                      Container(
+                        width: 6 * s,
+                        height: 6 * s,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 5 * s),
                       Text(
-                        'SẮP RA MẮT',
+                        'KHÁM PHÁ',
                         style: TextStyle(
                           fontFamily: 'LilitaOne',
-                          fontSize: 11 * widget.scale,
+                          fontSize: 12 * s,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          letterSpacing: 0.8,
                         ),
                       ),
                     ],
@@ -288,25 +380,44 @@ class _AlphabetCastleBuildingWidgetState extends State<AlphabetCastleBuildingWid
     );
   }
 
-  Widget _buildTurret(double scale) {
+  Widget _buildTurret(double s) {
     return Column(
       children: [
+        // Conical Roof
         Container(
-          width: 32 * scale,
-          height: 24 * scale,
+          width: 38 * s,
+          height: 28 * s,
           decoration: BoxDecoration(
-            color: const Color(0xFF1565C0),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16 * scale)),
-            border: Border.all(color: Colors.white, width: 2 * scale),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF64B5F6), Color(0xFF1976D2)],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(19 * s)),
+            border: Border.all(color: Colors.white, width: 2 * s),
           ),
         ),
+        // Tower Shaft
         Container(
-          width: 28 * scale,
-          height: 60 * scale,
+          width: 32 * s,
+          height: 52 * s,
           decoration: BoxDecoration(
-            color: const Color(0xFF64B5F6),
-            borderRadius: BorderRadius.circular(8 * scale),
-            border: Border.all(color: Colors.white, width: 2 * scale),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFBBDEFB), Color(0xFF64B5F6)],
+            ),
+            border: Border.all(color: Colors.white, width: 2 * s),
+          ),
+          child: Center(
+            child: Container(
+              width: 8 * s,
+              height: 14 * s,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D47A1),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(4 * s)),
+              ),
+            ),
           ),
         ),
       ],
