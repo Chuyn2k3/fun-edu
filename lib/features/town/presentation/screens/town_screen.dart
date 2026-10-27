@@ -3,15 +3,10 @@ import 'package:fun_edu/core/audio/audio_manager.dart';
 import 'package:fun_edu/core/audio/audio_sfx_enum.dart';
 import 'package:fun_edu/feature/game_feature/game_page.dart';
 import 'package:fun_edu/features/shop_game/presentation/widgets/layers/ambient_particles_layer.dart';
+import 'package:fun_edu/features/town/presentation/widgets/diorama_valley_canvas.dart';
 import 'package:fun_edu/features/town/presentation/widgets/game_bottom_dock.dart';
-import 'package:fun_edu/features/town/presentation/widgets/game_buildings/alphabet_castle_widget.dart';
-import 'package:fun_edu/features/town/presentation/widgets/game_buildings/market_building_widget.dart';
-import 'package:fun_edu/features/town/presentation/widgets/game_buildings/math_mushroom_widget.dart';
-import 'package:fun_edu/features/town/presentation/widgets/game_buildings/pet_sanctuary_widget.dart';
-import 'package:fun_edu/features/town/presentation/widgets/game_buildings/wonder_tree_widget.dart';
 import 'package:fun_edu/features/town/presentation/widgets/game_world_background.dart';
 import 'package:fun_edu/features/town/presentation/widgets/game_world_hud.dart';
-import 'package:fun_edu/features/town/presentation/widgets/interactive_pippo_character.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:go_router/go_router.dart';
 
@@ -169,310 +164,88 @@ class _TownScreenState extends State<TownScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Immersive Animated Scenery Background (Sky + Sun + Hills + Windmill + River)
-          const GameWorldBackground(),
+          // 1. Immersive Animated Scenery Background (Sky + Sun + Clouds)
+          const GameWorldBackground(showTerrain: false),
 
           // 2. Ambient Floating Sparkles & Particles
           const AmbientParticlesLayer(particleCount: 16),
 
-          // 3. Responsive Game World Content Area
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isTablet = constraints.maxWidth >= 600 || MediaQuery.of(context).size.shortestSide >= 600;
-
-                return Stack(
-                  children: [
-                    // Main Scrollable / Viewport Content
-                    Positioned.fill(
-                      child: isTablet
-                          ? _buildTabletPanoramaView(context, constraints)
-                          : _buildMobileAdventureTrail(context, constraints),
-                    ),
-
-                    // Top Floating Game HUD Bar
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: GameWorldHud(
-                        coins: 150,
-                        magicDew: 1,
-                        playerName: 'Bé Yêu',
-                      ),
-                    ),
-
-                    // Bottom Floating Game Navigation Dock
-                    Positioned(
-                      bottom: 8,
-                      left: 0,
-                      right: 0,
-                      child: GameBottomDock(
-                        activeIndex: _activeDockIndex,
-                        onMapTap: () {
-                          setState(() => _activeDockIndex = 0);
-                        },
-                        onArcadeTap: () {
-                          setState(() => _activeDockIndex = 1);
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const ListGamePage()),
-                          );
-                        },
-                        onBackpackTap: () {
-                          _showBackpackModal();
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // -------------------------------------------------------------
-  // Mobile Phone View: Vertical Winding Adventure Trail
-  // -------------------------------------------------------------
-  Widget _buildMobileAdventureTrail(BuildContext context, BoxConstraints constraints) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(top: 80, bottom: 90),
-      child: Column(
-        children: [
-          // World Banner Header on mobile
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                ),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Colors.white, width: 2.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
-                    offset: const Offset(0, 4),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: const Text(
-                'Làng Cổ Tích FunEdu',
-                style: TextStyle(
-                  fontFamily: 'LilitaOne',
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
+          // 3. Main 3D Diorama Valley World Canvas
+          Positioned.fill(
+            child: SafeArea(
+              bottom: false,
+              child: DioramaValleyCanvas(
+                onMarketTap: () {
+                  context.pushNamed(GoRouterName.shopGameLevelSelect.routeName);
+                },
+                onMathMushroomTap: () {
+                  context.pushNamed(GoRouterName.numberStudy.routeName);
+                },
+                onWonderTreeTap: () {
+                  _showActionDialog(
+                    title: 'Cây Tri Thức',
+                    message: 'Bé đã tưới 1 Giọt Nước Thần!\nCây lớn thêm 1 bậc và sắp ra quả thần kỳ rồi đó! 🍎✨',
+                    emoji: '💧🌳',
+                  );
+                },
+                onPetSanctuaryTap: () {
+                  _showActionDialog(
+                    title: 'Trại Ấp Thú',
+                    message: 'Bong! Bé vừa gõ búa phép thuật!\nVỏ trứng đã nứt thêm 1 vết, 1 ngày nữa sẽ nở bạn Rồng Con! 🐉✨',
+                    emoji: '🔨🐣',
+                  );
+                },
+                onAlphabetCastleTap: () {
+                  _showActionDialog(
+                    title: 'Lâu Đài Chữ Cái',
+                    message: 'Pippo đang xây dựng Lâu Đài Ngôn Ngữ với các bạn thú mới. Bé cùng chờ đón nhé! 🏰🎈',
+                    emoji: '🏰✨',
+                  );
+                },
               ),
             ),
           ),
 
-          // Interactive Mascot Pippo Greeting
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: InteractivePippoCharacter(scale: 0.95),
-          ),
-
-          // Station 1: Siêu Thị Pippo
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: MarketBuildingWidget(
-              scale: 1.0,
-              onTap: () {
-                context.pushNamed(GoRouterName.shopGameLevelSelect.routeName);
-              },
+          // 4. Top Floating Edge-Pinned Game HUD Bar
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: GameWorldHud(
+                coins: 150,
+                magicDew: 1,
+                playerName: 'Bé Yêu',
+              ),
             ),
           ),
 
-          // Wooden trail connector divider with flowers
-          _buildTrailConnector('🍃 🌸 🍃'),
-
-          // Station 2: Học Viện Toán Học (Nhà Toán Học)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: MathMushroomWidget(
-              scale: 1.0,
-              onTap: () {
-                context.pushNamed(GoRouterName.numberStudy.routeName);
-              },
-            ),
-          ),
-
-          _buildTrailConnector('🍄 ⭐ 🍄'),
-
-          // Station 3: Cây Tri Thức
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: WonderTreeBuildingWidget(
-              scale: 1.0,
-              onTap: () {
-                _showActionDialog(
-                  title: 'Cây Tri Thức',
-                  message: 'Bé đã tưới 1 Giọt Nước Thần!\nCây lớn thêm 1 bậc và sắp ra quả thần kỳ rồi đó! 🍎✨',
-                  emoji: '💧🌳',
-                );
-              },
-            ),
-          ),
-
-          _buildTrailConnector('🌿 🦋 🌿'),
-
-          // Station 4: Trại Ấp Thú
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: PetSanctuaryBuildingWidget(
-              scale: 1.0,
-              onTap: () {
-                _showActionDialog(
-                  title: 'Trại Ấp Thú',
-                  message: 'Bong! Bé vừa gõ búa phép thuật!\nVỏ trứng đã nứt thêm 1 vết, 1 ngày nữa sẽ nở bạn Rồng Con! 🐉✨',
-                  emoji: '🔨🐣',
-                );
-              },
-            ),
-          ),
-
-          _buildTrailConnector('✨ 🏰 ✨'),
-
-          // Station 5: Lâu Đài Chữ Cái
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: AlphabetCastleBuildingWidget(
-              scale: 1.0,
-              onTap: () {
-                _showActionDialog(
-                  title: 'Lâu Đài Chữ Cái',
-                  message: 'Pippo đang xây dựng Lâu Đài Ngôn Ngữ với các bạn thú mới. Bé cùng chờ đón nhé! 🏰🎈',
-                  emoji: '🏰✨',
-                );
-              },
+          // 5. Bottom Floating Game Navigation Dock
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              top: false,
+              child: GameBottomDock(
+                activeIndex: _activeDockIndex,
+                onMapTap: () {
+                  setState(() => _activeDockIndex = 0);
+                },
+                onArcadeTap: () {
+                  setState(() => _activeDockIndex = 1);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ListGamePage()),
+                  );
+                },
+                onBackpackTap: () {
+                  _showBackpackModal();
+                },
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTrailConnector(String decor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 40,
-            height: 3,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD54F),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(decor, style: const TextStyle(fontSize: 14)),
-          ),
-          Container(
-            width: 40,
-            height: 3,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD54F),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // -------------------------------------------------------------
-  // Tablet / iPad View: Grand Panoramic Valley Layout
-  // -------------------------------------------------------------
-  Widget _buildTabletPanoramaView(BuildContext context, BoxConstraints constraints) {
-    final scale = (constraints.maxWidth / 980).clamp(0.85, 1.25);
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(
-        top: 85 * scale,
-        bottom: 80 * scale,
-        left: 32 * scale,
-        right: 32 * scale,
-      ),
-      child: Center(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Interactive Mascot Pippo standing at entrance
-            Padding(
-              padding: EdgeInsets.only(right: 24 * scale, bottom: 20 * scale),
-              child: InteractivePippoCharacter(scale: scale),
-            ),
-
-            // Station 1: Siêu Thị Pippo
-            MarketBuildingWidget(
-              scale: scale,
-              onTap: () {
-                context.pushNamed(GoRouterName.shopGameLevelSelect.routeName);
-              },
-            ),
-            SizedBox(width: 20 * scale),
-
-            // Station 2: Nhà Toán Học
-            MathMushroomWidget(
-              scale: scale,
-              onTap: () {
-                context.pushNamed(GoRouterName.numberStudy.routeName);
-              },
-            ),
-            SizedBox(width: 20 * scale),
-
-            // Station 3: Cây Tri Thức
-            WonderTreeBuildingWidget(
-              scale: scale,
-              onTap: () {
-                _showActionDialog(
-                  title: 'Cây Tri Thức',
-                  message: 'Bé đã tưới 1 Giọt Nước Thần!\nCây lớn thêm 1 bậc và sắp ra quả thần kỳ rồi đó! 🍎✨',
-                  emoji: '💧🌳',
-                );
-              },
-            ),
-            SizedBox(width: 20 * scale),
-
-            // Station 4: Trại Ấp Thú
-            PetSanctuaryBuildingWidget(
-              scale: scale,
-              onTap: () {
-                _showActionDialog(
-                  title: 'Trại Ấp Thú',
-                  message: 'Bong! Bé vừa gõ búa phép thuật!\nVỏ trứng đã nứt thêm 1 vết, 1 ngày nữa sẽ nở bạn Rồng Con! 🐉✨',
-                  emoji: '🔨🐣',
-                );
-              },
-            ),
-            SizedBox(width: 20 * scale),
-
-            // Station 5: Lâu Đài Chữ Cái
-            AlphabetCastleBuildingWidget(
-              scale: scale,
-              onTap: () {
-                _showActionDialog(
-                  title: 'Lâu Đài Chữ Cái',
-                  message: 'Pippo đang xây dựng Lâu Đài Ngôn Ngữ với các bạn thú mới. Bé cùng chờ đón nhé! 🏰🎈',
-                  emoji: '🏰✨',
-                );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }

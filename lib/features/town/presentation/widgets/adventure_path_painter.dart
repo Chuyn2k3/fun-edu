@@ -38,12 +38,6 @@ class AdventurePathPainter extends CustomPainter {
 
     canvas.drawPath(path, roadPaint);
 
-    // 3. Dashed Cobblestone Stepping Stones (Các viên đá bước chân lát đường)
-    final stonePaint = Paint()
-      ..color = Colors.white.withOpacity(0.55)
-      ..strokeWidth = isTablet ? 5.0 : 4.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
 
     // Vẽ các viên sỏi trang trí rải rác dọc theo các điểm trạm
     final pebblePaint = Paint()..color = const Color(0xFFFFF9C4);

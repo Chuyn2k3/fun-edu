@@ -23,28 +23,33 @@ class GameBottomDock extends StatelessWidget {
 
     return Center(
       child: Container(
-        margin: EdgeInsets.only(bottom: isTablet ? 16 : 6),
+        margin: EdgeInsets.only(bottom: isTablet ? 16 : 8),
         padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 16 : 8,
-          vertical: isTablet ? 8 : 4,
+          horizontal: isTablet ? 14 : 8,
+          vertical: isTablet ? 8 : 5,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFF263238).withOpacity(0.9),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFFFD54F), width: 2),
+          color: Colors.white.withOpacity(0.92),
+          borderRadius: BorderRadius.circular(36),
+          border: Border.all(color: const Color(0xFFFFD54F), width: 3),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              offset: const Offset(0, 4),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.2),
+              offset: const Offset(0, 6),
+              blurRadius: 14,
+            ),
+            const BoxShadow(
+              color: Colors.white,
+              offset: Offset(0, -2),
+              blurRadius: 4,
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDockItem(
-              emoji: '🗺️',
+            _buildDockJellyItem(
+              icon: Icons.explore_rounded,
               label: isTablet ? 'Thung Lũng' : 'Bản Đồ',
               isActive: activeIndex == 0,
               isTablet: isTablet,
@@ -54,8 +59,8 @@ class GameBottomDock extends StatelessWidget {
               },
             ),
             SizedBox(width: isTablet ? 12 : 6),
-            _buildDockItem(
-              emoji: '🎮',
+            _buildDockJellyItem(
+              icon: Icons.sports_esports_rounded,
               label: isTablet ? 'Phòng Chơi' : 'Trò Chơi',
               isActive: activeIndex == 1,
               isTablet: isTablet,
@@ -65,9 +70,9 @@ class GameBottomDock extends StatelessWidget {
               },
             ),
             SizedBox(width: isTablet ? 12 : 6),
-            _buildDockItem(
-              emoji: '🎒',
-              label: 'Balo',
+            _buildDockJellyItem(
+              icon: Icons.backpack_rounded,
+              label: isTablet ? 'Balo Thần Kỳ' : 'Balo',
               isActive: activeIndex == 2,
               isTablet: isTablet,
               onTap: () {
@@ -81,8 +86,8 @@ class GameBottomDock extends StatelessWidget {
     );
   }
 
-  Widget _buildDockItem({
-    required String emoji,
+  Widget _buildDockJellyItem({
+    required IconData icon,
     required String label,
     required bool isActive,
     required bool isTablet,
@@ -91,33 +96,62 @@ class GameBottomDock extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutBack,
         padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 14 : 8,
-          vertical: isTablet ? 8 : 4,
+          horizontal: isTablet ? 18 : 12,
+          vertical: isTablet ? 10 : 7,
         ),
         decoration: BoxDecoration(
           gradient: isActive
               ? const LinearGradient(
-                  colors: [Color(0xFFFFB300), Color(0xFFE65100)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFEE58), // Vàng nắng
+                    Color(0xFFFFA000), // Cam ngọt
+                    Color(0xFFFF6F00), // Đế 3D
+                  ],
+                  stops: [0.0, 0.6, 1.0],
                 )
               : null,
           color: isActive ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: isActive ? Border.all(color: Colors.white, width: 1.5) : null,
+          borderRadius: BorderRadius.circular(24),
+          border: isActive
+              ? Border.all(color: Colors.white, width: 2.2)
+              : null,
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFFF8F00).withOpacity(0.55),
+                    offset: const Offset(0, 4),
+                    blurRadius: 8,
+                  ),
+                  const BoxShadow(
+                    color: Colors.white70,
+                    offset: Offset(0, -1),
+                    blurRadius: 2,
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: TextStyle(fontSize: isTablet ? 18 : 15)),
-            const SizedBox(width: 4),
+            Icon(
+              icon,
+              color: isActive ? const Color(0xFF3E2723) : const Color(0xFF8D6E63),
+              size: isTablet ? 22 : 18,
+            ),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'LilitaOne',
-                fontSize: isTablet ? 13 : 11,
+                fontSize: isTablet ? 15 : 13,
                 fontWeight: FontWeight.bold,
-                color: isActive ? Colors.white : Colors.white70,
+                color: isActive ? const Color(0xFF3E2723) : const Color(0xFF8D6E63),
+                letterSpacing: 0.3,
               ),
             ),
           ],
