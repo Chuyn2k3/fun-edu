@@ -12,6 +12,7 @@ import 'package:fun_edu/helper/pref.dart';
 import 'package:fun_edu/router/app_router.dart';
 import 'package:fun_edu/utils/device_id_service.dart';
 import 'package:fun_edu/utils/navigation_service.dart';
+import 'package:fun_edu/app/app_bootstrap.dart';
 import 'package:fun_edu/utils/shared_preferences_manager.dart';
 import 'package:fun_edu/widget/breakpoint_label.dart';
 import 'package:get_it/get_it.dart';
@@ -20,9 +21,10 @@ import 'package:toastification/toastification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await setupLocator();
-  // init hive
+  // init hive & preferences
   await Pref.initialize();
+  await setupLocator();
+  await AppBootstrap.init();
   // for initializing facebook ads sdk
   //AdHelper.init();
   await DeviceIdService.getDeviceId();

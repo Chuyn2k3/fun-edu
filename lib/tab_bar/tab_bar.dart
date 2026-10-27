@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fun_edu/feature/digit_feature/page.dart';
 import 'package:fun_edu/feature/game_feature/game_page.dart';
+import 'package:fun_edu/features/town/presentation/screens/town_screen.dart';
 import 'package:fun_edu/screen/home_screen.dart';
 
 class MainTabbarScreen extends StatefulWidget {
@@ -25,8 +26,8 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
       DeviceOrientation.portraitDown,
     ]);
     Flame.device.setPortrait();
+    pages.add(const TownScreen());
     pages.add(const HomeScreen());
-   // pages.add(const DigitRecogizePage());
     pages.add(const ListGamePage());
   }
 
