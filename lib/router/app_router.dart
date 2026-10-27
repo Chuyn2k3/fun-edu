@@ -26,6 +26,7 @@ import 'package:fun_edu/feature/operation_feature/operator_screen.dart';
 import 'package:fun_edu/feature/provider/game_provider.dart';
 import 'package:fun_edu/features/shop_game/presentation/screens/level_select_screen.dart';
 import 'package:fun_edu/features/shop_game/presentation/screens/shop_game_screen.dart';
+import 'package:fun_edu/features/town/presentation/screens/town_screen.dart';
 import 'package:fun_edu/router/go_router_name_enum.dart';
 import 'package:fun_edu/screen/choose_age.dart';
 import 'package:fun_edu/screen/daily_task_screen.dart';
@@ -220,6 +221,12 @@ class AppRouter {
             child: ShopGameScreen(levelId: levelId),
           );
         },
+      ),
+      GoRoute(
+        path: GoRouterName.town.routePath,
+        name: GoRouterName.town.routeName,
+        pageBuilder: (context, state) =>
+            const MaterialPage<void>(child: TownScreen()),
       ),
       GoRoute(
         path: GoRouterName.overView.routePath,

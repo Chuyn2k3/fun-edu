@@ -28,6 +28,7 @@ enum GoRouterName {
   overView,
   shopGameLevelSelect,
   shopGamePlay,
+  town,
 }
 
 extension GoRouterNameX on GoRouterName {
@@ -89,6 +90,8 @@ extension GoRouterNameX on GoRouterName {
         return "/shop-game";
       case GoRouterName.shopGamePlay:
         return "/shop-game/play/:levelId";
+      case GoRouterName.town:
+        return "/town";
     }
   }
 }
