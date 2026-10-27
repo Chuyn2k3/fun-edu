@@ -5,11 +5,13 @@ import 'package:fun_edu/features/shop_game/presentation/widgets/shelf/draggable_
 class FruitShelfDraggableLayer extends StatelessWidget {
   final List<ItemEntity> availableItems;
   final bool isEnabled;
+  final ValueChanged<ItemEntity>? onItemTapped;
 
   const FruitShelfDraggableLayer({
     super.key,
     required this.availableItems,
     this.isEnabled = true,
+    this.onItemTapped,
   });
 
   @override
@@ -69,6 +71,7 @@ class FruitShelfDraggableLayer extends StatelessWidget {
                     return DraggableFruitItem(
                       item: item,
                       isDraggable: isEnabled,
+                      onTap: onItemTapped != null ? () => onItemTapped!(item) : null,
                     );
                   }).toList(),
                 ),

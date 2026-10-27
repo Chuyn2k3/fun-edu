@@ -1,7 +1,5 @@
-import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fun_edu/feature/digit_feature/page.dart';
 import 'package:fun_edu/feature/game_feature/game_page.dart';
 import 'package:fun_edu/features/town/presentation/screens/town_screen.dart';
 import 'package:fun_edu/screen/home_screen.dart';
@@ -24,8 +22,9 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
     ]);
-    Flame.device.setPortrait();
     pages.add(const TownScreen());
     pages.add(const HomeScreen());
     pages.add(const ListGamePage());
@@ -40,9 +39,11 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
       },
       child: Scaffold(
         extendBody: true,
+        backgroundColor: Colors.transparent,
         body: pages[_indexPages],
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: isDrawerOpen ? null : _buildCustomNavBar(),
+        // Khi ở TownScreen, ẩn nav bar cũ để TownScreen hiển thị full-screen game canvas
+        floatingActionButton: (isDrawerOpen || _indexPages == 0) ? null : _buildCustomNavBar(),
       ),
     );
   }
@@ -70,8 +71,7 @@ class _MainTabbarScreenState extends State<MainTabbarScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home, 0),
-         // _buildNavItem(Icons.memory, 1),
-          _buildNavItem(Icons.sports_esports, 1),
+          _buildNavItem(Icons.sports_esports, 2),
         ],
       ),
     );

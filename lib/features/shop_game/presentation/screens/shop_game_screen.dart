@@ -46,6 +46,17 @@ class _ShopGameScreenState extends State<ShopGameScreen> {
     // 2. Resolve cubit
     _cubit = widget.cubit ?? locator<ShopGameCubit>();
     _cubit.startGame(widget.levelId);
+
+    // Ensure customer transition triggers even on immediate loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _cubit.state.phase == GamePhase.customerEntering) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted && _cubit.state.phase == GamePhase.customerEntering) {
+            _cubit.onCustomerEntered();
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -68,7 +79,19 @@ class _ShopGameScreenState extends State<ShopGameScreen> {
       value: _cubit,
       child: BlocConsumer<ShopGameCubit, ShopGameState>(
         listener: (context, state) {
-          if (state.phase == GamePhase.levelComplete) {
+          if (state.phase == GamePhase.customerEntering) {
+            Future.delayed(const Duration(milliseconds: 600), () {
+              if (mounted && _cubit.state.phase == GamePhase.customerEntering) {
+                _cubit.onCustomerEntered();
+              }
+            });
+          } else if (state.phase == GamePhase.celebrating) {
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted && _cubit.state.phase == GamePhase.celebrating) {
+                _cubit.nextCustomerOrFinish();
+              }
+            });
+          } else if (state.phase == GamePhase.levelComplete) {
             final levelNumber = int.tryParse(state.levelId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
             final avgStars = state.orderStarsHistory.isNotEmpty
                 ? (state.orderStarsHistory.fold<int>(0, (a, b) => a + b) / state.orderStarsHistory.length).round()
@@ -139,14 +162,26 @@ class _ShopGameScreenState extends State<ShopGameScreen> {
                 // Layer 4: Countertop & Props
                 CountertopLayer(
                   basketItems: state.basketItems,
-                  onItemDropped: (item) => _cubit.onItemDroppedToBasket(item),
+                  onItemDropped: (item) {
+                    if (state.phase == GamePhase.customerEntering) {
+                      _cubit.onCustomerEntered();
+                    }
+                    _cubit.onItemDroppedToBasket(item);
+                  },
                   totalCoins: state.starCount * 5,
                 ),
 
                 // Layer 5: Fruit Shelf Draggable Items
                 FruitShelfDraggableLayer(
                   availableItems: ShopGameLevelsData.shelfEntities,
-                  isEnabled: state.phase == GamePhase.collectingItems,
+                  isEnabled: state.phase == GamePhase.collectingItems ||
+                      state.phase == GamePhase.customerEntering,
+                  onItemTapped: (item) {
+                    if (state.phase == GamePhase.customerEntering) {
+                      _cubit.onCustomerEntered();
+                    }
+                    _cubit.onItemDroppedToBasket(item);
+                  },
                 ),
 
                 // Layer 6: Game HUD Overlay

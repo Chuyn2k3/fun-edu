@@ -4,11 +4,13 @@ import 'package:fun_edu/features/shop_game/domain/entities/item_entity.dart';
 class DraggableFruitItem extends StatelessWidget {
   final ItemEntity item;
   final bool isDraggable;
+  final VoidCallback? onTap;
 
   const DraggableFruitItem({
     super.key,
     required this.item,
     this.isDraggable = true,
+    this.onTap,
   });
 
   Widget _buildItemCard({bool isGhost = false, bool isDragging = false}) {
@@ -66,8 +68,17 @@ class DraggableFruitItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final card = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isDraggable ? onTap : null,
+        borderRadius: BorderRadius.circular(16),
+        child: _buildItemCard(),
+      ),
+    );
+
     if (!isDraggable) {
-      return _buildItemCard();
+      return card;
     }
 
     return Draggable<ItemEntity>(
@@ -80,7 +91,7 @@ class DraggableFruitItem extends StatelessWidget {
         ),
       ),
       childWhenDragging: _buildItemCard(isGhost: true),
-      child: _buildItemCard(),
+      child: card,
     );
   }
 }
