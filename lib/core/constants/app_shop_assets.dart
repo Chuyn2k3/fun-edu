@@ -31,7 +31,13 @@ class AppShopAssets {
   static const String starEmpty = '${baseHud}star_empty.webp';
   static const String handTutor = '${baseHud}hand_tutor.webp';
 
-  // Lottie Characters
+  // Bear Character Assets (3D Stylized Game Assets)
+  static const String bearWavingWebp = '${baseChars}bear/bear_waving.webp';
+  static const String bearIdlePng = '${baseChars}bear/bear_idle.png';
+  static const String bearTorsoPng = '${baseChars}bear/bear_torso.png';
+  static const String bearArmPng = '${baseChars}bear/bear_arm.png';
+
+  // Lottie Characters (Legacy fallback)
   static const String bearIdleLottie = '${baseChars}bear_idle.json';
   static const String bearHappyLottie = '${baseChars}bear_happy.json';
 }

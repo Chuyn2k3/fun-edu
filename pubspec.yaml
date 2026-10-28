@@ -101,6 +101,11 @@ flutter:
     - assets/image_math/
     - assets/model_ai/
     - assets/file_time.txt
+    - assets/shop_game/characters/bear/
+    - assets/shop_game/bg/
+    - assets/shop_game/props/
+    - assets/shop_game/items/
+    - assets/shop_game/hud/
 
   fonts:
     - family: CabinSketch

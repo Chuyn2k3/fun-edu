@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:fun_edu/core/constants/app_shop_assets.dart';
 import 'package:fun_edu/features/shop_game/domain/entities/item_entity.dart';
 
 class BasketDragTarget extends StatefulWidget {
