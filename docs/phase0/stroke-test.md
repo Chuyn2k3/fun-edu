@@ -49,7 +49,7 @@ Cách ghi:
 
 Kiểm tra: từ thư mục `app`, chạy `flutter test`. Bài test `test/stroke/assets_self_grade_test.dart` tự đọc mọi file trong `assets/glyphs/` và kiểm tra mỗi glyph chấm đúng chính nét mẫu của nó. Test đỏ nghĩa là file glyph đó có vấn đề (sai id, rỗng, hoặc nét ghi quá lạ), hãy ghi lại.
 
-Sau khi thêm file glyph, phải **dừng hẳn app** (bấm `q` trong terminal `flutter run`, hoặc vuốt tắt app) rồi chạy lại `flutter run`. Hot reload/hot restart **không** nhận file asset mới. Khi đó trang chủ mới liệt kê đủ 9 glyph. Cuối cùng commit các file `.json`.
+Sau khi thêm file glyph, phải **dừng hẳn app** (bấm `q` trong terminal `flutter run`, hoặc vuốt tắt app) rồi chạy lại `flutter run`. Hot reload/hot restart **không** nhận file asset mới. Khi đó `/dev/glyphs` mới liệt kê đủ 9 glyph. Cuối cùng commit các file `.json`.
 
 ## 3. Kịch bản buổi thử
 
@@ -57,7 +57,7 @@ Chuẩn bị: sạc đầy máy, tắt thông báo, bật sáng màn hình, mộ
 
 Với **mỗi bé**:
 1. Giới thiệu vui, không nói là "kiểm tra". Cho bé làm quen vài giây với việc chạm và kéo.
-2. Bé lần lượt tô: 5 nét cơ bản (`net-ngang`, `net-thang-dung`, `net-xien`, `net-cong`, `net-moc`), số 0, 1, 2, 3, chữ a, chữ b. Mở từng glyph từ trang chủ.
+2. Bé lần lượt tô: 5 nét cơ bản (`net-ngang`, `net-thang-dung`, `net-xien`, `net-cong`, `net-moc`), số 0, 1, 2, 3, chữ a, chữ b. Mở từng glyph bằng bản debug: `flutter run --route=/dev/glyphs` (màn thử chữ giờ nằm ở route này, không còn ở trang chủ).
 3. Mỗi nét bé vẽ, người lớn **tự đánh giá theo mắt** ngay lúc đó: nét này có phải là nét đúng không (đúng thứ tự, đúng chiều, đủ dài, bám theo đường chấm)? Nét hơi xấu nhưng đúng thì tính là **đúng**.
 4. Cùng lúc, nhìn app báo gì ("Đúng rồi!", "Vẽ dài thêm chút nữa nhé", "Bé vẽ ngược chiều rồi", "Đi theo đường chấm nhé", "Nét này vẽ sau nhé"). Ghi vào phiếu bên dưới.
 5. Hết một glyph, app báo "Giỏi quá!". Cho bé bấm "Làm lại" nếu bé thích.

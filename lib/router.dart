@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/lesson/lesson_done_screen.dart';
+import 'features/lesson/lesson_flow_screen.dart';
+import 'features/subject/writing_map_screen.dart';
 import 'features/trace/trace_screen.dart';
 import 'stroke/glyph_repository.dart';
 
@@ -40,8 +43,26 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     GoRoute(
+        path: '/lesson', builder: (context, state) => const LessonFlowScreen()),
+    GoRoute(
+      path: '/lesson/done',
+      builder: (context, state) => LessonDoneScreen(
+        starsEarned: state.extra is int ? state.extra! as int : 0,
+      ),
+    ),
+    GoRoute(
+      path: '/subject/viet',
+      builder: (context, state) => const WritingMapScreen(),
+    ),
+    GoRoute(
+      path: '/practice/:glyphId',
+      builder: (context, state) =>
+          PracticeScreen(state.pathParameters['glyphId']!),
+    ),
+    GoRoute(
       path: '/trace/:glyphId',
-      builder: (context, state) => TraceScreen(state.pathParameters['glyphId']!),
+      builder: (context, state) =>
+          TraceScreen(state.pathParameters['glyphId']!),
     ),
     if (kDebugMode)
       GoRoute(
