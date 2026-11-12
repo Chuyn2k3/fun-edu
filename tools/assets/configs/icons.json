@@ -1,0 +1,12 @@
+{
+  "items": [
+    {"name": "ic-viet", "box": [0, 0, 341, 341]},
+    {"name": "ic-tieng-viet", "box": [341, 0, 682, 341]},
+    {"name": "ic-toan", "box": [682, 0, 1024, 341]},
+    {"name": "ic-tieng-anh", "box": [682, 341, 1024, 682]},
+    {"name": "ic-star", "box": [0, 682, 341, 1024]},
+    {"name": "ic-flame", "box": [341, 682, 682, 1024]},
+    {"name": "ic-crown", "box": [682, 682, 1024, 1024]}
+  ],
+  "export_widths": [64, 128, 192]
+}

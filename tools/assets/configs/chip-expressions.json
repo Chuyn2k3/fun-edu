@@ -1,0 +1,11 @@
+{
+  "items": [
+    {"name": "chip-joy", "box": [0, 40, 348, 415]},
+    {"name": "chip-thumb", "box": [348, 40, 682, 415]},
+    {"name": "chip-surprise", "box": [682, 40, 1024, 415]},
+    {"name": "chip-encourage", "box": [0, 600, 341, 965]},
+    {"name": "chip-sleep", "box": [341, 600, 682, 965]},
+    {"name": "chip-write", "box": [682, 600, 1024, 965]}
+  ],
+  "export_widths": [100, 200, 300]
+}
