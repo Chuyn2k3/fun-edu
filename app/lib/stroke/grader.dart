@@ -44,6 +44,13 @@ StrokeResult gradeStroke(Stroke drawn, Stroke reference,
         ok: false, error: StrokeError.tooShort, deviation: 0);
   }
 
+  // Fail closed on NaN/infinite input: comparisons with NaN are all false and
+  // would otherwise be accepted.
+  if (d.any((p) => !p.x.isFinite || !p.y.isFinite)) {
+    return const StrokeResult(
+        ok: false, error: StrokeError.offPath, deviation: double.infinity);
+  }
+
   final refLen = pathLength(r);
 
   // Rule 1: dot reference.
@@ -59,7 +66,7 @@ StrokeResult gradeStroke(Stroke drawn, Stroke reference,
   final fwd = meanDistance(fwdPts, rs);
 
   // Rule 2: too short.
-  if (pathLength(d) < config.minLengthRatio * refLen) {
+  if (!(pathLength(d) >= config.minLengthRatio * refLen)) {
     return StrokeResult(
         ok: false, error: StrokeError.tooShort, deviation: fwd);
   }
@@ -72,8 +79,8 @@ StrokeResult gradeStroke(Stroke drawn, Stroke reference,
   }
 
   // Rule 5: off path.
-  if (fwd > config.tolerance ||
-      maxDistance(fwdPts, rs) > config.maxPointDistance) {
+  if (!(fwd <= config.tolerance) ||
+      !(maxDistance(fwdPts, rs) <= config.maxPointDistance)) {
     return StrokeResult(ok: false, error: StrokeError.offPath, deviation: fwd);
   }
 

@@ -59,4 +59,16 @@ void main() {
   test('empty drawn stroke is tooShort, not a crash', () {
     expect(gradeStroke(const Stroke([]), ref).error, StrokeError.tooShort);
   });
+
+  test('NaN coordinate fails closed → offPath, deviation not NaN', () {
+    final drawn = Stroke([
+      ...ref.points.take(5),
+      const Point2(double.nan, 0.5),
+      ...ref.points.skip(5),
+    ]);
+    final r = gradeStroke(drawn, ref);
+    expect(r.ok, isFalse);
+    expect(r.error, StrokeError.offPath);
+    expect(r.deviation.isNaN, isFalse);
+  });
 }
