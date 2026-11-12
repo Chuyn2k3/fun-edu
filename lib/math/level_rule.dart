@@ -6,6 +6,8 @@ int nextLevelIndex({
   required int total,
   required int levelCount,
 }) {
+  // An empty session carries no evidence, so never move.
+  if (total <= 0) return current.clamp(0, levelCount - 1);
   var next = current;
   if (firstTryCorrect * 5 >= total * 4) {
     next = current + 1;

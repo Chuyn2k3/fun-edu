@@ -22,4 +22,9 @@ void main() {
     expect(n(0, 0), 0);
     expect(n(8, 5), 8);
   });
+  test('empty session stays', () => expect(n(2, 0, total: 0), 2));
+  test('non-5 totals', () {
+    expect(n(2, 3, total: 4), 2);
+    expect(n(2, 8, total: 10), 3);
+  });
 }
