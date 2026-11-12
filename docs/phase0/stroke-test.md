@@ -38,14 +38,14 @@ Cần ghi 9 glyph (đã có sẵn `net-ngang` và `net-thang-dung`):
 | `chu-b` | Chữ b | |
 
 Cách ghi:
-1. Mở màn hình ghi nét: trong bản debug đi tới đường dẫn `/dev/recorder` (từ trang chủ nếu có nút dẫn tới, hoặc đặt tuyến khởi đầu bằng `flutter run --route=/dev/recorder`).
-2. Nhập ô **id** đúng như bảng trên (chữ thường, có gạch ngang) và ô **nhãn** (tên hiển thị cho bé).
+1. Mở màn hình ghi nét bằng bản debug: từ thư mục `app`, chạy `flutter run --route=/dev/recorder` (không có nút dẫn tới màn này trong app).
+2. Nhập ô **id** đúng như bảng trên (chữ thường, có gạch ngang) và ô **label** (tên hiển thị cho bé). Để trống id hoặc label thì bấm Xuất sẽ chỉ báo "Nhập id trước khi xuất" và không chép gì.
 3. Viết trên khung vẽ theo **mẫu chữ tiểu học**: đúng **thứ tự nét** và đúng **hướng** (điểm bắt đầu tới điểm kết thúc). Dùng **bút cảm ứng** nếu có, nét sẽ đều hơn ngón tay. Viết chậm, trơn, không run.
 4. Nhấc tay là kết thúc một nét; glyph nhiều nét thì viết các nét lần lượt theo đúng thứ tự.
 5. Viết sai thì bấm **Hoàn tác** (bỏ nét cuối) hoặc **Xóa** (làm lại từ đầu).
-6. Bấm **Xuất**. JSON được chép vào clipboard **của điện thoại/máy tính bảng** và đồng thời in ra **terminal trên máy tính** đang chạy `flutter run`.
-7. Đưa JSON về máy tính: mở cửa sổ terminal đang chạy `flutter run`, tìm đoạn JSON vừa in ra sau khi bấm Xuất (bắt đầu bằng `{"id": ...`), bôi đen và sao chép. Dán vào file `app/assets/glyphs/<id>.json` (ví dụ `app/assets/glyphs/so-2.json`) rồi lưu. Tên file phải trùng `id` trong JSON.
-   Cách dự phòng nếu terminal không có JSON: trên thiết bị, dán (clipboard) vào một app ghi chú hoặc tin nhắn rồi gửi cho chính bạn, mở trên máy tính và sao chép vào file như trên.
+6. Bấm **Xuất**. JSON (một dòng duy nhất, tọa độ làm tròn 4 chữ số) được chép vào clipboard **của điện thoại/máy tính bảng**.
+7. Đưa JSON về máy tính: trên thiết bị, dán (clipboard) vào một app ghi chú hoặc tin nhắn rồi gửi cho chính bạn; mở trên máy tính, sao chép toàn bộ rồi dán vào file `app/assets/glyphs/<id>.json` (ví dụ `app/assets/glyphs/so-2.json`) và lưu. Tên file phải trùng `id` trong JSON.
+   Cách phụ: JSON cũng được in ra terminal đang chạy `flutter run` (một dòng). Bôi đen dòng đó, bỏ phần tiền tố `I/flutter (...): ` ở đầu dòng rồi dán vào file. Trên Android, dòng quá dài có thể bị cắt, khi đó dùng cách clipboard ở trên.
 8. Lặp lại cho đủ 9 glyph.
 
 Kiểm tra: từ thư mục `app`, chạy `flutter test`. Bài test `test/stroke/assets_self_grade_test.dart` tự đọc mọi file trong `assets/glyphs/` và kiểm tra mỗi glyph chấm đúng chính nét mẫu của nó. Test đỏ nghĩa là file glyph đó có vấn đề (sai id, rỗng, hoặc nét ghi quá lạ), hãy ghi lại.
@@ -66,9 +66,11 @@ Với **mỗi bé**:
 
 Phiếu ghi nhanh (mỗi nét bé vẽ một dòng):
 
-| Bé | Glyph | Nét số | Mắt người: đúng/sai | App: đúng/sai | Ghi chú (app báo gì) |
-|---|---|---|---|---|---|
-| | | | | | |
+| Bé | Thiết bị (điện thoại / máy tính bảng) | Glyph | Nét số | Mắt người: đúng/sai | App: đúng/sai | Ghi chú (app báo gì; kiểu nét: ngắn, vẽ quá, bắt đầu lệch chỗ) |
+|---|---|---|---|---|---|---|
+| | | | | | | |
+
+Khi người lớn thấy nét đúng mà app từ chối, ghi vào cột cuối kiểu nét: **ngắn** (bé dừng sớm), **vẽ quá** (đi quá điểm cuối), **bắt đầu lệch chỗ** (vòng/nét bắt đầu không đúng điểm mẫu). Các kiểu này có thể bị báo "Đi theo đường chấm nhé" chứ không phải "Vẽ dài thêm" (xem phần 6). Nhớ ghi thiết bị: cần thử cả điện thoại và máy tính bảng.
 
 Cuối buổi, tính tổng vào bảng kết quả ở phần 4.
 
@@ -76,7 +78,7 @@ Cuối buổi, tính tổng vào bảng kết quả ở phần 4.
 
 Bé sẽ không cố tình vẽ sai, nên tiêu chí "sai thứ tự hoặc sai chiều phải bị bắt" do **người lớn** kiểm tra. Với **mỗi glyph**, người lớn cố tình:
 1. **Sai chiều**: vẽ một nét đúng đường nhưng ngược chiều (từ cuối về đầu). Mong đợi app báo "Bé vẽ ngược chiều rồi".
-2. **Sai thứ tự** (chỉ với glyph từ 2 nét trở lên, như số 2, 3, chữ a, b nếu có nhiều nét): vẽ nét thứ 2 trước nét thứ 1. Mong đợi app báo "Nét này vẽ sau nhé".
+2. **Sai thứ tự** (chỉ với glyph từ 2 nét trở lên): vẽ nét thứ 2 trước nét thứ 1. Đếm số nét của `so-1` trước (điền vào cột Số nét); nếu `so-1` chỉ có 1 nét thì ghi "không áp dụng (1 nét)". Mong đợi app báo "Nét này vẽ sau nhé".
 
 Ghi kết quả (Bắt được / Lọt):
 
@@ -87,7 +89,7 @@ Ghi kết quả (Bắt được / Lọt):
 | net-xien | | | không áp dụng (1 nét) | |
 | net-cong | | | không áp dụng (1 nét) | |
 | net-moc | | | không áp dụng (1 nét) | |
-| so-0 | | | | |
+| so-0 | | | không áp dụng (1 nét) | |
 | so-1 | | | | |
 | so-2 | | | | |
 | so-3 | | | | |
@@ -145,17 +147,28 @@ Xem các nét bị từ chối và lý do:
 ```
 sqlite3 funedu.sqlite "SELECT glyph_id, stroke_index, error, ROUND(deviation,3) FROM stroke_attempts WHERE ok = 0 ORDER BY created_at;"
 ```
+Lấy các điểm của một nét bị từ chối (cột `points`, JSON mảng cặp [x,y]) để tái hiện trong test:
+```
+sqlite3 funedu.sqlite "SELECT id, glyph_id, stroke_index, error, points FROM stroke_attempts WHERE ok = 0 ORDER BY created_at;"
+```
+Chép chuỗi `points` của dòng cần xem, rồi trong test (theo mẫu `app/test/stroke/grader_test.dart`) dựng nét:
+```dart
+final pts = jsonDecode('[[0.9,0.5],[0.5,0.5],[0.1,0.5]]') as List; // dán chuỗi points ở đây
+final drawn = Stroke([for (final p in pts) Point2((p[0] as num).toDouble(), (p[1] as num).toDouble())]);
+// grade(drawn, glyph.strokes[stroke_index]) rồi expect đúng kết quả mong muốn
+```
 Lưu ý: số này gồm cả lần bé vẽ thử, làm lại; chỉ dùng để đối chiếu, không thay cho đánh giá của người lớn. Nếu tên cột khác, xem bằng `sqlite3 funedu.sqlite ".schema stroke_attempts"`.
 
 ## 6. Nếu không đạt: chỉnh ngưỡng nào
 
-Các ngưỡng nằm trong `GradeConfig` (`app/lib/stroke/grader.dart`). Chỉ chỉnh ngưỡng, không đổi thuật toán.
+Các ngưỡng nằm trong `GradeConfig` (`app/lib/stroke/grader.dart`). Chỉ chỉnh ngưỡng, không đổi thuật toán. Nếu các nét "ngắn / vẽ quá / bắt đầu lệch chỗ" chiếm phần lớn lỗi trong phiếu, nguyên nhân nằm ở thuật toán ghép điểm theo độ dài và cần sửa ở bước "chỉnh thuật toán", không chỉ chỉnh ngưỡng.
 
 | Triệu chứng | Ngưỡng chỉnh | Mặc định |
 |---|---|---|
 | Nét đúng nhưng lệch nhẹ vẫn bị "Đi theo đường chấm nhé" (trung bình) | tăng `tolerance` | 0.12 |
+| Nét đúng đường nhưng hơi ngắn (khoảng 60 đến 70% độ dài), hoặc vẽ quá điểm cuối (khoảng 30%), hoặc vòng tròn bắt đầu lệch chỗ (khoảng 30 độ) mà bị báo "Đi theo đường chấm nhé" (không phải "Vẽ dài thêm") | tăng `tolerance` (và/hoặc `maxPointDistance`); giảm `minLengthRatio` không giúp ở khoảng này | 0.12 / 0.25 |
 | Nét đúng, chỉ một đoạn ngắn run/vọt xa bị từ chối | tăng `maxPointDistance` | 0.25 |
-| Nét hơi ngắn đã bị "Vẽ dài thêm chút nữa nhé" | giảm `minLengthRatio` | 0.6 |
+| Nét ngắn dưới 60% bị "Vẽ dài thêm chút nữa nhé" | giảm `minLengthRatio` (chỉ có tác dụng dưới 60%) | 0.6 |
 | Nét đúng chiều bị báo ngược, hoặc nét ngược chiều lọt qua | `directionRatio`: tăng để dễ bắt ngược hơn, giảm để ít báo nhầm ngược hơn | 0.6 |
 | Chấm (nét là một điểm) chấm gần đúng mà bị từ chối | tăng `dotRadius` | 0.1 |
 | App cho qua nét sai (quá dễ) | làm ngược lại: giảm `tolerance` / `maxPointDistance`, tăng `minLengthRatio` | |

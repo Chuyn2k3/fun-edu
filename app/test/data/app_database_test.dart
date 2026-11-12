@@ -7,12 +7,12 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     Future<void> log(bool ok, String glyph) => db.logAttempt(
-          glyphId: glyph,
-          strokeIndex: 0,
-          ok: ok,
-          error: ok ? null : 'offPath',
-          deviation: 0.1,
-        );
+      glyphId: glyph,
+      strokeIndex: 0,
+      ok: ok,
+      error: ok ? null : 'offPath',
+      deviation: 0.1,
+    );
     await log(true, 'net-ngang');
     await log(false, 'net-ngang');
     await log(true, 'net-ngang');

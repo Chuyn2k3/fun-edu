@@ -25,9 +25,15 @@ class _RecorderScreenState extends ConsumerState<RecorderScreen> {
   }
 
   Future<void> _export() async {
-    final json = ref
-        .read(recorderProvider.notifier)
-        .exportJson(_id.text.trim(), _label.text.trim());
+    final id = _id.text.trim();
+    final label = _label.text.trim();
+    if (id.isEmpty || label.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nhập id trước khi xuất')));
+      return;
+    }
+    final json = ref.read(recorderProvider.notifier).exportJson(id, label);
     debugPrint(json);
     await Clipboard.setData(ClipboardData(text: json));
   }

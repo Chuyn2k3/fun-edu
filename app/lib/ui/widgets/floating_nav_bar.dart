@@ -48,7 +48,11 @@ class FloatingNavBar extends StatelessWidget {
 }
 
 class _NavTile extends StatelessWidget {
-  const _NavTile({required this.item, required this.active, required this.onTap});
+  const _NavTile({
+    required this.item,
+    required this.active,
+    required this.onTap,
+  });
 
   final NavItem item;
   final bool active;
@@ -66,7 +70,7 @@ class _NavTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.pill),
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
+          constraints: const BoxConstraints(minHeight: 64),
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
             color: active ? AppColors.accent.withValues(alpha: 0.12) : null,

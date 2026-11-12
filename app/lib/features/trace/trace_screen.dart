@@ -13,11 +13,11 @@ import 'trace_pad.dart';
 const String _okMessage = 'Đúng rồi!';
 
 String _errorMessage(StrokeError error) => switch (error) {
-      StrokeError.tooShort => 'Vẽ dài thêm chút nữa nhé',
-      StrokeError.wrongDirection => 'Bé vẽ ngược chiều rồi',
-      StrokeError.offPath => 'Đi theo đường chấm nhé',
-      StrokeError.wrongOrder => 'Nét này vẽ sau nhé',
-    };
+  StrokeError.tooShort => 'Vẽ dài thêm chút nữa nhé',
+  StrokeError.wrongDirection => 'Bé vẽ ngược chiều rồi',
+  StrokeError.offPath => 'Đi theo đường chấm nhé',
+  StrokeError.wrongOrder => 'Nét này vẽ sau nhé',
+};
 
 /// Screen where a child traces a glyph; every graded stroke is logged.
 class TraceScreen extends ConsumerWidget {
@@ -54,21 +54,33 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
   late final GlyphSession _session = GlyphSession(widget.glyph);
   final List<Stroke> _inked = [];
   String? _message;
+  int _attempts = 0;
 
   void _onStrokeEnd(Stroke drawn) {
     if (_session.isComplete) return;
     final index = _session.currentIndex;
     final result = _session.submit(drawn);
+    final messenger = ScaffoldMessenger.of(context);
     unawaited(
-      ref.read(databaseProvider).logAttempt(
+      ref
+          .read(databaseProvider)
+          .logAttempt(
             glyphId: widget.glyph.id,
             strokeIndex: index,
             ok: result.ok,
             error: result.error?.name,
             deviation: result.deviation,
-          ),
+            drawn: drawn,
+          )
+          .catchError((Object e, StackTrace st) {
+        debugPrint('logAttempt failed: $e\n$st');
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Không lưu được kết quả')),
+            );
+          }),
     );
     setState(() {
+      _attempts++;
       if (result.ok) {
         _inked.add(drawn);
         _message = _okMessage;
@@ -83,6 +95,7 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
     setState(() {
       _inked.clear();
       _message = null;
+      _attempts = 0;
     });
   }
 
@@ -108,11 +121,21 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
           ),
           const SizedBox(height: 16),
           Text(complete ? 'Giỏi quá!' : (_message ?? ''), style: textStyle),
+          Text(
+            _attempts == 0 ? '' : 'Lần thử: $_attempts',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 48,
+            height: 64,
             child: complete
-                ? FilledButton(onPressed: _reset, child: const Text('Làm lại'))
+                ? FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(120, 64),
+                    ),
+                    onPressed: _reset,
+                    child: const Text('Làm lại'),
+                  )
                 : null,
           ),
         ],

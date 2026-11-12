@@ -76,6 +76,15 @@ class $StrokeAttemptsTable extends StrokeAttempts
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _pointsMeta = const VerificationMeta('points');
+  @override
+  late final GeneratedColumn<String> points = GeneratedColumn<String>(
+    'points',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -95,6 +104,7 @@ class $StrokeAttemptsTable extends StrokeAttempts
     ok,
     error,
     deviation,
+    points,
     createdAt,
   ];
   @override
@@ -150,6 +160,12 @@ class $StrokeAttemptsTable extends StrokeAttempts
     } else if (isInserting) {
       context.missing(_deviationMeta);
     }
+    if (data.containsKey('points')) {
+      context.handle(
+        _pointsMeta,
+        points.isAcceptableOrUnknown(data['points']!, _pointsMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -191,6 +207,10 @@ class $StrokeAttemptsTable extends StrokeAttempts
         DriftSqlType.double,
         data['${effectivePrefix}deviation'],
       )!,
+      points: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}points'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -211,6 +231,10 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   final bool ok;
   final String? error;
   final double deviation;
+
+  /// JSON array of [x, y] pairs (4 decimals) of the drawn stroke, so a false
+  /// rejection can be replayed in a test.
+  final String? points;
   final DateTime createdAt;
   const StrokeAttempt({
     required this.id,
@@ -219,6 +243,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
     required this.ok,
     this.error,
     required this.deviation,
+    this.points,
     required this.createdAt,
   });
   @override
@@ -232,6 +257,9 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
       map['error'] = Variable<String>(error);
     }
     map['deviation'] = Variable<double>(deviation);
+    if (!nullToAbsent || points != null) {
+      map['points'] = Variable<String>(points);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -246,6 +274,9 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
           ? const Value.absent()
           : Value(error),
       deviation: Value(deviation),
+      points: points == null && nullToAbsent
+          ? const Value.absent()
+          : Value(points),
       createdAt: Value(createdAt),
     );
   }
@@ -262,6 +293,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
       ok: serializer.fromJson<bool>(json['ok']),
       error: serializer.fromJson<String?>(json['error']),
       deviation: serializer.fromJson<double>(json['deviation']),
+      points: serializer.fromJson<String?>(json['points']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -275,6 +307,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
       'ok': serializer.toJson<bool>(ok),
       'error': serializer.toJson<String?>(error),
       'deviation': serializer.toJson<double>(deviation),
+      'points': serializer.toJson<String?>(points),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -286,6 +319,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
     bool? ok,
     Value<String?> error = const Value.absent(),
     double? deviation,
+    Value<String?> points = const Value.absent(),
     DateTime? createdAt,
   }) => StrokeAttempt(
     id: id ?? this.id,
@@ -294,6 +328,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
     ok: ok ?? this.ok,
     error: error.present ? error.value : this.error,
     deviation: deviation ?? this.deviation,
+    points: points.present ? points.value : this.points,
     createdAt: createdAt ?? this.createdAt,
   );
   StrokeAttempt copyWithCompanion(StrokeAttemptsCompanion data) {
@@ -306,6 +341,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
       ok: data.ok.present ? data.ok.value : this.ok,
       error: data.error.present ? data.error.value : this.error,
       deviation: data.deviation.present ? data.deviation.value : this.deviation,
+      points: data.points.present ? data.points.value : this.points,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -319,14 +355,23 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
           ..write('ok: $ok, ')
           ..write('error: $error, ')
           ..write('deviation: $deviation, ')
+          ..write('points: $points, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, glyphId, strokeIndex, ok, error, deviation, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    glyphId,
+    strokeIndex,
+    ok,
+    error,
+    deviation,
+    points,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -337,6 +382,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
           other.ok == this.ok &&
           other.error == this.error &&
           other.deviation == this.deviation &&
+          other.points == this.points &&
           other.createdAt == this.createdAt);
 }
 
@@ -347,6 +393,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   final Value<bool> ok;
   final Value<String?> error;
   final Value<double> deviation;
+  final Value<String?> points;
   final Value<DateTime> createdAt;
   const StrokeAttemptsCompanion({
     this.id = const Value.absent(),
@@ -355,6 +402,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     this.ok = const Value.absent(),
     this.error = const Value.absent(),
     this.deviation = const Value.absent(),
+    this.points = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   StrokeAttemptsCompanion.insert({
@@ -364,6 +412,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     required bool ok,
     this.error = const Value.absent(),
     required double deviation,
+    this.points = const Value.absent(),
     required DateTime createdAt,
   }) : glyphId = Value(glyphId),
        strokeIndex = Value(strokeIndex),
@@ -377,6 +426,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     Expression<bool>? ok,
     Expression<String>? error,
     Expression<double>? deviation,
+    Expression<String>? points,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -386,6 +436,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
       if (ok != null) 'ok': ok,
       if (error != null) 'error': error,
       if (deviation != null) 'deviation': deviation,
+      if (points != null) 'points': points,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -397,6 +448,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     Value<bool>? ok,
     Value<String?>? error,
     Value<double>? deviation,
+    Value<String?>? points,
     Value<DateTime>? createdAt,
   }) {
     return StrokeAttemptsCompanion(
@@ -406,6 +458,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
       ok: ok ?? this.ok,
       error: error ?? this.error,
       deviation: deviation ?? this.deviation,
+      points: points ?? this.points,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -431,6 +484,9 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     if (deviation.present) {
       map['deviation'] = Variable<double>(deviation.value);
     }
+    if (points.present) {
+      map['points'] = Variable<String>(points.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -446,6 +502,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
           ..write('ok: $ok, ')
           ..write('error: $error, ')
           ..write('deviation: $deviation, ')
+          ..write('points: $points, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -471,6 +528,7 @@ typedef $$StrokeAttemptsTableCreateCompanionBuilder =
       required bool ok,
       Value<String?> error,
       required double deviation,
+      Value<String?> points,
       required DateTime createdAt,
     });
 typedef $$StrokeAttemptsTableUpdateCompanionBuilder =
@@ -481,6 +539,7 @@ typedef $$StrokeAttemptsTableUpdateCompanionBuilder =
       Value<bool> ok,
       Value<String?> error,
       Value<double> deviation,
+      Value<String?> points,
       Value<DateTime> createdAt,
     });
 
@@ -520,6 +579,11 @@ class $$StrokeAttemptsTableFilterComposer
 
   ColumnFilters<double> get deviation => $composableBuilder(
     column: $table.deviation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get points => $composableBuilder(
+    column: $table.points,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -568,6 +632,11 @@ class $$StrokeAttemptsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get points => $composableBuilder(
+    column: $table.points,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -602,6 +671,9 @@ class $$StrokeAttemptsTableAnnotationComposer
 
   GeneratedColumn<double> get deviation =>
       $composableBuilder(column: $table.deviation, builder: (column) => column);
+
+  GeneratedColumn<String> get points =>
+      $composableBuilder(column: $table.points, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -646,6 +718,7 @@ class $$StrokeAttemptsTableTableManager
                 Value<bool> ok = const Value.absent(),
                 Value<String?> error = const Value.absent(),
                 Value<double> deviation = const Value.absent(),
+                Value<String?> points = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => StrokeAttemptsCompanion(
                 id: id,
@@ -654,6 +727,7 @@ class $$StrokeAttemptsTableTableManager
                 ok: ok,
                 error: error,
                 deviation: deviation,
+                points: points,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -664,6 +738,7 @@ class $$StrokeAttemptsTableTableManager
                 required bool ok,
                 Value<String?> error = const Value.absent(),
                 required double deviation,
+                Value<String?> points = const Value.absent(),
                 required DateTime createdAt,
               }) => StrokeAttemptsCompanion.insert(
                 id: id,
@@ -672,6 +747,7 @@ class $$StrokeAttemptsTableTableManager
                 ok: ok,
                 error: error,
                 deviation: deviation,
+                points: points,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

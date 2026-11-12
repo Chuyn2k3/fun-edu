@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../stroke/glyph.dart';
 
 part 'app_database.g.dart';
 
@@ -12,6 +16,10 @@ class StrokeAttempts extends Table {
   BoolColumn get ok => boolean()();
   TextColumn get error => text().nullable()();
   RealColumn get deviation => real()();
+
+  /// JSON array of [x, y] pairs (4 decimals) of the drawn stroke, so a false
+  /// rejection can be replayed in a test.
+  TextColumn get points => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 }
 
@@ -28,6 +36,7 @@ class AppDatabase extends _$AppDatabase {
     required bool ok,
     required String? error,
     required double deviation,
+    Stroke? drawn,
   }) async {
     await into(strokeAttempts).insert(
       StrokeAttemptsCompanion.insert(
@@ -36,18 +45,34 @@ class AppDatabase extends _$AppDatabase {
         ok: ok,
         error: Value(error),
         deviation: deviation,
+        points: Value(drawn == null ? null : encodePoints(drawn)),
         createdAt: DateTime.now(),
       ),
     );
   }
 
+  Future<List<StrokeAttempt>> attemptsFor(String glyphId) =>
+      (select(strokeAttempts)
+            ..where((t) => t.glyphId.equals(glyphId))
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .get();
+
   Future<({int total, int ok})> summary(String glyphId) async {
-    final rows = await (select(strokeAttempts)
-          ..where((t) => t.glyphId.equals(glyphId)))
-        .get();
+    final rows = await (select(
+      strokeAttempts,
+    )..where((t) => t.glyphId.equals(glyphId))).get();
     return (total: rows.length, ok: rows.where((r) => r.ok).length);
   }
 }
+
+/// Encodes a stroke as a JSON array of [x, y] pairs rounded to 4 decimals.
+String encodePoints(Stroke s) => jsonEncode([
+  for (final p in s.points)
+    [
+      double.parse(p.x.toStringAsFixed(4)),
+      double.parse(p.y.toStringAsFixed(4)),
+    ],
+]);
 
 /// Opened lazily, so screens that never read it never touch the database.
 final databaseProvider = Provider<AppDatabase>((ref) {
