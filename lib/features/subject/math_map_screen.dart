@@ -36,7 +36,8 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final current = ref.watch(mathLevelIndexProvider).valueOrNull ?? 0;
+    final level = ref.watch(mathLevelIndexProvider);
+    final current = level.valueOrNull;
     return Scaffold(
       body: DottedBackground(
         child: SafeArea(
@@ -91,17 +92,21 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                     ),
                   ),
                   Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      itemCount: mathLevels.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, i) => _LevelTile(
-                        index: i,
-                        title: mathLevels[i].title,
-                        current: current,
-                        onTap: i <= current ? () => _openPractice(i) : null,
-                      ),
-                    ),
+                    child: current == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            itemCount: mathLevels.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, i) => _LevelTile(
+                              index: i,
+                              title: mathLevels[i].title,
+                              current: current,
+                              onTap:
+                                  i <= current ? () => _openPractice(i) : null,
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -183,7 +188,7 @@ class _LevelTile extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.accent,
+                                color: AppColors.primary,
                               ),
                             ),
                         ],

@@ -7,6 +7,7 @@ void main() {
   test('palette meets WCAG AA text contrast', () {
     expect(contrastRatio(Colors.white, AppColors.primary), greaterThanOrEqualTo(4.5));
     expect(contrastRatio(AppColors.text, AppColors.background), greaterThanOrEqualTo(4.5));
+    expect(contrastRatio(AppColors.primary, AppColors.card), greaterThanOrEqualTo(4.5));
     expect(contrastRatio(AppColors.textMuted, AppColors.card), greaterThanOrEqualTo(4.5));
   });
 

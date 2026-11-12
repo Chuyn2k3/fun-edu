@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/app.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/features/placement/placement_screen.dart';
 import 'package:funedu/progress/level_repository.dart';
 import 'package:funedu/router.dart';
@@ -253,6 +254,27 @@ void main() {
       await pumpApp(t, placed: false);
       expect(find.text('Chào bé! Mình là Chíp Chíp'), findsOneWidget);
       expect(find.text('Bài hôm nay'), findsNothing);
+    });
+
+    testWidgets('unplaced: home is never built, frame by frame', (t) async {
+      _setSize(t, 375, 667);
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      appRouter.go('/');
+      await t.pumpWidget(
+        ProviderScope(
+          overrides: [databaseProvider.overrideWithValue(db)],
+          child: const App(),
+        ),
+      );
+      for (var i = 0; i < 30; i++) {
+        expect(find.byType(HomeScreen), findsNothing);
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      expect(find.text('Chào bé! Mình là Chíp Chíp'), findsOneWidget);
     });
 
     testWidgets('placed: opens home', (t) async {

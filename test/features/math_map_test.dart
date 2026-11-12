@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -98,6 +100,25 @@ void main() {
     await t.tap(find.text(mathLevels[3].title));
     await t.pumpAndSettle();
     expect(visited, ['0']);
+  });
+
+  testWidgets('shows a spinner, not level 1 as current, until loaded',
+      (t) async {
+    _setSize(t, 375, 667);
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const MathMapScreen()),
+    ]);
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mathLevelIndexProvider.overrideWith((ref) => Completer<int>().future),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await t.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Đang học'), findsNothing);
   });
 
   testWidgets('no overflow on a tablet', (t) async {

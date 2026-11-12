@@ -199,7 +199,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     };
     // Back during the try-out starts over; nothing was stored yet.
     return PopScope(
-      canPop: false,
+      canPop: _phase == _Phase.welcome,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _phase != _Phase.finish) _reset();
       },
