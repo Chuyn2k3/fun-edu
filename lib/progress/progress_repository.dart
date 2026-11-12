@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
 import '../learning/writing_ladder.dart';
+import 'level_repository.dart';
 
 typedef Clock = DateTime Function();
 
@@ -100,11 +101,13 @@ class HomeSummary {
     required this.totalStars,
     required this.learnedDaysThisWeek,
     required this.masteredWriting,
+    this.mathLevelIndex = 0,
   });
 
   final int totalStars;
   final int learnedDaysThisWeek;
   final int masteredWriting;
+  final int mathLevelIndex;
 
   int get level => 1 + masteredWriting ~/ 3;
 }
@@ -122,5 +125,6 @@ final homeSummaryProvider = FutureProvider<HomeSummary>((ref) async {
     totalStars: await repo.totalStars(),
     learnedDaysThisWeek: (await repo.learnedWeekdaysThisWeek()).length,
     masteredWriting: mastered,
+    mathLevelIndex: await ref.watch(mathLevelIndexProvider.future),
   );
 });

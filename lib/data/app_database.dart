@@ -24,12 +24,12 @@ class StrokeAttempts extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-@DriftDatabase(tables: [StrokeAttempts, GlyphProgress, LessonCompletions])
+@DriftDatabase(tables: [StrokeAttempts, GlyphProgress, LessonCompletions, SubjectLevels])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -37,6 +37,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(glyphProgress);
             await m.createTable(lessonCompletions);
+          }
+          if (from < 3) {
+            await m.createTable(subjectLevels);
           }
         },
       );

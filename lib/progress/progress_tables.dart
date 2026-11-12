@@ -19,3 +19,14 @@ class LessonCompletions extends Table {
   DateTimeColumn get completedAt => dateTime()();
   IntColumn get starsEarned => integer()();
 }
+
+/// Current level index per subject ('viet' or 'toan'); a row exists once the
+/// subject has been placed.
+class SubjectLevels extends Table {
+  TextColumn get subject => text()();
+  IntColumn get levelIndex => integer()();
+  DateTimeColumn get placedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {subject};
+}

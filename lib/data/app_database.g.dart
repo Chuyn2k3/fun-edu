@@ -931,6 +931,243 @@ class LessonCompletionsCompanion extends UpdateCompanion<LessonCompletion> {
   }
 }
 
+class $SubjectLevelsTable extends SubjectLevels
+    with TableInfo<$SubjectLevelsTable, SubjectLevel> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SubjectLevelsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _subjectMeta =
+      const VerificationMeta('subject');
+  @override
+  late final GeneratedColumn<String> subject = GeneratedColumn<String>(
+      'subject', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _levelIndexMeta =
+      const VerificationMeta('levelIndex');
+  @override
+  late final GeneratedColumn<int> levelIndex = GeneratedColumn<int>(
+      'level_index', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _placedAtMeta =
+      const VerificationMeta('placedAt');
+  @override
+  late final GeneratedColumn<DateTime> placedAt = GeneratedColumn<DateTime>(
+      'placed_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [subject, levelIndex, placedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'subject_levels';
+  @override
+  VerificationContext validateIntegrity(Insertable<SubjectLevel> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('subject')) {
+      context.handle(_subjectMeta,
+          subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta));
+    } else if (isInserting) {
+      context.missing(_subjectMeta);
+    }
+    if (data.containsKey('level_index')) {
+      context.handle(
+          _levelIndexMeta,
+          levelIndex.isAcceptableOrUnknown(
+              data['level_index']!, _levelIndexMeta));
+    } else if (isInserting) {
+      context.missing(_levelIndexMeta);
+    }
+    if (data.containsKey('placed_at')) {
+      context.handle(_placedAtMeta,
+          placedAt.isAcceptableOrUnknown(data['placed_at']!, _placedAtMeta));
+    } else if (isInserting) {
+      context.missing(_placedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {subject};
+  @override
+  SubjectLevel map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SubjectLevel(
+      subject: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject'])!,
+      levelIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}level_index'])!,
+      placedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}placed_at'])!,
+    );
+  }
+
+  @override
+  $SubjectLevelsTable createAlias(String alias) {
+    return $SubjectLevelsTable(attachedDatabase, alias);
+  }
+}
+
+class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
+  final String subject;
+  final int levelIndex;
+  final DateTime placedAt;
+  const SubjectLevel(
+      {required this.subject,
+      required this.levelIndex,
+      required this.placedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['subject'] = Variable<String>(subject);
+    map['level_index'] = Variable<int>(levelIndex);
+    map['placed_at'] = Variable<DateTime>(placedAt);
+    return map;
+  }
+
+  SubjectLevelsCompanion toCompanion(bool nullToAbsent) {
+    return SubjectLevelsCompanion(
+      subject: Value(subject),
+      levelIndex: Value(levelIndex),
+      placedAt: Value(placedAt),
+    );
+  }
+
+  factory SubjectLevel.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SubjectLevel(
+      subject: serializer.fromJson<String>(json['subject']),
+      levelIndex: serializer.fromJson<int>(json['levelIndex']),
+      placedAt: serializer.fromJson<DateTime>(json['placedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'subject': serializer.toJson<String>(subject),
+      'levelIndex': serializer.toJson<int>(levelIndex),
+      'placedAt': serializer.toJson<DateTime>(placedAt),
+    };
+  }
+
+  SubjectLevel copyWith(
+          {String? subject, int? levelIndex, DateTime? placedAt}) =>
+      SubjectLevel(
+        subject: subject ?? this.subject,
+        levelIndex: levelIndex ?? this.levelIndex,
+        placedAt: placedAt ?? this.placedAt,
+      );
+  SubjectLevel copyWithCompanion(SubjectLevelsCompanion data) {
+    return SubjectLevel(
+      subject: data.subject.present ? data.subject.value : this.subject,
+      levelIndex:
+          data.levelIndex.present ? data.levelIndex.value : this.levelIndex,
+      placedAt: data.placedAt.present ? data.placedAt.value : this.placedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubjectLevel(')
+          ..write('subject: $subject, ')
+          ..write('levelIndex: $levelIndex, ')
+          ..write('placedAt: $placedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(subject, levelIndex, placedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SubjectLevel &&
+          other.subject == this.subject &&
+          other.levelIndex == this.levelIndex &&
+          other.placedAt == this.placedAt);
+}
+
+class SubjectLevelsCompanion extends UpdateCompanion<SubjectLevel> {
+  final Value<String> subject;
+  final Value<int> levelIndex;
+  final Value<DateTime> placedAt;
+  final Value<int> rowid;
+  const SubjectLevelsCompanion({
+    this.subject = const Value.absent(),
+    this.levelIndex = const Value.absent(),
+    this.placedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SubjectLevelsCompanion.insert({
+    required String subject,
+    required int levelIndex,
+    required DateTime placedAt,
+    this.rowid = const Value.absent(),
+  })  : subject = Value(subject),
+        levelIndex = Value(levelIndex),
+        placedAt = Value(placedAt);
+  static Insertable<SubjectLevel> custom({
+    Expression<String>? subject,
+    Expression<int>? levelIndex,
+    Expression<DateTime>? placedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (subject != null) 'subject': subject,
+      if (levelIndex != null) 'level_index': levelIndex,
+      if (placedAt != null) 'placed_at': placedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SubjectLevelsCompanion copyWith(
+      {Value<String>? subject,
+      Value<int>? levelIndex,
+      Value<DateTime>? placedAt,
+      Value<int>? rowid}) {
+    return SubjectLevelsCompanion(
+      subject: subject ?? this.subject,
+      levelIndex: levelIndex ?? this.levelIndex,
+      placedAt: placedAt ?? this.placedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (subject.present) {
+      map['subject'] = Variable<String>(subject.value);
+    }
+    if (levelIndex.present) {
+      map['level_index'] = Variable<int>(levelIndex.value);
+    }
+    if (placedAt.present) {
+      map['placed_at'] = Variable<DateTime>(placedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SubjectLevelsCompanion(')
+          ..write('subject: $subject, ')
+          ..write('levelIndex: $levelIndex, ')
+          ..write('placedAt: $placedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -938,12 +1175,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GlyphProgressTable glyphProgress = $GlyphProgressTable(this);
   late final $LessonCompletionsTable lessonCompletions =
       $LessonCompletionsTable(this);
+  late final $SubjectLevelsTable subjectLevels = $SubjectLevelsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [strokeAttempts, glyphProgress, lessonCompletions];
+      [strokeAttempts, glyphProgress, lessonCompletions, subjectLevels];
 }
 
 typedef $$StrokeAttemptsTableCreateCompanionBuilder = StrokeAttemptsCompanion
@@ -1460,6 +1698,149 @@ typedef $$LessonCompletionsTableProcessedTableManager = ProcessedTableManager<
     ),
     LessonCompletion,
     PrefetchHooks Function()>;
+typedef $$SubjectLevelsTableCreateCompanionBuilder = SubjectLevelsCompanion
+    Function({
+  required String subject,
+  required int levelIndex,
+  required DateTime placedAt,
+  Value<int> rowid,
+});
+typedef $$SubjectLevelsTableUpdateCompanionBuilder = SubjectLevelsCompanion
+    Function({
+  Value<String> subject,
+  Value<int> levelIndex,
+  Value<DateTime> placedAt,
+  Value<int> rowid,
+});
+
+class $$SubjectLevelsTableFilterComposer
+    extends Composer<_$AppDatabase, $SubjectLevelsTable> {
+  $$SubjectLevelsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get subject => $composableBuilder(
+      column: $table.subject, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get levelIndex => $composableBuilder(
+      column: $table.levelIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get placedAt => $composableBuilder(
+      column: $table.placedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SubjectLevelsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SubjectLevelsTable> {
+  $$SubjectLevelsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get subject => $composableBuilder(
+      column: $table.subject, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get levelIndex => $composableBuilder(
+      column: $table.levelIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get placedAt => $composableBuilder(
+      column: $table.placedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SubjectLevelsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SubjectLevelsTable> {
+  $$SubjectLevelsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get subject =>
+      $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<int> get levelIndex => $composableBuilder(
+      column: $table.levelIndex, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get placedAt =>
+      $composableBuilder(column: $table.placedAt, builder: (column) => column);
+}
+
+class $$SubjectLevelsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SubjectLevelsTable,
+    SubjectLevel,
+    $$SubjectLevelsTableFilterComposer,
+    $$SubjectLevelsTableOrderingComposer,
+    $$SubjectLevelsTableAnnotationComposer,
+    $$SubjectLevelsTableCreateCompanionBuilder,
+    $$SubjectLevelsTableUpdateCompanionBuilder,
+    (
+      SubjectLevel,
+      BaseReferences<_$AppDatabase, $SubjectLevelsTable, SubjectLevel>
+    ),
+    SubjectLevel,
+    PrefetchHooks Function()> {
+  $$SubjectLevelsTableTableManager(_$AppDatabase db, $SubjectLevelsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SubjectLevelsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SubjectLevelsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SubjectLevelsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> subject = const Value.absent(),
+            Value<int> levelIndex = const Value.absent(),
+            Value<DateTime> placedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SubjectLevelsCompanion(
+            subject: subject,
+            levelIndex: levelIndex,
+            placedAt: placedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String subject,
+            required int levelIndex,
+            required DateTime placedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SubjectLevelsCompanion.insert(
+            subject: subject,
+            levelIndex: levelIndex,
+            placedAt: placedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SubjectLevelsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SubjectLevelsTable,
+    SubjectLevel,
+    $$SubjectLevelsTableFilterComposer,
+    $$SubjectLevelsTableOrderingComposer,
+    $$SubjectLevelsTableAnnotationComposer,
+    $$SubjectLevelsTableCreateCompanionBuilder,
+    $$SubjectLevelsTableUpdateCompanionBuilder,
+    (
+      SubjectLevel,
+      BaseReferences<_$AppDatabase, $SubjectLevelsTable, SubjectLevel>
+    ),
+    SubjectLevel,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1470,4 +1851,6 @@ class $AppDatabaseManager {
       $$GlyphProgressTableTableManager(_db, _db.glyphProgress);
   $$LessonCompletionsTableTableManager get lessonCompletions =>
       $$LessonCompletionsTableTableManager(_db, _db.lessonCompletions);
+  $$SubjectLevelsTableTableManager get subjectLevels =>
+      $$SubjectLevelsTableTableManager(_db, _db.subjectLevels);
 }
