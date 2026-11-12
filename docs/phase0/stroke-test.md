@@ -43,13 +43,14 @@ Cách ghi:
 3. Viết trên khung vẽ theo **mẫu chữ tiểu học**: đúng **thứ tự nét** và đúng **hướng** (điểm bắt đầu tới điểm kết thúc). Dùng **bút cảm ứng** nếu có, nét sẽ đều hơn ngón tay. Viết chậm, trơn, không run.
 4. Nhấc tay là kết thúc một nét; glyph nhiều nét thì viết các nét lần lượt theo đúng thứ tự.
 5. Viết sai thì bấm **Hoàn tác** (bỏ nét cuối) hoặc **Xóa** (làm lại từ đầu).
-6. Bấm **Xuất**: JSON của glyph được chép vào clipboard (và in ra log).
-7. Dán JSON vào file `app/assets/glyphs/<id>.json` (ví dụ `app/assets/glyphs/so-2.json`). Tên file phải trùng `id` trong JSON.
+6. Bấm **Xuất**. JSON được chép vào clipboard **của điện thoại/máy tính bảng** và đồng thời in ra **terminal trên máy tính** đang chạy `flutter run`.
+7. Đưa JSON về máy tính: mở cửa sổ terminal đang chạy `flutter run`, tìm đoạn JSON vừa in ra sau khi bấm Xuất (bắt đầu bằng `{"id": ...`), bôi đen và sao chép. Dán vào file `app/assets/glyphs/<id>.json` (ví dụ `app/assets/glyphs/so-2.json`) rồi lưu. Tên file phải trùng `id` trong JSON.
+   Cách dự phòng nếu terminal không có JSON: trên thiết bị, dán (clipboard) vào một app ghi chú hoặc tin nhắn rồi gửi cho chính bạn, mở trên máy tính và sao chép vào file như trên.
 8. Lặp lại cho đủ 9 glyph.
 
 Kiểm tra: từ thư mục `app`, chạy `flutter test`. Bài test `test/stroke/assets_self_grade_test.dart` tự đọc mọi file trong `assets/glyphs/` và kiểm tra mỗi glyph chấm đúng chính nét mẫu của nó. Test đỏ nghĩa là file glyph đó có vấn đề (sai id, rỗng, hoặc nét ghi quá lạ), hãy ghi lại.
 
-Sau đó chạy lại app (`flutter run`) để trang chủ liệt kê đủ 9 glyph, rồi commit các file `.json`.
+Sau khi thêm file glyph, phải **dừng hẳn app** (bấm `q` trong terminal `flutter run`, hoặc vuốt tắt app) rồi chạy lại `flutter run`. Hot reload/hot restart **không** nhận file asset mới. Khi đó trang chủ mới liệt kê đủ 9 glyph. Cuối cùng commit các file `.json`.
 
 ## 3. Kịch bản buổi thử
 
@@ -70,6 +71,28 @@ Phiếu ghi nhanh (mỗi nét bé vẽ một dòng):
 | | | | | | |
 
 Cuối buổi, tính tổng vào bảng kết quả ở phần 4.
+
+## 3b. Kiểm tra bắt lỗi (người lớn làm, không cần bé)
+
+Bé sẽ không cố tình vẽ sai, nên tiêu chí "sai thứ tự hoặc sai chiều phải bị bắt" do **người lớn** kiểm tra. Với **mỗi glyph**, người lớn cố tình:
+1. **Sai chiều**: vẽ một nét đúng đường nhưng ngược chiều (từ cuối về đầu). Mong đợi app báo "Bé vẽ ngược chiều rồi".
+2. **Sai thứ tự** (chỉ với glyph từ 2 nét trở lên, như số 2, 3, chữ a, b nếu có nhiều nét): vẽ nét thứ 2 trước nét thứ 1. Mong đợi app báo "Nét này vẽ sau nhé".
+
+Ghi kết quả (Bắt được / Lọt):
+
+| Glyph | Số nét | Sai chiều: app bắt? | Sai thứ tự: app bắt? | Ghi chú |
+|---|---|---|---|---|
+| net-ngang | | | không áp dụng (1 nét) | |
+| net-thang-dung | | | không áp dụng (1 nét) | |
+| net-xien | | | không áp dụng (1 nét) | |
+| net-cong | | | không áp dụng (1 nét) | |
+| net-moc | | | không áp dụng (1 nét) | |
+| so-0 | | | | |
+| so-1 | | | | |
+| so-2 | | | | |
+| so-3 | | | | |
+| chu-a | | | | |
+| chu-b | | | | |
 
 ## 4. Bảng kết quả
 
@@ -99,7 +122,7 @@ Tỷ lệ chấm sai nét đúng = (tổng cột cuối) / (số nét người l
 
 ### Tiêu chí đạt (theo spec)
 - Nét hơi xấu nhưng đúng thì được chấp nhận.
-- Sai thứ tự nét hoặc sai chiều thì phải bị bắt.
+- Sai thứ tự nét hoặc sai chiều thì phải bị bắt: mọi dòng ở bảng phần 3b đều "Bắt được" (lọt dòng nào là chưa đạt).
 - Tỷ lệ app chấm sai một nét đúng dưới khoảng 1/10.
 
 Kết luận: [ ] Đạt   [ ] Chưa đạt, cần chỉnh ngưỡng (xem phần 6).
