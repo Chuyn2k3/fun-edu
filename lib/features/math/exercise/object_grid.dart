@@ -10,6 +10,7 @@ class ObjectGrid extends StatelessWidget {
     required this.count,
     this.image = AppImages.icStar,
     this.marked = const {},
+    this.faded = const {},
     this.numbers = const {},
     this.onTapObject,
     this.maxPerRow = 5,
@@ -20,6 +21,9 @@ class ObjectGrid extends StatelessWidget {
 
   /// Indices drawn with a soft highlight.
   final Set<int> marked;
+
+  /// Indices drawn dimmed (for example the objects taken away in a subtraction).
+  final Set<int> faded;
 
   /// Order number badges to draw on top of objects, keyed by index.
   final Map<int, int> numbers;
@@ -85,7 +89,10 @@ class ObjectGrid extends StatelessWidget {
             Positioned.fill(
               child: Padding(
                 padding: const EdgeInsets.all(4),
-                child: Image.asset(image, fit: BoxFit.contain),
+                child: Opacity(
+                  opacity: faded.contains(i) ? 0.3 : 1,
+                  child: Image.asset(image, fit: BoxFit.contain),
+                ),
               ),
             ),
             if (badge != null)

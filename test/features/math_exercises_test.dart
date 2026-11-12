@@ -51,6 +51,17 @@ void main() {
       expect(deco.color, Subject.toan.tint);
     });
 
+    testWidgets('the correct tile is filled with the primary colour',
+        (tester) async {
+      await tester.pumpWidget(host(ChoiceAnswers(
+          choices: const [2, 3, 4], answer: 3, onAnswered: (_) {})));
+      await tester.tap(find.text('3'));
+      await tester.pump();
+      final ink = tester.widget<Ink>(
+          find.ancestor(of: find.text('3'), matching: find.byType(Ink)));
+      expect((ink.decoration! as BoxDecoration).color, AppColors.primary);
+    });
+
     testWidgets('resets when rebuilt with another question', (tester) async {
       final log = <bool>[];
       Widget w(int a) => host(ChoiceAnswers(

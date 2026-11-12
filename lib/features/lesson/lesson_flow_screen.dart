@@ -29,6 +29,11 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
   int _index = 0;
   bool _busy = false;
   bool _loadFailed = false;
+  // Set when saving a finished item failed; the finished screen is replaced
+  // by a retry prompt that re-runs only the save, not the session.
+  bool _saveFailed = false;
+  Future<void> Function()? _pendingRecord;
+  bool _recorded = false;
 
   @override
   void initState() {
@@ -52,13 +57,22 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
     final repo = ref.read(progressRepositoryProvider);
     final items = _items!;
     try {
-      await record();
+      // A retry must not record the item twice if only a later step failed.
+      if (!_recorded) {
+        await record();
+        _recorded = true;
+      }
       final last = _index == items.length - 1;
       if (!last) {
         ref.invalidate(homeSummaryProvider);
         ref.invalidate(todayLessonProvider);
         if (!mounted) return;
-        setState(() => _index++);
+        setState(() {
+          _index++;
+          _saveFailed = false;
+          _pendingRecord = null;
+          _recorded = false;
+        });
         return;
       }
       final stars = await repo.recordLessonCompleted(
@@ -71,9 +85,10 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
     } catch (e, st) {
       debugPrint('lesson progress failed: $e\n$st');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không lưu được kết quả')),
-        );
+        setState(() {
+          _saveFailed = true;
+          _pendingRecord = record;
+        });
       }
     } finally {
       _busy = false;
@@ -109,6 +124,16 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: _Message(onHome: _home, text: 'Chưa có bài nào'),
+      );
+    }
+    if (_saveFailed) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: _Message(
+          onHome: _home,
+          text: 'Không lưu được kết quả',
+          onRetry: () => _completeItem(_pendingRecord!),
+        ),
       );
     }
     final item = items[_index];
@@ -153,10 +178,11 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
 }
 
 class _Message extends StatelessWidget {
-  const _Message({required this.text, required this.onHome});
+  const _Message({required this.text, required this.onHome, this.onRetry});
 
   final String text;
   final VoidCallback onHome;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +203,10 @@ class _Message extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              if (onRetry != null) ...[
+                PrimaryButton(label: 'Thử lại', onPressed: onRetry),
+                const SizedBox(height: 12),
+              ],
               PrimaryButton(label: 'Về trang chính', onPressed: onHome),
             ],
           ),

@@ -62,10 +62,36 @@ Future<void> _finishGlyph(WidgetTester t) async {
   await t.pumpAndSettle();
 }
 
+/// Fails the first [failures] math saves, then behaves normally.
+class _FlakyLevelRepository extends LevelRepository {
+  _FlakyLevelRepository(super.db, this.failures);
+
+  int failures;
+  int attempts = 0;
+
+  @override
+  Future<int> recordMathSession({
+    required int firstTryCorrect,
+    required int total,
+  }) {
+    attempts++;
+    if (failures > 0) {
+      failures--;
+      throw StateError('disk full');
+    }
+    return super.recordMathSession(
+      firstTryCorrect: firstTryCorrect,
+      total: total,
+    );
+  }
+}
+
 Future<AppDatabase> _pump(
   WidgetTester t, {
   required List<LessonItem> lesson,
   String initial = '/lesson',
+  int mathSaveFailures = 0,
+  List<_FlakyLevelRepository>? flaky,
 }) async {
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
@@ -89,6 +115,12 @@ Future<AppDatabase> _pump(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        if (flaky != null)
+          levelRepositoryProvider.overrideWith((ref) {
+            final repo = _FlakyLevelRepository(db, mathSaveFailures);
+            flaky.add(repo);
+            return repo;
+          }),
         todayLessonProvider.overrideWith((ref) async => lesson),
         glyphProvider.overrideWith((ref, id) async => _glyph(id, 'Chữ $id')),
       ],
@@ -222,6 +254,54 @@ void main() {
     expect(lessons!.single.starsEarned, 5);
     final progress = await t.runAsync(() => db.select(db.glyphProgress).get());
     expect(progress!.map((r) => r.glyphId).toSet(), {'a', 'b'});
+  });
+
+  testWidgets('failed math save offers Thử lại that retries only the save',
+      (t) async {
+    _setSize(t, 375, 667);
+    final flaky = <_FlakyLevelRepository>[];
+    final db = await _pump(
+      t,
+      lesson: const [MathItem(4)],
+      mathSaveFailures: 1,
+      flaky: flaky,
+    );
+    await t.runAsync(() => LevelRepository(db).setLevel('toan', 4));
+    final prompt = RegExp(r'^(\d+) \+ (\d+) = \?$');
+    for (var i = 0; i < 5; i++) {
+      final text = t
+          .widgetList<Text>(find.byType(Text))
+          .map((w) => w.data ?? '')
+          .firstWhere(prompt.hasMatch);
+      final m = prompt.firstMatch(text)!;
+      await t.tap(find.descendant(
+        of: find.byType(ChoiceAnswers),
+        matching: find.text('${int.parse(m[1]!) + int.parse(m[2]!)}'),
+      ));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 900));
+    }
+    await t.pump(const Duration(milliseconds: 1200));
+    await t.pumpAndSettle();
+    expect(find.text('Không lưu được kết quả'), findsOneWidget);
+    expect(find.text('Thử lại'), findsOneWidget);
+    expect(flaky.single.attempts, 1);
+
+    await t.tap(find.text('Thử lại'));
+    await t.pump();
+    for (var i = 0; i < 6; i++) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await t.pump();
+    }
+    await t.pumpAndSettle();
+    expect(flaky.single.attempts, 2);
+    expect(find.text('Xong bài hôm nay!'), findsOneWidget);
+    expect(
+      await t.runAsync(() => LevelRepository(db).levelOf('toan')),
+      5,
+    );
   });
 
   testWidgets('waits for the fresh lesson instead of a stale reloading one',

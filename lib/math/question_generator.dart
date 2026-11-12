@@ -4,7 +4,8 @@ import 'math_level.dart';
 import 'math_question.dart';
 
 /// Generates [count] questions for [level]; deterministic for a given [rng]
-/// state. No two adjacent questions are equal.
+/// state. No two adjacent questions show the same content (choices and their
+/// order are not part of what the child sees as "the question").
 List<MathQuestion> generateQuestions(
   MathLevel level,
   Random rng, {
@@ -13,11 +14,23 @@ List<MathQuestion> generateQuestions(
   final result = <MathQuestion>[];
   while (result.length < count) {
     final q = _generateOne(level, rng);
-    if (result.isNotEmpty && result.last == q) continue;
+    if (result.isNotEmpty && _sameContent(result.last, q)) continue;
     result.add(q);
   }
   return result;
 }
+
+/// True when the child would see the same question: count/match by `n`,
+/// compare by sides and ask, arithmetic by operands and operator.
+bool _sameContent(MathQuestion x, MathQuestion y) => switch ((x, y)) {
+      (CountQuestion a, CountQuestion b) => a.n == b.n,
+      (MatchQuestion a, MatchQuestion b) => a.n == b.n,
+      (CompareQuestion a, CompareQuestion b) =>
+        a.left == b.left && a.right == b.right && a.ask == b.ask,
+      (ArithmeticQuestion a, ArithmeticQuestion b) =>
+        a.a == b.a && a.b == b.b && a.plus == b.plus,
+      _ => false,
+    };
 
 MathQuestion _generateOne(MathLevel level, Random rng) {
   final max = level.max;
@@ -51,7 +64,7 @@ ArithmeticQuestion _arithmetic(int max, bool plus, Random rng) {
     b = 1 + rng.nextInt(max - a);
   } else {
     a = 1 + rng.nextInt(max);
-    b = rng.nextInt(a + 1);
+    b = 1 + rng.nextInt(a); // 1..a: never subtract 0, but a - a = 0 is fine
   }
   final answer = plus ? a + b : a - b;
   return ArithmeticQuestion(a, b, plus, _choices(answer, max, rng));

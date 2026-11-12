@@ -5,6 +5,14 @@ import 'package:funedu/math/math_level.dart';
 import 'package:funedu/math/math_question.dart';
 import 'package:funedu/math/question_generator.dart';
 
+/// What the child sees, ignoring choices and their order.
+List<Object> _content(MathQuestion q) => switch (q) {
+      CountQuestion() => ['count', q.n],
+      MatchQuestion() => ['match', q.n],
+      CompareQuestion() => ['compare', q.left, q.right, q.ask],
+      ArithmeticQuestion() => ['arith', q.a, q.b, q.plus],
+    };
+
 void main() {
   test('mathLevels matches the ladder table', () {
     const expected = [
@@ -81,12 +89,23 @@ void main() {
                   expect(q.prompt, '${q.a} + ${q.b} = ?');
                 } else {
                   expect(q.a, lessThanOrEqualTo(level.max));
-                  expect(q.b, inInclusiveRange(0, q.a));
+                  expect(q.b, inInclusiveRange(1, q.a));
                   expect(q.answer, q.a - q.b);
                   expect(q.prompt, '${q.a} − ${q.b} = ?');
                 }
                 checkChoices(q.choices, q.answer, level.max);
             }
+          }
+        }
+      });
+
+      test('adjacent questions never share visible content (seeds 0..199)',
+          () {
+        for (var seed = 0; seed < 200; seed++) {
+          final qs = generateQuestions(level, Random(seed), count: 5);
+          for (var i = 1; i < qs.length; i++) {
+            expect(_content(qs[i]), isNot(_content(qs[i - 1])),
+                reason: 'seed $seed, index $i');
           }
         }
       });
@@ -105,6 +124,14 @@ void main() {
       });
     });
   }
+
+  test('answer 0 stays possible when b == a', () {
+    final qs = [
+      for (var seed = 0; seed < 50; seed++)
+        ...generateQuestions(mathLevels[5], Random(seed)),
+    ].cast<ArithmeticQuestion>();
+    expect(qs.any((q) => q.answer == 0), isTrue);
+  });
 
   test('addSubtract mixes plus and minus', () {
     final qs = generateQuestions(mathLevels.last, Random(1), count: 20)

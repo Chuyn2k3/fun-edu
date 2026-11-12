@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/features/math/exercise/choice_answers.dart';
+import 'package:funedu/features/math/exercise/object_grid.dart';
 import 'package:funedu/features/math/math_session_screen.dart';
 import 'package:funedu/math/math_level.dart';
 import 'package:funedu/math/math_question.dart';
@@ -118,6 +119,48 @@ void main() {
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 3));
     expect(r.calls, isEmpty);
+  });
+
+  /// First seed whose first question matches [a] op [b].
+  int seedFor(String levelId, int a, int b, bool plus) {
+    for (var seed = 0; seed < 5000; seed++) {
+      final q = generateQuestions(_level(levelId), Random(seed), count: 5)
+          .first as ArithmeticQuestion;
+      if (q.a == a && q.b == b && q.plus == plus) return seed;
+    }
+    fail('no seed for $a $b');
+  }
+
+  Finder stars() => find.descendant(
+        of: find.byType(ObjectGrid),
+        matching: find.byWidgetPredicate((w) =>
+            w is Image &&
+            w.image is AssetImage &&
+            (w.image as AssetImage).assetName == AppImages.icStar),
+      );
+
+  testWidgets('2 + 3 shows both groups: 5 stars and a plus sign', (t) async {
+    await _pump(t, 'cong-5', seed: seedFor('cong-5', 2, 3, true));
+    expect(find.text('2 + 3 = ?'), findsOneWidget);
+    expect(stars(), findsNWidgets(5));
+    expect(find.byType(ObjectGrid), findsNWidgets(2));
+    expect(find.text('+'), findsOneWidget);
+  });
+
+  testWidgets('5 - 2 shows 5 stars, the last 2 faded', (t) async {
+    await _pump(t, 'tru-5', seed: seedFor('tru-5', 5, 2, false));
+    expect(find.text('5 − 2 = ?'), findsOneWidget);
+    expect(stars(), findsNWidgets(5));
+    final faded = t
+        .widgetList<Opacity>(find.descendant(
+            of: find.byType(ObjectGrid), matching: find.byType(Opacity)))
+        .where((o) => o.opacity == 0.3);
+    expect(faded.length, 2);
+  });
+
+  testWidgets('no grid when the objects would exceed 10', (t) async {
+    await _pump(t, 'cong-tru-20', seed: seedFor('cong-tru-20', 12, 3, false));
+    expect(find.byType(ObjectGrid), findsNothing);
   });
 
   group('no overflow', () {

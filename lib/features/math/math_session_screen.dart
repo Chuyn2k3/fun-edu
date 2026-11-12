@@ -185,6 +185,33 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
     );
   }
 
+  /// Pictures for an arithmetic question, empty when there would be more
+  /// than [_maxIllustratedObjects]. Addition shows both groups; subtraction
+  /// shows `a` objects with the last `b` dimmed (the ones taken away).
+  List<Widget> _illustration(ArithmeticQuestion q) {
+    final total = q.plus ? q.a + q.b : q.a;
+    if (total > _maxIllustratedObjects) return const [];
+    return [
+      const SizedBox(height: 12),
+      if (q.plus) ...[
+        ObjectGrid(count: q.a),
+        const Text(
+          '+',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
+            color: AppColors.text,
+          ),
+        ),
+        ObjectGrid(count: q.b),
+      ] else
+        ObjectGrid(
+          count: q.a,
+          faded: {for (var i = q.a - q.b; i < q.a; i++) i},
+        ),
+    ];
+  }
+
   Widget _exercise(MathQuestion q, Key key) => switch (q) {
         CountQuestion() =>
           TapCountBoard(key: key, q: q, onAnswered: _onAnswered),
@@ -208,10 +235,7 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
                   ),
                 ),
               ),
-              if (q.a <= _maxIllustratedObjects) ...[
-                const SizedBox(height: 12),
-                ObjectGrid(count: q.a),
-              ],
+              ..._illustration(q),
               const SizedBox(height: 16),
               ChoiceAnswers(
                 choices: q.choices,
