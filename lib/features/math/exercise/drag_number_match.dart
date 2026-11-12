@@ -18,6 +18,7 @@ class DragNumberMatch extends StatefulWidget {
 class _DragNumberMatchState extends State<DragNumberMatch> {
   static const _size = 80.0;
   bool _done = false;
+  bool _reportedWrong = false;
   int? _placed;
 
   @override
@@ -25,18 +26,23 @@ class _DragNumberMatchState extends State<DragNumberMatch> {
     super.didUpdateWidget(old);
     if (old.q != widget.q) {
       _done = false;
+      _reportedWrong = false;
       _placed = null;
     }
   }
 
   void _drop(int v) {
     if (_done) return;
-    final ok = v == widget.q.answer;
-    setState(() {
-      _done = true;
-      if (ok) _placed = v;
-    });
-    widget.onAnswered(ok);
+    if (v == widget.q.answer) {
+      setState(() {
+        _done = true;
+        _placed = v;
+      });
+      widget.onAnswered(true);
+    } else if (!_reportedWrong) {
+      _reportedWrong = true;
+      widget.onAnswered(false);
+    }
   }
 
   @override

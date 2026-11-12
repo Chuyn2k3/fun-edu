@@ -17,17 +17,26 @@ class CompareGroups extends StatefulWidget {
 
 class _CompareGroupsState extends State<CompareGroups> {
   bool _done = false;
+  bool _reportedWrong = false;
 
   @override
   void didUpdateWidget(CompareGroups old) {
     super.didUpdateWidget(old);
-    if (old.q != widget.q) _done = false;
+    if (old.q != widget.q) {
+      _done = false;
+      _reportedWrong = false;
+    }
   }
 
   void _pick(Side s) {
     if (_done) return;
-    _done = true;
-    widget.onAnswered(s == widget.q.answer);
+    if (s == widget.q.answer) {
+      _done = true;
+      widget.onAnswered(true);
+    } else if (!_reportedWrong) {
+      _reportedWrong = true;
+      widget.onAnswered(false);
+    }
   }
 
   @override

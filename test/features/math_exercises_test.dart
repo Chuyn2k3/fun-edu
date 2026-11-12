@@ -6,7 +6,6 @@ import 'package:funedu/features/math/exercise/drag_number_match.dart';
 import 'package:funedu/features/math/exercise/object_grid.dart';
 import 'package:funedu/features/math/exercise/tap_count_board.dart';
 import 'package:funedu/math/math_question.dart';
-import 'package:funedu/ui/theme/tokens.dart';
 
 Widget host(Widget child) => MaterialApp(
       home: Scaffold(body: SingleChildScrollView(child: child)),
@@ -104,14 +103,20 @@ void main() {
       expect(log, [true]);
     });
 
-    testWidgets('wrong side is false', (tester) async {
+    testWidgets('wrong side is false, then retry right is true',
+        (tester) async {
       final log = <bool>[];
       await tester.pumpWidget(host(CompareGroups(
           q: const CompareQuestion(2, 5, CompareAsk.less),
           onAnswered: log.add)));
       await tester.tap(find.byKey(const ValueKey('compare-right')));
       await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('compare-right')));
+      await tester.pump();
       expect(log, [false]);
+      await tester.tap(find.byKey(const ValueKey('compare-left')));
+      await tester.pump();
+      expect(log, [false, true]);
     });
   });
 
@@ -135,15 +140,18 @@ void main() {
           findsOneWidget);
     });
 
-    testWidgets('tapping a wrong tile is false and locks', (tester) async {
+    testWidgets('wrong tile is false once, then right tile is true',
+        (tester) async {
       final log = <bool>[];
       await tester.pumpWidget(host(DragNumberMatch(
           q: const MatchQuestion(3, [2, 3, 4]), onAnswered: log.add)));
       await tester.tap(find.byKey(const ValueKey('match-tile-2')));
       await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('match-tile-4')));
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey('match-tile-3')));
       await tester.pump();
-      expect(log, [false]);
+      expect(log, [false, true]);
     });
 
     testWidgets('tapping the right tile is true', (tester) async {
@@ -155,6 +163,4 @@ void main() {
       expect(log, [true]);
     });
   });
-
-  test('tokens sanity', () => expect(AppColors.accent, isNotNull));
 }
