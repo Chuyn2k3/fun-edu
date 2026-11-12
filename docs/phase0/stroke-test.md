@@ -12,12 +12,11 @@ Cần trên máy tính của bạn: Flutter SDK và (cho Android) Android SDK; (
 3. Kiểm tra máy được nhận: `flutter devices`.
 4. Cài và chạy bản debug:
    ```
-   cd app
    flutter run -d <mã-thiết-bị>
    ```
    Lặp lại với từng thiết bị (điện thoại, rồi máy tính bảng).
 
-**iOS (iPhone/iPad)**: mở `app/ios/Runner.xcworkspace` bằng Xcode, chọn Team ký ứng dụng, cắm thiết bị rồi chạy `flutter run -d <mã-thiết-bị>`.
+**iOS (iPhone/iPad)**: mở `ios/Runner.xcworkspace` bằng Xcode, chọn Team ký ứng dụng, cắm thiết bị rồi chạy `flutter run -d <mã-thiết-bị>`.
 
 Chỉ bản debug mới có màn hình ghi nét `/dev/recorder`. Đừng dùng bản release cho việc này.
 
@@ -44,7 +43,7 @@ Cách ghi:
 4. Nhấc tay là kết thúc một nét; glyph nhiều nét thì viết các nét lần lượt theo đúng thứ tự.
 5. Viết sai thì bấm **Hoàn tác** (bỏ nét cuối) hoặc **Xóa** (làm lại từ đầu).
 6. Bấm **Xuất**. JSON (một dòng duy nhất, tọa độ làm tròn 4 chữ số) được chép vào clipboard **của điện thoại/máy tính bảng**.
-7. Đưa JSON về máy tính: trên thiết bị, dán (clipboard) vào một app ghi chú hoặc tin nhắn rồi gửi cho chính bạn; mở trên máy tính, sao chép toàn bộ rồi dán vào file `app/assets/glyphs/<id>.json` (ví dụ `app/assets/glyphs/so-2.json`) và lưu. Tên file phải trùng `id` trong JSON.
+7. Đưa JSON về máy tính: trên thiết bị, dán (clipboard) vào một app ghi chú hoặc tin nhắn rồi gửi cho chính bạn; mở trên máy tính, sao chép toàn bộ rồi dán vào file `assets/glyphs/<id>.json` (ví dụ `assets/glyphs/so-2.json`) và lưu. Tên file phải trùng `id` trong JSON.
    Cách phụ: JSON cũng được in ra terminal đang chạy `flutter run` (một dòng). Bôi đen dòng đó, bỏ phần tiền tố `I/flutter (...): ` ở đầu dòng rồi dán vào file. Trên Android, dòng quá dài có thể bị cắt, khi đó dùng cách clipboard ở trên.
 8. Lặp lại cho đủ 9 glyph.
 
@@ -151,7 +150,7 @@ Lấy các điểm của một nét bị từ chối (cột `points`, JSON mản
 ```
 sqlite3 funedu.sqlite "SELECT id, glyph_id, stroke_index, error, points FROM stroke_attempts WHERE ok = 0 ORDER BY created_at;"
 ```
-Chép chuỗi `points` của dòng cần xem, rồi trong test (theo mẫu `app/test/stroke/grader_test.dart`) dựng nét:
+Chép chuỗi `points` của dòng cần xem, rồi trong test (theo mẫu `test/stroke/grader_test.dart`) dựng nét:
 ```dart
 final pts = jsonDecode('[[0.9,0.5],[0.5,0.5],[0.1,0.5]]') as List; // dán chuỗi points ở đây
 final drawn = Stroke([for (final p in pts) Point2((p[0] as num).toDouble(), (p[1] as num).toDouble())]);
@@ -161,7 +160,7 @@ Lưu ý: số này gồm cả lần bé vẽ thử, làm lại; chỉ dùng đ�
 
 ## 6. Nếu không đạt: chỉnh ngưỡng nào
 
-Các ngưỡng nằm trong `GradeConfig` (`app/lib/stroke/grader.dart`). Chỉ chỉnh ngưỡng, không đổi thuật toán. Nếu các nét "ngắn / vẽ quá / bắt đầu lệch chỗ" chiếm phần lớn lỗi trong phiếu, nguyên nhân nằm ở thuật toán ghép điểm theo độ dài và cần sửa ở bước "chỉnh thuật toán", không chỉ chỉnh ngưỡng.
+Các ngưỡng nằm trong `GradeConfig` (`lib/stroke/grader.dart`). Chỉ chỉnh ngưỡng, không đổi thuật toán. Nếu các nét "ngắn / vẽ quá / bắt đầu lệch chỗ" chiếm phần lớn lỗi trong phiếu, nguyên nhân nằm ở thuật toán ghép điểm theo độ dài và cần sửa ở bước "chỉnh thuật toán", không chỉ chỉnh ngưỡng.
 
 | Triệu chứng | Ngưỡng chỉnh | Mặc định |
 |---|---|---|
@@ -174,6 +173,6 @@ Các ngưỡng nằm trong `GradeConfig` (`app/lib/stroke/grader.dart`). Chỉ c
 | App cho qua nét sai (quá dễ) | làm ngược lại: giảm `tolerance` / `maxPointDistance`, tăng `minLengthRatio` | |
 
 Mỗi lần chỉnh: tăng/giảm từng chút (khoảng 0.02 đến 0.03), chạy lại cùng nét trên máy, rồi:
-1. Thêm một test tái hiện nét bé bị chấm sai (dựa theo các test trong `app/test/stroke/grader_test.dart`).
+1. Thêm một test tái hiện nét bé bị chấm sai (dựa theo các test trong `test/stroke/grader_test.dart`).
 2. Chạy lại toàn bộ `flutter test` và `flutter analyze`.
 3. Thử lại với bé và điền lại bảng kết quả.
