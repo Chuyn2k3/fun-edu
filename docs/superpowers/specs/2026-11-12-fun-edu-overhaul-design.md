@@ -1,6 +1,6 @@
 # Đại tu Fun Edu → app tập viết và học cho bé 3–6 tuổi (linh vật Chíp Chíp)
 
-> Trạng thái: **bản thiết kế tổng thể, chờ chủ dự án duyệt.** Thay cho bản nháp cũ cùng tên.
+> Trạng thái: **đã được chủ dự án duyệt (2026-11-12).** Thay cho bản nháp cũ cùng tên. Công việc triển khai làm trên nhánh `chipchip`.
 > Phạm vi của tài liệu này: tầm nhìn sản phẩm, khung chức năng, kiến trúc, lộ trình 6 giai đoạn (0–5), và **chi tiết giai đoạn 0–1**. Các giai đoạn 2–5 chỉ ở mức khung; mỗi giai đoạn sẽ có spec và kế hoạch riêng khi đến lượt.
 > Quy ước: mọi mục dưới đây đã được chủ dự án đồng ý trong buổi trao đổi ngày 2026-11-12, trừ các mục ghi **[Mở]**.
 
@@ -148,7 +148,19 @@ Bé thua vẫn nhận ít sao.
 8. Nút cho bé ≥ 64 pt; mỗi màn hình một việc chính. Góc ba mẹ cùng màu và font nhưng trầm hơn, nhiều chữ hơn.
 9. Chữ đạt độ tương phản 4.5:1; các trạng thái phân biệt bằng độ sáng, không chỉ bằng màu.
 
-- **[Mở]** Màu chính cụ thể và màu nền sẽ chốt ở bản phác thảo thứ 2 (đang chờ bộ ảnh Gemini).
+### 8.2a Bảng màu và chữ (đã chốt qua bản phác thảo thứ 2)
+| Vai trò | Giá trị |
+|---|---|
+| Màu chính (nút chính, tab đang chọn) | Cam `#C8460F` (chữ trắng đạt 4.5:1); cam sáng `#E8590C` cho điểm nhấn, nút tròn lớn, thanh tiến độ |
+| Nền | Kem `#FBF5EC` có chấm bi mờ `#EADFCF`; đầu trang là cảnh mây 3D mờ dần vào nền |
+| Thẻ | Trắng `#FFFFFF`, bo 24–28 px, bóng `0 10–14px 24–32px rgba(80,60,40,0.09–0.12)` |
+| Chữ | Navy `#22284A`; chữ phụ `#5B6385` |
+| Màu môn (chỉ ở vòng tiến độ, nền ô biểu tượng) | Viết cam `#E8590C` / nền `#FFF0E4`; Tiếng Việt tím `#7C3AED` / `#F3EDFF`; Toán xanh dương `#2563EB` / `#E8F1FF`; Tiếng Anh xanh lá `#0F8A5F` / `#E5F7EF` |
+| Font | Nunito, đậm 800–900 cho tiêu đề và nút |
+
+Cam được chọn vì trùng màu khăn của Chíp Chíp và màu môn Viết, đồng thời khác StarJar (xanh).
+
+Ảnh mẫu đã duyệt: `assets/icons-sheet.webp` (biểu tượng môn, sao, lửa, vương miện), `assets/bg-sky.webp` (cảnh đầu trang), `assets/cover-rocket.webp` (bìa Đua tên lửa). Bản phác thảo thứ 2 (trang chính, tập viết, xong bài, đua tên lửa) đã được chủ dự án duyệt; nó là mẫu tham chiếu cho bộ giao diện chung ở giai đoạn 0.
 
 ### 8.3 Linh vật: Chíp Chíp
 - Chim sẻ con mũm mĩm, nâu kem, má hồng, **khăn quàng cam và bút sáp cam** (màu của môn Viết, gắn với điểm khác biệt "tập viết").
@@ -166,7 +178,7 @@ Bé thua vẫn nhận ít sao.
 ### 9.1 App di động: Flutter, dự án mới
 - **Một** thư viện quản lý trạng thái: Riverpod. Điều hướng: go_router. Lưu trữ: SQLite qua drift.
 - **Chạy đầy đủ không cần mạng.** Từ giai đoạn 2 đồng bộ lên máy chủ khi có mạng.
-- Dựng trên nhánh `new-web`; code cũ chỉ còn trong lịch sử git để tra cứu (ý tưởng trò Toán cũ, phần tạo PDF).
+- Dựng trên nhánh `chipchip` (tách từ `new-web`); code cũ chỉ còn trong lịch sử git để tra cứu (ý tưởng trò Toán cũ, phần tạo PDF).
 
 | Khối | Việc của nó | Phụ thuộc |
 |---|---|---|
@@ -249,7 +261,7 @@ Làm theo thứ tự, rủi ro cao trước:
 
 ## 14. Việc còn mở
 1. **[Mở]** Mã gói thật của bản trên store (giai đoạn 0).
-2. **[Mở]** Màu chính và màu nền (bản phác thảo thứ 2).
+2. ~~Màu chính và màu nền~~ — đã chốt ở mục 8.2a.
 3. **[Mở]** Giá gói năm/tháng; số cấp miễn phí mỗi môn (trước giai đoạn 2).
 4. **[Mở]** Tra trùng thương hiệu "Chíp Chíp" và tên app trên store.
 5. **[Mở]** Giáo viên nào rà nội dung Tiếng Việt (trước giai đoạn 2).
