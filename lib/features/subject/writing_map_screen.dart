@@ -19,11 +19,29 @@ final writingStatsProvider = FutureProvider.autoDispose<Map<String, GlyphStat>>(
 );
 
 /// Viết subject map: a grid of the writing ladder, tap a glyph to practice.
-class WritingMapScreen extends ConsumerWidget {
+class WritingMapScreen extends ConsumerStatefulWidget {
   const WritingMapScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WritingMapScreen> createState() => _WritingMapScreenState();
+}
+
+class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
+  // True while a practice route is pushed; ignores further taps (double-tap).
+  bool _navigating = false;
+
+  Future<void> _openPractice(String id) async {
+    if (_navigating) return;
+    _navigating = true;
+    try {
+      await context.push('/practice/$id');
+    } finally {
+      _navigating = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final stats = ref.watch(writingStatsProvider).valueOrNull ?? const {};
     final available =
         ref.watch(glyphListProvider).valueOrNull ?? const <Glyph>[];
@@ -53,17 +71,22 @@ class WritingMapScreen extends ConsumerWidget {
                             onTap: () => context.go('/'),
                             radius: 32,
                             child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: const BoxDecoration(
-                                color: AppColors.card,
-                                shape: BoxShape.circle,
-                                boxShadow: [AppShadows.card],
-                              ),
-                              child: const Icon(
-                                Icons.chevron_left_rounded,
-                                size: 36,
-                                color: AppColors.text,
+                              width: 64,
+                              height: 64,
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.card,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [AppShadows.card],
+                                ),
+                                child: const Icon(
+                                  Icons.chevron_left_rounded,
+                                  size: 36,
+                                  color: AppColors.text,
+                                ),
                               ),
                             ),
                           ),
@@ -94,7 +117,7 @@ class WritingMapScreen extends ConsumerWidget {
                       itemBuilder: (context, i) => _GlyphTile(
                         label: byId[ids[i]]!.label,
                         mastered: stats[ids[i]]?.mastered ?? false,
-                        onTap: () => context.push('/practice/${ids[i]}'),
+                        onTap: () => _openPractice(ids[i]),
                       ),
                     ),
                   ),
@@ -184,12 +207,20 @@ class PracticeScreen extends ConsumerWidget {
       data: (g) => WritingScreen(
         glyph: g,
         onCompleted: (failed) async {
-          await ref
-              .read(progressRepositoryProvider)
-              .recordGlyphCompleted(g.id, failedStrokes: failed);
-          ref.invalidate(homeSummaryProvider);
-          ref.invalidate(todayLessonProvider);
-          ref.invalidate(writingStatsProvider);
+          final messenger = ScaffoldMessenger.of(context);
+          try {
+            await ref
+                .read(progressRepositoryProvider)
+                .recordGlyphCompleted(g.id, failedStrokes: failed);
+            ref.invalidate(homeSummaryProvider);
+            ref.invalidate(todayLessonProvider);
+            ref.invalidate(writingStatsProvider);
+          } catch (e, st) {
+            debugPrint('practice progress failed: $e\n$st');
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Không lưu được kết quả')),
+            );
+          }
           if (!context.mounted) return;
           if (context.canPop()) {
             context.pop();

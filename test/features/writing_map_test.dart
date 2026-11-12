@@ -23,7 +23,11 @@ final _stroke = Stroke([Point2(0.1, 0.5), Point2(0.9, 0.5)]);
 
 const _labels = {'net-ngang': 'Nét ngang', 'net-xien': 'Nét xiên'};
 
-Future<AppDatabase> _pump(WidgetTester t, {bool master = false}) async {
+Future<AppDatabase> _pump(
+  WidgetTester t, {
+  bool master = false,
+  ProgressRepository Function(AppDatabase)? repo,
+}) async {
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
   if (master) {
@@ -53,6 +57,8 @@ Future<AppDatabase> _pump(WidgetTester t, {bool master = false}) async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        if (repo != null)
+          progressRepositoryProvider.overrideWithValue(repo(db)),
         glyphListProvider.overrideWith(
           (ref) async => [
             for (final id in writingLadder)
@@ -72,6 +78,17 @@ Future<AppDatabase> _pump(WidgetTester t, {bool master = false}) async {
   );
   await t.pumpAndSettle();
   return db;
+}
+
+class _FailingRepo extends ProgressRepository {
+  _FailingRepo(super.db);
+
+  @override
+  Future<void> recordGlyphCompleted(
+    String glyphId, {
+    required int failedStrokes,
+  }) async =>
+      throw StateError('disk full');
 }
 
 void main() {
@@ -150,4 +167,47 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+
+  testWidgets('double tap on a tile opens only one practice screen', (t) async {
+    _setSize(t, 375, 667);
+    await _pump(t);
+    await t.tap(find.text('Nét xiên'));
+    await t.tap(find.text('Nét xiên'));
+    await t.pumpAndSettle();
+    expect(find.byType(PracticeScreen, skipOffstage: false), findsOneWidget);
+  });
+
+  testWidgets('map back button is at least 64 pt', (t) async {
+    _setSize(t, 375, 667);
+    await _pump(t);
+    final size = t.getSize(find.ancestor(
+      of: find.byIcon(Icons.chevron_left_rounded),
+      matching: find.byType(InkResponse),
+    ));
+    expect(size.width, greaterThanOrEqualTo(64));
+    expect(size.height, greaterThanOrEqualTo(64));
+  });
+
+  testWidgets('a failed save shows a snackbar and still returns', (t) async {
+    _setSize(t, 375, 667);
+    await _pump(t, repo: _FailingRepo.new);
+    await t.tap(find.text('Nét xiên'));
+    await t.pumpAndSettle();
+    final o = t.getTopLeft(find.byType(TracePad));
+    final side = t.getSize(find.byType(TracePad)).width;
+    await t.runAsync(() async {
+      await t.dragFrom(
+          o + Offset(0.1 * side, 0.5 * side), Offset(0.8 * side, 0));
+      await Future<void>.delayed(const Duration(milliseconds: 1400));
+    });
+    for (var i = 0; i < 6; i++) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await t.pump();
+    }
+    await t.pump(const Duration(milliseconds: 500));
+    expect(find.text('Viết Nét xiên'), findsNothing);
+    expect(find.text('Không lưu được kết quả'), findsOneWidget);
+  });
 }

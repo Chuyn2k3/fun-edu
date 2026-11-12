@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -172,4 +174,34 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('a reload keeps the old content instead of a spinner',
+      (tester) async {
+    _setSize(tester, 375, 667);
+    final gate = Completer<HomeSummary>();
+    var calls = 0;
+    final overrides = [
+      ..._fakes().skip(1),
+      homeSummaryProvider.overrideWith(
+        (ref) => ++calls == 1
+            ? Future.value(const HomeSummary(
+                totalStars: 12,
+                learnedDaysThisWeek: 3,
+                masteredWriting: 2,
+              ))
+            : gate.future,
+      ),
+    ];
+    await tester.pumpWidget(_app(overrides, []));
+    await tester.pumpAndSettle();
+    expect(find.text('Viết'), findsWidgets);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomeScreen)),
+    );
+    container.invalidate(homeSummaryProvider);
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Viết'), findsWidgets);
+  });
 }

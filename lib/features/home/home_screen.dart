@@ -31,7 +31,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(homeSummaryProvider);
     final lessonAsync = ref.watch(todayLessonProvider);
-    final loading = summaryAsync.isLoading || lessonAsync.isLoading;
+    // Spinner only before the first value; reloads keep showing the old one.
+    final loading = !summaryAsync.hasValue && summaryAsync.isLoading ||
+        !lessonAsync.hasValue && lessonAsync.isLoading;
 
     // On error fall back to zeros rather than crashing.
     final summary = summaryAsync.valueOrNull ??

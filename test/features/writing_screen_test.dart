@@ -139,4 +139,19 @@ void main() {
       expect(find.byType(TracePad), findsOneWidget);
     });
   }
+
+  testWidgets('a wrong stroke replays the model stroke (flash runs)',
+      (t) async {
+    await _pump(t);
+    bool flashing() =>
+        t.widgetList<AnimatedBuilder>(find.byType(AnimatedBuilder)).any((b) {
+          final a = b.listenable;
+          return a is AnimationController && a.isAnimating;
+        });
+    expect(flashing(), isFalse);
+    await _draw(t, _line(0.3, reversed: true));
+    expect(find.text('Bé vẽ ngược chiều rồi'), findsOneWidget);
+    expect(flashing(), isTrue);
+    await t.pumpAndSettle();
+  });
 }

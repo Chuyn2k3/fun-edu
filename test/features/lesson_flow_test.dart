@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,4 +165,41 @@ void main() {
       }
     });
   }
+
+  testWidgets('waits for the fresh lesson instead of a stale reloading one',
+      (t) async {
+    _setSize(t, 375, 667);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    var calls = 0;
+    final second = Completer<List<String>>();
+    final container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        todayLessonProvider.overrideWith(
+          (ref) => ++calls == 1 ? Future.value(['old']) : second.future,
+        ),
+        glyphProvider.overrideWith((ref, id) async => _glyph(id, 'Chữ $id')),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(todayLessonProvider.future);
+    container.invalidate(todayLessonProvider);
+    // Now reloading with the stale ['old'] still readable.
+    expect(container.read(todayLessonProvider).valueOrNull, ['old']);
+
+    await t.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: LessonFlowScreen()),
+      ),
+    );
+    await t.pump();
+    expect(find.text('Viết Chữ old'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    second.complete(['new']);
+    await t.pumpAndSettle();
+    expect(find.text('Viết Chữ new'), findsOneWidget);
+  });
 }

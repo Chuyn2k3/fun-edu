@@ -23,6 +23,20 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
   List<String>? _ids;
   int _index = 0;
   bool _busy = false;
+  bool _loadFailed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Await the fresh value: after an invalidate the provider may still expose
+    // the previous (stale) list while reloading.
+    ref.read(todayLessonProvider.future).then((ids) {
+      if (mounted) setState(() => _ids = ids);
+    }, onError: (Object e, StackTrace st) {
+      debugPrint('today lesson failed: $e\n$st');
+      if (mounted) setState(() => _loadFailed = true);
+    });
+  }
 
   void _home() => context.go('/');
 
@@ -62,13 +76,11 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lesson = ref.watch(todayLessonProvider);
-    _ids ??= lesson.valueOrNull;
     final ids = _ids;
     if (ids == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        body: lesson.hasError
+        body: _loadFailed
             ? _Message(onHome: _home, text: 'Chưa có bài nào')
             : const Center(child: CircularProgressIndicator()),
       );

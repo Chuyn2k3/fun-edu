@@ -100,6 +100,9 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
       if (!result.ok) {
         _chip = AppImages.chipEncourage;
         _message = _errorMessage(result.error!);
+        // Replay the model stroke so a child who cannot read the bubble
+        // still sees what to trace.
+        _flash.forward(from: 0);
         return;
       }
       _inked.add(drawn);
