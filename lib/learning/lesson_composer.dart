@@ -47,8 +47,8 @@ List<String> composeTodayLesson({
   return picked;
 }
 
-/// Today's lesson as [LessonItem]s: first new glyph, a math session, then the
-/// second glyph. Glyphs before [writingStartIndex] in [ladder] count as already
+/// Today's lesson as [LessonItem]s: one new glyph, a math session, then one
+/// review glyph (the next new glyph when nothing is mastered yet). Glyphs before [writingStartIndex] in [ladder] count as already
 /// learned (unless real stats exist). Missing glyphs drop their writing item;
 /// the math item is always present.
 List<LessonItem> composeTodayLessonItems({
@@ -69,7 +69,7 @@ List<LessonItem> composeTodayLessonItems({
     ladder: ladder,
     stats: effective,
     available: available,
-    size: 3,
+    size: 2,
   );
   return [
     if (glyphs.isNotEmpty) WritingItem(glyphs[0]),

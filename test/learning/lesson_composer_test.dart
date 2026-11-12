@@ -90,6 +90,15 @@ void main() {
     ]);
   });
 
+  test('one mastered glyph: new glyph, math, then review of the mastered one',
+      () {
+    expect(items(stats: {'net-ngang': clean()}, math: 2), const [
+      WritingItem('net-thang-dung'),
+      MathItem(2),
+      WritingItem('net-ngang'),
+    ]);
+  });
+
   test('writingStartIndex 5 treats earlier glyphs as learned', () {
     expect(items(start: 5, math: 2), const [
       WritingItem('so-0'),

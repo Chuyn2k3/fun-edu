@@ -57,7 +57,6 @@ class HomeScreen extends ConsumerWidget {
                 summary: summary,
                 lessonTotal: lesson.length,
                 firstLabel: firstLabel,
-                hasWriting: firstWriting != null,
               ),
       ),
     );
@@ -69,13 +68,11 @@ class _HomeBody extends StatelessWidget {
     required this.summary,
     required this.lessonTotal,
     required this.firstLabel,
-    required this.hasWriting,
   });
 
   final HomeSummary summary;
   final int lessonTotal;
   final String? firstLabel;
-  final bool hasWriting;
 
   void _soon(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
@@ -85,9 +82,9 @@ class _HomeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubbleText = !hasWriting
+    final bubbleText = firstLabel == null
         ? 'Hôm nay mình làm Toán nhé!'
-        : 'Hôm nay mình viết ${firstLabel ?? ''} và làm Toán nhé!';
+        : 'Hôm nay mình viết $firstLabel và làm Toán nhé!';
 
     return Stack(
       children: [
