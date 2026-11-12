@@ -118,7 +118,11 @@ class _Tile extends StatelessWidget {
       height: _DragNumberMatchState._size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: Subject.toan.tint,
+        border: Border.all(
+          color: Subject.toan.color.withOpacity(0.35),
+          width: 2,
+        ),
         borderRadius: BorderRadius.circular(AppRadii.tile),
         boxShadow: const [AppShadows.card],
       ),

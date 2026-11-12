@@ -82,7 +82,11 @@ class _ChoiceAnswersState extends State<ChoiceAnswers> {
         child: Ink(
           height: 72,
           decoration: BoxDecoration(
-            color: correct ? AppColors.accent : AppColors.card,
+            color: correct ? AppColors.accent : Subject.toan.tint,
+            border: Border.all(
+              color: Subject.toan.color.withOpacity(0.35),
+              width: 2,
+            ),
             borderRadius: BorderRadius.circular(AppRadii.tile),
             boxShadow: const [AppShadows.card],
           ),

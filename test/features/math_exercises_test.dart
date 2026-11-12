@@ -6,6 +6,7 @@ import 'package:funedu/features/math/exercise/drag_number_match.dart';
 import 'package:funedu/features/math/exercise/object_grid.dart';
 import 'package:funedu/features/math/exercise/tap_count_board.dart';
 import 'package:funedu/math/math_question.dart';
+import 'package:funedu/ui/theme/tokens.dart';
 
 Widget host(Widget child) => MaterialApp(
       home: Scaffold(body: SingleChildScrollView(child: child)),
@@ -39,6 +40,15 @@ void main() {
       await tester.tap(find.text('3'));
       await tester.pump();
       expect(log, [false, true]);
+    });
+
+    testWidgets('idle tiles use the toan tint so they stand out on white',
+        (tester) async {
+      await tester.pumpWidget(host(ChoiceAnswers(
+          choices: const [2, 3, 4], answer: 3, onAnswered: (_) {})));
+      final ink = tester.widget<Ink>(find.byType(Ink).first);
+      final deco = ink.decoration! as BoxDecoration;
+      expect(deco.color, Subject.toan.tint);
     });
 
     testWidgets('resets when rebuilt with another question', (tester) async {

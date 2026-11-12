@@ -57,6 +57,10 @@ class _CompareGroupsState extends State<CompareGroups> {
       child: Ink(
         decoration: BoxDecoration(
           color: AppColors.card,
+          border: Border.all(
+            color: Subject.toan.color.withOpacity(0.35),
+            width: 2,
+          ),
           borderRadius: BorderRadius.circular(AppRadii.card),
           boxShadow: const [AppShadows.card],
         ),
