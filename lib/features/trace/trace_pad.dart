@@ -16,12 +16,16 @@ class TracePad extends StatefulWidget {
     required this.onStrokeEnd,
     this.guide = const [],
     this.inked = const [],
+    this.crayon = false,
     super.key,
   });
 
   final void Function(Stroke) onStrokeEnd;
   final List<Stroke> guide;
   final List<Stroke> inked;
+
+  /// Draws ink like a crayon: the main line plus faint offset thin lines.
+  final bool crayon;
 
   @override
   State<TracePad> createState() => _TracePadState();
@@ -78,6 +82,7 @@ class _TracePadState extends State<TracePad> {
               onPointerCancel: _cancel,
               child: CustomPaint(
                 painter: _PadPainter(
+                  crayon: widget.crayon,
                   guide: widget.guide,
                   inked: [
                     ...widget.inked,
@@ -94,10 +99,15 @@ class _TracePadState extends State<TracePad> {
 }
 
 class _PadPainter extends CustomPainter {
-  _PadPainter({required this.guide, required this.inked});
+  _PadPainter({
+    required this.guide,
+    required this.inked,
+    required this.crayon,
+  });
 
   final List<Stroke> guide;
   final List<Stroke> inked;
+  final bool crayon;
 
   Path _path(Stroke s, double side) {
     final path = Path();
@@ -148,7 +158,28 @@ class _PadPainter extends CustomPainter {
         inkPaint.style = PaintingStyle.stroke;
       } else {
         canvas.drawPath(_path(s, side), inkPaint);
+        if (crayon) _paintCrayonTexture(canvas, s, side);
       }
+    }
+  }
+
+  // Fixed offsets (fractions of the side) keep the texture from flickering.
+  static const _crayonOffsets = [
+    Offset(0.012, -0.008),
+    Offset(-0.010, 0.010),
+    Offset(0.004, 0.014),
+  ];
+
+  void _paintCrayonTexture(Canvas canvas, Stroke s, double side) {
+    final thin = Paint()
+      ..color = _inkColor.withOpacity(0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = side * _inkWidthFactor * 0.25;
+    final base = _path(s, side);
+    for (final o in _crayonOffsets) {
+      canvas.drawPath(base.shift(Offset(o.dx * side, o.dy * side)), thin);
     }
   }
 

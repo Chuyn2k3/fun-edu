@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
+import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +21,7 @@ Future<List<Stroke>> _pump(WidgetTester t, double side) async {
 }
 
 void main() {
+  _crayonTest();
   testWidgets('maps drag to normalized coordinates (300)', (t) async {
     final got = await _pump(t, 300);
     final o = t.getTopLeft(find.byType(TracePad));
@@ -71,5 +73,30 @@ void main() {
     await c.moveTo(o + const Offset(60, 30));
     await c.cancel();
     expect(got, hasLength(1));
+  });
+}
+
+void _crayonTest() {
+  testWidgets('crayon pad builds and draws without error', (t) async {
+    await t.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: TracePad(
+              crayon: true,
+              onStrokeEnd: (_) {},
+              inked: const [
+                Stroke([Point2(0.1, 0.1), Point2(0.9, 0.9)]),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final o = t.getTopLeft(find.byType(TracePad));
+    await t.dragFrom(o + const Offset(30, 30), const Offset(100, 0));
+    expect(t.takeException(), isNull);
   });
 }
