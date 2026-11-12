@@ -19,7 +19,7 @@
 - Màu (mục 8.2a, giữ nguyên giá trị): chính `#C8460F`; nhấn `#E8590C`; nền `#FBF5EC`, chấm bi `#EADFCF`; thẻ `#FFFFFF`; chữ `#22284A`; chữ phụ `#5B6385`; Viết `#E8590C`/`#FFF0E4`; Tiếng Việt `#7C3AED`/`#F3EDFF`; Toán `#2563EB`/`#E8F1FF`; Tiếng Anh `#0F8A5F`/`#E5F7EF`.
 - Font Nunito, tiêu đề và nút đậm 800–900. Thẻ bo 24–28 px. Nút cho bé ≥ 64 pt. Chữ đạt tương phản ≥ 4.5:1.
 - Tọa độ nét luôn chuẩn hóa về ô vuông đơn vị `[0,1]×[0,1]`, gốc ở góc trên trái, y hướng xuống.
-- Mã định danh ứng dụng tạm thời `vn.chipchip.app` cho tới khi Task 9 chốt mã gói thật.
+- Mã định danh ứng dụng (đã chốt): `com.ibme.funedu` cho cả Android (applicationId) và iOS (bundle id).
 - Code mới chỉ nằm trong `app/` và `tools/`; tài liệu trong `docs/`.
 
 ## Review Focus
@@ -80,7 +80,7 @@ docs/phase0/asset-list.md            # danh sách ảnh cần tạo cho giai đo
 - Produces: `class App extends StatelessWidget` trong `lib/app.dart`; `final GoRouter appRouter` trong `lib/router.dart` với route `/` (màn tạm `HomePlaceholder` hiện chữ `Chíp Chíp`). Các task sau thêm route vào `appRouter`.
 
 - [ ] **Step 1: Cài Flutter nếu máy chưa có** — `git clone https://github.com/flutter/flutter.git -b stable ~/flutter && export PATH=$HOME/flutter/bin:$PATH && flutter --version`. Ghi phiên bản Flutter/Dart vào `app/README.md`.
-- [ ] **Step 2: Tạo dự án** — `flutter create --org vn.chipchip --project-name chipchip --platforms android,ios app`. Đặt applicationId Android và bundle id iOS là `vn.chipchip.app`.
+- [ ] **Step 2: Tạo dự án** — `flutter create --org com.ibme --project-name funedu --platforms android,ios app`. Kiểm tra applicationId Android và bundle id iOS đều là `com.ibme.funedu`.
 - [ ] **Step 3: Thêm phụ thuộc** — `flutter pub add flutter_riverpod go_router drift drift_flutter path_provider` và `flutter pub add --dev drift_dev build_runner`. Xóa `cupertino_icons` nếu không dùng.
 - [ ] **Step 4: Viết test khói**
 
@@ -284,14 +284,14 @@ expect(contrastRatio(Colors.black, Colors.white), closeTo(21, 0.01));
 
 ---
 
-### Task 9: Dọn dẹp và chốt mã gói
+### Task 9: Dọn dẹp
 
 **Files:**
-- Modify: `app/android/app/build.gradle*`, `app/ios/Runner.xcodeproj/project.pbxproj`, `app/README.md`
+- Modify: `app/README.md`
 - Delete: mã app cũ ở gốc nhánh `chipchip` — `lib/`, `test/`, `android/`, `ios/`, `linux/`, `macos/`, `windows/`, `web/`, `assets/`, `library/`, `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, `devtools_options.yaml`, `CNAME`. Giữ `docs/`, `README.md` (viết lại ngắn), `app/`, `tools/`.
 
 - [ ] **Step 1: Chủ dự án thu hồi khóa OpenAI cũ** trên trang OpenAI (khóa nằm trong lịch sử git ở `lib/feature/game_feature/game/sweep/game/data/envied/env.g.dart` và `lib/helper/global.dart`). Người thực thi chỉ ghi lại trong `app/README.md` là việc này đã xong hay chưa.
-- [ ] **Step 2: Chủ dự án tra mã gói thật** của bản trên Google Play (`id=` trong link) và App Store (bundle id). Có → thay `vn.chipchip.app` bằng mã đó ở Android và iOS; không có → giữ `vn.chipchip.app` hoặc mã chủ dự án chọn. Ghi quyết định vào `app/README.md` và đánh dấu mục 1 trong phần "Việc còn mở" của spec.
+- [ ] **Step 2: Kiểm tra mã gói** — `git grep -n "com.example\|vn.chipchip" -- app` không có kết quả; applicationId và bundle id là `com.ibme.funedu`. Ghi vào `app/README.md`.
 - [ ] **Step 3: Xóa mã app cũ ở gốc** theo danh sách trên; viết lại `README.md` gốc: dự án mới ở `app/`, spec và kế hoạch ở `docs/superpowers/`, mã cũ tra trong lịch sử git (nhánh `new-web`, `develop`).
 - [ ] **Step 4: Kiểm tra** — `cd app && flutter analyze && flutter test` → không lỗi, mọi test PASS; `cd ../tools/assets && python3 -m pytest -q` → PASS; `git grep -n "sk-" -- app tools` → không có kết quả.
 - [ ] **Step 5: Commit** — `git commit -m "chore: chốt mã gói, bỏ mã app cũ khỏi nhánh chipchip"`
@@ -302,5 +302,5 @@ expect(contrastRatio(Colors.black, Colors.white), closeTo(21, 0.01));
 
 - Mọi test trong `app/` và `tools/assets/` đều PASS, `flutter analyze` sạch.
 - `docs/phase0/stroke-test.md` có kết quả buổi thử với bé **đạt** tiêu chí của spec.
-- Mã gói đã chốt, khóa OpenAI cũ đã thu hồi.
+- Khóa OpenAI cũ đã thu hồi.
 - Bộ ảnh độ phân giải cao theo `docs/phase0/asset-list.md` đã tạo và cắt bằng script (có thể làm song song, là điều kiện để bắt đầu giai đoạn 1).

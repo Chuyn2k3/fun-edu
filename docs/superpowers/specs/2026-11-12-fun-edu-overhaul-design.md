@@ -216,7 +216,7 @@ Làm theo thứ tự, rủi ro cao trước:
 3. Bộ giao diện chung theo mục 8.2; chốt màu chính qua bản phác thảo thứ 2.
 4. Script quy trình làm hình; tạo bộ ảnh độ phân giải cao cho giai đoạn 1.
 5. Dọn dẹp:
-   - **Mã gói:** repo đang dùng `com.example.fun_edu` (Android) và `com.example.funEdu` (iOS); Google Play không nhận mã `com.example`. Tìm mã gói thật của bản trên store. Có thì app mới dùng đúng mã đó để cập nhật đè; không có thì đặt mã chuẩn mới (dạng `vn.<tên>.chipchip`) và đăng mới.
+   - **Mã gói:** repo đang dùng `com.example.fun_edu` (Android) và `com.example.funEdu` (iOS); Google Play không nhận mã `com.example`. **Đã chốt: app mới dùng mã `com.ibme.funedu`** cho cả Android và iOS.
    - **Khóa OpenAI:** `lib/feature/game_feature/game/sweep/game/data/envied/env.g.dart` đang được git theo dõi và `lib/helper/global.dart` có comment chứa khóa. Thu hồi khóa trên trang OpenAI (khóa đã nằm trong lịch sử git).
 
 ### Giai đoạn 1: bản cập nhật đầu (miễn phí hết, không cần mạng)
@@ -260,7 +260,7 @@ Làm theo thứ tự, rủi ro cao trước:
 - **Không chuyển dữ liệu cũ**; bé làm bài thử xếp cấp lại. Người dùng cũ được tặng quà chào mừng (ví dụ trang phục đặc biệt cho Chíp Chíp). Ghi rõ trong phần "Có gì mới".
 
 ## 14. Việc còn mở
-1. **[Mở]** Mã gói thật của bản trên store (giai đoạn 0).
+1. ~~Mã gói~~ — đã chốt `com.ibme.funedu`.
 2. ~~Màu chính và màu nền~~ — đã chốt ở mục 8.2a.
 3. **[Mở]** Giá gói năm/tháng; số cấp miễn phí mỗi môn (trước giai đoạn 2).
 4. **[Mở]** Tra trùng thương hiệu "Chíp Chíp" và tên app trên store.
