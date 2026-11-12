@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
+import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/floating_nav_bar.dart';
 import '../../ui/widgets/info_pill.dart';
 import '../../ui/widgets/primary_button.dart';
@@ -35,8 +36,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomPaint(
-        painter: const _DotsPainter(),
+      body: DottedBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -137,23 +137,4 @@ class _GalleryScreenState extends State<GalleryScreen> {
       ),
     );
   }
-}
-
-class _DotsPainter extends CustomPainter {
-  const _DotsPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = AppColors.background);
-    final paint = Paint()..color = AppColors.dot;
-    const gap = 24.0;
-    for (var y = gap / 2; y < size.height; y += gap) {
-      for (var x = gap / 2; x < size.width; x += gap) {
-        canvas.drawCircle(Offset(x, y), 1.5, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DotsPainter old) => false;
 }

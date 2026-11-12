@@ -5,12 +5,13 @@ import 'package:flutter/material.dart';
 
 import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
+import 'features/home/home_screen.dart';
 import 'features/trace/trace_screen.dart';
 import 'stroke/glyph_repository.dart';
 
-/// Home screen: lists the bundled glyphs to pick one to trace.
-class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+/// Dev-only: lists the bundled glyphs to pick one to trace.
+class GlyphListScreen extends ConsumerWidget {
+  const GlyphListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,6 +43,11 @@ final GoRouter appRouter = GoRouter(
       path: '/trace/:glyphId',
       builder: (context, state) => TraceScreen(state.pathParameters['glyphId']!),
     ),
+    if (kDebugMode)
+      GoRoute(
+        path: '/dev/glyphs',
+        builder: (context, state) => const GlyphListScreen(),
+      ),
     if (kDebugMode)
       GoRoute(
         path: '/dev/recorder',
