@@ -99,7 +99,7 @@ class _HomeBody extends StatelessWidget {
                   fit: BoxFit.cover,
                   alignment: Alignment.topCenter,
                 ),
-                const Positioned(
+                Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
@@ -109,7 +109,10 @@ class _HomeBody extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0x00FBF5EC), AppColors.background],
+                        colors: [
+                          AppColors.background.withOpacity(0),
+                          AppColors.background,
+                        ],
                       ),
                     ),
                   ),
@@ -211,7 +214,7 @@ class _TopRow extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
+              color: AppColors.card,
               borderRadius: BorderRadius.circular(AppRadii.pill),
               boxShadow: const [AppShadows.card],
             ),
@@ -263,10 +266,10 @@ class _TopRow extends StatelessWidget {
           label: 'Góc ba mẹ',
           excludeSemantics: true,
           child: Material(
-            color: Colors.white.withOpacity(0.92),
+            color: AppColors.card,
             shape: const CircleBorder(),
             elevation: 3,
-            shadowColor: const Color(0x1A503C28),
+            shadowColor: AppShadows.card.color,
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: onParents,
@@ -370,18 +373,18 @@ class _ChipBlock extends StatelessWidget {
               child: Material(
                 color: AppColors.accent,
                 shape: const CircleBorder(
-                  side: BorderSide(color: Colors.white, width: 4),
+                  side: BorderSide(color: AppColors.card, width: 4),
                 ),
                 elevation: 6,
-                shadowColor: AppColors.accent.withOpacity(0.4),
+                shadowColor: AppColors.accent,
                 child: InkWell(
                   customBorder: const CircleBorder(),
                   onTap: onStart,
                   child: const SizedBox(
-                    width: 60,
-                    height: 60,
+                    width: 64,
+                    height: 64,
                     child: Icon(Icons.play_arrow_rounded,
-                        size: 34, color: Colors.white),
+                        size: 38, color: AppColors.card),
                   ),
                 ),
               ),

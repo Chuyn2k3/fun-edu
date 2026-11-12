@@ -44,23 +44,17 @@ class SubjectCard extends StatelessWidget {
             color: subject.color,
             size: 44,
           );
-    return Material(
-      color: AppColors.card,
-      borderRadius: BorderRadius.circular(24),
-      elevation: 0,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x17503C28),
-              blurRadius: 24,
-              offset: Offset(0, 10),
-            ),
-          ],
-        ),
+    const radius = BorderRadius.all(Radius.circular(AppRadii.card));
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.card,
+        borderRadius: radius,
+        boxShadow: [AppShadows.card],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: radius,
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(12),

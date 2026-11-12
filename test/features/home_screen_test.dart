@@ -5,6 +5,8 @@ import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/stroke/glyph.dart';
+import 'package:funedu/ui/theme/tokens.dart';
+import 'package:funedu/ui/widgets/subject_card.dart';
 import 'package:funedu/stroke/glyph_repository.dart';
 import 'package:go_router/go_router.dart';
 
@@ -64,6 +66,21 @@ void _setSize(WidgetTester tester, double w, double h) {
 }
 
 void main() {
+  testWidgets('thẻ môn học có nền trắng', (tester) async {
+    _setSize(tester, 375, 667);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    final card = find.ancestor(
+        of: find.text('Viết'), matching: find.byType(SubjectCard));
+    final decorated = tester
+        .widgetList<Container>(
+            find.descendant(of: card, matching: find.byType(Container)))
+        .map((c) => c.decoration)
+        .whereType<BoxDecoration>()
+        .where((d) => d.boxShadow != null && d.boxShadow!.isNotEmpty);
+    expect(decorated.first.color, AppColors.card);
+  });
+
   testWidgets('hiện đủ nội dung trang chủ', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));
