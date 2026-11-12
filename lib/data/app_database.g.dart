@@ -419,15 +419,531 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   }
 }
 
+class $GlyphProgressTable extends GlyphProgress
+    with TableInfo<$GlyphProgressTable, GlyphProgressData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GlyphProgressTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _glyphIdMeta =
+      const VerificationMeta('glyphId');
+  @override
+  late final GeneratedColumn<String> glyphId = GeneratedColumn<String>(
+      'glyph_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _completionsMeta =
+      const VerificationMeta('completions');
+  @override
+  late final GeneratedColumn<int> completions = GeneratedColumn<int>(
+      'completions', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _cleanCompletionsMeta =
+      const VerificationMeta('cleanCompletions');
+  @override
+  late final GeneratedColumn<int> cleanCompletions = GeneratedColumn<int>(
+      'clean_completions', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _lastPracticedAtMeta =
+      const VerificationMeta('lastPracticedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastPracticedAt =
+      GeneratedColumn<DateTime>('last_practiced_at', aliasedName, false,
+          type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [glyphId, completions, cleanCompletions, lastPracticedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'glyph_progress';
+  @override
+  VerificationContext validateIntegrity(Insertable<GlyphProgressData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('glyph_id')) {
+      context.handle(_glyphIdMeta,
+          glyphId.isAcceptableOrUnknown(data['glyph_id']!, _glyphIdMeta));
+    } else if (isInserting) {
+      context.missing(_glyphIdMeta);
+    }
+    if (data.containsKey('completions')) {
+      context.handle(
+          _completionsMeta,
+          completions.isAcceptableOrUnknown(
+              data['completions']!, _completionsMeta));
+    }
+    if (data.containsKey('clean_completions')) {
+      context.handle(
+          _cleanCompletionsMeta,
+          cleanCompletions.isAcceptableOrUnknown(
+              data['clean_completions']!, _cleanCompletionsMeta));
+    }
+    if (data.containsKey('last_practiced_at')) {
+      context.handle(
+          _lastPracticedAtMeta,
+          lastPracticedAt.isAcceptableOrUnknown(
+              data['last_practiced_at']!, _lastPracticedAtMeta));
+    } else if (isInserting) {
+      context.missing(_lastPracticedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {glyphId};
+  @override
+  GlyphProgressData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GlyphProgressData(
+      glyphId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}glyph_id'])!,
+      completions: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}completions'])!,
+      cleanCompletions: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}clean_completions'])!,
+      lastPracticedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_practiced_at'])!,
+    );
+  }
+
+  @override
+  $GlyphProgressTable createAlias(String alias) {
+    return $GlyphProgressTable(attachedDatabase, alias);
+  }
+}
+
+class GlyphProgressData extends DataClass
+    implements Insertable<GlyphProgressData> {
+  final String glyphId;
+  final int completions;
+
+  /// Completions with at most one failed stroke.
+  final int cleanCompletions;
+  final DateTime lastPracticedAt;
+  const GlyphProgressData(
+      {required this.glyphId,
+      required this.completions,
+      required this.cleanCompletions,
+      required this.lastPracticedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['glyph_id'] = Variable<String>(glyphId);
+    map['completions'] = Variable<int>(completions);
+    map['clean_completions'] = Variable<int>(cleanCompletions);
+    map['last_practiced_at'] = Variable<DateTime>(lastPracticedAt);
+    return map;
+  }
+
+  GlyphProgressCompanion toCompanion(bool nullToAbsent) {
+    return GlyphProgressCompanion(
+      glyphId: Value(glyphId),
+      completions: Value(completions),
+      cleanCompletions: Value(cleanCompletions),
+      lastPracticedAt: Value(lastPracticedAt),
+    );
+  }
+
+  factory GlyphProgressData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GlyphProgressData(
+      glyphId: serializer.fromJson<String>(json['glyphId']),
+      completions: serializer.fromJson<int>(json['completions']),
+      cleanCompletions: serializer.fromJson<int>(json['cleanCompletions']),
+      lastPracticedAt: serializer.fromJson<DateTime>(json['lastPracticedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'glyphId': serializer.toJson<String>(glyphId),
+      'completions': serializer.toJson<int>(completions),
+      'cleanCompletions': serializer.toJson<int>(cleanCompletions),
+      'lastPracticedAt': serializer.toJson<DateTime>(lastPracticedAt),
+    };
+  }
+
+  GlyphProgressData copyWith(
+          {String? glyphId,
+          int? completions,
+          int? cleanCompletions,
+          DateTime? lastPracticedAt}) =>
+      GlyphProgressData(
+        glyphId: glyphId ?? this.glyphId,
+        completions: completions ?? this.completions,
+        cleanCompletions: cleanCompletions ?? this.cleanCompletions,
+        lastPracticedAt: lastPracticedAt ?? this.lastPracticedAt,
+      );
+  GlyphProgressData copyWithCompanion(GlyphProgressCompanion data) {
+    return GlyphProgressData(
+      glyphId: data.glyphId.present ? data.glyphId.value : this.glyphId,
+      completions:
+          data.completions.present ? data.completions.value : this.completions,
+      cleanCompletions: data.cleanCompletions.present
+          ? data.cleanCompletions.value
+          : this.cleanCompletions,
+      lastPracticedAt: data.lastPracticedAt.present
+          ? data.lastPracticedAt.value
+          : this.lastPracticedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GlyphProgressData(')
+          ..write('glyphId: $glyphId, ')
+          ..write('completions: $completions, ')
+          ..write('cleanCompletions: $cleanCompletions, ')
+          ..write('lastPracticedAt: $lastPracticedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(glyphId, completions, cleanCompletions, lastPracticedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GlyphProgressData &&
+          other.glyphId == this.glyphId &&
+          other.completions == this.completions &&
+          other.cleanCompletions == this.cleanCompletions &&
+          other.lastPracticedAt == this.lastPracticedAt);
+}
+
+class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
+  final Value<String> glyphId;
+  final Value<int> completions;
+  final Value<int> cleanCompletions;
+  final Value<DateTime> lastPracticedAt;
+  final Value<int> rowid;
+  const GlyphProgressCompanion({
+    this.glyphId = const Value.absent(),
+    this.completions = const Value.absent(),
+    this.cleanCompletions = const Value.absent(),
+    this.lastPracticedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GlyphProgressCompanion.insert({
+    required String glyphId,
+    this.completions = const Value.absent(),
+    this.cleanCompletions = const Value.absent(),
+    required DateTime lastPracticedAt,
+    this.rowid = const Value.absent(),
+  })  : glyphId = Value(glyphId),
+        lastPracticedAt = Value(lastPracticedAt);
+  static Insertable<GlyphProgressData> custom({
+    Expression<String>? glyphId,
+    Expression<int>? completions,
+    Expression<int>? cleanCompletions,
+    Expression<DateTime>? lastPracticedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (glyphId != null) 'glyph_id': glyphId,
+      if (completions != null) 'completions': completions,
+      if (cleanCompletions != null) 'clean_completions': cleanCompletions,
+      if (lastPracticedAt != null) 'last_practiced_at': lastPracticedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GlyphProgressCompanion copyWith(
+      {Value<String>? glyphId,
+      Value<int>? completions,
+      Value<int>? cleanCompletions,
+      Value<DateTime>? lastPracticedAt,
+      Value<int>? rowid}) {
+    return GlyphProgressCompanion(
+      glyphId: glyphId ?? this.glyphId,
+      completions: completions ?? this.completions,
+      cleanCompletions: cleanCompletions ?? this.cleanCompletions,
+      lastPracticedAt: lastPracticedAt ?? this.lastPracticedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (glyphId.present) {
+      map['glyph_id'] = Variable<String>(glyphId.value);
+    }
+    if (completions.present) {
+      map['completions'] = Variable<int>(completions.value);
+    }
+    if (cleanCompletions.present) {
+      map['clean_completions'] = Variable<int>(cleanCompletions.value);
+    }
+    if (lastPracticedAt.present) {
+      map['last_practiced_at'] = Variable<DateTime>(lastPracticedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GlyphProgressCompanion(')
+          ..write('glyphId: $glyphId, ')
+          ..write('completions: $completions, ')
+          ..write('cleanCompletions: $cleanCompletions, ')
+          ..write('lastPracticedAt: $lastPracticedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LessonCompletionsTable extends LessonCompletions
+    with TableInfo<$LessonCompletionsTable, LessonCompletion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LessonCompletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _completedAtMeta =
+      const VerificationMeta('completedAt');
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+      'completed_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _starsEarnedMeta =
+      const VerificationMeta('starsEarned');
+  @override
+  late final GeneratedColumn<int> starsEarned = GeneratedColumn<int>(
+      'stars_earned', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, completedAt, starsEarned];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lesson_completions';
+  @override
+  VerificationContext validateIntegrity(Insertable<LessonCompletion> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+          _completedAtMeta,
+          completedAt.isAcceptableOrUnknown(
+              data['completed_at']!, _completedAtMeta));
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    if (data.containsKey('stars_earned')) {
+      context.handle(
+          _starsEarnedMeta,
+          starsEarned.isAcceptableOrUnknown(
+              data['stars_earned']!, _starsEarnedMeta));
+    } else if (isInserting) {
+      context.missing(_starsEarnedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LessonCompletion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LessonCompletion(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      completedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at'])!,
+      starsEarned: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}stars_earned'])!,
+    );
+  }
+
+  @override
+  $LessonCompletionsTable createAlias(String alias) {
+    return $LessonCompletionsTable(attachedDatabase, alias);
+  }
+}
+
+class LessonCompletion extends DataClass
+    implements Insertable<LessonCompletion> {
+  final int id;
+  final DateTime completedAt;
+  final int starsEarned;
+  const LessonCompletion(
+      {required this.id, required this.completedAt, required this.starsEarned});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['completed_at'] = Variable<DateTime>(completedAt);
+    map['stars_earned'] = Variable<int>(starsEarned);
+    return map;
+  }
+
+  LessonCompletionsCompanion toCompanion(bool nullToAbsent) {
+    return LessonCompletionsCompanion(
+      id: Value(id),
+      completedAt: Value(completedAt),
+      starsEarned: Value(starsEarned),
+    );
+  }
+
+  factory LessonCompletion.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LessonCompletion(
+      id: serializer.fromJson<int>(json['id']),
+      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      starsEarned: serializer.fromJson<int>(json['starsEarned']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'completedAt': serializer.toJson<DateTime>(completedAt),
+      'starsEarned': serializer.toJson<int>(starsEarned),
+    };
+  }
+
+  LessonCompletion copyWith(
+          {int? id, DateTime? completedAt, int? starsEarned}) =>
+      LessonCompletion(
+        id: id ?? this.id,
+        completedAt: completedAt ?? this.completedAt,
+        starsEarned: starsEarned ?? this.starsEarned,
+      );
+  LessonCompletion copyWithCompanion(LessonCompletionsCompanion data) {
+    return LessonCompletion(
+      id: data.id.present ? data.id.value : this.id,
+      completedAt:
+          data.completedAt.present ? data.completedAt.value : this.completedAt,
+      starsEarned:
+          data.starsEarned.present ? data.starsEarned.value : this.starsEarned,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LessonCompletion(')
+          ..write('id: $id, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('starsEarned: $starsEarned')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, completedAt, starsEarned);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LessonCompletion &&
+          other.id == this.id &&
+          other.completedAt == this.completedAt &&
+          other.starsEarned == this.starsEarned);
+}
+
+class LessonCompletionsCompanion extends UpdateCompanion<LessonCompletion> {
+  final Value<int> id;
+  final Value<DateTime> completedAt;
+  final Value<int> starsEarned;
+  const LessonCompletionsCompanion({
+    this.id = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.starsEarned = const Value.absent(),
+  });
+  LessonCompletionsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime completedAt,
+    required int starsEarned,
+  })  : completedAt = Value(completedAt),
+        starsEarned = Value(starsEarned);
+  static Insertable<LessonCompletion> custom({
+    Expression<int>? id,
+    Expression<DateTime>? completedAt,
+    Expression<int>? starsEarned,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (starsEarned != null) 'stars_earned': starsEarned,
+    });
+  }
+
+  LessonCompletionsCompanion copyWith(
+      {Value<int>? id, Value<DateTime>? completedAt, Value<int>? starsEarned}) {
+    return LessonCompletionsCompanion(
+      id: id ?? this.id,
+      completedAt: completedAt ?? this.completedAt,
+      starsEarned: starsEarned ?? this.starsEarned,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (starsEarned.present) {
+      map['stars_earned'] = Variable<int>(starsEarned.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LessonCompletionsCompanion(')
+          ..write('id: $id, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('starsEarned: $starsEarned')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $StrokeAttemptsTable strokeAttempts = $StrokeAttemptsTable(this);
+  late final $GlyphProgressTable glyphProgress = $GlyphProgressTable(this);
+  late final $LessonCompletionsTable lessonCompletions =
+      $LessonCompletionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [strokeAttempts];
+  List<DatabaseSchemaEntity> get allSchemaEntities =>
+      [strokeAttempts, glyphProgress, lessonCompletions];
 }
 
 typedef $$StrokeAttemptsTableCreateCompanionBuilder = StrokeAttemptsCompanion
@@ -643,10 +1159,315 @@ typedef $$StrokeAttemptsTableProcessedTableManager = ProcessedTableManager<
     ),
     StrokeAttempt,
     PrefetchHooks Function()>;
+typedef $$GlyphProgressTableCreateCompanionBuilder = GlyphProgressCompanion
+    Function({
+  required String glyphId,
+  Value<int> completions,
+  Value<int> cleanCompletions,
+  required DateTime lastPracticedAt,
+  Value<int> rowid,
+});
+typedef $$GlyphProgressTableUpdateCompanionBuilder = GlyphProgressCompanion
+    Function({
+  Value<String> glyphId,
+  Value<int> completions,
+  Value<int> cleanCompletions,
+  Value<DateTime> lastPracticedAt,
+  Value<int> rowid,
+});
+
+class $$GlyphProgressTableFilterComposer
+    extends Composer<_$AppDatabase, $GlyphProgressTable> {
+  $$GlyphProgressTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get glyphId => $composableBuilder(
+      column: $table.glyphId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get completions => $composableBuilder(
+      column: $table.completions, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get cleanCompletions => $composableBuilder(
+      column: $table.cleanCompletions,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastPracticedAt => $composableBuilder(
+      column: $table.lastPracticedAt,
+      builder: (column) => ColumnFilters(column));
+}
+
+class $$GlyphProgressTableOrderingComposer
+    extends Composer<_$AppDatabase, $GlyphProgressTable> {
+  $$GlyphProgressTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get glyphId => $composableBuilder(
+      column: $table.glyphId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get completions => $composableBuilder(
+      column: $table.completions, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cleanCompletions => $composableBuilder(
+      column: $table.cleanCompletions,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastPracticedAt => $composableBuilder(
+      column: $table.lastPracticedAt,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$GlyphProgressTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GlyphProgressTable> {
+  $$GlyphProgressTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get glyphId =>
+      $composableBuilder(column: $table.glyphId, builder: (column) => column);
+
+  GeneratedColumn<int> get completions => $composableBuilder(
+      column: $table.completions, builder: (column) => column);
+
+  GeneratedColumn<int> get cleanCompletions => $composableBuilder(
+      column: $table.cleanCompletions, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastPracticedAt => $composableBuilder(
+      column: $table.lastPracticedAt, builder: (column) => column);
+}
+
+class $$GlyphProgressTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $GlyphProgressTable,
+    GlyphProgressData,
+    $$GlyphProgressTableFilterComposer,
+    $$GlyphProgressTableOrderingComposer,
+    $$GlyphProgressTableAnnotationComposer,
+    $$GlyphProgressTableCreateCompanionBuilder,
+    $$GlyphProgressTableUpdateCompanionBuilder,
+    (
+      GlyphProgressData,
+      BaseReferences<_$AppDatabase, $GlyphProgressTable, GlyphProgressData>
+    ),
+    GlyphProgressData,
+    PrefetchHooks Function()> {
+  $$GlyphProgressTableTableManager(_$AppDatabase db, $GlyphProgressTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GlyphProgressTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GlyphProgressTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GlyphProgressTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> glyphId = const Value.absent(),
+            Value<int> completions = const Value.absent(),
+            Value<int> cleanCompletions = const Value.absent(),
+            Value<DateTime> lastPracticedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GlyphProgressCompanion(
+            glyphId: glyphId,
+            completions: completions,
+            cleanCompletions: cleanCompletions,
+            lastPracticedAt: lastPracticedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String glyphId,
+            Value<int> completions = const Value.absent(),
+            Value<int> cleanCompletions = const Value.absent(),
+            required DateTime lastPracticedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GlyphProgressCompanion.insert(
+            glyphId: glyphId,
+            completions: completions,
+            cleanCompletions: cleanCompletions,
+            lastPracticedAt: lastPracticedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$GlyphProgressTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $GlyphProgressTable,
+    GlyphProgressData,
+    $$GlyphProgressTableFilterComposer,
+    $$GlyphProgressTableOrderingComposer,
+    $$GlyphProgressTableAnnotationComposer,
+    $$GlyphProgressTableCreateCompanionBuilder,
+    $$GlyphProgressTableUpdateCompanionBuilder,
+    (
+      GlyphProgressData,
+      BaseReferences<_$AppDatabase, $GlyphProgressTable, GlyphProgressData>
+    ),
+    GlyphProgressData,
+    PrefetchHooks Function()>;
+typedef $$LessonCompletionsTableCreateCompanionBuilder
+    = LessonCompletionsCompanion Function({
+  Value<int> id,
+  required DateTime completedAt,
+  required int starsEarned,
+});
+typedef $$LessonCompletionsTableUpdateCompanionBuilder
+    = LessonCompletionsCompanion Function({
+  Value<int> id,
+  Value<DateTime> completedAt,
+  Value<int> starsEarned,
+});
+
+class $$LessonCompletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $LessonCompletionsTable> {
+  $$LessonCompletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get starsEarned => $composableBuilder(
+      column: $table.starsEarned, builder: (column) => ColumnFilters(column));
+}
+
+class $$LessonCompletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LessonCompletionsTable> {
+  $$LessonCompletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get starsEarned => $composableBuilder(
+      column: $table.starsEarned, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LessonCompletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LessonCompletionsTable> {
+  $$LessonCompletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get starsEarned => $composableBuilder(
+      column: $table.starsEarned, builder: (column) => column);
+}
+
+class $$LessonCompletionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $LessonCompletionsTable,
+    LessonCompletion,
+    $$LessonCompletionsTableFilterComposer,
+    $$LessonCompletionsTableOrderingComposer,
+    $$LessonCompletionsTableAnnotationComposer,
+    $$LessonCompletionsTableCreateCompanionBuilder,
+    $$LessonCompletionsTableUpdateCompanionBuilder,
+    (
+      LessonCompletion,
+      BaseReferences<_$AppDatabase, $LessonCompletionsTable, LessonCompletion>
+    ),
+    LessonCompletion,
+    PrefetchHooks Function()> {
+  $$LessonCompletionsTableTableManager(
+      _$AppDatabase db, $LessonCompletionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LessonCompletionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LessonCompletionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LessonCompletionsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> completedAt = const Value.absent(),
+            Value<int> starsEarned = const Value.absent(),
+          }) =>
+              LessonCompletionsCompanion(
+            id: id,
+            completedAt: completedAt,
+            starsEarned: starsEarned,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime completedAt,
+            required int starsEarned,
+          }) =>
+              LessonCompletionsCompanion.insert(
+            id: id,
+            completedAt: completedAt,
+            starsEarned: starsEarned,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$LessonCompletionsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $LessonCompletionsTable,
+    LessonCompletion,
+    $$LessonCompletionsTableFilterComposer,
+    $$LessonCompletionsTableOrderingComposer,
+    $$LessonCompletionsTableAnnotationComposer,
+    $$LessonCompletionsTableCreateCompanionBuilder,
+    $$LessonCompletionsTableUpdateCompanionBuilder,
+    (
+      LessonCompletion,
+      BaseReferences<_$AppDatabase, $LessonCompletionsTable, LessonCompletion>
+    ),
+    LessonCompletion,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$StrokeAttemptsTableTableManager get strokeAttempts =>
       $$StrokeAttemptsTableTableManager(_db, _db.strokeAttempts);
+  $$GlyphProgressTableTableManager get glyphProgress =>
+      $$GlyphProgressTableTableManager(_db, _db.glyphProgress);
+  $$LessonCompletionsTableTableManager get lessonCompletions =>
+      $$LessonCompletionsTableTableManager(_db, _db.lessonCompletions);
 }

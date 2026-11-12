@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../progress/progress_tables.dart';
 import '../stroke/glyph.dart';
 
 part 'app_database.g.dart';
@@ -23,12 +24,22 @@ class StrokeAttempts extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-@DriftDatabase(tables: [StrokeAttempts])
+@DriftDatabase(tables: [StrokeAttempts, GlyphProgress, LessonCompletions])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(glyphProgress);
+            await m.createTable(lessonCompletions);
+          }
+        },
+      );
 
   Future<void> logAttempt({
     required String glyphId,
@@ -60,19 +71,20 @@ class AppDatabase extends _$AppDatabase {
   Future<({int total, int ok})> summary(String glyphId) async {
     final rows = await (select(
       strokeAttempts,
-    )..where((t) => t.glyphId.equals(glyphId))).get();
+    )..where((t) => t.glyphId.equals(glyphId)))
+        .get();
     return (total: rows.length, ok: rows.where((r) => r.ok).length);
   }
 }
 
 /// Encodes a stroke as a JSON array of [x, y] pairs rounded to 4 decimals.
 String encodePoints(Stroke s) => jsonEncode([
-  for (final p in s.points)
-    [
-      double.parse(p.x.toStringAsFixed(4)),
-      double.parse(p.y.toStringAsFixed(4)),
-    ],
-]);
+      for (final p in s.points)
+        [
+          double.parse(p.x.toStringAsFixed(4)),
+          double.parse(p.y.toStringAsFixed(4)),
+        ],
+    ]);
 
 /// Opened lazily, so screens that never read it never touch the database.
 final databaseProvider = Provider<AppDatabase>((ref) {
