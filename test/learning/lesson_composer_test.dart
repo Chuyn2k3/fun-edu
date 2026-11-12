@@ -99,11 +99,12 @@ void main() {
     ]);
   });
 
-  test('writingStartIndex 5 treats earlier glyphs as learned', () {
+  test('writingStartIndex 5: earlier glyphs are learned, review the earliest',
+      () {
     expect(items(start: 5, math: 2), const [
       WritingItem('so-0'),
       MathItem(2),
-      WritingItem('so-1'),
+      WritingItem('net-ngang'),
     ]);
   });
 
@@ -156,7 +157,7 @@ void main() {
     expect(await container.read(todayLessonProvider.future), const [
       WritingItem('so-0'),
       MathItem(1),
-      WritingItem('so-1'),
+      WritingItem('net-ngang'),
     ]);
   });
 }
