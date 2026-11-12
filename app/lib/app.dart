@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'router.dart';
+import 'ui/theme/app_theme.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -9,6 +10,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Chíp Chíp',
+      theme: buildAppTheme(),
       routerConfig: appRouter,
     );
   }

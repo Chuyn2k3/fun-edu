@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
 import 'features/trace/trace_screen.dart';
 import 'stroke/glyph_repository.dart';
@@ -45,6 +46,11 @@ final GoRouter appRouter = GoRouter(
       GoRoute(
         path: '/dev/recorder',
         builder: (context, state) => const RecorderScreen(),
+      ),
+    if (kDebugMode)
+      GoRoute(
+        path: '/dev/gallery',
+        builder: (context, state) => const GalleryScreen(),
       ),
   ],
 );
