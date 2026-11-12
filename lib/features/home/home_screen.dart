@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
+import '../../math/math_level.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
@@ -167,7 +168,10 @@ class _HomeBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _SubjectGrid(masteredWriting: summary.masteredWriting),
+                  _SubjectGrid(
+                    masteredWriting: summary.masteredWriting,
+                    mathLevelIndex: summary.mathLevelIndex,
+                  ),
                 ],
               ),
             ),
@@ -401,9 +405,13 @@ class _ChipBlock extends StatelessWidget {
 }
 
 class _SubjectGrid extends StatelessWidget {
-  const _SubjectGrid({required this.masteredWriting});
+  const _SubjectGrid({
+    required this.masteredWriting,
+    required this.mathLevelIndex,
+  });
 
   final int masteredWriting;
+  final int mathLevelIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -423,11 +431,14 @@ class _SubjectGrid extends StatelessWidget {
         title: 'Tiếng Việt',
         subtitle: 'Chữ, âm, vần',
       ),
-      const SubjectCard(
+      SubjectCard(
         subject: Subject.toan,
         imagePath: AppImages.icToan,
         title: 'Toán',
         subtitle: 'Đếm, cộng trừ',
+        done: mathLevelIndex + 1,
+        total: mathLevels.length,
+        onTap: () => context.push('/subject/toan'),
       ),
       const SubjectCard(
         subject: Subject.tiengAnh,

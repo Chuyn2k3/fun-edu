@@ -1,0 +1,275 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../learning/today_lesson_provider.dart';
+import '../../math/math_level.dart';
+import '../../progress/level_repository.dart';
+import '../../progress/progress_repository.dart';
+import '../../ui/theme/tokens.dart';
+import '../../ui/widgets/dotted_background.dart';
+import '../math/math_session_screen.dart';
+
+const _contentMaxWidth = 560.0;
+
+/// Toán subject map: the 9 math levels; done and current ones are tappable.
+class MathMapScreen extends ConsumerStatefulWidget {
+  const MathMapScreen({super.key});
+
+  @override
+  ConsumerState<MathMapScreen> createState() => _MathMapScreenState();
+}
+
+class _MathMapScreenState extends ConsumerState<MathMapScreen> {
+  // True while a practice route is pushed; ignores further taps (double-tap).
+  bool _navigating = false;
+
+  Future<void> _openPractice(int index) async {
+    if (_navigating) return;
+    _navigating = true;
+    try {
+      await context.push('/practice-math/$index');
+    } finally {
+      _navigating = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = ref.watch(mathLevelIndexProvider).valueOrNull ?? 0;
+    return Scaffold(
+      body: DottedBackground(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 72,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 16),
+                        Semantics(
+                          label: 'Quay lại',
+                          button: true,
+                          excludeSemantics: true,
+                          child: InkResponse(
+                            onTap: () => context.go('/'),
+                            radius: 32,
+                            child: Container(
+                              width: 64,
+                              height: 64,
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.card,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [AppShadows.card],
+                                ),
+                                child: const Icon(
+                                  Icons.chevron_left_rounded,
+                                  size: 36,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Toán',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      itemCount: mathLevels.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, i) => _LevelTile(
+                        index: i,
+                        title: mathLevels[i].title,
+                        current: current,
+                        onTap: i <= current ? () => _openPractice(i) : null,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LevelTile extends StatelessWidget {
+  const _LevelTile({
+    required this.index,
+    required this.title,
+    required this.current,
+    required this.onTap,
+  });
+
+  final int index;
+  final String title;
+  final int current;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final done = index < current;
+    final isCurrent = index == current;
+    final locked = index > current;
+    final radius = BorderRadius.circular(AppRadii.tile);
+    return Opacity(
+      opacity: locked ? 0.5 : 1,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: radius,
+            boxShadow: const [AppShadows.card],
+            border: isCurrent
+                ? Border.all(color: AppColors.accent, width: 3)
+                : null,
+          ),
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 72),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          if (isCurrent)
+                            const Text(
+                              'Đang học',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (done)
+                      Icon(
+                        Icons.check_circle_rounded,
+                        key: ValueKey('done-$index'),
+                        size: 28,
+                        color: Subject.toan.color,
+                      ),
+                    if (locked)
+                      Icon(
+                        Icons.lock_rounded,
+                        key: ValueKey('locked-$index'),
+                        size: 26,
+                        color: AppColors.textMuted,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Single-level practice: only the current level moves the child's level.
+class PracticeMathScreen extends ConsumerStatefulWidget {
+  const PracticeMathScreen(this.levelIndex, {super.key});
+
+  final int levelIndex;
+
+  @override
+  ConsumerState<PracticeMathScreen> createState() => _PracticeMathScreenState();
+}
+
+class _PracticeMathScreenState extends ConsumerState<PracticeMathScreen> {
+  bool _busy = false;
+
+  Future<void> _onCompleted(int firstTryCorrect, int total) async {
+    if (_busy) return;
+    _busy = true;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final repo = ref.read(levelRepositoryProvider);
+      final current = await repo.levelOf('toan') ?? 0;
+      if (widget.levelIndex == current) {
+        await repo.recordMathSession(
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+        );
+        ref.invalidate(mathLevelIndexProvider);
+        ref.invalidate(homeSummaryProvider);
+        ref.invalidate(todayLessonProvider);
+      }
+    } catch (e, st) {
+      debugPrint('math practice progress failed: $e\n$st');
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Không lưu được kết quả')),
+      );
+    } finally {
+      _busy = false;
+    }
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/subject/toan');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.levelIndex < 0 || widget.levelIndex >= mathLevels.length) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: Text('Chưa có cấp này')),
+      );
+    }
+    return MathSessionScreen(
+      level: mathLevels[widget.levelIndex],
+      onCompleted: _onCompleted,
+    );
+  }
+}

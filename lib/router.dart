@@ -8,6 +8,8 @@ import 'features/dev/recorder_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/lesson/lesson_done_screen.dart';
 import 'features/lesson/lesson_flow_screen.dart';
+import 'features/placement/placement_screen.dart';
+import 'features/subject/math_map_screen.dart';
 import 'features/subject/writing_map_screen.dart';
 import 'features/trace/trace_screen.dart';
 import 'stroke/glyph_repository.dart';
@@ -53,6 +55,20 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/subject/viet',
       builder: (context, state) => const WritingMapScreen(),
+    ),
+    GoRoute(
+      path: '/placement',
+      builder: (context, state) => const PlacementScreen(),
+    ),
+    GoRoute(
+      path: '/subject/toan',
+      builder: (context, state) => const MathMapScreen(),
+    ),
+    GoRoute(
+      path: '/practice-math/:levelIndex',
+      builder: (context, state) => PracticeMathScreen(
+        int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+      ),
     ),
     GoRoute(
       path: '/practice/:glyphId',
