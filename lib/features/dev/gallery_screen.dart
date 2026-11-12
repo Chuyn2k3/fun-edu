@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';

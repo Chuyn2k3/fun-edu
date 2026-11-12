@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
@@ -62,7 +62,7 @@ class _RingPainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..color = color.withValues(alpha: 0.18);
+      ..color = color.withOpacity(0.18);
     canvas.drawArc(arcRect, 0, math.pi * 2, false, track);
     if (fraction > 0) {
       final arc = Paint()

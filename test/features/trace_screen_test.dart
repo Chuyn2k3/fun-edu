@@ -9,7 +9,7 @@ import 'package:funedu/features/trace/trace_screen.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/stroke/glyph_repository.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 class _FakeRepo implements GlyphRepository {
   @override

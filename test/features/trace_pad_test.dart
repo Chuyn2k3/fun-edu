@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
 import 'package:funedu/stroke/glyph.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 Future<List<Stroke>> _pump(WidgetTester t, double side) async {
   final got = <Stroke>[];

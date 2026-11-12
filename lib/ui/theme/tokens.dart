@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// Brand palette (spec 8.2a).
 abstract final class AppColors {

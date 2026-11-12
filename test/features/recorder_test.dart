@@ -7,7 +7,7 @@ import 'package:funedu/features/dev/recorder_controller.dart';
 import 'package:funedu/features/dev/recorder_screen.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   test('addStroke, undo, clear and exportJson', () {

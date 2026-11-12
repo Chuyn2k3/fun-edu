@@ -7,7 +7,7 @@
 - `docs/superpowers/specs/` — spec thiết kế; `docs/superpowers/plans/` — kế hoạch triển khai; `docs/phase0/` — tài liệu giai đoạn 0.
 
 - Package id: `com.ibme.funedu` (Android applicationId / iOS bundle id), Dart package `funedu`
-- Flutter 3.50.0 (stable), Dart 3.14.0
+- Flutter 3.24.5 (stable), Dart 3.5.4 — chạy được với Flutter ≥ 3.24
 - Stack: flutter_riverpod, go_router, drift (+ drift_flutter, path_provider)
 
 ## Chạy

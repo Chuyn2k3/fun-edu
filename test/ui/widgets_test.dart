@@ -4,7 +4,7 @@ import 'package:funedu/ui/theme/app_theme.dart';
 import 'package:funedu/ui/widgets/floating_nav_bar.dart';
 import 'package:funedu/ui/widgets/primary_button.dart';
 import 'package:funedu/ui/widgets/progress_ring.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 Widget host(Widget child) => MaterialApp(
       theme: buildAppTheme(),

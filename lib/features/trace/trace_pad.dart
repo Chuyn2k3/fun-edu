@@ -1,6 +1,6 @@
 import 'dart:ui' show PathMetric;
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import '../../stroke/geometry.dart';
 import '../../stroke/glyph.dart';

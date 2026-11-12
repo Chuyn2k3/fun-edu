@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
@@ -73,7 +73,7 @@ class _NavTile extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 64),
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: active ? AppColors.accent.withValues(alpha: 0.12) : null,
+            color: active ? AppColors.accent.withOpacity(0.12) : null,
             borderRadius: BorderRadius.circular(AppRadii.pill),
           ),
           child: Column(

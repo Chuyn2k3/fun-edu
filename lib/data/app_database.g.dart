@@ -12,132 +12,81 @@ class $StrokeAttemptsTable extends StrokeAttempts
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _glyphIdMeta = const VerificationMeta(
-    'glyphId',
-  );
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _glyphIdMeta =
+      const VerificationMeta('glyphId');
   @override
   late final GeneratedColumn<String> glyphId = GeneratedColumn<String>(
-    'glyph_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _strokeIndexMeta = const VerificationMeta(
-    'strokeIndex',
-  );
+      'glyph_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _strokeIndexMeta =
+      const VerificationMeta('strokeIndex');
   @override
   late final GeneratedColumn<int> strokeIndex = GeneratedColumn<int>(
-    'stroke_index',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
+      'stroke_index', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _okMeta = const VerificationMeta('ok');
   @override
   late final GeneratedColumn<bool> ok = GeneratedColumn<bool>(
-    'ok',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("ok" IN (0, 1))',
-    ),
-  );
+      'ok', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("ok" IN (0, 1))'));
   static const VerificationMeta _errorMeta = const VerificationMeta('error');
   @override
   late final GeneratedColumn<String> error = GeneratedColumn<String>(
-    'error',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _deviationMeta = const VerificationMeta(
-    'deviation',
-  );
+      'error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _deviationMeta =
+      const VerificationMeta('deviation');
   @override
   late final GeneratedColumn<double> deviation = GeneratedColumn<double>(
-    'deviation',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
+      'deviation', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
   static const VerificationMeta _pointsMeta = const VerificationMeta('points');
   @override
   late final GeneratedColumn<String> points = GeneratedColumn<String>(
-    'points',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
+      'points', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    glyphId,
-    strokeIndex,
-    ok,
-    error,
-    deviation,
-    points,
-    createdAt,
-  ];
+  List<GeneratedColumn> get $columns =>
+      [id, glyphId, strokeIndex, ok, error, deviation, points, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'stroke_attempts';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<StrokeAttempt> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<StrokeAttempt> instance,
+      {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('glyph_id')) {
-      context.handle(
-        _glyphIdMeta,
-        glyphId.isAcceptableOrUnknown(data['glyph_id']!, _glyphIdMeta),
-      );
+      context.handle(_glyphIdMeta,
+          glyphId.isAcceptableOrUnknown(data['glyph_id']!, _glyphIdMeta));
     } else if (isInserting) {
       context.missing(_glyphIdMeta);
     }
     if (data.containsKey('stroke_index')) {
       context.handle(
-        _strokeIndexMeta,
-        strokeIndex.isAcceptableOrUnknown(
-          data['stroke_index']!,
           _strokeIndexMeta,
-        ),
-      );
+          strokeIndex.isAcceptableOrUnknown(
+              data['stroke_index']!, _strokeIndexMeta));
     } else if (isInserting) {
       context.missing(_strokeIndexMeta);
     }
@@ -148,29 +97,21 @@ class $StrokeAttemptsTable extends StrokeAttempts
     }
     if (data.containsKey('error')) {
       context.handle(
-        _errorMeta,
-        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
-      );
+          _errorMeta, error.isAcceptableOrUnknown(data['error']!, _errorMeta));
     }
     if (data.containsKey('deviation')) {
-      context.handle(
-        _deviationMeta,
-        deviation.isAcceptableOrUnknown(data['deviation']!, _deviationMeta),
-      );
+      context.handle(_deviationMeta,
+          deviation.isAcceptableOrUnknown(data['deviation']!, _deviationMeta));
     } else if (isInserting) {
       context.missing(_deviationMeta);
     }
     if (data.containsKey('points')) {
-      context.handle(
-        _pointsMeta,
-        points.isAcceptableOrUnknown(data['points']!, _pointsMeta),
-      );
+      context.handle(_pointsMeta,
+          points.isAcceptableOrUnknown(data['points']!, _pointsMeta));
     }
     if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
@@ -183,38 +124,22 @@ class $StrokeAttemptsTable extends StrokeAttempts
   StrokeAttempt map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return StrokeAttempt(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      glyphId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}glyph_id'],
-      )!,
-      strokeIndex: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}stroke_index'],
-      )!,
-      ok: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}ok'],
-      )!,
-      error: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}error'],
-      ),
-      deviation: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}deviation'],
-      )!,
-      points: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}points'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      glyphId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}glyph_id'])!,
+      strokeIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}stroke_index'])!,
+      ok: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}ok'])!,
+      error: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}error']),
+      deviation: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}deviation'])!,
+      points: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}points']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
   }
 
@@ -236,16 +161,15 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   /// rejection can be replayed in a test.
   final String? points;
   final DateTime createdAt;
-  const StrokeAttempt({
-    required this.id,
-    required this.glyphId,
-    required this.strokeIndex,
-    required this.ok,
-    this.error,
-    required this.deviation,
-    this.points,
-    required this.createdAt,
-  });
+  const StrokeAttempt(
+      {required this.id,
+      required this.glyphId,
+      required this.strokeIndex,
+      required this.ok,
+      this.error,
+      required this.deviation,
+      this.points,
+      required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -270,21 +194,17 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
       glyphId: Value(glyphId),
       strokeIndex: Value(strokeIndex),
       ok: Value(ok),
-      error: error == null && nullToAbsent
-          ? const Value.absent()
-          : Value(error),
+      error:
+          error == null && nullToAbsent ? const Value.absent() : Value(error),
       deviation: Value(deviation),
-      points: points == null && nullToAbsent
-          ? const Value.absent()
-          : Value(points),
+      points:
+          points == null && nullToAbsent ? const Value.absent() : Value(points),
       createdAt: Value(createdAt),
     );
   }
 
-  factory StrokeAttempt.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory StrokeAttempt.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return StrokeAttempt(
       id: serializer.fromJson<int>(json['id']),
@@ -312,32 +232,31 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
     };
   }
 
-  StrokeAttempt copyWith({
-    int? id,
-    String? glyphId,
-    int? strokeIndex,
-    bool? ok,
-    Value<String?> error = const Value.absent(),
-    double? deviation,
-    Value<String?> points = const Value.absent(),
-    DateTime? createdAt,
-  }) => StrokeAttempt(
-    id: id ?? this.id,
-    glyphId: glyphId ?? this.glyphId,
-    strokeIndex: strokeIndex ?? this.strokeIndex,
-    ok: ok ?? this.ok,
-    error: error.present ? error.value : this.error,
-    deviation: deviation ?? this.deviation,
-    points: points.present ? points.value : this.points,
-    createdAt: createdAt ?? this.createdAt,
-  );
+  StrokeAttempt copyWith(
+          {int? id,
+          String? glyphId,
+          int? strokeIndex,
+          bool? ok,
+          Value<String?> error = const Value.absent(),
+          double? deviation,
+          Value<String?> points = const Value.absent(),
+          DateTime? createdAt}) =>
+      StrokeAttempt(
+        id: id ?? this.id,
+        glyphId: glyphId ?? this.glyphId,
+        strokeIndex: strokeIndex ?? this.strokeIndex,
+        ok: ok ?? this.ok,
+        error: error.present ? error.value : this.error,
+        deviation: deviation ?? this.deviation,
+        points: points.present ? points.value : this.points,
+        createdAt: createdAt ?? this.createdAt,
+      );
   StrokeAttempt copyWithCompanion(StrokeAttemptsCompanion data) {
     return StrokeAttempt(
       id: data.id.present ? data.id.value : this.id,
       glyphId: data.glyphId.present ? data.glyphId.value : this.glyphId,
-      strokeIndex: data.strokeIndex.present
-          ? data.strokeIndex.value
-          : this.strokeIndex,
+      strokeIndex:
+          data.strokeIndex.present ? data.strokeIndex.value : this.strokeIndex,
       ok: data.ok.present ? data.ok.value : this.ok,
       error: data.error.present ? data.error.value : this.error,
       deviation: data.deviation.present ? data.deviation.value : this.deviation,
@@ -363,15 +282,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
 
   @override
   int get hashCode => Object.hash(
-    id,
-    glyphId,
-    strokeIndex,
-    ok,
-    error,
-    deviation,
-    points,
-    createdAt,
-  );
+      id, glyphId, strokeIndex, ok, error, deviation, points, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -414,11 +325,11 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     required double deviation,
     this.points = const Value.absent(),
     required DateTime createdAt,
-  }) : glyphId = Value(glyphId),
-       strokeIndex = Value(strokeIndex),
-       ok = Value(ok),
-       deviation = Value(deviation),
-       createdAt = Value(createdAt);
+  })  : glyphId = Value(glyphId),
+        strokeIndex = Value(strokeIndex),
+        ok = Value(ok),
+        deviation = Value(deviation),
+        createdAt = Value(createdAt);
   static Insertable<StrokeAttempt> custom({
     Expression<int>? id,
     Expression<String>? glyphId,
@@ -441,16 +352,15 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     });
   }
 
-  StrokeAttemptsCompanion copyWith({
-    Value<int>? id,
-    Value<String>? glyphId,
-    Value<int>? strokeIndex,
-    Value<bool>? ok,
-    Value<String?>? error,
-    Value<double>? deviation,
-    Value<String?>? points,
-    Value<DateTime>? createdAt,
-  }) {
+  StrokeAttemptsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? glyphId,
+      Value<int>? strokeIndex,
+      Value<bool>? ok,
+      Value<String?>? error,
+      Value<double>? deviation,
+      Value<String?>? points,
+      Value<DateTime>? createdAt}) {
     return StrokeAttemptsCompanion(
       id: id ?? this.id,
       glyphId: glyphId ?? this.glyphId,
@@ -520,28 +430,28 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [strokeAttempts];
 }
 
-typedef $$StrokeAttemptsTableCreateCompanionBuilder =
-    StrokeAttemptsCompanion Function({
-      Value<int> id,
-      required String glyphId,
-      required int strokeIndex,
-      required bool ok,
-      Value<String?> error,
-      required double deviation,
-      Value<String?> points,
-      required DateTime createdAt,
-    });
-typedef $$StrokeAttemptsTableUpdateCompanionBuilder =
-    StrokeAttemptsCompanion Function({
-      Value<int> id,
-      Value<String> glyphId,
-      Value<int> strokeIndex,
-      Value<bool> ok,
-      Value<String?> error,
-      Value<double> deviation,
-      Value<String?> points,
-      Value<DateTime> createdAt,
-    });
+typedef $$StrokeAttemptsTableCreateCompanionBuilder = StrokeAttemptsCompanion
+    Function({
+  Value<int> id,
+  required String glyphId,
+  required int strokeIndex,
+  required bool ok,
+  Value<String?> error,
+  required double deviation,
+  Value<String?> points,
+  required DateTime createdAt,
+});
+typedef $$StrokeAttemptsTableUpdateCompanionBuilder = StrokeAttemptsCompanion
+    Function({
+  Value<int> id,
+  Value<String> glyphId,
+  Value<int> strokeIndex,
+  Value<bool> ok,
+  Value<String?> error,
+  Value<double> deviation,
+  Value<String?> points,
+  Value<DateTime> createdAt,
+});
 
 class $$StrokeAttemptsTableFilterComposer
     extends Composer<_$AppDatabase, $StrokeAttemptsTable> {
@@ -553,44 +463,28 @@ class $$StrokeAttemptsTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.id, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get glyphId => $composableBuilder(
-    column: $table.glyphId,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.glyphId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get strokeIndex => $composableBuilder(
-    column: $table.strokeIndex,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.strokeIndex, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get ok => $composableBuilder(
-    column: $table.ok,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.ok, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get error => $composableBuilder(
-    column: $table.error,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.error, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get deviation => $composableBuilder(
-    column: $table.deviation,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.deviation, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get points => $composableBuilder(
-    column: $table.points,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.points, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$StrokeAttemptsTableOrderingComposer
@@ -603,44 +497,28 @@ class $$StrokeAttemptsTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.id, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get glyphId => $composableBuilder(
-    column: $table.glyphId,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.glyphId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get strokeIndex => $composableBuilder(
-    column: $table.strokeIndex,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.strokeIndex, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get ok => $composableBuilder(
-    column: $table.ok,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.ok, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get error => $composableBuilder(
-    column: $table.error,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.error, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get deviation => $composableBuilder(
-    column: $table.deviation,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.deviation, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get points => $composableBuilder(
-    column: $table.points,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.points, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$StrokeAttemptsTableAnnotationComposer
@@ -659,9 +537,7 @@ class $$StrokeAttemptsTableAnnotationComposer
       $composableBuilder(column: $table.glyphId, builder: (column) => column);
 
   GeneratedColumn<int> get strokeIndex => $composableBuilder(
-    column: $table.strokeIndex,
-    builder: (column) => column,
-  );
+      column: $table.strokeIndex, builder: (column) => column);
 
   GeneratedColumn<bool> get ok =>
       $composableBuilder(column: $table.ok, builder: (column) => column);
@@ -679,29 +555,24 @@ class $$StrokeAttemptsTableAnnotationComposer
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
-class $$StrokeAttemptsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $StrokeAttemptsTable,
-          StrokeAttempt,
-          $$StrokeAttemptsTableFilterComposer,
-          $$StrokeAttemptsTableOrderingComposer,
-          $$StrokeAttemptsTableAnnotationComposer,
-          $$StrokeAttemptsTableCreateCompanionBuilder,
-          $$StrokeAttemptsTableUpdateCompanionBuilder,
-          (
-            StrokeAttempt,
-            BaseReferences<_$AppDatabase, $StrokeAttemptsTable, StrokeAttempt>,
-          ),
-          StrokeAttempt,
-          PrefetchHooks Function()
-        > {
+class $$StrokeAttemptsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $StrokeAttemptsTable,
+    StrokeAttempt,
+    $$StrokeAttemptsTableFilterComposer,
+    $$StrokeAttemptsTableOrderingComposer,
+    $$StrokeAttemptsTableAnnotationComposer,
+    $$StrokeAttemptsTableCreateCompanionBuilder,
+    $$StrokeAttemptsTableUpdateCompanionBuilder,
+    (
+      StrokeAttempt,
+      BaseReferences<_$AppDatabase, $StrokeAttemptsTable, StrokeAttempt>
+    ),
+    StrokeAttempt,
+    PrefetchHooks Function()> {
   $$StrokeAttemptsTableTableManager(
-    _$AppDatabase db,
-    $StrokeAttemptsTable table,
-  ) : super(
-        TableManagerState(
+      _$AppDatabase db, $StrokeAttemptsTable table)
+      : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -710,80 +581,68 @@ class $$StrokeAttemptsTableTableManager
               $$StrokeAttemptsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$StrokeAttemptsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> glyphId = const Value.absent(),
-                Value<int> strokeIndex = const Value.absent(),
-                Value<bool> ok = const Value.absent(),
-                Value<String?> error = const Value.absent(),
-                Value<double> deviation = const Value.absent(),
-                Value<String?> points = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => StrokeAttemptsCompanion(
-                id: id,
-                glyphId: glyphId,
-                strokeIndex: strokeIndex,
-                ok: ok,
-                error: error,
-                deviation: deviation,
-                points: points,
-                createdAt: createdAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String glyphId,
-                required int strokeIndex,
-                required bool ok,
-                Value<String?> error = const Value.absent(),
-                required double deviation,
-                Value<String?> points = const Value.absent(),
-                required DateTime createdAt,
-              }) => StrokeAttemptsCompanion.insert(
-                id: id,
-                glyphId: glyphId,
-                strokeIndex: strokeIndex,
-                ok: ok,
-                error: error,
-                deviation: deviation,
-                points: points,
-                createdAt: createdAt,
-              ),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> glyphId = const Value.absent(),
+            Value<int> strokeIndex = const Value.absent(),
+            Value<bool> ok = const Value.absent(),
+            Value<String?> error = const Value.absent(),
+            Value<double> deviation = const Value.absent(),
+            Value<String?> points = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              StrokeAttemptsCompanion(
+            id: id,
+            glyphId: glyphId,
+            strokeIndex: strokeIndex,
+            ok: ok,
+            error: error,
+            deviation: deviation,
+            points: points,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String glyphId,
+            required int strokeIndex,
+            required bool ok,
+            Value<String?> error = const Value.absent(),
+            required double deviation,
+            Value<String?> points = const Value.absent(),
+            required DateTime createdAt,
+          }) =>
+              StrokeAttemptsCompanion.insert(
+            id: id,
+            glyphId: glyphId,
+            strokeIndex: strokeIndex,
+            ok: ok,
+            error: error,
+            deviation: deviation,
+            points: points,
+            createdAt: createdAt,
+          ),
           withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<$StrokeAttemptsTable, StrokeAttempt>(table),
-                  BaseReferences<
-                    _$AppDatabase,
-                    $StrokeAttemptsTable,
-                    StrokeAttempt
-                  >(db, table, e),
-                ),
-              )
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ),
-      );
+        ));
 }
 
-typedef $$StrokeAttemptsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $StrokeAttemptsTable,
+typedef $$StrokeAttemptsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $StrokeAttemptsTable,
+    StrokeAttempt,
+    $$StrokeAttemptsTableFilterComposer,
+    $$StrokeAttemptsTableOrderingComposer,
+    $$StrokeAttemptsTableAnnotationComposer,
+    $$StrokeAttemptsTableCreateCompanionBuilder,
+    $$StrokeAttemptsTableUpdateCompanionBuilder,
+    (
       StrokeAttempt,
-      $$StrokeAttemptsTableFilterComposer,
-      $$StrokeAttemptsTableOrderingComposer,
-      $$StrokeAttemptsTableAnnotationComposer,
-      $$StrokeAttemptsTableCreateCompanionBuilder,
-      $$StrokeAttemptsTableUpdateCompanionBuilder,
-      (
-        StrokeAttempt,
-        BaseReferences<_$AppDatabase, $StrokeAttemptsTable, StrokeAttempt>,
-      ),
-      StrokeAttempt,
-      PrefetchHooks Function()
-    >;
+      BaseReferences<_$AppDatabase, $StrokeAttemptsTable, StrokeAttempt>
+    ),
+    StrokeAttempt,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
