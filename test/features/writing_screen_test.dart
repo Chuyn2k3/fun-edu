@@ -1,11 +1,13 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
 import 'package:funedu/features/writing/writing_screen.dart';
 import 'package:funedu/stroke/geometry.dart';
+import 'package:funedu/ui/theme/tokens.dart';
 import 'package:funedu/stroke/glyph.dart';
 
 Stroke _line(double y, {bool reversed = false}) {
@@ -16,7 +18,7 @@ Stroke _line(double y, {bool reversed = false}) {
 final _glyph =
     Glyph(id: 'hai-net', label: 'Hai nét', strokes: [_line(0.3), _line(0.7)]);
 
-Future<List<int>> _pump(WidgetTester t, {Size? size}) async {
+Future<List<int>> _pump(WidgetTester t, {Size? size, Glyph? glyph}) async {
   if (size != null) {
     t.view.physicalSize = size;
     t.view.devicePixelRatio = 1;
@@ -30,7 +32,7 @@ Future<List<int>> _pump(WidgetTester t, {Size? size}) async {
       overrides: [databaseProvider.overrideWithValue(db)],
       child: MaterialApp(
         home: WritingScreen(
-          glyph: _glyph,
+          glyph: glyph ?? _glyph,
           step: 1,
           totalSteps: 4,
           onCompleted: completed.add,
@@ -75,15 +77,14 @@ void main() {
 
     // A stroke during the delay is ignored and cannot re-fire completion.
     await _draw(t, _line(0.3));
-    // The completion timer is created inside runAsync (real clock), so wait
+    // The completion timer is created inside runAsync (real clock), so poll
     // on the real clock too.
-    await t.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 1400)),
-    );
-    expect(completed, [1]);
-    await t.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 1400)),
-    );
+    await t.runAsync(() async {
+      for (var i = 0; i < 50 && completed.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+    });
     expect(completed, [1]);
   });
 
@@ -106,6 +107,29 @@ void main() {
     await _draw(t, _line(0.3));
     expect(find.text('Giỏi quá! Giờ tô nét 2 nhé.'), findsOneWidget);
     await t.pumpAndSettle();
+  });
+
+  testWidgets('long title is not ellipsized at 375x667', (t) async {
+    final long = Glyph(
+      id: 'x',
+      label: 'Nét thẳng đứng',
+      strokes: [_line(0.3)],
+    );
+    await _pump(t, size: const Size(375, 667), glyph: long);
+    final render = t.renderObject<RenderParagraph>(
+      find.text('Viết Nét thẳng đứng'),
+    );
+    expect(render.didExceedMaxLines, isFalse);
+    expect(find.text("Viết Nét thẳng đứng"), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('action buttons are filled with the card color', (t) async {
+    await _pump(t);
+    final ink = t.widget<Ink>(
+      find.ancestor(of: find.text('Nghe'), matching: find.byType(Ink)),
+    );
+    expect((ink.decoration! as BoxDecoration).color, AppColors.card);
   });
 
   for (final size in const [Size(375, 667), Size(1024, 1366)]) {

@@ -103,6 +103,7 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
         return;
       }
       _inked.add(drawn);
+      _flash.reset();
       if (_session.isComplete) {
         _completed = true;
         _chip = AppImages.chipThumb;
@@ -131,7 +132,7 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
   void _clear() {
     if (_completed) return;
     _completeTimer?.cancel();
-    _flash.stop();
+    _flash.reset();
     _session.reset();
     setState(() {
       _inked.clear();
@@ -278,23 +279,30 @@ class _Header extends StatelessWidget {
               ),
             ),
           ),
-          Flexible(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: AppColors.text,
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.text,
+                ),
               ),
             ),
           ),
           if (showProgress) ...[
-            const SizedBox(width: 10),
-            _ProgressBar(step: step!, total: totalSteps!),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 48,
+              child: _ProgressBar(step: step!, total: totalSteps!),
+            ),
           ],
-          const Spacer(),
+          const SizedBox(width: 8),
           InfoPill(
             leading: Image.asset(
               AppImages.icStar,
@@ -326,7 +334,7 @@ class _ProgressBar extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.pill),
             child: SizedBox(
-              width: 56,
+              width: 48,
               height: 8,
               child: LinearProgressIndicator(
                 value: (step / total).clamp(0.0, 1.0),
@@ -438,27 +446,27 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.card,
-      borderRadius: BorderRadius.circular(AppRadii.tile),
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.tile),
-        onTap: onTap,
-        child: Container(
-          height: 64,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.tile),
-            boxShadow: const [AppShadows.card],
-          ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: AppColors.text,
+      type: MaterialType.transparency,
+      child: Ink(
+        height: 64,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+          boxShadow: const [AppShadows.card],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+          onTap: onTap,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.text,
+                ),
               ),
             ),
           ),
