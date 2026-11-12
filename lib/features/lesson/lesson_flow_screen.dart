@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
+import '../../math/math_level.dart';
+import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/primary_button.dart';
+import '../math/math_session_screen.dart';
 import '../writing/writing_screen.dart';
 
-/// Runs today's lesson: one [WritingScreen] per glyph, then the done screen.
+/// Runs today's lesson: a [WritingScreen] or [MathSessionScreen] per item,
+/// then the done screen.
 class LessonFlowScreen extends ConsumerStatefulWidget {
   const LessonFlowScreen({super.key});
 
@@ -20,7 +25,7 @@ class LessonFlowScreen extends ConsumerStatefulWidget {
 class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
   // Frozen at first load: recording progress invalidates todayLessonProvider,
   // and the lesson in progress must not change under the child.
-  List<String>? _ids;
+  List<LessonItem>? _items;
   int _index = 0;
   bool _busy = false;
   bool _loadFailed = false;
@@ -30,8 +35,8 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
     super.initState();
     // Await the fresh value: after an invalidate the provider may still expose
     // the previous (stale) list while reloading.
-    ref.read(todayLessonProvider.future).then((ids) {
-      if (mounted) setState(() => _ids = ids);
+    ref.read(todayLessonProvider.future).then((items) {
+      if (mounted) setState(() => _items = items);
     }, onError: (Object e, StackTrace st) {
       debugPrint('today lesson failed: $e\n$st');
       if (mounted) setState(() => _loadFailed = true);
@@ -40,14 +45,15 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
 
   void _home() => context.go('/');
 
-  Future<void> _onGlyphCompleted(String id, int failedStrokes) async {
+  /// Records one finished item, then advances or finishes the lesson.
+  Future<void> _completeItem(Future<void> Function() record) async {
     if (_busy) return;
     _busy = true;
     final repo = ref.read(progressRepositoryProvider);
-    final ids = _ids!;
+    final items = _items!;
     try {
-      await repo.recordGlyphCompleted(id, failedStrokes: failedStrokes);
-      final last = _index == ids.length - 1;
+      await record();
+      final last = _index == items.length - 1;
       if (!last) {
         ref.invalidate(homeSummaryProvider);
         ref.invalidate(todayLessonProvider);
@@ -56,7 +62,7 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
         return;
       }
       final stars = await repo.recordLessonCompleted(
-        glyphsCompleted: ids.length,
+        itemsCompleted: items.length,
       );
       ref.invalidate(homeSummaryProvider);
       ref.invalidate(todayLessonProvider);
@@ -74,10 +80,24 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
     }
   }
 
+  Future<void> _onGlyphCompleted(String id, int failedStrokes) =>
+      _completeItem(() => ref
+          .read(progressRepositoryProvider)
+          .recordGlyphCompleted(id, failedStrokes: failedStrokes));
+
+  Future<void> _onMathCompleted(int firstTryCorrect, int total) =>
+      _completeItem(() async {
+        await ref.read(levelRepositoryProvider).recordMathSession(
+              firstTryCorrect: firstTryCorrect,
+              total: total,
+            );
+        ref.invalidate(mathLevelIndexProvider);
+      });
+
   @override
   Widget build(BuildContext context) {
-    final ids = _ids;
-    if (ids == null) {
+    final items = _items;
+    if (items == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: _loadFailed
@@ -85,35 +105,48 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
             : const Center(child: CircularProgressIndicator()),
       );
     }
-    if (ids.isEmpty) {
+    if (items.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: _Message(onHome: _home, text: 'Chưa có bài nào'),
       );
     }
-    final id = ids[_index];
-    final glyph = ref.watch(glyphProvider(id));
+    final item = items[_index];
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _home();
       },
-      child: glyph.when(
-        data: (g) => WritingScreen(
-          key: ValueKey(id),
-          glyph: g,
-          step: _index + 1,
-          totalSteps: ids.length,
-          onCompleted: (failed) => _onGlyphCompleted(id, failed),
-        ),
-        loading: () => const Scaffold(
-          backgroundColor: AppColors.background,
-          body: Center(child: CircularProgressIndicator()),
-        ),
-        error: (_, __) => Scaffold(
-          backgroundColor: AppColors.background,
-          body: _Message(onHome: _home, text: 'Chưa có bài nào'),
-        ),
+      child: switch (item) {
+        WritingItem(:final glyphId) => _writing(glyphId, items.length),
+        MathItem(:final levelIndex) => MathSessionScreen(
+            key: ValueKey('math-$_index'),
+            level: mathLevels[levelIndex.clamp(0, mathLevels.length - 1)],
+            step: _index + 1,
+            totalSteps: items.length,
+            onCompleted: _onMathCompleted,
+          ),
+      },
+    );
+  }
+
+  Widget _writing(String id, int total) {
+    final glyph = ref.watch(glyphProvider(id));
+    return glyph.when(
+      data: (g) => WritingScreen(
+        key: ValueKey(id),
+        glyph: g,
+        step: _index + 1,
+        totalSteps: total,
+        onCompleted: (failed) => _onGlyphCompleted(id, failed),
+      ),
+      loading: () => const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => Scaffold(
+        backgroundColor: AppColors.background,
+        body: _Message(onHome: _home, text: 'Chưa có bài nào'),
       ),
     );
   }

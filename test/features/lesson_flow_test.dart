@@ -7,7 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/features/lesson/lesson_done_screen.dart';
 import 'package:funedu/features/lesson/lesson_flow_screen.dart';
+import 'package:funedu/features/math/exercise/choice_answers.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
+import 'package:funedu/learning/lesson_item.dart';
+import 'package:funedu/progress/level_repository.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
@@ -61,7 +64,7 @@ Future<void> _finishGlyph(WidgetTester t) async {
 
 Future<AppDatabase> _pump(
   WidgetTester t, {
-  required List<String> lesson,
+  required List<LessonItem> lesson,
   String initial = '/lesson',
 }) async {
   final db = AppDatabase(NativeDatabase.memory());
@@ -100,7 +103,8 @@ void main() {
   testWidgets('two glyphs: records progress, shows done screen with +4',
       (t) async {
     _setSize(t, 375, 667);
-    final db = await _pump(t, lesson: ['a', 'b']);
+    final db = await _pump(t,
+        lesson: [const WritingItem('a'), const WritingItem('b')]);
     expect(find.text('Viết Chữ a'), findsOneWidget);
 
     await _draw(t);
@@ -127,7 +131,8 @@ void main() {
   testWidgets('back on the first glyph goes home and records nothing',
       (t) async {
     _setSize(t, 375, 667);
-    final db = await _pump(t, lesson: ['a', 'b']);
+    final db = await _pump(t,
+        lesson: [const WritingItem('a'), const WritingItem('b')]);
     await t.tap(find.bySemanticsLabel('Quay lại'));
     await t.pumpAndSettle();
     expect(find.text('home stub'), findsOneWidget);
@@ -138,7 +143,7 @@ void main() {
 
   testWidgets('empty lesson shows a friendly message', (t) async {
     _setSize(t, 375, 667);
-    await _pump(t, lesson: []);
+    await _pump(t, lesson: const []);
     expect(find.text('Chưa có bài nào'), findsOneWidget);
     await t.tap(find.text('Về trang chính'));
     await t.pumpAndSettle();
@@ -166,18 +171,73 @@ void main() {
     });
   }
 
+  testWidgets('writing, math, writing: records all and shows +5', (t) async {
+    _setSize(t, 375, 667);
+    final db = await _pump(t, lesson: const [
+      WritingItem('a'),
+      MathItem(4),
+      WritingItem('b'),
+    ]);
+    await t.runAsync(() => LevelRepository(db).setLevel('toan', 4));
+    await _draw(t);
+    await _finishGlyph(t);
+
+    // Math session (cong-5): answer each question correctly first try.
+    expect(find.text('Toán · Cộng trong 5'), findsOneWidget);
+    final prompt = RegExp(r'^(\d+) \+ (\d+) = \?$');
+    for (var i = 0; i < 5; i++) {
+      final text = t
+          .widgetList<Text>(find.byType(Text))
+          .map((w) => w.data ?? '')
+          .firstWhere(prompt.hasMatch);
+      final m = prompt.firstMatch(text)!;
+      final answer = int.parse(m[1]!) + int.parse(m[2]!);
+      await t.tap(find.descendant(
+        of: find.byType(ChoiceAnswers),
+        matching: find.text('$answer'),
+      ));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 900));
+    }
+    await t.pump(const Duration(milliseconds: 1200));
+    for (var i = 0; i < 6; i++) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await t.pump();
+    }
+    await t.pumpAndSettle();
+    expect(find.text('Viết Chữ b'), findsOneWidget);
+    expect(
+      await t.runAsync(() => LevelRepository(db).levelOf('toan')),
+      5,
+    );
+
+    await _draw(t);
+    await _finishGlyph(t);
+    expect(find.text('Xong bài hôm nay!'), findsOneWidget);
+    expect(find.text('+5'), findsOneWidget);
+    final lessons =
+        await t.runAsync(() => db.select(db.lessonCompletions).get());
+    expect(lessons!.single.starsEarned, 5);
+    final progress = await t.runAsync(() => db.select(db.glyphProgress).get());
+    expect(progress!.map((r) => r.glyphId).toSet(), {'a', 'b'});
+  });
+
   testWidgets('waits for the fresh lesson instead of a stale reloading one',
       (t) async {
     _setSize(t, 375, 667);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     var calls = 0;
-    final second = Completer<List<String>>();
+    final second = Completer<List<LessonItem>>();
     final container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
         todayLessonProvider.overrideWith(
-          (ref) => ++calls == 1 ? Future.value(['old']) : second.future,
+          (ref) => ++calls == 1
+              ? Future.value([const WritingItem('old')])
+              : second.future,
         ),
         glyphProvider.overrideWith((ref, id) async => _glyph(id, 'Chữ $id')),
       ],
@@ -186,7 +246,8 @@ void main() {
     await container.read(todayLessonProvider.future);
     container.invalidate(todayLessonProvider);
     // Now reloading with the stale ['old'] still readable.
-    expect(container.read(todayLessonProvider).valueOrNull, ['old']);
+    expect(container.read(todayLessonProvider).valueOrNull,
+        [const WritingItem('old')]);
 
     await t.pumpWidget(
       UncontrolledProviderScope(
@@ -198,7 +259,7 @@ void main() {
     expect(find.text('Viết Chữ old'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    second.complete(['new']);
+    second.complete([const WritingItem('new')]);
     await t.pumpAndSettle();
     expect(find.text('Viết Chữ new'), findsOneWidget);
   });

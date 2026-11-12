@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
 import '../../progress/progress_repository.dart';
@@ -42,10 +43,11 @@ class HomeScreen extends ConsumerWidget {
           learnedDaysThisWeek: 0,
           masteredWriting: 0,
         );
-    final lesson = lessonAsync.valueOrNull ?? const <String>[];
-    final firstLabel = lesson.isEmpty
+    final lesson = lessonAsync.valueOrNull ?? const <LessonItem>[];
+    final firstWriting = lesson.whereType<WritingItem>().firstOrNull;
+    final firstLabel = firstWriting == null
         ? null
-        : ref.watch(glyphProvider(lesson.first)).valueOrNull?.label;
+        : ref.watch(glyphProvider(firstWriting.glyphId)).valueOrNull?.label;
 
     return Scaffold(
       body: DottedBackground(
@@ -55,6 +57,7 @@ class HomeScreen extends ConsumerWidget {
                 summary: summary,
                 lessonTotal: lesson.length,
                 firstLabel: firstLabel,
+                hasWriting: firstWriting != null,
               ),
       ),
     );
@@ -66,11 +69,13 @@ class _HomeBody extends StatelessWidget {
     required this.summary,
     required this.lessonTotal,
     required this.firstLabel,
+    required this.hasWriting,
   });
 
   final HomeSummary summary;
   final int lessonTotal;
   final String? firstLabel;
+  final bool hasWriting;
 
   void _soon(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
@@ -80,9 +85,9 @@ class _HomeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubbleText = firstLabel == null
-        ? 'Hôm nay Chíp với bé tập viết nhé!'
-        : 'Hôm nay Chíp với bé tập viết $firstLabel nhé!';
+    final bubbleText = !hasWriting
+        ? 'Hôm nay mình làm Toán nhé!'
+        : 'Hôm nay mình viết ${firstLabel ?? ''} và làm Toán nhé!';
 
     return Stack(
       children: [

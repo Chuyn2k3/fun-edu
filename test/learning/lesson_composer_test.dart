@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/learning/lesson_composer.dart';
+import 'package:funedu/learning/lesson_item.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/learning/writing_ladder.dart';
+import 'package:funedu/progress/level_repository.dart';
 import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/stroke/glyph_repository.dart';
 
@@ -65,7 +67,57 @@ void main() {
     expect(r, ['d', 'b']);
   });
 
-  test('todayLessonProvider yields first 3 ladder ids for a new child',
+  List<LessonItem> items({
+    Map<String, GlyphStat> stats = const {},
+    Set<String>? avail,
+    int start = 0,
+    int math = 0,
+    List<String>? lad,
+  }) =>
+      composeTodayLessonItems(
+        ladder: lad ?? writingLadder,
+        stats: stats,
+        available: avail ?? writingLadder.toSet(),
+        writingStartIndex: start,
+        mathLevelIndex: math,
+      );
+
+  test('new child: writing, math, writing', () {
+    expect(items(), const [
+      WritingItem('net-ngang'),
+      MathItem(0),
+      WritingItem('net-thang-dung'),
+    ]);
+  });
+
+  test('writingStartIndex 5 treats earlier glyphs as learned', () {
+    expect(items(start: 5, math: 2), const [
+      WritingItem('so-0'),
+      MathItem(2),
+      WritingItem('so-1'),
+    ]);
+  });
+
+  test('no glyphs available: math only', () {
+    expect(items(avail: {}, math: 3), const [MathItem(3)]);
+  });
+
+  test('one glyph: writing then math', () {
+    expect(items(avail: {'net-ngang'}), const [
+      WritingItem('net-ngang'),
+      MathItem(0),
+    ]);
+  });
+
+  test('real stats are kept for skipped glyphs', () {
+    // net-ngang is skipped but has real stats; so-0 start still comes first.
+    expect(
+      items(start: 5, stats: {'net-ngang': sloppy(2)}).first,
+      const WritingItem('so-0'),
+    );
+  });
+
+  test('todayLessonProvider yields writing, math, writing for a new child',
       () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
@@ -74,9 +126,28 @@ void main() {
       databaseProvider.overrideWithValue(db),
     ]);
     addTearDown(container.dispose);
-    expect(
-      await container.read(todayLessonProvider.future),
-      writingLadder.take(3).toList(),
-    );
+    expect(await container.read(todayLessonProvider.future), const [
+      WritingItem('net-ngang'),
+      MathItem(0),
+      WritingItem('net-thang-dung'),
+    ]);
+  });
+
+  test('todayLessonProvider uses stored levels', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final container = ProviderContainer(overrides: [
+      glyphRepositoryProvider.overrideWithValue(_FakeGlyphRepository()),
+      databaseProvider.overrideWithValue(db),
+    ]);
+    addTearDown(container.dispose);
+    final levels = container.read(levelRepositoryProvider);
+    await levels.setLevel('viet', 5);
+    await levels.setLevel('toan', 1);
+    expect(await container.read(todayLessonProvider.future), const [
+      WritingItem('so-0'),
+      MathItem(1),
+      WritingItem('so-1'),
+    ]);
   });
 }

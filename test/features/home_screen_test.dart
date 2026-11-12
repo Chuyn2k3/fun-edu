@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/home/home_screen.dart';
+import 'package:funedu/learning/lesson_item.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/stroke/glyph.dart';
@@ -50,7 +51,11 @@ List<Override> _fakes() => [
         ),
       ),
       todayLessonProvider.overrideWith(
-        (ref) async => ['net-xien', 'net-cong', 'net-ngang'],
+        (ref) async => const [
+          WritingItem('net-xien'),
+          MathItem(0),
+          WritingItem('net-cong'),
+        ],
       ),
       glyphProvider.overrideWith(
         (ref, id) async => Glyph(id: id, label: 'Nét xiên', strokes: const []),
@@ -95,11 +100,22 @@ void main() {
     expect(find.text('2/15'), findsOneWidget);
     expect(find.text('0/3 bài'), findsOneWidget);
     expect(
-      find.text('Hôm nay Chíp với bé tập viết Nét xiên nhé!'),
+      find.text('Hôm nay mình viết Nét xiên và làm Toán nhé!'),
       findsOneWidget,
     );
     expect(find.text('Sắp có'), findsNWidgets(3));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('chỉ có Toán thì lời Chíp không nhắc viết', (tester) async {
+    _setSize(tester, 375, 667);
+    await tester.pumpWidget(_app([
+      ..._fakes(),
+      todayLessonProvider.overrideWith((ref) async => const [MathItem(0)]),
+    ], []));
+    await tester.pumpAndSettle();
+    expect(find.text('Hôm nay mình làm Toán nhé!'), findsOneWidget);
+    expect(find.text('0/1 bài'), findsOneWidget);
   });
 
   testWidgets('bấm nút ▶ đi tới /lesson', (tester) async {

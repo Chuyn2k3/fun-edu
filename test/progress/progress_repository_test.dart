@@ -35,26 +35,26 @@ void main() {
 
   test('lesson stars are glyphs plus a 2-star bonus', () async {
     expect(await repo.totalStars(), 0);
-    expect(await repo.recordLessonCompleted(glyphsCompleted: 3), 5);
-    expect(await repo.recordLessonCompleted(glyphsCompleted: 3), 5);
+    expect(await repo.recordLessonCompleted(itemsCompleted: 3), 5);
+    expect(await repo.recordLessonCompleted(itemsCompleted: 3), 5);
     expect(await repo.totalStars(), 10);
   });
 
   test('learned weekdays split at local midnight', () async {
     clock = DateTime(2026, 11, 11, 23, 59);
-    await repo.recordLessonCompleted(glyphsCompleted: 1);
+    await repo.recordLessonCompleted(itemsCompleted: 1);
     clock = DateTime(2026, 11, 12, 0, 1);
-    await repo.recordLessonCompleted(glyphsCompleted: 1);
+    await repo.recordLessonCompleted(itemsCompleted: 1);
     expect(await repo.learnedWeekdaysThisWeek(), {3, 4});
   });
 
   test('week resets on Monday; Sunday belongs to the ending week', () async {
     clock = DateTime(2026, 11, 15, 12); // Sunday
-    await repo.recordLessonCompleted(glyphsCompleted: 1);
+    await repo.recordLessonCompleted(itemsCompleted: 1);
     expect(await repo.learnedWeekdaysThisWeek(), {7});
     clock = DateTime(2026, 11, 16, 0, 0); // next Monday
     expect(await repo.learnedWeekdaysThisWeek(), isEmpty);
-    await repo.recordLessonCompleted(glyphsCompleted: 1);
+    await repo.recordLessonCompleted(itemsCompleted: 1);
     expect(await repo.learnedWeekdaysThisWeek(), {1});
   });
 }

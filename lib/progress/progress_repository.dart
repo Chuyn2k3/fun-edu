@@ -47,9 +47,9 @@ class ProgressRepository {
     });
   }
 
-  /// One star per glyph plus a 2-star bonus; returns the stars just earned.
-  Future<int> recordLessonCompleted({required int glyphsCompleted}) async {
-    final stars = glyphsCompleted + 2;
+  /// One star per lesson item plus a 2-star bonus; returns the stars just earned.
+  Future<int> recordLessonCompleted({required int itemsCompleted}) async {
+    final stars = itemsCompleted + 2;
     await _db.into(_db.lessonCompletions).insert(
           LessonCompletionsCompanion.insert(
             completedAt: _now(),
