@@ -10,6 +10,7 @@ import '../../math/math_level.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/progress_repository.dart';
+import '../../rewards/reward_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
 import '../../ui/theme/tokens.dart';
@@ -67,6 +68,7 @@ class HomeScreen extends ConsumerWidget {
                 summary: summary,
                 lessonTotal: lesson.length,
                 firstLabel: firstLabel,
+                reward: ref.watch(pendingRewardProvider).valueOrNull,
               ),
       ),
     );
@@ -79,8 +81,10 @@ class _HomeBody extends StatelessWidget {
     required this.summary,
     required this.lessonTotal,
     required this.firstLabel,
+    required this.reward,
   });
 
+  final PendingReward? reward;
   final KidProfile? kid;
   final HomeSummary summary;
   final int lessonTotal;
@@ -176,6 +180,10 @@ class _HomeBody extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (reward != null) ...[
+                    const SizedBox(height: 12),
+                    _RewardPill(reward: reward!),
+                  ],
                   const SizedBox(height: 18),
                   const Text(
                     'Hôm nay học gì?',
@@ -217,6 +225,45 @@ class _HomeBody extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The kid's next real-life reward and how many stars they have toward it.
+class _RewardPill extends StatelessWidget {
+  const _RewardPill({required this.reward});
+
+  final PendingReward reward;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        boxShadow: const [AppShadows.card],
+      ),
+      child: Row(
+        children: [
+          Image.asset(AppImages.icStar,
+              width: 32, height: 32, fit: BoxFit.contain),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '${reward.stars}/${reward.starsNeeded} sao: ${reward.title}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.text,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

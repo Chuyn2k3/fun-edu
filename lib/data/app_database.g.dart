@@ -2042,6 +2042,351 @@ class DailyUsageCompanion extends UpdateCompanion<DailyUsageData> {
   }
 }
 
+class $RealRewardsTable extends RealRewards
+    with TableInfo<$RealRewardsTable, RealReward> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RealRewardsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 60),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _starsNeededMeta =
+      const VerificationMeta('starsNeeded');
+  @override
+  late final GeneratedColumn<int> starsNeeded = GeneratedColumn<int>(
+      'stars_needed', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _redeemedAtMeta =
+      const VerificationMeta('redeemedAt');
+  @override
+  late final GeneratedColumn<DateTime> redeemedAt = GeneratedColumn<DateTime>(
+      'redeemed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, kidId, title, starsNeeded, createdAt, redeemedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'real_rewards';
+  @override
+  VerificationContext validateIntegrity(Insertable<RealReward> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('stars_needed')) {
+      context.handle(
+          _starsNeededMeta,
+          starsNeeded.isAcceptableOrUnknown(
+              data['stars_needed']!, _starsNeededMeta));
+    } else if (isInserting) {
+      context.missing(_starsNeededMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('redeemed_at')) {
+      context.handle(
+          _redeemedAtMeta,
+          redeemedAt.isAcceptableOrUnknown(
+              data['redeemed_at']!, _redeemedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RealReward map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RealReward(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      starsNeeded: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}stars_needed'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      redeemedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}redeemed_at']),
+    );
+  }
+
+  @override
+  $RealRewardsTable createAlias(String alias) {
+    return $RealRewardsTable(attachedDatabase, alias);
+  }
+}
+
+class RealReward extends DataClass implements Insertable<RealReward> {
+  final int id;
+  final int kidId;
+  final String title;
+  final int starsNeeded;
+  final DateTime createdAt;
+  final DateTime? redeemedAt;
+  const RealReward(
+      {required this.id,
+      required this.kidId,
+      required this.title,
+      required this.starsNeeded,
+      required this.createdAt,
+      this.redeemedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kid_id'] = Variable<int>(kidId);
+    map['title'] = Variable<String>(title);
+    map['stars_needed'] = Variable<int>(starsNeeded);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || redeemedAt != null) {
+      map['redeemed_at'] = Variable<DateTime>(redeemedAt);
+    }
+    return map;
+  }
+
+  RealRewardsCompanion toCompanion(bool nullToAbsent) {
+    return RealRewardsCompanion(
+      id: Value(id),
+      kidId: Value(kidId),
+      title: Value(title),
+      starsNeeded: Value(starsNeeded),
+      createdAt: Value(createdAt),
+      redeemedAt: redeemedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(redeemedAt),
+    );
+  }
+
+  factory RealReward.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RealReward(
+      id: serializer.fromJson<int>(json['id']),
+      kidId: serializer.fromJson<int>(json['kidId']),
+      title: serializer.fromJson<String>(json['title']),
+      starsNeeded: serializer.fromJson<int>(json['starsNeeded']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      redeemedAt: serializer.fromJson<DateTime?>(json['redeemedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kidId': serializer.toJson<int>(kidId),
+      'title': serializer.toJson<String>(title),
+      'starsNeeded': serializer.toJson<int>(starsNeeded),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'redeemedAt': serializer.toJson<DateTime?>(redeemedAt),
+    };
+  }
+
+  RealReward copyWith(
+          {int? id,
+          int? kidId,
+          String? title,
+          int? starsNeeded,
+          DateTime? createdAt,
+          Value<DateTime?> redeemedAt = const Value.absent()}) =>
+      RealReward(
+        id: id ?? this.id,
+        kidId: kidId ?? this.kidId,
+        title: title ?? this.title,
+        starsNeeded: starsNeeded ?? this.starsNeeded,
+        createdAt: createdAt ?? this.createdAt,
+        redeemedAt: redeemedAt.present ? redeemedAt.value : this.redeemedAt,
+      );
+  RealReward copyWithCompanion(RealRewardsCompanion data) {
+    return RealReward(
+      id: data.id.present ? data.id.value : this.id,
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      title: data.title.present ? data.title.value : this.title,
+      starsNeeded:
+          data.starsNeeded.present ? data.starsNeeded.value : this.starsNeeded,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      redeemedAt:
+          data.redeemedAt.present ? data.redeemedAt.value : this.redeemedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RealReward(')
+          ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
+          ..write('title: $title, ')
+          ..write('starsNeeded: $starsNeeded, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('redeemedAt: $redeemedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, kidId, title, starsNeeded, createdAt, redeemedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RealReward &&
+          other.id == this.id &&
+          other.kidId == this.kidId &&
+          other.title == this.title &&
+          other.starsNeeded == this.starsNeeded &&
+          other.createdAt == this.createdAt &&
+          other.redeemedAt == this.redeemedAt);
+}
+
+class RealRewardsCompanion extends UpdateCompanion<RealReward> {
+  final Value<int> id;
+  final Value<int> kidId;
+  final Value<String> title;
+  final Value<int> starsNeeded;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> redeemedAt;
+  const RealRewardsCompanion({
+    this.id = const Value.absent(),
+    this.kidId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.starsNeeded = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.redeemedAt = const Value.absent(),
+  });
+  RealRewardsCompanion.insert({
+    this.id = const Value.absent(),
+    required int kidId,
+    required String title,
+    required int starsNeeded,
+    required DateTime createdAt,
+    this.redeemedAt = const Value.absent(),
+  })  : kidId = Value(kidId),
+        title = Value(title),
+        starsNeeded = Value(starsNeeded),
+        createdAt = Value(createdAt);
+  static Insertable<RealReward> custom({
+    Expression<int>? id,
+    Expression<int>? kidId,
+    Expression<String>? title,
+    Expression<int>? starsNeeded,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? redeemedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kidId != null) 'kid_id': kidId,
+      if (title != null) 'title': title,
+      if (starsNeeded != null) 'stars_needed': starsNeeded,
+      if (createdAt != null) 'created_at': createdAt,
+      if (redeemedAt != null) 'redeemed_at': redeemedAt,
+    });
+  }
+
+  RealRewardsCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? kidId,
+      Value<String>? title,
+      Value<int>? starsNeeded,
+      Value<DateTime>? createdAt,
+      Value<DateTime?>? redeemedAt}) {
+    return RealRewardsCompanion(
+      id: id ?? this.id,
+      kidId: kidId ?? this.kidId,
+      title: title ?? this.title,
+      starsNeeded: starsNeeded ?? this.starsNeeded,
+      createdAt: createdAt ?? this.createdAt,
+      redeemedAt: redeemedAt ?? this.redeemedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (starsNeeded.present) {
+      map['stars_needed'] = Variable<int>(starsNeeded.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (redeemedAt.present) {
+      map['redeemed_at'] = Variable<DateTime>(redeemedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RealRewardsCompanion(')
+          ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
+          ..write('title: $title, ')
+          ..write('starsNeeded: $starsNeeded, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('redeemedAt: $redeemedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2053,6 +2398,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $KidProfilesTable kidProfiles = $KidProfilesTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $DailyUsageTable dailyUsage = $DailyUsageTable(this);
+  late final $RealRewardsTable realRewards = $RealRewardsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2064,7 +2410,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         subjectLevels,
         kidProfiles,
         appSettings,
-        dailyUsage
+        dailyUsage,
+        realRewards
       ];
 }
 
@@ -3209,6 +3556,182 @@ typedef $$DailyUsageTableProcessedTableManager = ProcessedTableManager<
     ),
     DailyUsageData,
     PrefetchHooks Function()>;
+typedef $$RealRewardsTableCreateCompanionBuilder = RealRewardsCompanion
+    Function({
+  Value<int> id,
+  required int kidId,
+  required String title,
+  required int starsNeeded,
+  required DateTime createdAt,
+  Value<DateTime?> redeemedAt,
+});
+typedef $$RealRewardsTableUpdateCompanionBuilder = RealRewardsCompanion
+    Function({
+  Value<int> id,
+  Value<int> kidId,
+  Value<String> title,
+  Value<int> starsNeeded,
+  Value<DateTime> createdAt,
+  Value<DateTime?> redeemedAt,
+});
+
+class $$RealRewardsTableFilterComposer
+    extends Composer<_$AppDatabase, $RealRewardsTable> {
+  $$RealRewardsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get starsNeeded => $composableBuilder(
+      column: $table.starsNeeded, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get redeemedAt => $composableBuilder(
+      column: $table.redeemedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$RealRewardsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RealRewardsTable> {
+  $$RealRewardsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get starsNeeded => $composableBuilder(
+      column: $table.starsNeeded, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get redeemedAt => $composableBuilder(
+      column: $table.redeemedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RealRewardsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RealRewardsTable> {
+  $$RealRewardsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get starsNeeded => $composableBuilder(
+      column: $table.starsNeeded, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get redeemedAt => $composableBuilder(
+      column: $table.redeemedAt, builder: (column) => column);
+}
+
+class $$RealRewardsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RealRewardsTable,
+    RealReward,
+    $$RealRewardsTableFilterComposer,
+    $$RealRewardsTableOrderingComposer,
+    $$RealRewardsTableAnnotationComposer,
+    $$RealRewardsTableCreateCompanionBuilder,
+    $$RealRewardsTableUpdateCompanionBuilder,
+    (RealReward, BaseReferences<_$AppDatabase, $RealRewardsTable, RealReward>),
+    RealReward,
+    PrefetchHooks Function()> {
+  $$RealRewardsTableTableManager(_$AppDatabase db, $RealRewardsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RealRewardsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RealRewardsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RealRewardsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> kidId = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<int> starsNeeded = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> redeemedAt = const Value.absent(),
+          }) =>
+              RealRewardsCompanion(
+            id: id,
+            kidId: kidId,
+            title: title,
+            starsNeeded: starsNeeded,
+            createdAt: createdAt,
+            redeemedAt: redeemedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int kidId,
+            required String title,
+            required int starsNeeded,
+            required DateTime createdAt,
+            Value<DateTime?> redeemedAt = const Value.absent(),
+          }) =>
+              RealRewardsCompanion.insert(
+            id: id,
+            kidId: kidId,
+            title: title,
+            starsNeeded: starsNeeded,
+            createdAt: createdAt,
+            redeemedAt: redeemedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RealRewardsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RealRewardsTable,
+    RealReward,
+    $$RealRewardsTableFilterComposer,
+    $$RealRewardsTableOrderingComposer,
+    $$RealRewardsTableAnnotationComposer,
+    $$RealRewardsTableCreateCompanionBuilder,
+    $$RealRewardsTableUpdateCompanionBuilder,
+    (RealReward, BaseReferences<_$AppDatabase, $RealRewardsTable, RealReward>),
+    RealReward,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3227,4 +3750,6 @@ class $AppDatabaseManager {
       $$AppSettingsTableTableManager(_db, _db.appSettings);
   $$DailyUsageTableTableManager get dailyUsage =>
       $$DailyUsageTableTableManager(_db, _db.dailyUsage);
+  $$RealRewardsTableTableManager get realRewards =>
+      $$RealRewardsTableTableManager(_db, _db.realRewards);
 }

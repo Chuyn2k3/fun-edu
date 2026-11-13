@@ -81,6 +81,7 @@ class KidRepository {
     await (_db.delete(_db.subjectLevels)..where((t) => t.kidId.equals(id)))
         .go();
     await (_db.delete(_db.dailyUsage)..where((t) => t.kidId.equals(id))).go();
+    await (_db.delete(_db.realRewards)..where((t) => t.kidId.equals(id))).go();
     // Screen-time settings (limit, bedtime, extra minutes) of this kid.
     await (_db.delete(_db.appSettings)
           ..where((t) =>
@@ -118,6 +119,9 @@ class KidRepository {
       _db.into(_db.appSettings).insertOnConflictUpdate(
             AppSettingsCompanion.insert(key: key, value: value),
           );
+
+  Future<void> removeSetting(String key) =>
+      (_db.delete(_db.appSettings)..where((t) => t.key.equals(key))).go();
 
   /// Wipes every table: kids, settings and all progress.
   Future<void> deleteAllData() => _db.transaction(() async {

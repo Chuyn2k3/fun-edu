@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profile/kid_tables.dart';
 import '../progress/progress_tables.dart';
+import '../rewards/reward_tables.dart';
 import '../screen_time/screen_time_tables.dart';
 import '../stroke/glyph.dart';
 import '../ui/assets.dart';
@@ -37,13 +38,14 @@ class StrokeAttempts extends Table {
     KidProfiles,
     AppSettings,
     DailyUsage,
+    RealRewards,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -57,6 +59,7 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) await _upgradeToV4(m, from);
           if (from < 5) await m.createTable(dailyUsage);
+          if (from < 6) await m.createTable(realRewards);
         },
       );
 

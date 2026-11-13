@@ -137,11 +137,11 @@ void main() {
     expect(bo, isNot(na));
   });
 
-  testWidgets('other tabs show Sắp có and Về màn bé goes home', (tester) async {
+  testWidgets('other tabs open and Về màn bé goes home', (tester) async {
     await unlockedParent(tester);
     await tester.tap(find.text('Hồ sơ'));
     await settle(tester);
-    expect(find.text('Sắp có'), findsOneWidget);
+    expect(find.text('Thêm bé'), findsOneWidget);
     await tester.tap(find.text('Về màn bé'));
     await settle(tester);
     expect(find.text('trang chủ'), findsOneWidget);
@@ -196,7 +196,7 @@ void main() {
     expect(find.text('Dành cho ba mẹ'), findsNothing);
     expect(find.text('Góc ba mẹ'), findsOneWidget);
     expect(find.text('Hôm nay'), findsNothing);
-    expect(find.text('Sắp có'), findsOneWidget);
+    expect(find.text('Thêm bé'), findsOneWidget);
   });
 
   testWidgets('math label stays within 1..9', (tester) async {

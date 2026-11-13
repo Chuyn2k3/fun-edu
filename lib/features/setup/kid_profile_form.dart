@@ -16,7 +16,21 @@ bool isValidNickname(String raw) {
 /// "Tạo hồ sơ cho bé": nickname, avatar and age. Shared by the first-run
 /// flow and the kid switcher's "Thêm bé".
 class KidProfileForm extends StatefulWidget {
-  const KidProfileForm({super.key, required this.onSubmit});
+  const KidProfileForm({
+    super.key,
+    required this.onSubmit,
+    this.title = 'Tạo hồ sơ cho bé',
+    this.initialNickname,
+    this.initialAvatar,
+    this.initialAge,
+  });
+
+  final String title;
+
+  /// Prefilled values when editing an existing profile.
+  final String? initialNickname;
+  final String? initialAvatar;
+  final int? initialAge;
 
   /// Called with the trimmed nickname, chosen avatar asset and age. The form
   /// ignores further taps until the returned future completes.
@@ -27,9 +41,10 @@ class KidProfileForm extends StatefulWidget {
 }
 
 class _KidProfileFormState extends State<KidProfileForm> {
-  final _controller = TextEditingController();
-  String? _avatar;
-  int? _age;
+  late final _controller =
+      TextEditingController(text: widget.initialNickname);
+  late String? _avatar = widget.initialAvatar;
+  late int? _age = widget.initialAge;
   bool _touched = false;
   bool _busy = false;
 
@@ -58,10 +73,10 @@ class _KidProfileFormState extends State<KidProfileForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Tạo hồ sơ cho bé',
+        Text(
+          widget.title,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
             color: AppColors.text,

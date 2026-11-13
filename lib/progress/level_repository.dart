@@ -38,6 +38,13 @@ class LevelRepository {
         );
   }
 
+  /// Forgets this kid's placement so they redo the placement test.
+  Future<void> clearLevels() async {
+    final kid = kidId ?? (throw StateError('No kid profile selected'));
+    await (_db.delete(_db.subjectLevels)..where((t) => t.kidId.equals(kid)))
+        .go();
+  }
+
   /// True once both subjects have a stored level.
   Future<bool> isPlaced() async =>
       await levelOf('viet') != null && await levelOf('toan') != null;

@@ -241,4 +241,20 @@ CREATE TABLE subject_levels (
     expect(await db.select(db.dailyUsage).get(), hasLength(1));
     expect(await KidRepository(db).kids(), hasLength(1));
   });
+
+  test('upgrading from v5 adds real_rewards', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(setup: (raw) => raw.execute('PRAGMA user_version = 5')),
+    );
+    addTearDown(db.close);
+    await db.into(db.realRewards).insert(
+          RealRewardsCompanion.insert(
+            kidId: 1,
+            title: 'Đi công viên',
+            starsNeeded: 10,
+            createdAt: DateTime(2026, 11, 13),
+          ),
+        );
+    expect(await db.select(db.realRewards).get(), hasLength(1));
+  });
 }

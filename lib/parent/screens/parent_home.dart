@@ -8,7 +8,11 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../parent_gate_route.dart';
 import '../parent_unlock.dart';
+import 'kids_tab.dart';
 import 'progress_tab.dart';
+import 'rewards_tab.dart';
+import 'settings_tab.dart';
+import 'time_tab.dart';
 
 const _tabs = [
   (icon: Icons.insights_rounded, label: 'Tiến bộ'),
@@ -50,6 +54,11 @@ class _ParentHomeState extends ConsumerState<ParentHome> {
 
   Future<void> _ask() async {
     if (_asking || !mounted) return;
+    // The corner may still be on screen while a route change away from it
+    // (e.g. after deleting all data) finishes animating: do not gate then.
+    final path =
+        GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+    if (path != '/parent') return;
     _asking = true;
     final passed = await showParentGate(context);
     _asking = false;
@@ -115,21 +124,25 @@ class _ParentHomeState extends ConsumerState<ParentHome> {
   }
 
   Widget _body(int? kidId) {
-    if (_tab == 0) {
-      if (kidId == null) return const SizedBox.shrink();
-      return ProgressTab(kidId: kidId);
+    // Per-kid tabs are keyed by kid so their state resets on a kid change.
+    switch (_tab) {
+      case 0:
+        return kidId == null
+            ? const SizedBox.shrink()
+            : ProgressTab(kidId: kidId);
+      case 1:
+        return const KidsTab();
+      case 2:
+        return kidId == null
+            ? const SizedBox.shrink()
+            : TimeTab(key: ValueKey(kidId), kidId: kidId);
+      case 3:
+        return kidId == null
+            ? const SizedBox.shrink()
+            : RewardsTab(key: ValueKey(kidId), kidId: kidId);
+      default:
+        return SettingsTab(kidId: kidId);
     }
-    // Tabs 1-4 are filled in by a later task.
-    return const Center(
-      child: Text(
-        'Sắp có',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textMuted,
-        ),
-      ),
-    );
   }
 }
 
