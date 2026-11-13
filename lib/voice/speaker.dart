@@ -75,8 +75,33 @@ class TtsSpeaker implements Speaker {
   }
 }
 
-/// Silent when the parent switched the voice off in settings.
+/// Passes speech to [_device] only while [_enabled] says so. The setting is
+/// read at each call, so screens that keep a speaker follow later changes.
+class SettingGatedSpeaker implements Speaker {
+  SettingGatedSpeaker(this._device, this._enabled);
+
+  final Speaker _device;
+  final bool Function() _enabled;
+
+  @override
+  Future<void> speak(String text) async {
+    if (_enabled()) await _device.speak(text);
+  }
+
+  @override
+  Future<void> stop() => _device.stop();
+}
+
+/// The device voice; tests override it to record speech.
+final deviceSpeakerProvider = Provider<Speaker>((ref) => TtsSpeaker());
+
+/// Speaks only when the parent's voice setting is known to be on: silent
+/// while the setting loads or fails to load, and when switched off.
 final speakerProvider = Provider<Speaker>((ref) {
-  final enabled = ref.watch(voiceEnabledProvider).valueOrNull ?? true;
-  return enabled ? TtsSpeaker() : const SilentSpeaker();
+  // Start loading the setting now so it is known by the first line.
+  ref.listen<AsyncValue<bool>>(voiceEnabledProvider, (_, __) {});
+  return SettingGatedSpeaker(
+    ref.watch(deviceSpeakerProvider),
+    () => ref.read(voiceEnabledProvider).valueOrNull ?? false,
+  );
 });

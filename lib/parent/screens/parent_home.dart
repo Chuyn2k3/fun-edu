@@ -56,8 +56,8 @@ class _ParentHomeState extends ConsumerState<ParentHome> {
     if (_asking || !mounted) return;
     // The corner may still be on screen while a route change away from it
     // (e.g. after deleting all data) finishes animating: do not gate then.
-    final path =
-        GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+    // `state` is the top route, also when the corner was pushed.
+    final path = GoRouter.of(context).routerDelegate.state.uri.path;
     if (path != '/parent') return;
     _asking = true;
     final passed = await showParentGate(context);

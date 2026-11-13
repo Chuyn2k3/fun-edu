@@ -163,6 +163,10 @@ void main() {
     );
     await t.pumpAndSettle();
     expect(find.text('3/9'), findsOneWidget);
+    // The card sits below the fold on a small phone; bring it clear of the
+    // floating nav bar first.
+    await t.drag(find.byType(ListView), const Offset(0, -200));
+    await t.pumpAndSettle();
     await t.tap(find.text('Toán'));
     await t.pumpAndSettle();
     expect(find.text('toan stub'), findsOneWidget);

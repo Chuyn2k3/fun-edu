@@ -17,12 +17,13 @@ import 'package:funedu/voice/speaker.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/setup_helpers.dart';
+import '../voice/fake_speaker.dart';
 
 late AppDatabase db;
 late int na;
 late int bo;
 
-Future<void> _pumpParent(WidgetTester t, {Size? size}) async {
+Future<void> _pumpParent(WidgetTester t, {Size? size, Speaker? device}) async {
   setSize(t, size?.width ?? 375, size?.height ?? 667);
   final router = GoRouter(routes: [
     GoRoute(path: '/', builder: (_, __) => const Text('trang chủ')),
@@ -34,6 +35,7 @@ Future<void> _pumpParent(WidgetTester t, {Size? size}) async {
       databaseProvider.overrideWithValue(db),
       parentUnlockedUntilProvider
           .overrideWith((ref) => DateTime.now().add(parentUnlockDuration)),
+      if (device != null) deviceSpeakerProvider.overrideWithValue(device),
     ],
     child: MaterialApp.router(routerConfig: router),
   ));
@@ -257,14 +259,19 @@ void main() {
 
   group('SettingsTab', () {
     testWidgets('turning Giọng đọc off silences the speaker', (t) async {
-      await _pumpParent(t);
+      final device = FakeSpeaker();
+      await _pumpParent(t, device: device);
       await _openTab(t, 'Cài đặt');
-      expect(_container(t).read(speakerProvider), isNot(isA<SilentSpeaker>()));
+      final speaker = _container(t).read(speakerProvider);
+      await speaker.speak('một');
+      expect(device.spoken, ['một']);
       await t.tap(find.byType(Switch));
       await settle(t);
       expect(await t.runAsync(() => KidRepository(db).setting('voiceEnabled')),
           'false');
-      expect(_container(t).read(speakerProvider), isA<SilentSpeaker>());
+      await speaker.speak('hai');
+      await _container(t).read(speakerProvider).speak('ba');
+      expect(device.spoken, ['một']);
     });
 
     testWidgets('redo placement clears only the selected kid', (t) async {
@@ -342,6 +349,37 @@ void main() {
     ));
     await settle(t);
     expect(find.text('4/10 sao: Đi công viên'), findsOneWidget);
+  });
+
+  testWidgets('reward pill never shows more stars than needed', (t) async {
+    await db.into(db.lessonCompletions).insert(
+          LessonCompletionsCompanion.insert(
+            kidId: na,
+            completedAt: DateTime.now(),
+            starsEarned: 12,
+          ),
+        );
+    await RewardRepository(db).add(na, 'Đi công viên', 10);
+    setSize(t, 375, 667);
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+    ]);
+    await t.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await settle(t);
+    expect(find.text('10/10 sao: Đi công viên'), findsOneWidget);
+  });
+
+  testWidgets('privacy policy names reward titles and kept strokes',
+      (t) async {
+    setSize(t, 375, 667);
+    await t.pumpWidget(const MaterialApp(home: PrivacyScreen()));
+    for (final s in ['phần thưởng do ba mẹ', 'tọa độ từng nét']) {
+      await t.scrollUntilVisible(find.textContaining(s), 200);
+      expect(find.textContaining(s), findsOneWidget);
+    }
   });
 
   testWidgets('privacy policy has its sections and contact placeholder',

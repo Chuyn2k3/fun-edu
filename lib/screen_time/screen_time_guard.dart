@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/sleep/sleep_screen.dart';
 import '../profile/kid_repository.dart';
+import '../router_location.dart';
 import '../ui/theme/tokens.dart';
 import '../voice/speaker.dart';
 import 'screen_time_service.dart';
@@ -79,8 +80,13 @@ class _ScreenTimeGuardState extends ConsumerState<ScreenTimeGuard>
   int? _kidId;
   ScreenTimeStatus _blocked = ScreenTimeStatus.ok;
 
-  /// True from a route change until its async status check answers.
+  /// True from a route change until its async status check answers, unless
+  /// the last check for this kid and day said ok (then the new screen shows
+  /// at once and the check runs behind it).
   bool _pending = false;
+
+  /// "kid/day" whose last status check answered ok.
+  String? _okFor;
   int _checkGen = 0;
   bool _started = false;
   final _sleepNavigator = GlobalKey<NavigatorState>();
@@ -93,8 +99,9 @@ class _ScreenTimeGuardState extends ConsumerState<ScreenTimeGuard>
     () => _blocked != ScreenTimeStatus.ok,
   );
 
-  Listenable get _location => widget.router.routeInformationProvider;
-  String get _path => widget.router.routeInformationProvider.value.uri.path;
+  // Sees pops too, so back navigation re-checks and restarts the timer.
+  RouterLocation get _location => RouterLocation.of(widget.router);
+  String get _path => _location.path;
 
   bool get _resumed =>
       WidgetsBinding.instance.lifecycleState == null ||
@@ -193,14 +200,30 @@ class _ScreenTimeGuardState extends ConsumerState<ScreenTimeGuard>
     unawaited(ref.read(screenTimeServiceProvider).addUsage(kid, elapsed));
   }
 
+  String _statusKey(int? kid) =>
+      '$kid/${dayKey(ref.read(screenTimeClockProvider)())}';
+
   Future<void> _check() async {
     final gen = ++_checkGen;
-    _update(() => _pending = true);
-    final kid = await ref.read(currentKidIdProvider.future);
-    final status = kid == null
-        ? ScreenTimeStatus.ok
-        : await ref.read(screenTimeServiceProvider).status(kid);
+    if (_okFor != _statusKey(_kidId)) _update(() => _pending = true);
+    var status = ScreenTimeStatus.ok;
+    var failed = false;
+    int? kid;
+    try {
+      kid = await ref.read(currentKidIdProvider.future);
+      if (!mounted) return;
+      if (kid != null) {
+        status = await ref.read(screenTimeServiceProvider).status(kid);
+      }
+    } catch (e) {
+      // Fail open: a broken check must not leave the kid on a blank screen.
+      debugPrint('Screen time check failed: $e');
+      failed = true;
+    }
     if (!mounted || gen != _checkGen) return;
+    if (!failed) {
+      _okFor = status == ScreenTimeStatus.ok ? _statusKey(kid) : null;
+    }
     _setBlocked(status);
   }
 

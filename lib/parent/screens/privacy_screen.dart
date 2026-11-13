@@ -13,6 +13,9 @@ const _sections = <(String, List<String>)>[
       '• Tuổi của bé.',
       '• Tiến độ học: bài đã làm, sao, cấp độ, kết quả tập viết.',
       '• Thời gian bé dùng ứng dụng mỗi ngày.',
+      '• Tên các phần thưởng do ba mẹ tự đặt.',
+      '• Các nét bé viết (tọa độ từng nét), giữ lại để cải thiện việc chấm '
+          'bài tập viết. Các nét này chỉ lưu trên máy này.',
     ],
   ),
   (

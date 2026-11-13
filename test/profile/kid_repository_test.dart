@@ -8,6 +8,8 @@ import 'package:funedu/progress/level_repository.dart';
 import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/voice/speaker.dart';
 
+import '../voice/fake_speaker.dart';
+
 void main() {
   late AppDatabase db;
   late KidRepository kids;
@@ -135,15 +137,19 @@ void main() {
   });
 
   test('voice defaults on and the speaker goes silent when off', () async {
+    final device = FakeSpeaker();
     final c = ProviderContainer(overrides: [
       databaseProvider.overrideWithValue(db),
+      deviceSpeakerProvider.overrideWithValue(device),
     ]);
     addTearDown(c.dispose);
     expect(await c.read(voiceEnabledProvider.future), isTrue);
+    await c.read(speakerProvider).speak('một');
     await kids.setSetting(voiceEnabledKey, 'false');
     c.invalidate(voiceEnabledProvider);
     expect(await c.read(voiceEnabledProvider.future), isFalse);
-    expect(c.read(speakerProvider), isA<SilentSpeaker>());
+    await c.read(speakerProvider).speak('hai');
+    expect(device.spoken, ['một']);
   });
 
   test('deleteKid removes the kid\'s screen-time settings and usage', () async {

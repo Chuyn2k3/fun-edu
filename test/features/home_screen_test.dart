@@ -93,6 +93,10 @@ void main() {
     await tester.pumpWidget(_app(_fakes(), []));
     await tester.pumpAndSettle();
     expect(find.text('Chào Na!'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('greeting-pill'))).height,
+      greaterThanOrEqualTo(64),
+    );
     await tester.tap(find.byKey(const ValueKey('greeting-pill')));
     await tester.pumpAndSettle();
     expect(find.text('Thêm bé'), findsOneWidget);

@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/voice/speaker.dart';
+
+import 'fake_speaker.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -78,5 +84,38 @@ void main() {
     await s.speak('xin chào');
     expect(args['setSharedInstance'], true);
     expect(args['speak'], 'xin chào');
+  });
+
+  group('speakerProvider follows the voice setting', () {
+    test('silent while the setting is still loading', () async {
+      final device = FakeSpeaker();
+      final container = ProviderContainer(overrides: [
+        deviceSpeakerProvider.overrideWithValue(device),
+        voiceEnabledProvider.overrideWith((ref) => Completer<bool>().future),
+      ]);
+      addTearDown(container.dispose);
+      await container.read(speakerProvider).speak('xin chào');
+      expect(device.spoken, isEmpty);
+    });
+
+    test('a speaker kept by a screen goes silent when switched off', () async {
+      final device = FakeSpeaker();
+      var on = true;
+      final container = ProviderContainer(overrides: [
+        deviceSpeakerProvider.overrideWithValue(device),
+        voiceEnabledProvider.overrideWith((ref) async => on),
+      ]);
+      addTearDown(container.dispose);
+      final kept = container.read(speakerProvider);
+      await container.read(voiceEnabledProvider.future);
+      await kept.speak('một');
+      expect(device.spoken, ['một']);
+
+      on = false;
+      container.invalidate(voiceEnabledProvider);
+      await container.read(voiceEnabledProvider.future);
+      await kept.speak('hai');
+      expect(device.spoken, ['một']);
+    });
   });
 }

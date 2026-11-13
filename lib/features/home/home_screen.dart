@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -252,7 +254,8 @@ class _RewardPill extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '${reward.stars}/${reward.starsNeeded} sao: ${reward.title}',
+              '${math.min(reward.stars, reward.starsNeeded)}/'
+              '${reward.starsNeeded} sao: ${reward.title}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -305,7 +308,7 @@ class _TopRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                   onTap: onSwitchKid,
                   child: Container(
-                    constraints: const BoxConstraints(minHeight: 48),
+                    constraints: const BoxConstraints(minHeight: 64),
                     padding: const EdgeInsets.fromLTRB(6, 6, 16, 6),
                     child: FittedBox(
                       fit: BoxFit.scaleDown,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'profile/kid_repository.dart';
 import 'progress/level_repository.dart';
 import 'router.dart';
+import 'router_location.dart';
 import 'screen_time/screen_time_guard.dart';
 import 'ui/theme/tokens.dart';
 import 'ui/theme/app_theme.dart';
@@ -13,8 +14,9 @@ class App extends ConsumerWidget {
 
   // GoRouter's redirect is synchronous, so the async checks live here:
   // no kid -> /setup, then an unplaced kid -> /placement.
-  static String _currentPath() =>
-      appRouter.routeInformationProvider.value.uri.path;
+  // Follows pops as well as go/push, so leaving /parent re-applies the rules.
+  static RouterLocation get _location => RouterLocation.of(appRouter);
+  static String _currentPath() => _location.path;
 
   static bool _isDev(String p) => p.startsWith('/dev/');
   static bool _isParent(String p) => p == '/parent' || p.startsWith('/parent/');
@@ -51,6 +53,8 @@ class App extends ConsumerWidget {
     });
     final kid = ref.watch(currentKidIdProvider);
     final placed = ref.watch(isPlacedProvider);
+    // Load the voice setting before any screen can speak.
+    final voice = ref.watch(voiceEnabledProvider);
     return MaterialApp.router(
       title: 'Chíp Chíp',
       theme: buildAppTheme(),
@@ -62,13 +66,14 @@ class App extends ConsumerWidget {
         // Hold back the navigator until we know where to go: while loading,
         // and while a redirect is due but has not taken effect yet.
         return ListenableBuilder(
-          listenable: appRouter.routeInformationProvider,
+          listenable: _location,
           builder: (context, _) {
             final kidKnown = kid.hasValue;
             final hasKid = kid.valueOrNull != null;
             final placedKnown = placed.hasValue;
             final loading = !kidKnown && kid.isLoading ||
-                hasKid && !placedKnown && placed.isLoading;
+                hasKid && !placedKnown && placed.isLoading ||
+                !voice.hasValue && voice.isLoading;
             final due = kidKnown &&
                 _target(_currentPath(),
                         hasKid: hasKid,
@@ -76,6 +81,13 @@ class App extends ConsumerWidget {
                     null;
             // A reload keeps the previous value; only wait when it is a
             // settled answer that demands a move.
+            if (due) {
+              // A location change (e.g. leaving /parent) can make a move due
+              // without any provider changing: make it after this frame.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) _redirect(ref);
+              });
+            }
             if (loading || due) {
               return const ColoredBox(
                 color: AppColors.background,
