@@ -13,6 +13,7 @@ import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/math/math_level.dart';
 import 'package:funedu/progress/level_repository.dart';
 import 'package:funedu/progress/progress_repository.dart';
+import 'package:funedu/ui/theme/tokens.dart';
 import 'package:funedu/ui/widgets/pressable.dart';
 import 'package:go_router/go_router.dart';
 
@@ -139,6 +140,8 @@ void main() {
   testWidgets('no overflow on a tablet', (t) async {
     await _pump(t, size: const Size(1024, 1366));
     expect(find.text('Đang học'), findsOneWidget);
+    expect(t.widget<Text>(find.text('Đang học')).style?.color,
+        AppColors.primaryOnTint);
     expect(t.takeException(), isNull);
   });
 
@@ -226,4 +229,19 @@ void main() {
     }
     expect(find.byType(Pressable), findsNWidgets(9));
   });
+
+  for (final (size, scale) in const [
+    (Size(1133, 744), 1.3),
+    (Size(1180, 820), 1.3),
+    (Size(1133, 744), 1.5),
+    (Size(1180, 820), 1.5),
+  ]) {
+    testWidgets('no overflow at $size with user text $scale', (t) async {
+      t.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+      await _pump(t, size: size);
+      expect(find.byType(Pressable), findsNWidgets(9));
+      expect(t.takeException(), isNull);
+    });
+  }
 }

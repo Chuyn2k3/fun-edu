@@ -289,4 +289,20 @@ void main() {
       expect(find.text('Bài hôm nay'), findsOneWidget);
     });
   });
+
+  for (final (size, user, expected) in const [
+    (Size(1024, 1366), 1.0, 1.2),
+    (Size(1133, 744), 1.3, 1.56),
+    (Size(375, 667), 1.0, 1.0),
+  ]) {
+    testWidgets('welcome text scale at $size, user $user is $expected',
+        (t) async {
+      t.platformDispatcher.textScaleFactorTestValue = user;
+      addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+      await _pumpPlacement(t, size: size);
+      final ctx = t.element(find.text('Bắt đầu'));
+      expect(MediaQuery.textScalerOf(ctx).scale(1), closeTo(expected, 0.001));
+      expect(t.takeException(), isNull);
+    });
+  }
 }

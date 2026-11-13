@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../ui/layout/scale_down_to_fit.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 
@@ -35,47 +36,52 @@ class WeekPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
       decoration: raisedDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Tuần này',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppColors.text,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              for (var d = 1; d <= 7; d++)
-                Expanded(
-                    child:
-                        _DayDot(day: d, learned: learnedWeekdays.contains(d))),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${learnedWeekdays.length} ngày học',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.text,
-                ),
+      // In a fixed-height row, large system text scales the content down
+      // instead of overflowing; in the portrait scroll it just grows.
+      child: ScaleDownToFit(
+        fillHeight: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Tuần này',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: AppColors.text,
               ),
-              const SizedBox(height: 4),
-              Text('Chữ đã thuộc: $masteredWriting/$writingTotal',
-                  style: _muted),
-              Text('Cấp Toán: $mathLevel/$mathTotal', style: _muted),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                for (var d = 1; d <= 7; d++)
+                  Expanded(
+                      child: _DayDot(
+                          day: d, learned: learnedWeekdays.contains(d))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${learnedWeekdays.length} ngày học',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.text,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text('Chữ đã thuộc: $masteredWriting/$writingTotal',
+                    style: _muted),
+                Text('Cấp Toán: $mathLevel/$mathTotal', style: _muted),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

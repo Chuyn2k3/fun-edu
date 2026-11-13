@@ -56,7 +56,10 @@ class _RailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.accent : AppColors.textMuted;
+    // The active icon stays orange; its label uses the text colour so it
+    // reads at 4.5:1 on the orange pill.
+    final iconColor = active ? AppColors.accent : AppColors.textMuted;
+    final labelColor = active ? AppColors.text : AppColors.textMuted;
     return Semantics(
       button: true,
       selected: active,
@@ -74,14 +77,14 @@ class _RailTile extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             decoration: BoxDecoration(
-              color: active ? const Color(0xFFFFECDE) : null,
+              color: active ? AppColors.accent.withOpacity(0.12) : null,
               borderRadius: BorderRadius.circular(32),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(item.icon, color: color, size: 32),
+                Icon(item.icon, color: iconColor, size: 32),
                 const SizedBox(height: 4),
                 Text(
                   item.label,
@@ -90,7 +93,7 @@ class _RailTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: active ? FontWeight.w900 : FontWeight.w700,
-                    color: color,
+                    color: labelColor,
                   ),
                 ),
               ],

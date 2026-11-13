@@ -75,31 +75,34 @@ class LessonDoneScreen extends ConsumerWidget {
                 ? Center(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(24),
-                      child: MessageCard(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const _Title(),
-                            const SizedBox(height: 14),
-                            const _Hero(scale: tabletChipScale),
-                            const SizedBox(height: 14),
-                            _StatsCard(
-                              stars: starsEarned,
-                              days: days.length,
-                              level: level,
-                            ),
-                            const SizedBox(height: 14),
-                            _WeekCard(
-                              learned: days,
-                              today: DateTime.now().weekday,
-                            ),
-                            const SizedBox(height: 20),
-                            PrimaryButton(
-                              label: 'Về trang chính',
-                              onPressed: () => context.go('/'),
-                            ),
-                          ],
+                      // Kid-facing text grows on tablets like other screens.
+                      child: TabletTextScale(
+                        child: MessageCard(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const _Title(),
+                              const SizedBox(height: 14),
+                              const _Hero(scale: tabletChipScale),
+                              const SizedBox(height: 14),
+                              _StatsCard(
+                                stars: starsEarned,
+                                days: days.length,
+                                level: level,
+                              ),
+                              const SizedBox(height: 14),
+                              _WeekCard(
+                                learned: days,
+                                today: DateTime.now().weekday,
+                              ),
+                              const SizedBox(height: 20),
+                              PrimaryButton(
+                                label: 'Về trang chính',
+                                onPressed: () => context.go('/'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

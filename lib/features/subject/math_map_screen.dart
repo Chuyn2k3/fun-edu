@@ -7,6 +7,7 @@ import '../../math/math_level.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../ui/layout/form_factor.dart';
+import '../../ui/layout/scale_down_to_fit.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/theme/tokens.dart';
@@ -194,9 +195,14 @@ class _LevelTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Stack(
         children: [
-          Center(
+          // Large system text scales the content down instead of
+          // overflowing the tile.
+          ScaleDownToFit(
+            fillHeight: true,
+            alignment: Alignment.center,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '${index + 1}',
@@ -224,7 +230,7 @@ class _LevelTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: AppColors.primaryOnTint,
                     ),
                   ),
               ],
@@ -323,7 +329,7 @@ class _LevelTile extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.primary,
+                                      color: AppColors.primaryOnTint,
                                     ),
                                   ),
                               ],

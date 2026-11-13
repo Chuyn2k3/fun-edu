@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/dev/gallery_screen.dart';
 import 'package:funedu/ui/theme/app_theme.dart';
+import 'package:funedu/ui/theme/contrast.dart';
+import 'package:funedu/ui/theme/tokens.dart';
 import 'package:funedu/ui/widgets/dotted_background.dart';
 import 'package:funedu/ui/widgets/floating_nav_bar.dart';
 import 'package:funedu/ui/widgets/nav_rail.dart';
@@ -94,6 +96,29 @@ void main() {
     }
     await tester.tap(find.text('Chơi'));
     expect(picked, 1);
+  });
+
+  testWidgets('NavRail selected label meets 4.5:1 on its pill',
+      (tester) async {
+    await tester.pumpWidget(host(NavRail(
+      items: const [
+        NavItem(icon: Icons.edit, label: 'Học'),
+        NavItem(icon: Icons.star, label: 'Chơi'),
+      ],
+      selected: 0,
+      onSelect: (_) {},
+    )));
+    final label = tester.widget<Text>(find.text('Học'));
+    final pill = tester
+        .widgetList<Container>(find.ancestor(
+            of: find.text('Học'), matching: find.byType(Container)))
+        .map((c) => c.decoration)
+        .whereType<BoxDecoration>()
+        .firstWhere((d) => d.color != null)
+        .color!;
+    // The pill is translucent over the white rail.
+    final fill = Color.alphaBlend(pill, AppColors.card);
+    expect(contrastRatio(label.style!.color!, fill), greaterThanOrEqualTo(4.5));
   });
 
   testWidgets('GalleryScreen shows the NavRail on a tablet', (tester) async {

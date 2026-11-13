@@ -135,7 +135,7 @@ class _LeftPane extends StatelessWidget {
                   labelStyle: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: k.id == selectedKid ? Colors.white : AppColors.text,
+                    color: k.id == selectedKid ? AppColors.card : AppColors.text,
                   ),
                   selected: k.id == selectedKid,
                   selectedColor: AppColors.text,

@@ -373,4 +373,32 @@ void main() {
     expect(find.text('Về trang chính'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
+
+  for (final (size, user, expected) in const [
+    (Size(1024, 1366), 1.0, 1.2),
+    (Size(1133, 744), 1.3, 1.56),
+    (Size(375, 667), 1.0, 1.0),
+  ]) {
+    testWidgets('done screen text scale at $size, user $user is $expected',
+        (t) async {
+      t.platformDispatcher.textScaleFactorTestValue = user;
+      addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+      _setSize(t, size.width, size.height);
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      await t.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            currentKidIdProvider.overrideWith((ref) async => 1),
+          ],
+          child: const MaterialApp(home: LessonDoneScreen(starsEarned: 5)),
+        ),
+      );
+      await t.pumpAndSettle();
+      final ctx = t.element(find.text('Về trang chính'));
+      expect(MediaQuery.textScalerOf(ctx).scale(1), closeTo(expected, 0.001));
+      expect(t.takeException(), isNull);
+    });
+  }
 }

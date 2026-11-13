@@ -18,16 +18,18 @@ void main() {
     expect(text.style?.fontWeight, FontWeight.w900);
   });
 
-  testWidgets('SplashView breathes between 0.96 and 1.0', (t) async {
+  testWidgets('SplashView breathes between 1.0 and 0.96, starting at 1.0',
+      (t) async {
     await t.pumpWidget(const MaterialApp(home: SplashView()));
     double scale() => t
         .widget<ScaleTransition>(find.byKey(const ValueKey('splash-logo')))
         .scale
         .value;
-    expect(scale(), closeTo(0.96, 0.001));
-    await t.pump(const Duration(milliseconds: 900));
+    // Starts at full size, like the 160 pt native launch logo.
     expect(scale(), closeTo(1.0, 0.001));
     await t.pump(const Duration(milliseconds: 900));
     expect(scale(), closeTo(0.96, 0.001));
+    await t.pump(const Duration(milliseconds: 900));
+    expect(scale(), closeTo(1.0, 0.001));
   });
 }

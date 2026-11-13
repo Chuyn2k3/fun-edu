@@ -7,6 +7,7 @@ import 'progress/level_repository.dart';
 import 'router.dart';
 import 'router_location.dart';
 import 'screen_time/screen_time_guard.dart';
+import 'ui/layout/orientation_lock.dart';
 import 'ui/precache.dart';
 import 'ui/theme/app_theme.dart';
 
@@ -66,6 +67,12 @@ class App extends ConsumerWidget {
       routerDelegate: appRouter.routerDelegate,
       backButtonDispatcher: screenTimeBackDispatcher,
       builder: (context, child) {
+        if (!PortraitLock.decided) {
+          // main() saw no window size yet: decide from the first real one.
+          final size = MediaQuery.sizeOf(context);
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => PortraitLock.decide(size));
+        }
         // Hold back the navigator until we know where to go: while loading,
         // and while a redirect is due but has not taken effect yet.
         return ListenableBuilder(

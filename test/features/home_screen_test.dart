@@ -331,6 +331,25 @@ void tabletLayoutTests() {
     });
   }
 
+  // Larger system text on top of the tablet x1.2 must not overflow.
+  for (final (size, scale) in const [
+    (Size(1133, 744), 1.3),
+    (Size(1180, 820), 1.3),
+    (Size(1133, 744), 1.5),
+    (Size(1180, 820), 1.5),
+    (Size(744, 1133), 1.5),
+  ]) {
+    testWidgets('tablet: no overflow at $size with user text $scale',
+        (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      _setSize(tester, size.width, size.height);
+      await tester.pumpWidget(_app(_fakes(), []));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   Rect rectOf(WidgetTester t, Finder f) => t.getRect(f);
 
   testWidgets(

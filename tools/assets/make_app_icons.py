@@ -9,7 +9,7 @@ plain background colour at its edges. Writes:
   android/app/src/main/res/mipmap-*/ic_launcher_foreground.png (adaptive, empty)
   android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
   android/app/src/main/res/drawable-*/launch_logo.png    (rounded, 160dp)
-  ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage*.png (168pt)
+  ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage*.png (160pt)
   assets/images/logo.png                                 (512px, rounded)
 """
 
@@ -26,7 +26,8 @@ ANDROID_DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi":
 ADAPTIVE_LOGO_DP = 84
 CORNER_RADIUS = 0.22  # fraction of the side, for the in-app and launch logo
 LAUNCH_LOGO_DP = 160
-LAUNCH_LOGO_IOS_PT = 168
+# Same size as the Flutter splash logo (160) so the hand-off does not jump.
+LAUNCH_LOGO_IOS_PT = 160
 IN_APP_LOGO_PX = 512
 
 

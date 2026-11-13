@@ -31,6 +31,11 @@ void main() {
       expect(contrastRatio(AppColors.textMuted, bottom),
           greaterThanOrEqualTo(4.5));
       expect(contrastRatio(AppColors.text, bottom), greaterThanOrEqualTo(4.5));
+      // "Đang học" on the map tiles: primary is just under 4.5 here, so
+      // the label uses the darker primaryOnTint.
+      expect(contrastRatio(AppColors.primaryOnTint, bottom),
+          greaterThanOrEqualTo(4.5),
+          reason: 'primaryOnTint on $tint');
     }
   });
 }

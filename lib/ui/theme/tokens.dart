@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 /// Brand palette (spec 8.2a).
 abstract final class AppColors {
   static const primary = Color(0xFFC8460F);
+  /// [primary] darkened for small text on a tinted raised card (the
+  /// gradient end of a subject tint), where [primary] is just under 4.5:1.
+  static const primaryOnTint = Color(0xFFB43E0D);
   static const accent = Color(0xFFE8590C);
   static const background = Color(0xFFFBF5EC);
   static const dot = Color(0xFFEADFCF);

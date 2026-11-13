@@ -200,7 +200,9 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
                   ),
                   Expanded(child: _paperCard()),
                   const SizedBox(height: 8),
-                  ChipSays(image: _chip, text: _message),
+                  // Same key as the tablet layouts: switching between them
+                  // (split view) keeps the state, so Chíp does not re-speak.
+                  ChipSays(key: _chipKey, image: _chip, text: _message),
                   const SizedBox(height: 8),
                   _ActionRow(
                     onListen: _listen,

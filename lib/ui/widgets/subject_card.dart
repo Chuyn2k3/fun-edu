@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../layout/scale_down_to_fit.dart';
 import '../theme/depth.dart';
 import '../theme/tokens.dart';
 import 'pressable.dart';
@@ -153,56 +154,67 @@ class SubjectCard extends StatelessWidget {
           type: MaterialType.transparency,
           child: Padding(
             padding: EdgeInsets.all(14 * k),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 64 * k,
-                      height: 64 * k,
-                      decoration: BoxDecoration(
-                        color: subject.tint,
-                        borderRadius: BorderRadius.circular(AppRadii.tile),
+            // Large system text scales the content down instead of
+            // overflowing the fixed card height.
+            child: ScaleDownToFit(
+              fillHeight: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 64 * k,
+                        height: 64 * k,
+                        decoration: BoxDecoration(
+                          color: subject.tint,
+                          borderRadius: BorderRadius.circular(AppRadii.tile),
+                        ),
+                        padding: EdgeInsets.all(6 * k),
+                        child: Image.asset(imagePath, fit: BoxFit.contain),
                       ),
-                      padding: EdgeInsets.all(6 * k),
-                      child: Image.asset(imagePath, fit: BoxFit.contain),
-                    ),
-                    SizedBox(width: 8 * k),
-                    Expanded(
-                      child: FittedBox(
+                      SizedBox(width: 8 * k),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.topRight,
+                          child: trailing,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FittedBox(
                         fit: BoxFit.scaleDown,
-                        alignment: Alignment.topRight,
-                        child: trailing,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 22 * k,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 22 * k,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.text,
-                    ),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15 * k,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15 * k,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

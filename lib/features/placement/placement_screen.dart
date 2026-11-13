@@ -331,7 +331,11 @@ class _MessageState extends ConsumerState<_Message> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: c.maxHeight - 48),
                     child: tablet
-                        ? Center(child: MessageCard(child: content))
+                        ? Center(
+                            child: TabletTextScale(
+                              child: MessageCard(child: content),
+                            ),
+                          )
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [content],

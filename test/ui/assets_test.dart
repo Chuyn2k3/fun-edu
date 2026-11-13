@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/ui/assets.dart';
+import 'package:funedu/ui/precache.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,5 +20,10 @@ void main() {
         expect(variants, contains('assets/images/3.0x/$name'), reason: path);
       }
     }
+  });
+
+  test('the splash logo is precached first, then every screen image', () {
+    expect(precacheOrder.first, AppImages.logo);
+    expect(precacheOrder.skip(1), AppImages.all);
   });
 }

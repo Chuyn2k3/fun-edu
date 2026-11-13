@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../ui/assets.dart';
 import '../../ui/layout/form_factor.dart';
+import '../../ui/layout/scale_down_to_fit.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/pressable.dart';
@@ -82,7 +83,13 @@ class HomeTabletBody extends StatelessWidget {
                   builder: (context, c) {
                     final sideBySide =
                         landscape && c.maxWidth >= _minSideBySideWidth;
-                    if (sideBySide && _fits(c.maxHeight)) {
+                    // The user's own text scale (the tablet x1.2 is
+                    // applied below this point).
+                    final text = math.max(
+                      1.0,
+                      MediaQuery.textScalerOf(context).scale(1),
+                    );
+                    if (sideBySide && _fits(c.maxHeight, text)) {
                       return TabletTextScale(child: _filled());
                     }
                     return _content(
@@ -91,10 +98,14 @@ class HomeTabletBody extends StatelessWidget {
                       landscape && c.maxWidth >= _minSideBySideWidth,
                       // Taller screens get a taller hero so the page does
                       // not end in a band of empty space.
+                      // Larger system text gets a taller hero; the page
+                      // scrolls.
                       (c.maxHeight * 0.36).clamp(
-                        _landscapeHeroHeight,
-                        _landscapeHeroMaxHeight,
-                      ),
+                            _landscapeHeroHeight,
+                            _landscapeHeroMaxHeight,
+                          ) *
+                          text,
+                      _portraitHeroHeight * text,
                     );
                   },
                 ),
@@ -116,9 +127,12 @@ class HomeTabletBody extends StatelessWidget {
       (reward == null ? 0 : _rewardReserve);
 
   /// Whether the whole landscape page fits [height] without scrolling.
-  /// 120 covers the top padding, the top bar and the gap under it.
-  bool _fits(double height) =>
-      _rowsSpace(height - 120 - _bottomPad) >= _fillHeroMin + _fillCardMin;
+  /// 120 covers the top padding, the top bar and the gap under it. Larger
+  /// system text ([textScale] > 1) needs proportionally more height, else
+  /// the page falls back to the scrolling layout.
+  bool _fits(double height, double textScale) =>
+      _rowsSpace(height - 120 - _bottomPad) >=
+      (_fillHeroMin + _fillCardMin) * textScale;
 
   Widget _heading() => const SizedBox(
         height: _headingBox,
@@ -197,7 +211,7 @@ class HomeTabletBody extends StatelessWidget {
     );
   }
 
-  Widget _content(bool landscape, double heroHeight) {
+  Widget _content(bool landscape, double heroHeight, double portraitHero) {
     return TabletTextScale(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(0, 24, 32, 40),
@@ -219,7 +233,7 @@ class HomeTabletBody extends StatelessWidget {
                 ),
               )
             else
-              SizedBox(height: _portraitHeroHeight, child: hero),
+              SizedBox(height: portraitHero, child: hero),
             if (reward != null) ...[
               const SizedBox(height: 16),
               Align(
@@ -284,60 +298,70 @@ class HomeHeroCard extends StatelessWidget {
           children: [
             Expanded(
               flex: 5,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ExcludeSemantics(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 380),
-                      child: SpeechBubble(text: bubbleText),
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: ExcludeSemantics(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Bài hôm nay',
-                                  style: TextStyle(
-                                    fontSize: 38,
-                                    fontWeight: FontWeight.w900,
-                                    height: 1.1,
-                                    color: AppColors.text,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  progressText,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+              // Large system text scales the column down instead of
+              // overflowing the fixed hero height.
+              child: ScaleDownToFit(
+                fillHeight: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ExcludeSemantics(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 380),
+                        child: SpeechBubble(text: bubbleText),
                       ),
-                      const SizedBox(width: 16),
-                      _PlayButton(onTap: onStart),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: ExcludeSemantics(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'Bài hôm nay',
+                                        style: TextStyle(
+                                          fontSize: 38,
+                                          fontWeight: FontWeight.w900,
+                                          height: 1.1,
+                                          color: AppColors.text,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        progressText,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            _PlayButton(onTap: onStart),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(

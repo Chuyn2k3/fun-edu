@@ -19,7 +19,7 @@ class _SplashViewState extends State<SplashView>
     duration: const Duration(milliseconds: 900),
   )..repeat(reverse: true);
 
-  late final Animation<double> _scale = Tween<double>(begin: 0.96, end: 1.0)
+  late final Animation<double> _scale = Tween<double>(begin: 1.0, end: 0.96)
       .animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
 
   @override

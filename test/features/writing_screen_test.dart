@@ -10,6 +10,9 @@ import 'package:funedu/features/writing/writing_screen.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/ui/theme/tokens.dart';
 import 'package:funedu/stroke/glyph.dart';
+import 'package:funedu/voice/speaker.dart';
+
+import '../voice/fake_speaker.dart';
 
 Stroke _line(double y, {bool reversed = false}) {
   final pts = [for (var i = 0; i <= 10; i++) Point2(0.1 + 0.08 * i, y)];
@@ -235,5 +238,44 @@ void main() {
     expect(find.text('Giỏi quá! Giờ tô nét 2 nhé.'), findsNothing);
     expect(completed, isEmpty);
     await t.pumpAndSettle();
+  });
+
+  testWidgets('switching tablet <-> phone (split view) does not re-speak',
+      (t) async {
+    t.view.physicalSize = const Size(1366, 1024);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final fake = FakeSpeaker();
+    await t.pumpWidget(ProviderScope(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        speakerProvider.overrideWithValue(fake),
+        currentKidIdProvider.overrideWith((ref) async => 1),
+      ],
+      child: MaterialApp(
+        home: WritingScreen(
+          glyph: _glyph,
+          step: 1,
+          totalSteps: 4,
+          onCompleted: (_) {},
+        ),
+      ),
+    ));
+    await t.pumpAndSettle();
+    final first = List.of(fake.spoken);
+    expect(first, isNotEmpty);
+    for (final size in const [
+      Size(500, 1366),
+      Size(1366, 1024),
+      Size(1024, 1366),
+      Size(500, 1366),
+    ]) {
+      t.view.physicalSize = size;
+      await t.pumpAndSettle();
+    }
+    expect(fake.spoken, first);
+    expect(t.takeException(), isNull);
   });
 }

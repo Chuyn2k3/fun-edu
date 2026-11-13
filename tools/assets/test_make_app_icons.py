@@ -42,7 +42,7 @@ def test_writes_launch_images_and_logo(tmp_path):
 
     ios = tmp_path / "ios/Runner/Assets.xcassets/LaunchImage.imageset"
     for name, px in {
-        "LaunchImage.png": 168, "LaunchImage@2x.png": 336, "LaunchImage@3x.png": 504,
+        "LaunchImage.png": 160, "LaunchImage@2x.png": 320, "LaunchImage@3x.png": 480,
     }.items():
         assert Image.open(ios / name).size == (px, px)
 

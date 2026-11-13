@@ -48,13 +48,14 @@ class _PressableState extends State<Pressable> {
       onTap: widget.onTap,
       child: child,
     );
-    if (widget.semanticsLabel != null || enabled) {
-      child = Semantics(
-        button: enabled,
-        label: widget.semanticsLabel,
-        child: child,
-      );
-    }
-    return child;
+    // Its own node, so the card's texts read as one button; an inert card
+    // (onTap null, e.g. "Sắp có" or a locked level) is a disabled button.
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: enabled,
+      label: widget.semanticsLabel,
+      child: child,
+    );
   }
 }
