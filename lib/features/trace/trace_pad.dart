@@ -33,6 +33,10 @@ class TracePad extends StatefulWidget {
 
 class _TracePadState extends State<TracePad> {
   int? _activePointer;
+
+  /// Pad side when the active stroke started; a stroke that outlives a
+  /// resize (rotation) is dropped because its points mix two scales.
+  double? _strokeSide;
   final _CurrentStroke _current = _CurrentStroke();
 
   @override
@@ -47,18 +51,30 @@ class _TracePadState extends State<TracePad> {
   );
 
   void _down(PointerDownEvent e, double side) {
-    if (_activePointer != null) return;
+    if (!mounted || _activePointer != null) return;
     _activePointer = e.pointer;
+    _strokeSide = side;
     _current.start(_normalize(e.localPosition, side), side);
   }
 
+  /// Drops the active stroke when the pad was resized mid-stroke. Returns
+  /// true when the event should be ignored.
+  bool _stale(int pointer, double side) {
+    if (!mounted || pointer != _activePointer) return true;
+    if (side == _strokeSide) return false;
+    _activePointer = null;
+    _strokeSide = null;
+    _current.clear();
+    return true;
+  }
+
   void _move(PointerMoveEvent e, double side) {
-    if (e.pointer != _activePointer) return;
+    if (_stale(e.pointer, side)) return;
     _current.add(_normalize(e.localPosition, side), side);
   }
 
   void _up(PointerUpEvent e, double side) {
-    if (e.pointer != _activePointer) return;
+    if (_stale(e.pointer, side)) return;
     _current.add(_normalize(e.localPosition, side), side);
     final points = List<Point2>.of(_current.points);
     _activePointer = null;
@@ -67,7 +83,7 @@ class _TracePadState extends State<TracePad> {
   }
 
   void _cancel(PointerCancelEvent e) {
-    if (e.pointer != _activePointer) return;
+    if (!mounted || e.pointer != _activePointer) return;
     _activePointer = null;
     _current.clear();
   }

@@ -4,6 +4,10 @@ import '../../../ui/theme/depth.dart';
 import '../../../ui/widgets/pressable.dart';
 import '../../../ui/theme/tokens.dart';
 
+/// Lays an exercise's question part and its answers out side by side
+/// (tablet landscape). Exercises given one stack their answers vertically.
+typedef SplitArrange = Widget Function(Widget question, Widget answers);
+
 /// Three big answer buttons. Reports `true` on the correct pick and `false`
 /// on the first wrong pick only; wrong buttons dim and disable, the rest stay
 /// tappable. Locks after the correct pick.
@@ -13,11 +17,17 @@ class ChoiceAnswers extends StatefulWidget {
     required this.choices,
     required this.answer,
     required this.onAnswered,
+    this.tileHeight = 72,
+    this.vertical = false,
   });
 
   final List<int> choices;
   final int answer;
   final ValueChanged<bool> onAnswered;
+  final double tileHeight;
+
+  /// Stacks the buttons in a column instead of a row.
+  final bool vertical;
 
   @override
   State<ChoiceAnswers> createState() => _ChoiceAnswersState();
@@ -63,6 +73,18 @@ class _ChoiceAnswersState extends State<ChoiceAnswers> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.vertical) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < widget.choices.length; i++) ...[
+            if (i > 0) const SizedBox(height: 16),
+            _button(widget.choices[i]),
+          ],
+        ],
+      );
+    }
     return Row(
       children: [
         for (var i = 0; i < widget.choices.length; i++) ...[
@@ -89,7 +111,7 @@ class _ChoiceAnswersState extends State<ChoiceAnswers> {
             pressed: pressed,
           );
           return Container(
-            height: 72,
+            height: widget.tileHeight,
             alignment: Alignment.center,
             decoration: correct
                 ? BoxDecoration(

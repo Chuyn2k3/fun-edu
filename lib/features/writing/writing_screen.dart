@@ -10,12 +10,14 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
 import '../../ui/assets.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
 import '../../ui/widgets/chip_says.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/session_header.dart';
+import '../../ui/widgets/speech_bubble.dart';
 import '../../voice/speaker.dart';
 import '../trace/trace_pad.dart';
 import 'ruled_paper.dart';
@@ -25,6 +27,7 @@ const _completeDelay = Duration(milliseconds: 1200);
 const _flashDuration = Duration(milliseconds: 1500);
 const _flashCount = 3;
 const _badgeSize = 32.0;
+const _cardPadding = 12.0;
 
 String _errorMessage(StrokeError error) => switch (error) {
       StrokeError.tooShort => 'Vẽ dài thêm chút nữa nhé',
@@ -68,6 +71,9 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
   bool _completed = false;
   String _chip = AppImages.chipMain;
   late String _message = 'Bé tô nét số 1 nhé!';
+
+  /// Keeps Chíp's line (and its voice) across tablet rotations.
+  final _chipKey = GlobalKey();
 
   @override
   void dispose() {
@@ -152,6 +158,30 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final formFactor = context.formFactor;
+    if (formFactor != FormFactor.phone) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: TabletTextScale(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32, 8, 32, 24),
+              child: Column(
+                children: [
+                  _header(),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: formFactor == FormFactor.tabletLandscape
+                        ? _landscape()
+                        : _portrait(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -187,11 +217,190 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
     );
   }
 
+  Widget _header() => SessionHeader(
+        title: 'Viết ${widget.glyph.label}',
+        step: widget.step,
+        totalSteps: widget.totalSteps,
+        onBack: () => Navigator.of(context).maybePop(),
+      );
+
+  /// Pad on the left as a square as tall as the space under the header;
+  /// Chíp, the three actions and the stroke progress in a column on the right.
+  Widget _landscape() {
+    return LayoutBuilder(builder: (context, c) {
+      const gap = 32.0;
+      final column = (c.maxWidth * 0.3).clamp(300.0, 380.0);
+      final side = math.min(c.maxHeight, c.maxWidth - column - gap);
+      // Short landscape windows (small Android tablets) use phone-size
+      // buttons so the column still fits.
+      final button = c.maxHeight < 600 ? 64.0 : TabletSizes.kidTarget;
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: side, height: side, child: _paperCard()),
+          const SizedBox(width: gap),
+          SizedBox(
+            width: column,
+            height: c.maxHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              // Chíp and the actions at the top, stroke progress at the
+              // bottom; the card shrinks first when the column is short.
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Flexible(
+                        child: ChipSays(
+                          key: _chipKey,
+                          image: _chip,
+                          text: _message,
+                          layout: _chipCard,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      for (final (i, b) in _actions.indexed) ...[
+                        if (i > 0) const SizedBox(height: 14),
+                        _ActionButton(label: b.$1, onTap: b.$2, height: button),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _StrokeProgress(
+                  done: _session.currentIndex,
+                  total: widget.glyph.strokes.length,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  /// Pad centred; under it Chíp (160) with the line and the three actions.
+  Widget _portrait() {
+    return LayoutBuilder(builder: (context, c) {
+      final size = MediaQuery.sizeOf(context);
+      final pad = math.max(
+        0.0,
+        math.min(
+          math.min(size.width - 96, size.height - 360),
+          math.min(c.maxWidth, c.maxHeight - 200 - AppDepth.lip) -
+              _cardPadding * 2,
+        ),
+      );
+      return Column(
+        children: [
+          SizedBox(
+            width: pad + _cardPadding * 2,
+            // The card's bottom lip is a border, which pads the content.
+            height: pad + _cardPadding * 2 + AppDepth.lip,
+            child: _paperCard(),
+          ),
+          const SizedBox(height: 20),
+          ChipSays(
+            key: _chipKey,
+            image: _chip,
+            text: _message,
+            layout: (context, image, text) => Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Image.asset(
+                  image,
+                  key: const ValueKey('writing-chip-image'),
+                  width: 160,
+                  height: 160,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SpeechBubble(text: text),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          for (final (i, b) in _actions.indexed) ...[
+                            if (i > 0) const SizedBox(width: 12),
+                            Expanded(
+                              child: _ActionButton(
+                                label: b.$1,
+                                onTap: b.$2,
+                                height: TabletSizes.kidTarget,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  List<(String, VoidCallback)> get _actions => [
+        ('Xem mẫu', _showSample),
+        ('Nghe', _listen),
+        ('Xóa', _clear),
+      ];
+
+  Widget _chipCard(BuildContext context, String image, String text) {
+    return Container(
+      key: const ValueKey('writing-chip-card'),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      decoration: raisedDecoration(
+        accent: Subject.viet.color,
+        tint: Subject.viet.tint,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: SizedBox(
+              height: 240,
+              child: Image.asset(
+                image,
+                key: const ValueKey('writing-chip-image'),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              height: 1.25,
+              color: AppColors.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _paperCard() {
     final strokes = widget.glyph.strokes;
     final next = _session.isComplete ? null : strokes[_session.currentIndex];
     return AppCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(_cardPadding),
       child: LayoutBuilder(
         builder: (context, c) {
           final side = c.biggest.shortestSide;
@@ -292,17 +501,22 @@ class _ActionRow extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.label, required this.onTap});
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    this.height = 64,
+  });
 
   final String label;
   final VoidCallback onTap;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
       builder: (pressed) => Container(
-        height: 64,
+        height: height,
         alignment: Alignment.center,
         decoration: raisedDecoration(
           accent: Subject.viet.color,
@@ -321,6 +535,48 @@ class _ActionButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Nét 1/2" with one dot per stroke, filled for finished strokes.
+class _StrokeProgress extends StatelessWidget {
+  const _StrokeProgress({required this.done, required this.total});
+
+  final int done;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = math.min(done + 1, total);
+    return Semantics(
+      label: 'Nét $current/$total',
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          Text(
+            'Nét $current/$total',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: AppColors.text,
+            ),
+          ),
+          const SizedBox(width: 10),
+          for (var i = 0; i < total; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: i < done ? AppColors.accent : AppColors.card,
+                border: Border.all(color: AppColors.accent, width: 2),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -24,10 +24,15 @@ import '../../ui/widgets/info_pill.dart';
 import '../../ui/widgets/nav_rail.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/speech_bubble.dart';
+import 'home_tablet.dart';
 import 'kid_switcher.dart';
+import 'week_panel.dart';
 import '../../ui/widgets/subject_card.dart';
 
 const _contentMaxWidth = 560.0;
+
+String _progressText(int doneToday, int total) =>
+    doneToday == 0 ? '0/$total bài' : 'Xong $total/$total bài · $doneToday lần';
 
 const _navItems = [
   NavItem(icon: Icons.home_rounded, label: 'Học'),
@@ -113,46 +118,52 @@ class _HomeBody extends StatelessWidget {
         ? 'Hôm nay mình làm Toán nhé!'
         : 'Hôm nay mình viết $firstLabel và làm Toán nhé!';
 
-    final tablet = context.isTablet;
-    final stack = Stack(
-      children: [
-        // Sky image fading into the cream background.
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 300,
-          child: ExcludeSemantics(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  AppImages.bgSky,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 130,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.background.withOpacity(0),
-                          AppColors.background,
-                        ],
-                      ),
-                    ),
+    // Sky image fading into the cream background.
+    final sky = Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 300,
+      child: ExcludeSemantics(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              AppImages.bgSky,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 130,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.background.withOpacity(0),
+                      AppColors.background,
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+
+    final formFactor = context.formFactor;
+    if (formFactor != FormFactor.phone) {
+      return _tabletBody(context, bubbleText, sky,
+          landscape: formFactor == FormFactor.tabletLandscape);
+    }
+    return Stack(
+      children: [
+        sky,
         SafeArea(
           bottom: false,
           child: Center(
@@ -211,50 +222,74 @@ class _HomeBody extends StatelessWidget {
             ),
           ),
         ),
-        if (!tablet)
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 0,
-            child: SafeArea(
-              top: false,
-              minimum: const EdgeInsets.only(bottom: 12),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
-                  child: FloatingNavBar(
-                    items: _navItems,
-                    selected: 0,
-                    onSelect: (i) {
-                      if (i != 0) _soon(context, 'Sắp có');
-                    },
-                  ),
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 0,
+          child: SafeArea(
+            top: false,
+            minimum: const EdgeInsets.only(bottom: 12),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+                child: FloatingNavBar(
+                  items: _navItems,
+                  selected: 0,
+                  onSelect: (i) {
+                    if (i != 0) _soon(context, 'Sắp có');
+                  },
                 ),
               ),
             ),
           ),
+        ),
       ],
     );
-    if (!tablet) return stack;
-    return Row(
-      children: [
-        SafeArea(
-          right: false,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: NavRail(
-                items: _navItems,
-                selected: 0,
-                onSelect: (i) {
-                  if (i != 0) _soon(context, 'Sắp có');
-                },
-              ),
-            ),
-          ),
-        ),
-        Expanded(child: stack),
-      ],
+  }
+
+  Widget _tabletBody(
+    BuildContext context,
+    String bubbleText,
+    Widget sky, {
+    required bool landscape,
+  }) {
+    return HomeTabletBody(
+      landscape: landscape,
+      sky: sky,
+      navRail: NavRail(
+        items: _navItems,
+        selected: 0,
+        onSelect: (i) {
+          if (i != 0) _soon(context, 'Sắp có');
+        },
+      ),
+      topBar: _TopRow(
+        wide: true,
+        kid: kid,
+        level: summary.level,
+        stars: summary.totalStars,
+        onParents: () => _openParents(context),
+        onSwitchKid: () => showKidSwitcher(context),
+      ),
+      hero: HomeHeroCard(
+        bubbleText: bubbleText,
+        progressText: _progressText(summary.lessonsToday, lessonTotal),
+        onStart: () => context.push('/lesson'),
+      ),
+      weekPanel: WeekPanel(
+        learnedWeekdays: summary.learnedWeekdays,
+        masteredWriting: summary.masteredWriting,
+        writingTotal: writingLadder.length,
+        mathLevel: summary.mathLevelIndex + 1,
+        mathTotal: mathLevels.length,
+      ),
+      reward: reward == null ? null : _RewardPill(reward: reward!),
+      subjects: (columns) => _SubjectGrid(
+        masteredWriting: summary.masteredWriting,
+        mathLevelIndex: summary.mathLevelIndex,
+        columns: columns,
+        gap: 16,
+      ),
     );
   }
 }
@@ -302,6 +337,7 @@ class _TopRow extends StatelessWidget {
     required this.stars,
     required this.onParents,
     required this.onSwitchKid,
+    this.wide = false,
   });
 
   final KidProfile? kid;
@@ -310,12 +346,21 @@ class _TopRow extends StatelessWidget {
   final VoidCallback onParents;
   final VoidCallback onSwitchKid;
 
+  /// Tablet: the stars and the parent button sit at the right edge however
+  /// narrow the greeting is (a Flexible + Spacer pair splits the free space
+  /// in half, leaving a gap on wide screens).
+  final bool wide;
+
+  Widget _alignStart(Widget child) =>
+      wide ? Align(alignment: Alignment.centerLeft, child: child) : child;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Flexible(
-          child: Semantics(
+          fit: wide ? FlexFit.tight : FlexFit.loose,
+          child: _alignStart(Semantics(
             button: true,
             label: 'Đổi bé',
             excludeSemantics: true,
@@ -386,9 +431,9 @@ class _TopRow extends StatelessWidget {
                 ),
               ),
             ),
-          ),
+          )),
         ),
-        const Spacer(),
+        if (wide) const SizedBox(width: 16) else const Spacer(),
         InfoPill(
           leading: Image.asset(AppImages.icStar,
               width: 28, height: 28, fit: BoxFit.contain),
@@ -474,9 +519,7 @@ class _ChipBlock extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        doneToday == 0
-                            ? '0/$total bài'
-                            : 'Xong $total/$total bài · $doneToday lần',
+                        _progressText(doneToday, total),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -543,10 +586,14 @@ class _SubjectGrid extends StatelessWidget {
   const _SubjectGrid({
     required this.masteredWriting,
     required this.mathLevelIndex,
+    this.columns = 2,
+    this.gap = 12,
   });
 
   final int masteredWriting;
   final int mathLevelIndex;
+  final int columns;
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
@@ -584,14 +631,15 @@ class _SubjectGrid extends StatelessWidget {
     ];
     return Column(
       children: [
-        for (var i = 0; i < cards.length; i += 2) ...[
-          if (i > 0) const SizedBox(height: 12),
+        for (var i = 0; i < cards.length; i += columns) ...[
+          if (i > 0) SizedBox(height: gap),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: cards[i]),
-              const SizedBox(width: 12),
-              Expanded(child: cards[i + 1]),
+              for (var j = 0; j < columns; j++) ...[
+                if (j > 0) SizedBox(width: gap),
+                Expanded(child: cards[i + j]),
+              ],
             ],
           ),
         ],

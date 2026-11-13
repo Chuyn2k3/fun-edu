@@ -6,10 +6,18 @@ import 'object_grid.dart';
 
 /// Tap objects to number them 1, 2, 3...; then pick the total below.
 class TapCountBoard extends StatefulWidget {
-  const TapCountBoard({super.key, required this.q, required this.onAnswered});
+  const TapCountBoard({
+    super.key,
+    required this.q,
+    required this.onAnswered,
+    this.answerHeight = 72,
+    this.arrange,
+  });
 
   final CountQuestion q;
   final ValueChanged<bool> onAnswered;
+  final double answerHeight;
+  final SplitArrange? arrange;
 
   @override
   State<TapCountBoard> createState() => _TapCountBoardState();
@@ -31,22 +39,38 @@ class _TapCountBoardState extends State<TapCountBoard> {
 
   @override
   Widget build(BuildContext context) {
+    final arrange = widget.arrange;
+    if (arrange != null) {
+      return arrange(
+        _grid(),
+        ChoiceAnswers(
+          choices: widget.q.choices,
+          answer: widget.q.answer,
+          onAnswered: widget.onAnswered,
+          tileHeight: widget.answerHeight,
+          vertical: true,
+        ),
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ObjectGrid(
-          count: widget.q.n,
-          marked: _numbers.keys.toSet(),
-          numbers: _numbers,
-          onTapObject: _tap,
-        ),
+        _grid(),
         const SizedBox(height: 24),
         ChoiceAnswers(
           choices: widget.q.choices,
           answer: widget.q.answer,
           onAnswered: widget.onAnswered,
+          tileHeight: widget.answerHeight,
         ),
       ],
     );
   }
+
+  Widget _grid() => ObjectGrid(
+        count: widget.q.n,
+        marked: _numbers.keys.toSet(),
+        numbers: _numbers,
+        onTapObject: _tap,
+      );
 }

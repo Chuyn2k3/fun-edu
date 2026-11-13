@@ -11,6 +11,7 @@ class ChipSays extends ConsumerStatefulWidget {
     required this.image,
     required this.text,
     this.speakFirst = true,
+    this.layout,
     super.key,
   });
 
@@ -20,6 +21,11 @@ class ChipSays extends ConsumerStatefulWidget {
   /// Set to false when the screen reads something else on opening, so the
   /// two do not talk over each other.
   final bool speakFirst;
+
+  /// Custom arrangement of the Chíp image and the line (tablet layouts).
+  /// When null, the image sits left of a speech bubble, 88 pt tall.
+  final Widget Function(BuildContext context, String image, String text)?
+      layout;
 
   @override
   ConsumerState<ChipSays> createState() => _ChipSaysState();
@@ -51,6 +57,8 @@ class _ChipSaysState extends ConsumerState<ChipSays> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = widget.layout;
+    if (layout != null) return layout(context, widget.image, widget.text);
     return SizedBox(
       height: 88,
       child: Row(

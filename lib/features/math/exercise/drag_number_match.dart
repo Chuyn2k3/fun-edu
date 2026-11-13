@@ -3,14 +3,28 @@ import 'package:flutter/material.dart';
 import '../../../math/math_question.dart';
 import '../../../ui/theme/depth.dart';
 import '../../../ui/theme/tokens.dart';
+import 'choice_answers.dart';
 import 'object_grid.dart';
 
 /// Drag (or tap) a number tile into the dashed slot to match the objects.
 class DragNumberMatch extends StatefulWidget {
-  const DragNumberMatch({super.key, required this.q, required this.onAnswered});
+  const DragNumberMatch({
+    super.key,
+    required this.q,
+    required this.onAnswered,
+    this.tileSize = _DragNumberMatchState._size,
+    this.arrange,
+  });
 
   final MatchQuestion q;
   final ValueChanged<bool> onAnswered;
+
+  /// Side of the number tiles and of the slot.
+  final double tileSize;
+
+  /// When set, the objects and the slot are the question; the number tiles
+  /// are stacked as the answers.
+  final SplitArrange? arrange;
 
   @override
   State<DragNumberMatch> createState() => _DragNumberMatchState();
@@ -48,35 +62,34 @@ class _DragNumberMatchState extends State<DragNumberMatch> {
 
   @override
   Widget build(BuildContext context) {
+    final arrange = widget.arrange;
+    if (arrange != null) {
+      return arrange(
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ObjectGrid(count: widget.q.n),
+            const SizedBox(height: 20),
+            _slot(),
+          ],
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < widget.q.choices.length; i++) ...[
+              if (i > 0) const SizedBox(height: 16),
+              _draggable(widget.q.choices[i]),
+            ],
+          ],
+        ),
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ObjectGrid(count: widget.q.n),
         const SizedBox(height: 20),
-        DragTarget<int>(
-          onWillAcceptWithDetails: (_) => !_done,
-          onAcceptWithDetails: (d) => _drop(d.data),
-          builder: (context, candidates, _) => SizedBox(
-            key: const ValueKey('match-slot'),
-            width: _size,
-            height: _size,
-            child: CustomPaint(
-              painter: _DashedPainter(highlight: candidates.isNotEmpty),
-              child: Center(
-                child: _placed == null
-                    ? null
-                    : Text(
-                        '$_placed',
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.text,
-                        ),
-                      ),
-              ),
-            ),
-          ),
-        ),
+        _slot(),
         const SizedBox(height: 28),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -91,8 +104,33 @@ class _DragNumberMatchState extends State<DragNumberMatch> {
     );
   }
 
+  Widget _slot() => DragTarget<int>(
+        onWillAcceptWithDetails: (_) => !_done,
+        onAcceptWithDetails: (d) => _drop(d.data),
+        builder: (context, candidates, _) => SizedBox(
+          key: const ValueKey('match-slot'),
+          width: widget.tileSize,
+          height: widget.tileSize,
+          child: CustomPaint(
+            painter: _DashedPainter(highlight: candidates.isNotEmpty),
+            child: Center(
+              child: _placed == null
+                  ? null
+                  : Text(
+                      '$_placed',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.text,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      );
+
   Widget _draggable(int v) {
-    final tile = _Tile(v);
+    final tile = _Tile(v, size: widget.tileSize);
     return GestureDetector(
       key: ValueKey('match-tile-$v'),
       onTap: () => _drop(v),
@@ -109,14 +147,15 @@ class _DragNumberMatchState extends State<DragNumberMatch> {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile(this.value);
+  const _Tile(this.value, {required this.size});
   final int value;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: _DragNumberMatchState._size,
-      height: _DragNumberMatchState._size,
+      width: size,
+      height: size,
       alignment: Alignment.center,
       decoration: raisedDecoration(
         accent: Subject.toan.color,

@@ -145,6 +145,7 @@ class HomeSummary {
     required this.masteredWriting,
     this.mathLevelIndex = 0,
     this.lessonsToday = 0,
+    this.learnedWeekdays = const {},
   });
 
   final int totalStars;
@@ -154,6 +155,9 @@ class HomeSummary {
 
   /// Lessons finished today; the home card shows the lesson as done when > 0.
   final int lessonsToday;
+
+  /// Weekdays of this week with a finished lesson, 1 = Monday .. 7 = Sunday.
+  final Set<int> learnedWeekdays;
 
   int get level => 1 + masteredWriting ~/ 3;
 }
@@ -171,9 +175,11 @@ final homeSummaryProvider = FutureProvider<HomeSummary>((ref) async {
   final stats = await repo.glyphStats();
   final mastered =
       writingLadder.where((id) => stats[id]?.mastered ?? false).length;
+  final weekdays = await repo.learnedWeekdaysThisWeek();
   return HomeSummary(
     totalStars: await repo.totalStars(),
-    learnedDaysThisWeek: (await repo.learnedWeekdaysThisWeek()).length,
+    learnedDaysThisWeek: weekdays.length,
+    learnedWeekdays: weekdays,
     masteredWriting: mastered,
     mathLevelIndex: await ref.watch(mathLevelIndexProvider.future),
     lessonsToday: await repo.lessonsCompletedToday(),

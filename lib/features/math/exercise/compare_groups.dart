@@ -4,14 +4,24 @@ import '../../../math/math_question.dart';
 import '../../../ui/theme/depth.dart';
 import '../../../ui/widgets/pressable.dart';
 import '../../../ui/theme/tokens.dart';
+import 'choice_answers.dart';
 import 'object_grid.dart';
 
 /// Two white cards side by side; tapping a card picks that side.
 class CompareGroups extends StatefulWidget {
-  const CompareGroups({super.key, required this.q, required this.onAnswered});
+  const CompareGroups({
+    super.key,
+    required this.q,
+    required this.onAnswered,
+    this.arrange,
+  });
 
   final CompareQuestion q;
   final ValueChanged<bool> onAnswered;
+
+  /// When set, the two groups are the answers, stacked; the question part
+  /// is empty (the screen shows the prompt).
+  final SplitArrange? arrange;
 
   @override
   State<CompareGroups> createState() => _CompareGroupsState();
@@ -43,6 +53,21 @@ class _CompareGroupsState extends State<CompareGroups> {
 
   @override
   Widget build(BuildContext context) {
+    final arrange = widget.arrange;
+    if (arrange != null) {
+      return arrange(
+        const SizedBox.shrink(),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _card(Side.left, widget.q.left),
+            const SizedBox(height: 16),
+            _card(Side.right, widget.q.right),
+          ],
+        ),
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

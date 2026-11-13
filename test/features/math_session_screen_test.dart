@@ -13,6 +13,7 @@ import 'package:funedu/math/math_level.dart';
 import 'package:funedu/math/math_question.dart';
 import 'package:funedu/math/question_generator.dart';
 import 'package:funedu/ui/assets.dart';
+import 'package:funedu/ui/widgets/pressable.dart';
 
 MathLevel _level(String id) => mathLevels.firstWhere((l) => l.id == id);
 
@@ -36,8 +37,10 @@ Future<_Result> _pump(
   final result = _Result();
   await t.pumpWidget(
     ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)],
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)
+      ],
       child: MaterialApp(
         home: MathSessionScreen(
           level: _level(levelId),
@@ -126,8 +129,8 @@ void main() {
   /// First seed whose first question matches [a] op [b].
   int seedFor(String levelId, int a, int b, bool plus) {
     for (var seed = 0; seed < 5000; seed++) {
-      final q = generateQuestions(_level(levelId), Random(seed), count: 5)
-          .first as ArithmeticQuestion;
+      final q = generateQuestions(_level(levelId), Random(seed), count: 5).first
+          as ArithmeticQuestion;
       if (q.a == a && q.b == b && q.plus == plus) return seed;
     }
     fail('no seed for $a $b');
@@ -173,6 +176,58 @@ void main() {
         'ghep-so-10',
         'cong-tru-20'
       ]) {
+        testWidgets('$id at $size', (t) async {
+          await _pump(t, id, size: size);
+          expect(t.takeException(), isNull);
+          expect(find.text('Câu 1/5'), findsOneWidget);
+        });
+      }
+    }
+  });
+
+  List<Rect> tiles(WidgetTester t) => t
+      .widgetList(find.descendant(
+          of: find.byType(ChoiceAnswers), matching: find.byType(Pressable)))
+      .map((w) => t.getRect(find.byWidget(w)))
+      .toList();
+
+  for (final id in const ['cong-5', 'dem-10']) {
+    testWidgets('tablet landscape $id: answers column right of the question',
+        (t) async {
+      await _pump(t, id, size: const Size(1366, 1024));
+      final q = t.getRect(find.byKey(const ValueKey('math-question-area')));
+      final rs = tiles(t);
+      expect(rs.length, 3);
+      for (final r in rs) {
+        expect(r.left, greaterThan(q.right));
+        expect(r.height, greaterThanOrEqualTo(96));
+      }
+      expect(rs[1].top, greaterThan(rs[0].bottom));
+      expect(t.takeException(), isNull);
+    });
+  }
+
+  testWidgets('tablet portrait: phone layout, max width 720, tiles >= 96',
+      (t) async {
+    await _pump(t, 'cong-5', size: const Size(1024, 1366));
+    final rs = tiles(t);
+    expect(rs.length, 3);
+    for (final r in rs) {
+      expect(r.height, greaterThanOrEqualTo(96));
+      expect((r.top - rs.first.top).abs(), lessThanOrEqualTo(1));
+    }
+    expect(rs.last.right - rs.first.left, lessThanOrEqualTo(720));
+    expect(t.takeException(), isNull);
+  });
+
+  group('no overflow landscape', () {
+    for (final id in const [
+      'dem-10',
+      'so-sanh-10',
+      'ghep-so-10',
+      'cong-tru-20'
+    ]) {
+      for (final size in const [Size(1366, 1024), Size(1133, 744)]) {
         testWidgets('$id at $size', (t) async {
           await _pump(t, id, size: size);
           expect(t.takeException(), isNull);

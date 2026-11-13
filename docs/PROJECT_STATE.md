@@ -116,10 +116,10 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | 1A | Ảnh 3D, nét mẫu tạm (nét cơ bản + số 0–9), lưu sao/ngày học, "Bài hôm nay", trang chủ, màn tập viết, màn xong bài, bản đồ Viết | Xong |
 | 1B | Toán 9 cấp, 3 dạng bài, màn Toán, bài xếp cấp lần đầu, bản đồ Toán, bài hôm nay gồm Viết + Toán | Xong |
 | 1C | Giọng đọc (giọng máy), nhiều hồ sơ bé, cổng người lớn, lần đầu mở app có đồng ý, giới hạn giờ + giờ ngủ, góc ba mẹ 5 tab, phần thưởng thật, xóa toàn bộ dữ liệu, chính sách quyền riêng tư | Xong |
-| 1D (đang làm) | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại | Đang làm |
+| 1D (đang làm) | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ | Đang làm |
 | Ảnh | Thay 13 ảnh độ phân giải cao | Xong (trừ ngọn lửa) |
 
-Trạng thái kiểm tra cuối: `flutter analyze` sạch, **373 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI (chủ dự án đã chạy thử trên iPhone ở giai đoạn 0).
+Trạng thái kiểm tra cuối: `flutter analyze` sạch, **426 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI (chủ dự án đã chạy thử trên iPhone ở giai đoạn 0).
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
@@ -136,19 +136,21 @@ Trạng thái kiểm tra cuối: `flutter analyze` sạch, **373 test đạt** t
 - Bé bị lùi cấp Toán thì ô trên bản đồ khóa lại (không thông báo, nhưng bé thấy).
 - Giọng đọc: chuyển hẳn sang route khác có thể cắt câu đầu của màn mới (hiện chưa xảy ra vì các màn nói đều đổi tại chỗ); "Đúng rồi!" có thể bị câu hỏi kế cắt ngang.
 - `CNAME` (tên miền web `hocvui.ibme.edu.vn`) đã bị xóa trên nhánh `chipchip` — **không gộp `chipchip` vào `new-web` hay nhánh GitHub Pages** khi chưa khôi phục.
+- iPad: màn Toán dọc dùng bố cục điện thoại rộng 720 nên còn khoảng trống dưới đáp án; màn viết dọc còn khoảng trống dưới hàng nút.
 - Nút "Chơi", "Sưu tập", "Nhà Chíp" trên trang chủ và môn Tiếng Việt, Tiếng Anh còn hiện "Sắp có".
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-1. **Chủ dự án chạy thử bản 1C trên máy thật**, gom lỗi/ý kiến → sửa trước.
-2. **Giai đoạn 2 — bắt đầu thu tiền** (cần spec + kế hoạch riêng trước khi code):
+1. **Hoàn tất 1D** (các task còn lại của kế hoạch `.superpowers/sdd/2026-11-13-giai-doan-1d-muot-va-ipad`), rồi chủ dự án chạy thử trên iPhone và iPad thật.
+2. **Chủ dự án chạy thử bản 1C trên máy thật**, gom lỗi/ý kiến → sửa trước.
+3. **Giai đoạn 2 — bắt đầu thu tiền** (cần spec + kế hoạch riêng trước khi code):
    - Backend **Java Spring Boot + PostgreSQL** trên máy chủ Oracle (24 GB RAM, 100 GB SSD) — tài khoản gia đình, đồng bộ tiến độ, xác thực giao dịch Apple/Google, sao lưu ra nơi khác.
    - Gói năm/tháng (mua qua Apple/Google, khôi phục giao dịch); quyết định giá và số cấp miễn phí mỗi môn (**đang mở**).
    - Viết chữ cái (thường, hoa, dấu thanh); Tiếng Việt âm/vần theo sách Tiếng Việt 1 (có giáo viên rà); in phiếu tập tô PDF.
    - Trò chơi đầu tiên **Đua tên lửa** (một mình, 2 bé chung máy đối kháng/thay phiên; ảnh bìa đã có `docs/superpowers/specs/assets/cover-rocket.webp`).
    - Thống kê ẩn danh (đã hoãn ở 1C) — dịch vụ Java nhỏ.
    - Tùy chọn: đổi giọng máy sang file âm thanh tạo sẵn bằng Google Cloud TTS (lớp `Speaker` đã sẵn để thay).
-3. **Giai đoạn 3–5:** Tiếng Anh, Toán đến 100, các trò Kéo co/Xây tháp/Tàu chở hàng/Bắn bóng bay, nuôi Chíp Chíp, Vở của bé, giấy khen, báo cáo tuần, trang quản trị + AI sinh nội dung, ba mẹ tự tạo bộ câu hỏi; giai đoạn 4 chơi qua mạng, "Bé khám phá" (vòng kín), web ba mẹ (React); giai đoạn 5 đảo Sinh học/Địa lý/Lịch sử.
+4. **Giai đoạn 3–5:** Tiếng Anh, Toán đến 100, các trò Kéo co/Xây tháp/Tàu chở hàng/Bắn bóng bay, nuôi Chíp Chíp, Vở của bé, giấy khen, báo cáo tuần, trang quản trị + AI sinh nội dung, ba mẹ tự tạo bộ câu hỏi; giai đoạn 4 chơi qua mạng, "Bé khám phá" (vòng kín), web ba mẹ (React); giai đoạn 5 đảo Sinh học/Địa lý/Lịch sử.
 
 ## 9. Lịch sử quyết định quan trọng (tóm tắt)
 

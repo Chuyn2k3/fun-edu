@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/home/home_screen.dart';
+import 'package:funedu/features/home/week_panel.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/profile/avatars.dart';
 import 'package:funedu/profile/kid_repository.dart';
@@ -90,8 +91,11 @@ void _setSize(WidgetTester tester, double w, double h) {
 }
 
 void main() {
+  tabletLayoutTests();
+
   for (final size in const [Size(1024, 1366), Size(1366, 1024)]) {
-    testWidgets('tablet ${size.width.toInt()}x${size.height.toInt()} dùng NavRail',
+    testWidgets(
+        'tablet ${size.width.toInt()}x${size.height.toInt()} dùng NavRail',
         (tester) async {
       _setSize(tester, size.width, size.height);
       await tester.pumpWidget(_app(_fakes(), []));
@@ -309,5 +313,99 @@ void main() {
     await tester.pumpWidget(_app(_fakes(), <String>[]));
     await tester.pumpAndSettle();
     expect(find.text('0/3 bài'), findsOneWidget);
+  });
+}
+
+void tabletLayoutTests() {
+  for (final size in const [
+    Size(1366, 1024),
+    Size(1133, 744),
+    Size(744, 1133),
+    Size(960, 600),
+  ]) {
+    testWidgets('tablet: no overflow at $size', (tester) async {
+      _setSize(tester, size.width, size.height);
+      await tester.pumpWidget(_app(_fakes(), []));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  Rect rectOf(WidgetTester t, Finder f) => t.getRect(f);
+
+  testWidgets(
+      'tablet landscape: hero and WeekPanel side by side, subjects in one row',
+      (tester) async {
+    _setSize(tester, 1366, 1024);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    final hero = rectOf(tester, find.byKey(const ValueKey('home-hero')));
+    final week = rectOf(tester, find.byType(WeekPanel));
+    expect(week.left, greaterThan(hero.right));
+    expect((week.top - hero.top).abs(), lessThanOrEqualTo(1));
+    expect(hero.height, greaterThanOrEqualTo(300));
+    expect((week.height - hero.height).abs(), lessThanOrEqualTo(1));
+    final tops = tester
+        .widgetList(find.byType(SubjectCard))
+        .map((w) => tester.getTopLeft(find.byWidget(w)).dy)
+        .toList();
+    expect(tops.length, 4);
+    for (final y in tops) {
+      expect((y - tops.first).abs(), lessThanOrEqualTo(1));
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tablet portrait: subjects 2x2, WeekPanel below them',
+      (tester) async {
+    _setSize(tester, 1024, 1366);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    final rects = tester
+        .widgetList(find.byType(SubjectCard))
+        .map((w) => tester.getRect(find.byWidget(w)))
+        .toList();
+    expect(rects.length, 4);
+    expect((rects[0].top - rects[1].top).abs(), lessThanOrEqualTo(1));
+    expect((rects[2].top - rects[3].top).abs(), lessThanOrEqualTo(1));
+    expect(rects[2].top, greaterThan(rects[0].bottom));
+    final hero = rectOf(tester, find.byKey(const ValueKey('home-hero')));
+    expect(hero.height, greaterThanOrEqualTo(320));
+    final week = rectOf(tester, find.byType(WeekPanel));
+    expect(week.top, greaterThan(rects[3].bottom));
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final size in const [Size(1366, 1024), Size(1024, 1366)]) {
+    testWidgets('tablet $size: parent button at the right edge',
+        (tester) async {
+      _setSize(tester, size.width, size.height);
+      await tester.pumpWidget(_app(_fakes(), []));
+      await tester.pumpAndSettle();
+      final lock = tester.getRect(find.byIcon(Icons.lock_outline_rounded));
+      final hero = rectOf(tester, find.byKey(const ValueKey('home-hero')));
+      // The 48 pt round button ends where the content column ends.
+      expect(hero.right - lock.center.dx, lessThanOrEqualTo(24 + 1));
+    });
+  }
+
+  testWidgets('phone has no WeekPanel', (tester) async {
+    _setSize(tester, 390, 844);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    expect(find.byType(WeekPanel), findsNothing);
+    expect(find.byKey(const ValueKey('home-hero')), findsNothing);
+  });
+
+  testWidgets('tablet hero: play button 110, Chip >= 260 tall', (tester) async {
+    _setSize(tester, 1366, 1024);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    final play = tester.getSize(find.byKey(const ValueKey('home-hero-play')));
+    expect(play.width, greaterThanOrEqualTo(110));
+    final chip = tester.getSize(find.byKey(const ValueKey('home-hero-chip')));
+    expect(chip.height, greaterThanOrEqualTo(260));
+    await tester.tap(_labeled('Bắt đầu bài hôm nay'));
+    await tester.pumpAndSettle();
   });
 }

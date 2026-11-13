@@ -160,4 +160,80 @@ void main() {
     expect(flashing(), isTrue);
     await t.pumpAndSettle();
   });
+
+  for (final size in const [Size(1133, 744), Size(744, 1133), Size(960, 600)]) {
+    testWidgets('tablet: no overflow at $size', (t) async {
+      await _pump(t, size: size);
+      expect(t.takeException(), isNull);
+      final pad = t.getRect(find.byType(TracePad));
+      expect(pad.width, pad.height);
+    });
+  }
+
+  Rect buttonRect(WidgetTester t, String label) => t.getRect(find
+      .ancestor(of: find.text(label), matching: find.byType(Container))
+      .first);
+
+  testWidgets('tablet landscape: pad left, Chip card and stacked buttons right',
+      (t) async {
+    await _pump(t, size: const Size(1366, 1024));
+    final pad = t.getRect(find.byType(TracePad));
+    expect(pad.width, pad.height);
+    expect(pad.height, greaterThan(800));
+    final card = t.getRect(find.byKey(const ValueKey('writing-chip-card')));
+    expect(pad.right, lessThan(card.left));
+    final chip = t.getRect(find.byKey(const ValueKey('writing-chip-image')));
+    expect(chip.height, greaterThanOrEqualTo(220));
+    final rects = [
+      for (final l in ['Xem mẫu', 'Nghe', 'Xóa']) buttonRect(t, l)
+    ];
+    for (final r in rects) {
+      expect(r.height, greaterThanOrEqualTo(80));
+      expect(r.left, greaterThan(pad.right));
+      expect((r.left - rects.first.left).abs(), lessThanOrEqualTo(1));
+    }
+    expect(rects[1].top, greaterThan(rects[0].bottom));
+    expect(rects[2].top, greaterThan(rects[1].bottom));
+    expect(rects[0].top, greaterThan(card.bottom));
+    expect(find.text('Nét 1/2'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('tablet portrait: buttons in one row below the pad', (t) async {
+    await _pump(t, size: const Size(1024, 1366));
+    final pad = t.getRect(find.byType(TracePad));
+    expect(pad.width, pad.height);
+    expect(pad.width, 1024 - 96);
+    final rects = [
+      for (final l in ['Xem mẫu', 'Nghe', 'Xóa']) buttonRect(t, l)
+    ];
+    for (final r in rects) {
+      expect(r.top, greaterThan(pad.bottom));
+      expect((r.top - rects.first.top).abs(), lessThanOrEqualTo(1));
+      expect(r.height, greaterThanOrEqualTo(80));
+    }
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('rotating mid-stroke discards the stroke without errors',
+      (t) async {
+    final completed = await _pump(t, size: const Size(1366, 1024));
+    final o = t.getTopLeft(find.byType(TracePad));
+    final side = t.getSize(find.byType(TracePad)).width;
+    final g = await t.startGesture(o + Offset(0.1 * side, 0.3 * side));
+    await g.moveBy(Offset(0.2 * side, 0));
+    await t.pump();
+    t.view.physicalSize = const Size(1024, 1366);
+    await t.pump();
+    await g.moveBy(Offset(0.2 * side, 0));
+    await g.up();
+    await t.pump();
+    expect(t.takeException(), isNull);
+    final pad = t.getRect(find.byType(TracePad));
+    expect(pad.width, pad.height);
+    expect(find.text('Bé tô nét số 1 nhé!'), findsOneWidget);
+    expect(find.text('Giỏi quá! Giờ tô nét 2 nhé.'), findsNothing);
+    expect(completed, isEmpty);
+    await t.pumpAndSettle();
+  });
 }

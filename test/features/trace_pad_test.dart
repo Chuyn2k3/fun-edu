@@ -21,6 +21,40 @@ Future<List<Stroke>> _pump(WidgetTester t, double side) async {
 }
 
 void main() {
+  testWidgets('a resize mid-stroke drops the stroke', (t) async {
+    final got = <Stroke>[];
+    final side = ValueNotifier<double>(300);
+    addTearDown(side.dispose);
+    await t.pumpWidget(MaterialApp(
+      home: Center(
+        child: ValueListenableBuilder<double>(
+          valueListenable: side,
+          builder: (_, s, __) => SizedBox(
+            width: s,
+            height: s,
+            child: TracePad(onStrokeEnd: got.add),
+          ),
+        ),
+      ),
+    ));
+    var o = t.getTopLeft(find.byType(TracePad));
+    final g = await t.startGesture(o + const Offset(30, 30));
+    await g.moveBy(const Offset(60, 0));
+    await t.pump();
+    side.value = 400;
+    await t.pump();
+    await g.moveBy(const Offset(60, 0));
+    await g.up();
+    await t.pump();
+    expect(got, isEmpty);
+    expect(t.takeException(), isNull);
+    // The pad still works afterwards.
+    o = t.getTopLeft(find.byType(TracePad));
+    await t.dragFrom(o + const Offset(40, 40), const Offset(300, 0));
+    expect(got, hasLength(1));
+    expect(got.single.points.first.x, closeTo(0.1, 0.01));
+  });
+
   _crayonTest();
   _perfTests();
   testWidgets('maps drag to normalized coordinates (300)', (t) async {
