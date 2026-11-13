@@ -10,9 +10,11 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
 import '../../ui/assets.dart';
+import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
 import '../../ui/widgets/chip_says.dart';
+import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/session_header.dart';
 import '../../voice/speaker.dart';
 import '../trace/trace_pad.dart';
@@ -297,29 +299,25 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: Ink(
+    return Pressable(
+      onTap: onTap,
+      builder: (pressed) => Container(
         height: 64,
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(AppRadii.tile),
-          boxShadow: const [AppShadows.card],
+        alignment: Alignment.center,
+        decoration: raisedDecoration(
+          accent: Subject.viet.color,
+          tint: Subject.viet.tint,
+          radius: AppRadii.tile,
+          pressed: pressed,
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.tile),
-          onTap: onTap,
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.text,
-                ),
-              ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: AppColors.text,
             ),
           ),
         ),

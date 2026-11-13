@@ -27,7 +27,7 @@ Nguồn đầy đủ: **spec** `docs/superpowers/specs/2026-11-12-fun-edu-overha
   - Nền kem `background` `#FBF5EC` có chấm bi `dot` `#EADFCF`; thẻ trắng `card`; chữ navy `text` `#22284A`, chữ phụ `textMuted` `#5B6385`.
   - Màu môn (enum `Subject`): Viết cam, Tiếng Việt tím, Toán xanh dương, Tiếng Anh xanh lá — mỗi môn có `color` và `tint`.
 - **Font Nunito** (đóng kèm trong `assets/fonts/`), tiêu đề đậm 800–900.
-- **Thẻ trắng** = MỘT `BoxDecoration` có cả `color: AppColors.card` và `AppShadows.card`. **Không** để một Container chỉ có bóng (không màu) phủ lên `Material` trắng — sẽ ra màu xám (lỗi đã gặp nhiều lần). Nút trắng: `Material(transparency) > Ink(decoration có màu) > InkWell`.
+- **Thẻ nổi (candy)** = `raisedDecoration(accent:, tint:)` trong `lib/ui/theme/depth.dart` (nền chuyển màu, gờ màu dày 5px ở đáy, bóng có màu). Thẻ bé bấm được bọc `Pressable` để lún xuống khi chạm; góc ba mẹ giữ `InkWell`. Thẻ vẫn là MỘT `BoxDecoration` có cả nền và bóng. **Không** để một Container chỉ có bóng (không màu) phủ lên `Material` trắng — sẽ ra màu xám (lỗi đã gặp nhiều lần). Nút trắng: `Material(transparency) > Ink(decoration có màu) > InkWell`.
 - **Nút cho bé ≥ 64 pt**, góc ba mẹ ≥ 48. Chữ đạt tương phản ≥ 4.5:1 (có `contrastRatio` và test).
 - **Icon app:** minh họa phẳng nét sáp màu (chim sẻ cầm bút sáp trên nền vàng), nguồn `docs/superpowers/specs/assets/generated/app-icon-source.webp`, tạo lại bằng `python3 tools/assets/make_app_icons.py`. Đã bỏ kiểu 3D bóng cho icon vì trông "giả AI"; ảnh 3D trong app vẫn giữ (có thể đổi sang phong cách phẳng sau).
 - **Linh vật Chíp Chíp:** chim sẻ con nâu kem, khăn quàng cam, cầm bút sáp cam. 7 tư thế: chính, vui, giơ ngón cái, ngạc nhiên, động viên, ngủ (mũ ngủ), đang viết. Ảnh nguồn đã duyệt: `docs/superpowers/specs/assets/generated/` (bản độ phân giải cao) và `docs/superpowers/specs/assets/` (bản mẫu ban đầu).
@@ -116,6 +116,7 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | 1A | Ảnh 3D, nét mẫu tạm (nét cơ bản + số 0–9), lưu sao/ngày học, "Bài hôm nay", trang chủ, màn tập viết, màn xong bài, bản đồ Viết | Xong |
 | 1B | Toán 9 cấp, 3 dạng bài, màn Toán, bài xếp cấp lần đầu, bản đồ Toán, bài hôm nay gồm Viết + Toán | Xong |
 | 1C | Giọng đọc (giọng máy), nhiều hồ sơ bé, cổng người lớn, lần đầu mở app có đồng ý, giới hạn giờ + giờ ngủ, góc ba mẹ 5 tab, phần thưởng thật, xóa toàn bộ dữ liệu, chính sách quyền riêng tư | Xong |
+| 1D (đang làm) | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card` | Đang làm |
 | Ảnh | Thay 13 ảnh độ phân giải cao | Xong (trừ ngọn lửa) |
 
 Trạng thái kiểm tra cuối: `flutter analyze` sạch, **373 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI (chủ dự án đã chạy thử trên iPhone ở giai đoạn 0).

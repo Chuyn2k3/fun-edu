@@ -15,10 +15,12 @@ import '../../progress/progress_repository.dart';
 import '../../rewards/reward_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/floating_nav_bar.dart';
 import '../../ui/widgets/info_pill.dart';
+import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/speech_bubble.dart';
 import 'kid_switcher.dart';
 import '../../ui/widgets/subject_card.dart';
@@ -243,11 +245,7 @@ class _RewardPill extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [AppShadows.card],
-      ),
+      decoration: raisedDecoration(radius: AppRadii.pill),
       child: Row(
         children: [
           Image.asset(AppImages.icStar,
@@ -299,11 +297,7 @@ class _TopRow extends StatelessWidget {
             child: Material(
               type: MaterialType.transparency,
               child: Ink(
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  boxShadow: const [AppShadows.card],
-                ),
+                decoration: raisedDecoration(radius: AppRadii.pill),
                 child: InkWell(
                   key: const ValueKey('greeting-pill'),
                   borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -381,18 +375,18 @@ class _TopRow extends StatelessWidget {
           label: 'Góc ba mẹ',
           excludeSemantics: true,
           child: Material(
-            color: AppColors.card,
-            shape: const CircleBorder(),
-            elevation: 3,
-            shadowColor: AppShadows.card.color,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onParents,
-              child: const SizedBox(
-                width: 48,
-                height: 48,
-                child: Icon(Icons.lock_outline_rounded,
-                    size: 22, color: AppColors.text),
+            type: MaterialType.transparency,
+            child: Ink(
+              width: 48,
+              height: 48,
+              decoration: raisedDecoration(radius: 24),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onParents,
+                child: const Center(
+                  child: Icon(Icons.lock_outline_rounded,
+                      size: 22, color: AppColors.text),
+                ),
               ),
             ),
           ),
@@ -427,41 +421,46 @@ class _ChipBlock extends StatelessWidget {
             right: 0,
             bottom: 0,
             height: 112,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 18, 96, 18),
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(AppRadii.card),
-                boxShadow: const [AppShadows.card],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      'Bài hôm nay',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        height: 1,
-                        color: AppColors.text,
+            child: ExcludeSemantics(
+              child: Pressable(
+                onTap: onStart,
+                builder: (pressed) => Container(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 96, 18),
+                  decoration: raisedDecoration(
+                    accent: AppColors.accent,
+                    tint: Subject.viet.tint,
+                    pressed: pressed,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Bài hôm nay',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                            color: AppColors.text,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        doneToday == 0
+                            ? '0/$total bài'
+                            : 'Xong $total/$total bài · $doneToday lần',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    doneToday == 0
-                        ? '0/$total bài'
-                        : 'Xong $total/$total bài · $doneToday lần',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

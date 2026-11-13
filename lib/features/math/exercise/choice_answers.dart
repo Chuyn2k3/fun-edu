@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../ui/theme/depth.dart';
+import '../../../ui/widgets/pressable.dart';
 import '../../../ui/theme/tokens.dart';
 
 /// Three big answer buttons. Reports `true` on the correct pick and `false`
@@ -77,34 +79,36 @@ class _ChoiceAnswersState extends State<ChoiceAnswers> {
     final enabled = !_done && !wrong;
     return Opacity(
       opacity: wrong ? 0.4 : 1,
-      child: Material(
-        type: MaterialType.transparency,
-        child: Ink(
-          height: 72,
-          decoration: BoxDecoration(
-            color: correct ? AppColors.primary : Subject.toan.tint,
-            border: Border.all(
-              color: Subject.toan.color.withOpacity(0.35),
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(AppRadii.tile),
-            boxShadow: const [AppShadows.card],
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadii.tile),
-            onTap: enabled ? () => _pick(v) : null,
-            child: Center(
-              child: Text(
-                '$v',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: correct ? AppColors.card : AppColors.text,
-                ),
+      child: Pressable(
+        onTap: enabled ? () => _pick(v) : null,
+        builder: (pressed) {
+          final raised = raisedDecoration(
+            accent: Subject.toan.color,
+            tint: Subject.toan.tint,
+            radius: AppRadii.tile,
+            pressed: pressed,
+          );
+          return Container(
+            height: 72,
+            alignment: Alignment.center,
+            decoration: correct
+                ? BoxDecoration(
+                    color: AppColors.primary,
+                    border: raised.border,
+                    borderRadius: raised.borderRadius,
+                    boxShadow: raised.boxShadow,
+                  )
+                : raised,
+            child: Text(
+              '$v',
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: correct ? AppColors.card : AppColors.text,
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

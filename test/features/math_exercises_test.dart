@@ -46,9 +46,13 @@ void main() {
         (tester) async {
       await tester.pumpWidget(host(ChoiceAnswers(
           choices: const [2, 3, 4], answer: 3, onAnswered: (_) {})));
-      final ink = tester.widget<Ink>(find.byType(Ink).first);
-      final deco = ink.decoration! as BoxDecoration;
-      expect(deco.color, Subject.toan.tint);
+      final deco = tester
+          .widget<Container>(find
+              .ancestor(of: find.text('2'), matching: find.byType(Container))
+              .first)
+          .decoration! as BoxDecoration;
+      final g = deco.gradient! as LinearGradient;
+      expect(g.colors.last, Color.lerp(AppColors.card, Subject.toan.tint, 0.9));
     });
 
     testWidgets('the correct tile is filled with the primary colour',
@@ -57,9 +61,10 @@ void main() {
           choices: const [2, 3, 4], answer: 3, onAnswered: (_) {})));
       await tester.tap(find.text('3'));
       await tester.pump();
-      final ink = tester.widget<Ink>(
-          find.ancestor(of: find.text('3'), matching: find.byType(Ink)));
-      expect((ink.decoration! as BoxDecoration).color, AppColors.primary);
+      final box = tester.widget<Container>(find
+          .ancestor(of: find.text('3'), matching: find.byType(Container))
+          .first);
+      expect((box.decoration! as BoxDecoration).color, AppColors.primary);
     });
 
     testWidgets('resets when rebuilt with another question', (tester) async {

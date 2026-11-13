@@ -7,6 +7,7 @@ import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/level_repository.dart';
 import '../../screen_time/screen_time_service.dart';
+import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../parent_unlock.dart';
 import 'parent_card.dart';
@@ -133,11 +134,7 @@ class _ActionCard extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: Ink(
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          boxShadow: const [AppShadows.card],
-        ),
+        decoration: raisedDecoration(),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.card),
           onTap: onTap,

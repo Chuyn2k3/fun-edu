@@ -7,6 +7,8 @@ import '../../learning/writing_ladder.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../ui/theme/depth.dart';
+import '../../ui/widgets/pressable.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../writing/writing_screen.dart';
@@ -78,11 +80,7 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
                               child: Container(
                                 width: 48,
                                 height: 48,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.card,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [AppShadows.card],
-                                ),
+                                decoration: raisedDecoration(radius: 24),
                                 child: const Icon(
                                   Icons.chevron_left_rounded,
                                   size: 36,
@@ -145,50 +143,46 @@ class _GlyphTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadii.tile);
-    return Material(
-      type: MaterialType.transparency,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: radius,
-          boxShadow: const [AppShadows.card],
+    return Pressable(
+      onTap: onTap,
+      builder: (pressed) => Container(
+        decoration: raisedDecoration(
+          accent: Subject.viet.color,
+          tint: Subject.viet.tint,
+          radius: AppRadii.tile,
+          pressed: pressed,
         ),
-        child: InkWell(
-          borderRadius: radius,
-          onTap: onTap,
-          child: Stack(
-            children: [
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.text,
-                      ),
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.text,
                     ),
                   ),
                 ),
               ),
-              if (mastered)
-                Positioned(
-                  top: 6,
-                  right: 8,
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    key: const ValueKey('mastered'),
-                    size: 24,
-                    color: Subject.viet.color,
-                  ),
+            ),
+            if (mastered)
+              Positioned(
+                top: 6,
+                right: 8,
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  key: const ValueKey('mastered'),
+                  size: 24,
+                  color: Subject.viet.color,
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

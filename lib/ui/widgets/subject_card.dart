@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/depth.dart';
 import '../theme/tokens.dart';
+import 'pressable.dart';
 import 'progress_ring.dart';
 
 /// Tile for one subject: 3D icon on a tint, title, subtitle and either a
@@ -44,18 +46,16 @@ class SubjectCard extends StatelessWidget {
             color: subject.color,
             size: 44,
           );
-    const radius = BorderRadius.all(Radius.circular(AppRadii.card));
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        borderRadius: radius,
-        boxShadow: [AppShadows.card],
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: radius,
-          onTap: onTap,
+    return Pressable(
+      onTap: onTap,
+      builder: (pressed) => Container(
+        decoration: raisedDecoration(
+          accent: subject.color,
+          tint: subject.tint,
+          pressed: pressed,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(

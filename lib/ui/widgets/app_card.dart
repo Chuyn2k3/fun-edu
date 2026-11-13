@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
+import '../theme/depth.dart';
 
 /// White card with large radius and a soft, wide shadow.
 class AppCard extends StatelessWidget {
@@ -17,11 +17,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: padding,
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: const [AppShadows.card],
-      ),
+      decoration: raisedDecoration(),
       child: child,
     );
   }

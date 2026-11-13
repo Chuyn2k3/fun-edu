@@ -124,7 +124,8 @@ void main() {
         .map((c) => c.decoration)
         .whereType<BoxDecoration>()
         .where((d) => d.boxShadow != null && d.boxShadow!.isNotEmpty);
-    expect(decorated.first.color, AppColors.card);
+    expect((decorated.first.gradient! as LinearGradient).colors.first,
+        AppColors.card);
   });
 
   testWidgets('hiện đủ nội dung trang chủ', (tester) async {

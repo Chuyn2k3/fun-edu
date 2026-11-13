@@ -6,6 +6,8 @@ import '../../learning/today_lesson_provider.dart';
 import '../../math/math_level.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
+import '../../ui/theme/depth.dart';
+import '../../ui/widgets/pressable.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../math/math_session_screen.dart';
@@ -65,11 +67,7 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                               child: Container(
                                 width: 48,
                                 height: 48,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.card,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [AppShadows.card],
-                                ),
+                                decoration: raisedDecoration(radius: 24),
                                 child: const Icon(
                                   Icons.chevron_left_rounded,
                                   size: 36,
@@ -136,23 +134,29 @@ class _LevelTile extends StatelessWidget {
     final done = index < current;
     final isCurrent = index == current;
     final locked = index > current;
-    final radius = BorderRadius.circular(AppRadii.tile);
     return Opacity(
       opacity: locked ? 0.5 : 1,
-      child: Material(
-        type: MaterialType.transparency,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: radius,
-            boxShadow: const [AppShadows.card],
-            border: isCurrent
-                ? Border.all(color: AppColors.accent, width: 3)
-                : null,
-          ),
-          child: InkWell(
-            borderRadius: radius,
-            onTap: onTap,
+      child: Pressable(
+        onTap: onTap,
+        builder: (pressed) {
+          final raised = raisedDecoration(
+            accent: Subject.toan.color,
+            tint: Subject.toan.tint,
+            radius: AppRadii.tile,
+            pressed: pressed,
+          );
+          return Container(
+            // The current lesson gets a solid orange lip.
+            decoration: isCurrent
+                ? raised.copyWith(
+                    border: Border(
+                      bottom: BorderSide(
+                        width: pressed ? AppDepth.pressedLip : AppDepth.lip,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  )
+                : raised,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 72),
               child: Padding(
@@ -212,8 +216,8 @@ class _LevelTile extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

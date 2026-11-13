@@ -9,6 +9,7 @@ import '../../progress/progress_repository.dart';
 import '../../screen_time/screen_time_service.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 
 enum GlyphState { mastered, practicing, notStarted }
@@ -123,11 +124,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: const [AppShadows.card],
-      ),
+      decoration: raisedDecoration(),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(

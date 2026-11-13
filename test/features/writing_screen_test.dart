@@ -30,8 +30,10 @@ Future<List<int>> _pump(WidgetTester t, {Size? size, Glyph? glyph}) async {
   final completed = <int>[];
   await t.pumpWidget(
     ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)],
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)
+      ],
       child: MaterialApp(
         home: WritingScreen(
           glyph: glyph ?? _glyph,
@@ -98,8 +100,7 @@ void main() {
     expect(find.text('Bé tô nét số 1 nhé!'), findsOneWidget);
   });
 
-  testWidgets('Xem mẫu does not block drawing',
-      (t) async {
+  testWidgets('Xem mẫu does not block drawing', (t) async {
     await _pump(t);
     await t.tap(find.text('Nghe'));
     await t.pump();
@@ -128,10 +129,13 @@ void main() {
 
   testWidgets('action buttons are filled with the card color', (t) async {
     await _pump(t);
-    final ink = t.widget<Ink>(
-      find.ancestor(of: find.text('Nghe'), matching: find.byType(Ink)),
+    final box = t.widget<Container>(
+      find
+          .ancestor(of: find.text('Nghe'), matching: find.byType(Container))
+          .first,
     );
-    expect((ink.decoration! as BoxDecoration).color, AppColors.card);
+    final g = (box.decoration! as BoxDecoration).gradient! as LinearGradient;
+    expect(g.colors.first, AppColors.card);
   });
 
   for (final size in const [Size(375, 667), Size(1024, 1366)]) {

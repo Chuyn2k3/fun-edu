@@ -31,11 +31,3 @@ abstract final class AppRadii {
   static const tile = 18.0;
   static const pill = 999.0;
 }
-
-abstract final class AppShadows {
-  static const card = BoxShadow(
-    color: Color(0x1F503C28),
-    blurRadius: 32,
-    offset: Offset(0, 14),
-  );
-}

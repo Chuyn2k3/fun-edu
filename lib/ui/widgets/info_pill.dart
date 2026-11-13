@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/depth.dart';
 import '../theme/tokens.dart';
 
 /// Small rounded chip: a leading widget (icon/emoji) plus a label.
@@ -13,11 +14,7 @@ class InfoPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [AppShadows.card],
-      ),
+      decoration: raisedDecoration(radius: AppRadii.pill),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

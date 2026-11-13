@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../ui/theme/depth.dart';
 import '../ui/theme/tokens.dart';
 import '../ui/widgets/app_card.dart';
 import '../ui/widgets/dotted_background.dart';
@@ -262,11 +263,7 @@ class _GateKey extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(AppRadii.tile),
-            boxShadow: const [AppShadows.card],
-          ),
+          decoration: raisedDecoration(radius: AppRadii.tile),
           child: InkWell(
             borderRadius: BorderRadius.circular(AppRadii.tile),
             onTap: onTap,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/depth.dart';
 import '../theme/tokens.dart';
 
 /// White speech bubble with a squared bottom-left corner (the "tail").
@@ -12,15 +13,13 @@ class SpeechBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.only(
+      decoration: raisedDecoration(radius: 20).copyWith(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
           bottomRight: Radius.circular(20),
           bottomLeft: Radius.circular(6),
         ),
-        boxShadow: [AppShadows.card],
       ),
       child: Text(
         text,

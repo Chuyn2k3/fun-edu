@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../math/math_question.dart';
+import '../../../ui/theme/depth.dart';
 import '../../../ui/theme/tokens.dart';
 import 'object_grid.dart';
 
@@ -117,14 +118,10 @@ class _Tile extends StatelessWidget {
       width: _DragNumberMatchState._size,
       height: _DragNumberMatchState._size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Subject.toan.tint,
-        border: Border.all(
-          color: Subject.toan.color.withOpacity(0.35),
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.tile),
-        boxShadow: const [AppShadows.card],
+      decoration: raisedDecoration(
+        accent: Subject.toan.color,
+        tint: Subject.toan.tint,
+        radius: AppRadii.tile,
       ),
       child: Text(
         '$value',

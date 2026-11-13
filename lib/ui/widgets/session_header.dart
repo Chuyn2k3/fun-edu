@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../progress/progress_repository.dart';
 import '../assets.dart';
+import '../theme/depth.dart';
 import '../theme/tokens.dart';
 import 'info_pill.dart';
 
@@ -44,11 +45,7 @@ class SessionHeader extends ConsumerWidget {
                 child: Container(
                   width: 48,
                   height: 48,
-                  decoration: const BoxDecoration(
-                    color: AppColors.card,
-                    shape: BoxShape.circle,
-                    boxShadow: [AppShadows.card],
-                  ),
+                  decoration: raisedDecoration(radius: 24),
                   child: const Icon(
                     Icons.chevron_left_rounded,
                     size: 36,

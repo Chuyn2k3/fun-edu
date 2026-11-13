@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/depth.dart';
 import '../theme/tokens.dart';
 
 class NavItem {
@@ -26,11 +27,7 @@ class FloatingNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [AppShadows.card],
-      ),
+      decoration: raisedDecoration(radius: AppRadii.pill),
       child: Row(
         children: [
           for (var i = 0; i < items.length; i++)

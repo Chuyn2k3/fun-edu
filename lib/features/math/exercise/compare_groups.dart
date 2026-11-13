@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../math/math_question.dart';
+import '../../../ui/theme/depth.dart';
+import '../../../ui/widgets/pressable.dart';
 import '../../../ui/theme/tokens.dart';
 import 'object_grid.dart';
 
@@ -52,27 +54,17 @@ class _CompareGroupsState extends State<CompareGroups> {
   }
 
   Widget _card(Side side, int count) {
-    return Material(
-      type: MaterialType.transparency,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          border: Border.all(
-            color: Subject.toan.color.withOpacity(0.35),
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          boxShadow: const [AppShadows.card],
+    return Pressable(
+      key: ValueKey(side == Side.left ? 'compare-left' : 'compare-right'),
+      onTap: () => _pick(side),
+      builder: (pressed) => Container(
+        decoration: raisedDecoration(
+          accent: Subject.toan.color,
+          tint: Subject.toan.tint,
+          pressed: pressed,
         ),
-        child: InkWell(
-          key: ValueKey(side == Side.left ? 'compare-left' : 'compare-right'),
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          onTap: () => _pick(side),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: ObjectGrid(count: count, maxPerRow: 3),
-          ),
-        ),
+        padding: const EdgeInsets.all(12),
+        child: ObjectGrid(count: count, maxPerRow: 3),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:funedu/ui/widgets/pressable.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/subject/writing_map_screen.dart';
@@ -99,11 +100,11 @@ void main() {
     await _pump(t, master: true);
     final ngang = find.ancestor(
       of: find.text('Nét ngang'),
-      matching: find.byType(InkWell),
+      matching: find.byType(Pressable),
     );
     final xien = find.ancestor(
       of: find.text('Nét xiên'),
-      matching: find.byType(InkWell),
+      matching: find.byType(Pressable),
     );
     expect(
       find.descendant(
@@ -150,7 +151,7 @@ void main() {
     expect(find.text('Viết Nét xiên'), findsNothing);
     final xien = find.ancestor(
       of: find.text('Nét xiên'),
-      matching: find.byType(InkWell),
+      matching: find.byType(Pressable),
     );
     expect(
       find.descendant(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 
 /// White rounded card with a bold title, shared by the parent-corner tabs.
@@ -12,11 +13,7 @@ class ParentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: const [AppShadows.card],
-      ),
+      decoration: raisedDecoration(),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
