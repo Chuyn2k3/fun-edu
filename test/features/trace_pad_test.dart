@@ -22,6 +22,7 @@ Future<List<Stroke>> _pump(WidgetTester t, double side) async {
 
 void main() {
   _crayonTest();
+  _perfTests();
   testWidgets('maps drag to normalized coordinates (300)', (t) async {
     final got = await _pump(t, 300);
     final o = t.getTopLeft(find.byType(TracePad));
@@ -98,5 +99,50 @@ void _crayonTest() {
     final o = t.getTopLeft(find.byType(TracePad));
     await t.dragFrom(o + const Offset(30, 30), const Offset(100, 0));
     expect(t.takeException(), isNull);
+  });
+}
+
+void _perfTests() {
+  testWidgets('guide layer does not repaint while drawing', (t) async {
+    GuidePainter.paintCount = 0;
+    await t.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: TracePad(
+              onStrokeEnd: (_) {},
+              guide: const [
+                Stroke([Point2(0.1, 0.1), Point2(0.9, 0.1)]),
+                Stroke([Point2(0.1, 0.5), Point2(0.9, 0.9)]),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(GuidePainter.paintCount, 1);
+    final o = t.getTopLeft(find.byType(TracePad));
+    final g = await t.startGesture(o + const Offset(30, 30));
+    for (var i = 1; i <= 50; i++) {
+      await g.moveTo(o + Offset(30 + i * 4.0, 30 + i * 2.0));
+      await t.pump();
+    }
+    await g.up();
+    await t.pump();
+    expect(GuidePainter.paintCount, 1);
+  });
+
+  testWidgets('ink keeps every point of a long stroke', (t) async {
+    final got = await _pump(t, 300);
+    final o = t.getTopLeft(find.byType(TracePad));
+    final g = await t.startGesture(o + const Offset(10, 10));
+    for (var i = 1; i <= 600; i++) {
+      await g.moveTo(o + Offset(10 + (i % 280), 10 + (i % 200)));
+    }
+    await g.up();
+    expect(got, hasLength(1));
+    expect(got.first.points.length, greaterThanOrEqualTo(600));
   });
 }

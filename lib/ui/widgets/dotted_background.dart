@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 
 /// Cream background with a regular grid of soft dots, behind [child].
+///
+/// The dots live in their own repaint layer, so repainting [child] (scrolling,
+/// animation) never redraws them.
 class DottedBackground extends StatelessWidget {
   const DottedBackground({super.key, required this.child});
 
@@ -10,7 +13,21 @@ class DottedBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(painter: const _DotsPainter(), child: child);
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        const Positioned.fill(
+          child: RepaintBoundary(
+            child: CustomPaint(
+              isComplex: true,
+              willChange: false,
+              painter: _DotsPainter(),
+            ),
+          ),
+        ),
+        child,
+      ],
+    );
   }
 }
 

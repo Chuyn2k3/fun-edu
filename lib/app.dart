@@ -6,11 +6,14 @@ import 'progress/level_repository.dart';
 import 'router.dart';
 import 'router_location.dart';
 import 'screen_time/screen_time_guard.dart';
+import 'ui/precache.dart';
 import 'ui/theme/tokens.dart';
 import 'ui/theme/app_theme.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
+
+  static bool _precached = false;
 
   // GoRouter's redirect is synchronous, so the async checks live here:
   // no kid -> /setup, then an unplaced kid -> /placement.
@@ -63,6 +66,14 @@ class App extends ConsumerWidget {
       routerDelegate: appRouter.routerDelegate,
       backButtonDispatcher: screenTimeBackDispatcher,
       builder: (context, child) {
+        if (!_precached) {
+          _precached = true;
+          // Needs a context under MaterialApp (MediaQuery -> right 2x/3x
+          // variant). Task 3 moves this into the splash.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) precacheAppImages(context);
+          });
+        }
         // Hold back the navigator until we know where to go: while loading,
         // and while a redirect is due but has not taken effect yet.
         return ListenableBuilder(

@@ -33,7 +33,13 @@ class TracePad extends StatefulWidget {
 
 class _TracePadState extends State<TracePad> {
   int? _activePointer;
-  List<Point2> _current = [];
+  final _CurrentStroke _current = _CurrentStroke();
+
+  @override
+  void dispose() {
+    _current.dispose();
+    super.dispose();
+  }
 
   Point2 _normalize(Offset local, double side) => Point2(
     (local.dx / side).clamp(0.0, 1.0),
@@ -43,26 +49,27 @@ class _TracePadState extends State<TracePad> {
   void _down(PointerDownEvent e, double side) {
     if (_activePointer != null) return;
     _activePointer = e.pointer;
-    setState(() => _current = [_normalize(e.localPosition, side)]);
+    _current.start(_normalize(e.localPosition, side), side);
   }
 
   void _move(PointerMoveEvent e, double side) {
     if (e.pointer != _activePointer) return;
-    setState(() => _current = [..._current, _normalize(e.localPosition, side)]);
+    _current.add(_normalize(e.localPosition, side), side);
   }
 
   void _up(PointerUpEvent e, double side) {
     if (e.pointer != _activePointer) return;
-    final points = [..._current, _normalize(e.localPosition, side)];
+    _current.add(_normalize(e.localPosition, side), side);
+    final points = List<Point2>.of(_current.points);
     _activePointer = null;
-    setState(() => _current = []);
+    _current.clear();
     widget.onStrokeEnd(Stroke(points));
   }
 
   void _cancel(PointerCancelEvent e) {
     if (e.pointer != _activePointer) return;
     _activePointer = null;
-    setState(() => _current = []);
+    _current.clear();
   }
 
   @override
@@ -80,15 +87,26 @@ class _TracePadState extends State<TracePad> {
               onPointerMove: (e) => _move(e, side),
               onPointerUp: (e) => _up(e, side),
               onPointerCancel: _cancel,
-              child: CustomPaint(
-                painter: _PadPainter(
-                  crayon: widget.crayon,
-                  guide: widget.guide,
-                  inked: [
-                    ...widget.inked,
-                    if (_current.isNotEmpty) Stroke(_current),
-                  ],
-                ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Static layer: dashed guide, painted once per guide/size.
+                  RepaintBoundary(
+                    child: CustomPaint(
+                      painter: GuidePainter(widget.guide),
+                    ),
+                  ),
+                  // Live layer: repainted by the notifier, not by setState.
+                  RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _InkPainter(
+                        inked: widget.inked,
+                        current: _current,
+                        crayon: widget.crayon,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -98,48 +116,116 @@ class _TracePadState extends State<TracePad> {
   }
 }
 
-class _PadPainter extends CustomPainter {
-  _PadPainter({
-    required this.guide,
-    required this.inked,
-    required this.crayon,
-  });
+Path _pathOf(Stroke s, double side) {
+  final path = Path();
+  for (var i = 0; i < s.points.length; i++) {
+    final p = s.points[i];
+    if (i == 0) {
+      path.moveTo(p.x * side, p.y * side);
+    } else {
+      path.lineTo(p.x * side, p.y * side);
+    }
+  }
+  return path;
+}
+
+/// The stroke being drawn. Points and the pixel path grow in place; listeners
+/// (the ink painter) are told after each change.
+class _CurrentStroke extends ChangeNotifier {
+  final List<Point2> points = [];
+  Path path = Path();
+
+  void start(Point2 p, double side) {
+    points
+      ..clear()
+      ..add(p);
+    path = Path()..moveTo(p.x * side, p.y * side);
+    notifyListeners();
+  }
+
+  void add(Point2 p, double side) {
+    points.add(p);
+    path.lineTo(p.x * side, p.y * side);
+    notifyListeners();
+  }
+
+  void clear() {
+    if (points.isEmpty) return;
+    points.clear();
+    path = Path();
+    notifyListeners();
+  }
+}
+
+/// Paints the dashed guide strokes. Dash paths are computed once per size and
+/// cached; repaints only when the guide list or the size changes.
+@visibleForTesting
+class GuidePainter extends CustomPainter {
+  GuidePainter(this.guide);
+
+  /// Number of times any guide painter has painted (test hook).
+  static int paintCount = 0;
 
   final List<Stroke> guide;
-  final List<Stroke> inked;
-  final bool crayon;
+  double? _cachedSide;
+  List<Path> _dashes = const [];
 
-  Path _path(Stroke s, double side) {
-    final path = Path();
-    for (var i = 0; i < s.points.length; i++) {
-      final p = s.points[i];
-      if (i == 0) {
-        path.moveTo(p.x * side, p.y * side);
-      } else {
-        path.lineTo(p.x * side, p.y * side);
+  List<Path> _dashPaths(double side) {
+    if (_cachedSide == side) return _dashes;
+    final dash = side * 0.04;
+    final out = <Path>[];
+    for (final s in guide) {
+      if (s.points.length < 2) continue;
+      for (final PathMetric m in _pathOf(s, side).computeMetrics()) {
+        for (var d = 0.0; d < m.length; d += dash * 2) {
+          out.add(m.extractPath(d, d + dash));
+        }
       }
     }
-    return path;
+    _cachedSide = side;
+    return _dashes = out;
   }
 
   @override
   void paint(Canvas canvas, Size size) {
+    paintCount++;
     final side = size.shortestSide;
-    final guidePaint = Paint()
+    final paint = Paint()
       ..color = _guideColor
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = side * 0.02;
-    for (final s in guide) {
-      if (s.points.length < 2) continue;
-      for (final PathMetric m in _path(s, side).computeMetrics()) {
-        final dash = side * 0.04;
-        for (var d = 0.0; d < m.length; d += dash * 2) {
-          canvas.drawPath(m.extractPath(d, d + dash), guidePaint);
-        }
-      }
+    for (final d in _dashPaths(side)) {
+      canvas.drawPath(d, paint);
     }
+  }
 
+  @override
+  bool shouldRepaint(GuidePainter oldDelegate) {
+    final old = oldDelegate;
+    if (identical(old.guide, guide)) return false;
+    if (old.guide.length != guide.length) return true;
+    for (var i = 0; i < guide.length; i++) {
+      if (!identical(old.guide[i], guide[i])) return true;
+    }
+    return false;
+  }
+}
+
+class _InkPainter extends CustomPainter {
+  _InkPainter({
+    required this.inked,
+    required this.current,
+    required this.crayon,
+  }) : super(repaint: current);
+
+  final List<Stroke> inked;
+  final _CurrentStroke current;
+  final bool crayon;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final side = size.shortestSide;
     final inkPaint = Paint()
       ..color = _inkColor
       ..style = PaintingStyle.stroke
@@ -148,18 +234,31 @@ class _PadPainter extends CustomPainter {
       ..strokeWidth = side * _inkWidthFactor;
     for (final s in inked) {
       if (s.points.isEmpty) continue;
-      if (s.points.length == 1) {
-        final p = s.points.first;
-        canvas.drawCircle(
-          Offset(p.x * side, p.y * side),
-          side * _inkWidthFactor / 2,
-          inkPaint..style = PaintingStyle.fill,
-        );
-        inkPaint.style = PaintingStyle.stroke;
-      } else {
-        canvas.drawPath(_path(s, side), inkPaint);
-        if (crayon) _paintCrayonTexture(canvas, s, side);
-      }
+      _paintStroke(canvas, inkPaint, side, s.points, _pathOf(s, side));
+    }
+    if (current.points.isNotEmpty) {
+      _paintStroke(canvas, inkPaint, side, current.points, current.path);
+    }
+  }
+
+  void _paintStroke(
+    Canvas canvas,
+    Paint inkPaint,
+    double side,
+    List<Point2> points,
+    Path path,
+  ) {
+    if (points.length == 1) {
+      final p = points.first;
+      canvas.drawCircle(
+        Offset(p.x * side, p.y * side),
+        side * _inkWidthFactor / 2,
+        inkPaint..style = PaintingStyle.fill,
+      );
+      inkPaint.style = PaintingStyle.stroke;
+    } else {
+      canvas.drawPath(path, inkPaint);
+      if (crayon) _paintCrayonTexture(canvas, path, side);
     }
   }
 
@@ -170,19 +269,21 @@ class _PadPainter extends CustomPainter {
     Offset(0.004, 0.014),
   ];
 
-  void _paintCrayonTexture(Canvas canvas, Stroke s, double side) {
+  void _paintCrayonTexture(Canvas canvas, Path base, double side) {
     final thin = Paint()
       ..color = _inkColor.withOpacity(0.35)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..strokeWidth = side * _inkWidthFactor * 0.25;
-    final base = _path(s, side);
     for (final o in _crayonOffsets) {
       canvas.drawPath(base.shift(Offset(o.dx * side, o.dy * side)), thin);
     }
   }
 
   @override
-  bool shouldRepaint(_PadPainter old) => true;
+  bool shouldRepaint(_InkPainter old) =>
+      !identical(old.inked, inked) ||
+      old.crayon != crayon ||
+      !identical(old.current, current);
 }

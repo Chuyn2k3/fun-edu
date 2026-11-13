@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/dev/gallery_screen.dart';
 import 'package:funedu/ui/theme/app_theme.dart';
+import 'package:funedu/ui/widgets/dotted_background.dart';
 import 'package:funedu/ui/widgets/floating_nav_bar.dart';
 import 'package:funedu/ui/widgets/primary_button.dart';
 import 'package:funedu/ui/widgets/progress_ring.dart';
@@ -12,6 +13,27 @@ Widget host(Widget child) => MaterialApp(
     );
 
 void main() {
+  testWidgets('DottedBackground wraps its painter in a RepaintBoundary',
+      (tester) async {
+    await tester.pumpWidget(host(const DottedBackground(child: Text('x'))));
+    final boundary = find.descendant(
+      of: find.byType(DottedBackground),
+      matching: find.byType(RepaintBoundary),
+    );
+    expect(boundary, findsAtLeastNWidgets(1));
+    final paints = tester
+        .widgetList<CustomPaint>(find.descendant(
+          of: find.byType(DottedBackground),
+          matching: find.byType(CustomPaint),
+        ))
+        .where((c) => c.painter != null);
+    expect(paints, isNotEmpty);
+    for (final c in paints) {
+      expect(c.isComplex, isTrue);
+      expect(c.willChange, isFalse);
+    }
+  });
+
   testWidgets('PrimaryButton is at least 64 tall and fires onPressed', (tester) async {
     var taps = 0;
     await tester.pumpWidget(host(PrimaryButton(label: 'Bắt đầu', onPressed: () => taps++)));
