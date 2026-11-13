@@ -4,13 +4,14 @@
 
 **Goal:** Make the kid app feel smooth and tactile (raised "candy" cards), start with a branded splash, and lay out properly on iPad in both orientations.
 
-**Architecture:** Rendering hot spots get their own repaint layers (dotted background, writing-pad guide). Depth comes from one decoration helper (`raisedDecoration`) used by every card instead of the flat `AppShadows.card`. Tablets get a uniform scale (`AdaptiveScale`) so the phone layouts grow proportionally, plus a two-column home in wide landscape. Native launch screens and a Flutter `SplashView` replace the white flash and the bare spinner.
+**Architecture:** Rendering hot spots get their own repaint layers (dotted background, writing-pad guide). Depth comes from one decoration helper (`raisedDecoration`) used by every card instead of the flat `AppShadows.card`. Tablets get their own layouts (not a scaled phone UI): a left navigation rail, wider multi-column screens and tablet-sized type and targets, chosen through one `FormFactor` helper. Native launch screens and a Flutter `SplashView` replace the white flash and the bare spinner.
 
 **Tech Stack:** Flutter 3.24.5 / Dart 3.5, Riverpod 2.6, go_router 15. No new packages.
 
 **Spec:** owner requests of 2026-11-13 (chat), recorded in `docs/PROJECT_STATE.md`; base design `docs/superpowers/specs/2026-11-12-fun-edu-overhaul-design.md` §8 (UI). Decisions made with the owner:
 - Depth style: **coloured bottom lip + coloured soft shadow + faint gradient** ("Gờ màu + bóng màu").
-- Orientation: **phones portrait only; iPad rotates freely**, landscape home uses two columns.
+- Orientation: **phones portrait only; iPad rotates freely**.
+- iPad: **a separate tablet design**, approved from wireframes (`docs/superpowers/specs/assets/ipad-wireframes.png`): left nav rail; home = big "Bài hôm nay" hero + "Tuần này" panel side by side in landscape, 4 subjects in one row (2×2 in portrait); writing = big pad left, Chip + vertical buttons right (landscape) / buttons row under the pad (portrait); math = picture left, answers column right (landscape); maps 5 columns landscape / 4 portrait; parent corner = list-detail; message screens = one centred card ≤ 640 with a larger Chip. Uniform scaling of the phone UI was rejected by the owner.
 - The owner saw jank while running **debug** builds; performance must be judged with `flutter run --profile`.
 
 ## Global Constraints
@@ -22,15 +23,16 @@
 - UI strings Vietnamese, code comments English. `flutter analyze` clean and `flutter test` all green before each commit.
 - Commit trailer on every commit:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01AFB1tQYUFMHGwNRJqmZrar`.
-- Tablet = `MediaQuery` shortest side ≥ 600 logical px (before scaling).
+- Tablet = `MediaQuery` shortest side ≥ 600 logical px. Phone layouts must stay pixel-identical to today (except the depth change of Task 2).
+- Tablet sizes: kid touch targets ≥ 80, body text +20% via `FormFactor`, never by scaling the whole tree.
 
 ## Review Focus
 
-1. **Rotating an iPad mid-session** (writing pad half-drawn, math drag in progress) — layout re-flows, no exception, the drawn stroke stays in place relative to the pad. Test in Task 4.
-2. **Taps on a scaled tablet layout** must land on the widget drawn under the finger (hit-testing through the scale). Test in Task 4.
-3. **System text size set to largest** on a phone — raised cards must grow, not clip; the lip must stay at the bottom. Test in Task 2.
-4. **Keyboard on a tablet** (parent corner kid-name field) — view insets are scaled with the layout, the field stays visible. Test in Task 4.
-5. **Very long writing session** (hundreds of points per stroke) — painting cost must not grow with the number of finished strokes' guide work per frame. Test in Task 1.
+1. **Rotating an iPad mid-session** (writing pad half-drawn, math drag in progress) — layout switches between the landscape and portrait variants without an exception; a half-drawn stroke is cleared or kept consistently, never drawn at the wrong place. Test in Task 5.
+2. **iPad split view / Slide Over** (app at 320–500 px wide on an iPad) — the phone layout must be used because the *window* is narrow; `FormFactor` reads the window size, not the device model. Test in Task 4.
+3. **System text size set to largest** on a phone — raised cards grow, do not clip; the lip stays at the bottom. Test in Task 2.
+4. **Keyboard on iPad** (parent corner kid-name field in the detail pane) — the field stays visible above the keyboard. Test in Task 6.
+5. **Very long writing session** (hundreds of points per stroke) — the guide layer does not repaint per move. Test in Task 1.
 
 ---
 
@@ -133,38 +135,101 @@ Look: background `AppColors.background` (#FBF5EC) everywhere (native and Flutter
 
 ---
 
-### Task 4: Tablet layout
+### Task 4: Tablet shell — form factor and navigation rail
 
 **Files:**
-- Create: `lib/ui/layout/adaptive_scale.dart`
-- Modify: `lib/app.dart` (wrap the routed child, inside `ScreenTimeGuard`'s parent, with `AdaptiveScale`)
-- Modify: `lib/features/home/home_screen.dart` (two-column layout when wide)
-- Modify: `lib/features/subject/{writing_map_screen,math_map_screen}.dart` (column count by width)
-- Test: `test/ui/adaptive_scale_test.dart`, `test/features/home_screen_test.dart`, `test/features/writing_screen_test.dart` (rotation case)
+- Create: `lib/ui/layout/form_factor.dart`
+- Create: `lib/ui/widgets/nav_rail.dart`
+- Modify: `lib/features/home/home_screen.dart` (only the shell: rail vs floating bar; content unchanged in this task)
+- Modify: `lib/features/dev/gallery_screen.dart` (show the rail)
+- Test: `test/ui/form_factor_test.dart`, `test/ui/widgets_test.dart`, `test/features/home_screen_test.dart`
 
 **Interfaces:**
-- Produces: `double tabletScale(Size logicalSize)` — `1.0` when shortest side < 600, else `clamp(shortestSide / 600, 1.0, 1.5)` (iPad mini 744 → 1.24, iPad 820 → 1.37, iPad Pro 1024 → 1.5). Scaled landscape widths: iPad mini 914, iPad 863, iPad Pro 911 — all two-column.
-- Produces: `class AdaptiveScale extends StatelessWidget { const AdaptiveScale({required Widget child}) }` — child sees a `MediaQuery` whose `size`, `padding`, `viewPadding`, `viewInsets` are divided by the scale, laid out in a box of `size / scale` and painted with `Transform.scale(scale, alignment: Alignment.topLeft)`.
-- Produces: `const double wideLayoutMinWidth = 840;` in `home_screen.dart` — at or above this (scaled) width the home shows two columns.
+- Produces in `form_factor.dart`:
+  - `enum FormFactor { phone, tabletPortrait, tabletLandscape }`
+  - `FormFactor formFactorOf(Size windowSize)` — `phone` when shortest side < 600; otherwise `tabletLandscape` when width > height, else `tabletPortrait`.
+  - `extension FormFactorX on BuildContext { FormFactor get formFactor; bool get isTablet; }` — reads `MediaQuery.sizeOf(this)`.
+  - `abstract final class TabletSizes { static const kidTarget = 80.0; static const textScale = 1.2; static const railWidth = 104.0; static const messageMaxWidth = 640.0; }`
+- Produces: `class NavRail extends StatelessWidget { const NavRail({required List<NavItem> items, required int selected, required ValueChanged<int> onSelect}) }` — same `NavItem` type as `FloatingNavBar`, vertical white raised pill (uses `raisedDecoration` from Task 2), each item ≥ 80×80 with icon above label, selected item on `Color(0xFFFFECDE)` with `AppColors.accent` icon and label.
 
 - [ ] **Step 1: Write failing tests**
-  - `tabletScale`: 390×844 → 1.0; 744×1133 → 1.24 (±0.01); 820×1180 → 1.37 (±0.01); 1024×1366 → 1.5; 1366×1024 → 1.5.
-  - `AdaptiveScale gives the child a smaller logical size on tablets` (view 1024×1366 @2x: child's `MediaQuery.sizeOf` == 682.7×910.7 ±0.5).
-  - `taps land on the scaled widget` (a 100×100 button at child-logical (300, 400); tap at physical-logical (450, 600) on a 1.5 scale → onTap called; tap at (300, 400) → not called).
-  - `keyboard inset is scaled` (`viewInsets.bottom` 450 → child sees 300).
-  - `home uses two columns in iPad landscape` (1366×1024 and 1180×820: the subject grid and the lesson card are side by side — `tester.getTopLeft` of the "Hôm nay học gì?" heading has x greater than the lesson card's right edge); `home stays single column on iPad portrait and phones`.
-  - `writing pad survives rotation` (pump writing screen at 1024×1366, draw half a stroke, change view to 1366×1024, pump; no exception and the pad is still a square of side min(available width, available height)).
-  - Map screens: 3 columns at scaled width ≥ 600, otherwise the current count.
-- [ ] **Step 2: Run** the test files — expected FAIL.
-- [ ] **Step 3: Implement** as specified. Home two-column: left column (max 460) = top row, Chip/lesson card, streak pill; right column = "Hôm nay học gì?" + subject grid; both scroll together in one `ListView`-free `Row` inside a `SingleChildScrollView`; floating nav bar unchanged, centred, max width 560. Keep phone layout code path identical to today.
-- [ ] **Step 4: Run** `flutter analyze && flutter test` — all PASS. Render home at 390×844, 820×1180, 1180×820 with the shot test and attach to the review.
-- [ ] **Step 5: Commit** `feat: scale kid layouts on tablets and two-column home in landscape`
+  - `formFactorOf`: 390×844 → phone; 844×390 → phone; 500×1366 (split view) → phone; 1024×1366 → tabletPortrait; 1366×1024 → tabletLandscape; 744×1133 → tabletPortrait.
+  - `NavRail shows every item at least 80×80 and calls onSelect with the index`.
+  - `home shows NavRail and no FloatingNavBar on 1024×1366 and 1366×1024; FloatingNavBar and no NavRail on 390×844`.
+- [ ] **Step 2: Run** the three files — expected FAIL.
+- [ ] **Step 3: Implement.** Home on tablet: `Row(NavRail (left, 24 px margin, full height minus safe area), Expanded(content))`; on phone the existing `Stack` with the floating bar, untouched.
+- [ ] **Step 4: Run** `flutter analyze && flutter test` — PASS.
+- [ ] **Step 5: Commit** `feat: tablet form factor and navigation rail`
 
 ---
 
-### Task 5: Docs
+### Task 5: Tablet home, writing and math
 
-**Files:** `docs/PROJECT_STATE.md` (sections 2, 3, 4, 6, 7, 8), `AGENTS.md` (add: use `raisedDecoration` for cards; tablet = `AdaptiveScale`; judge performance only in profile mode).
+**Files:**
+- Modify: `lib/features/home/home_screen.dart`
+- Modify: `lib/features/writing/writing_screen.dart`
+- Modify: `lib/features/math/math_session_screen.dart`
+- Create: `lib/features/home/week_panel.dart`
+- Modify: `lib/progress/progress_repository.dart` (expose the weekdays set in `HomeSummary` if the panel needs it: `final Set<int> learnedWeekdays` default `{}`)
+- Test: `test/features/home_screen_test.dart`, `test/features/writing_screen_test.dart`, `test/features/math_session_screen_test.dart`, `test/features/week_panel_test.dart`
+
+**Interfaces:**
+- Consumes: `FormFactor`, `TabletSizes`, `NavRail` (Task 4), `raisedDecoration`, `Pressable` (Task 2).
+- Produces: `class WeekPanel extends StatelessWidget { const WeekPanel({required Set<int> learnedWeekdays, required int masteredWriting, required int writingTotal, required int mathLevel, required int mathTotal}) }` — title "Tuần này", 7 day dots labelled `T2 T3 T4 T5 T6 T7 CN` (filled `AppColors.accent` when learned), then "N ngày học", "Chữ đã thuộc: a/b", "Cấp Toán: c/d".
+
+Layouts (from the approved wireframes):
+- **Home, tabletLandscape:** top bar (greeting left, parent button right); row: hero lesson card (flex 62) + `WeekPanel` (flex 38), equal height ≥ 300; heading "Hôm nay học gì?"; 4 subject cards in ONE row. **tabletPortrait:** hero full width (≥ 320 tall); subjects 2×2; `WeekPanel` full width under the subjects. Chip image in the hero ≥ 260 tall; play button 110.
+- **Writing, tabletLandscape:** pad on the left, square, side = available height minus header; right column (min 300, max 380): Chip reaction card (Chip ≥ 220 tall + message), then "Xem mẫu", "Nghe", "Xóa" as full-width raised buttons ≥ 80 tall, stroke progress at the bottom. **tabletPortrait:** pad centred, side = min(width − 96, height − 360); below it one row: Chip (160) + the three buttons.
+- **Math, tabletLandscape:** question area left (flex 3), answers column right (flex 2), answer tiles ≥ 96 tall. **tabletPortrait:** current phone layout with max width 720 and tiles ≥ 96.
+- Text on tablet: apply `TabletSizes.textScale` with a `MediaQuery(textScaler: …)` around kid screens' content only when `isTablet` (compose with the user's own scale: `TextScaler.linear(user.scale(1) * 1.2)`).
+
+- [ ] **Step 1: Write failing tests**
+  - Home landscape (1366×1024): hero and `WeekPanel` side by side (WeekPanel left edge > hero right edge, same top ±1); the four `SubjectCard`s share one top y (±1).
+  - Home portrait (1024×1366): subject cards form 2 rows of 2; `WeekPanel` below the last subject row.
+  - Home phone (390×844): no `WeekPanel`; layout unchanged (existing tests keep passing).
+  - `WeekPanel` fills exactly the learned weekdays `{1,2,4}` → T2, T3, T5.
+  - Writing landscape: pad's right edge < Chip card's left edge; pad is square; the three buttons are stacked vertically and each ≥ 80 tall.
+  - Writing portrait: buttons in one row below the pad.
+  - Writing rotation: draw half a stroke at 1366×1024, switch to 1024×1366, pump — no exception, the pad is square and the in-progress stroke is discarded (no stroke reported to the grader).
+  - Math landscape: every answer tile's left edge > the question area's right edge; tiles ≥ 96 tall.
+- [ ] **Step 2: Run** the test files — expected FAIL.
+- [ ] **Step 3: Implement** per the layouts above; branch on `context.formFactor` at the top of each screen's body; keep the phone branch byte-for-byte the current widget tree.
+- [ ] **Step 4: Run** `flutter analyze && flutter test` — PASS. Render each screen at 390×844, 1024×1366, 1366×1024 with the shot test (`docs/perf.md` §screenshots) and attach to the review.
+- [ ] **Step 5: Commit** `feat: tablet layouts for home, writing and math`
+
+---
+
+### Task 6: Tablet maps, parent corner and message screens
+
+**Files:**
+- Modify: `lib/features/subject/{writing_map_screen,math_map_screen}.dart`
+- Modify: `lib/parent/screens/parent_home.dart`
+- Modify: `lib/features/lesson/lesson_done_screen.dart`, `lib/features/sleep/sleep_screen.dart`, `lib/features/placement/placement_screen.dart`, `lib/parent/parent_gate.dart`, `lib/features/setup/first_run_screen.dart`
+- Test: `test/features/math_map_test.dart`, `test/features/writing_map_test.dart`, `test/parent/parent_home_test.dart`, `test/features/lesson_done_test.dart`
+
+**Interfaces:**
+- Consumes: `FormFactor`, `TabletSizes` (Task 4).
+
+Layouts:
+- **Maps:** grid columns = 5 (tabletLandscape) / 4 (tabletPortrait) / current (phone); tiles ≥ 120.
+- **Parent corner on tablet:** list-detail. Left pane 300 wide: kid chips on top, then the 5 tabs as a vertical list (icon + label, ≥ 56 tall, selected row highlighted); right pane: the selected tab's content, max width 720, scrolls on its own; no bottom navigation. Phone unchanged.
+- **Message screens** (lesson done, sleep, placement welcome/finish, parent gate, first run): content in one centred raised card, max width `TabletSizes.messageMaxWidth`, Chip image ×1.4 of its phone size.
+
+- [ ] **Step 1: Write failing tests**
+  - Maps: 1366×1024 → first row holds 5 tiles; 1024×1366 → 4; 390×844 → unchanged count.
+  - Parent corner 1366×1024: no `NavigationBar`/bottom nav; the five tab labels are visible at the same time in a column (same x ±1); tapping "Thời gian" shows the time tab content in the right pane (its left edge ≥ 300).
+  - Parent corner keyboard: on 1024×1366 with `viewInsets.bottom = 400`, focus the kid-name field in Hồ sơ; after `pumpAndSettle` the field's bottom ≤ 1366 − 400.
+  - Lesson done on 1024×1366: the card width ≤ 640 and is horizontally centred (±1).
+- [ ] **Step 2: Run** the files — expected FAIL.
+- [ ] **Step 3: Implement** as above; phone branches unchanged.
+- [ ] **Step 4: Run** `flutter analyze && flutter test` — PASS. Render the parent corner and a map at both iPad orientations for the review.
+- [ ] **Step 5: Commit** `feat: tablet layouts for maps, parent corner and message screens`
+
+---
+
+### Task 7: Docs
+
+**Files:** `docs/PROJECT_STATE.md` (sections 2, 3, 4, 6, 7, 8), `AGENTS.md` (add: use `raisedDecoration` for cards; tablet layouts branch on `context.formFactor` (never scale the phone UI); judge performance only in profile mode).
 
 - [ ] **Step 1:** Update the docs to describe depth helper, splash, tablet scaling, orientation rules, how to profile; mark 1D done in §6; move any accepted limitation to §7.
 - [ ] **Step 2:** `flutter analyze && flutter test` — PASS (no code change expected).
