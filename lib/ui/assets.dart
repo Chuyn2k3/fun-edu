@@ -14,6 +14,7 @@ abstract final class AppImages {
   static const icStar = 'assets/images/ic-star.png';
   static const icFlame = 'assets/images/ic-flame.png';
   static const icCrown = 'assets/images/ic-crown.png';
+  static const logo = 'assets/images/logo.png';
   static const bgSky = 'assets/images/bg-sky.jpg';
 
   static const all = [

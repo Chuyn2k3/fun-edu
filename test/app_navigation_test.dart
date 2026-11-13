@@ -1,5 +1,12 @@
+import 'dart:async';
+
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:funedu/app.dart';
+import 'package:funedu/data/app_database.dart';
+import 'package:funedu/features/splash/splash_view.dart';
 import 'package:funedu/profile/avatars.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/router.dart';
@@ -20,6 +27,62 @@ Future<void> _drain(WidgetTester t) async {
 String get _path => appRouter.routerDelegate.state.uri.path;
 
 void main() {
+  group('splash while loading', () {
+    testWidgets('App shows SplashView, not a spinner, while the kid is loading',
+        (t) async {
+      setSize(t, 375, 667);
+      appRouter.go('/');
+      final never = Completer<int?>();
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          currentKidIdProvider.overrideWith((ref) => never.future),
+        ],
+        child: const App(),
+      ));
+      await t.pump();
+      expect(find.byKey(const ValueKey('splash')), findsOneWidget);
+      expect(find.byType(SplashView), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('splash fades out once data is ready', (t) async {
+      setSize(t, 375, 667);
+      appRouter.go('/');
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      late int id;
+      await t.runAsync(() async {
+        id = await KidRepository(db)
+            .addKid(nickname: 'Na', avatar: kidAvatars[0], age: 5);
+        await placeKid(db, id);
+      });
+      final gate = Completer<int?>();
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          currentKidIdProvider.overrideWith((ref) => gate.future),
+        ],
+        child: const App(),
+      ));
+      await t.pump();
+      expect(find.byKey(const ValueKey('splash')), findsOneWidget);
+
+      gate.complete(id);
+      // Let drift answer the remaining providers, then run the 250 ms fade.
+      for (var i = 0; i < 6; i++) {
+        await t.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 40)));
+        await t.pump(const Duration(milliseconds: 50));
+      }
+      await t.pump(const Duration(milliseconds: 300));
+      expect(find.byKey(const ValueKey('splash')), findsNothing);
+      expect(find.text('Bài hôm nay'), findsOneWidget);
+    });
+  });
+
   Future<void> openParentCorner(WidgetTester t, {bool push = false}) async {
     if (push) {
       appRouter.push('/parent');

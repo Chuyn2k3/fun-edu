@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/splash/splash_view.dart';
 import 'profile/kid_repository.dart';
 import 'progress/level_repository.dart';
 import 'router.dart';
 import 'router_location.dart';
 import 'screen_time/screen_time_guard.dart';
 import 'ui/precache.dart';
-import 'ui/theme/tokens.dart';
 import 'ui/theme/app_theme.dart';
 
 class App extends ConsumerWidget {
@@ -66,14 +66,6 @@ class App extends ConsumerWidget {
       routerDelegate: appRouter.routerDelegate,
       backButtonDispatcher: screenTimeBackDispatcher,
       builder: (context, child) {
-        if (!_precached) {
-          _precached = true;
-          // Needs a context under MaterialApp (MediaQuery -> right 2x/3x
-          // variant). Task 3 moves this into the splash.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) precacheAppImages(context);
-          });
-        }
         // Hold back the navigator until we know where to go: while loading,
         // and while a redirect is due but has not taken effect yet.
         return ListenableBuilder(
@@ -99,15 +91,25 @@ class App extends ConsumerWidget {
                 if (context.mounted) _redirect(ref);
               });
             }
-            if (loading || due) {
-              return const ColoredBox(
-                color: AppColors.background,
-                child: Center(child: CircularProgressIndicator()),
-              );
+            final waiting = loading || due;
+            if (waiting && !_precached) {
+              _precached = true;
+              // Warm the image cache while the splash is visible. Needs a
+              // context under MaterialApp (MediaQuery -> right 2x/3x variant).
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) precacheAppImages(context);
+              });
             }
-            return ScreenTimeGuard(
-              router: appRouter,
-              child: child ?? const SizedBox.shrink(),
+            // The splash fades out as soon as data is ready (no minimum time).
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: waiting
+                  ? const SplashView()
+                  : ScreenTimeGuard(
+                      key: const ValueKey('app'),
+                      router: appRouter,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
             );
           },
         );

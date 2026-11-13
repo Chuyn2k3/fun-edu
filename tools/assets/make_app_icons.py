@@ -8,19 +8,26 @@ plain background colour at its edges. Writes:
   android/app/src/main/res/mipmap-*/ic_launcher_background.png (adaptive)
   android/app/src/main/res/mipmap-*/ic_launcher_foreground.png (adaptive, empty)
   android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+  android/app/src/main/res/drawable-*/launch_logo.png    (rounded, 160dp)
+  ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage*.png (168pt)
+  assets/images/logo.png                                 (512px, rounded)
 """
 
 import json
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 DEFAULT_SOURCE = "docs/superpowers/specs/assets/generated/app-icon-source.webp"
 ANDROID_DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
 # Adaptive icons are 108dp and launchers show about the central 72dp; the
 # logo is drawn at this size so its edges stay visible under any mask.
 ADAPTIVE_LOGO_DP = 84
+CORNER_RADIUS = 0.22  # fraction of the side, for the in-app and launch logo
+LAUNCH_LOGO_DP = 160
+LAUNCH_LOGO_IOS_PT = 168
+IN_APP_LOGO_PX = 512
 
 
 def edge_colour(im: Image.Image) -> tuple:
@@ -39,13 +46,29 @@ def adaptive_background(icon: Image.Image, n: int) -> Image.Image:
     return bg
 
 
+def rounded_logo(icon: Image.Image, n: int) -> Image.Image:
+    """The icon at n x n with rounded corners, transparent outside them."""
+    ss = 4  # draw the mask supersampled for smooth edges
+    mask = Image.new("L", (n * ss, n * ss), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        (0, 0, n * ss - 1, n * ss - 1), radius=round(n * ss * CORNER_RADIUS), fill=255
+    )
+    out = icon.resize((n, n), Image.LANCZOS).convert("RGBA")
+    out.putalpha(mask.resize((n, n), Image.LANCZOS))
+    return out
+
+
 def main() -> None:
-    src = Path(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SOURCE)
+    run(Path(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SOURCE), Path("."))
+
+
+def run(src: Path, root: Path) -> None:
+    """Writes every icon and launch image under [root] (the repo root)."""
     icon = Image.open(src).convert("RGB")
     if icon.width != icon.height:
         sys.exit(f"{src}: logo must be square, got {icon.size}")
 
-    ios = Path("ios/Runner/Assets.xcassets/AppIcon.appiconset")
+    ios = root / Path("ios/Runner/Assets.xcassets/AppIcon.appiconset")
     for entry in json.loads((ios / "Contents.json").read_text())["images"]:
         name = entry.get("filename")
         if not name:
@@ -54,7 +77,7 @@ def main() -> None:
         px = round(pts * int(entry["scale"].rstrip("x")))
         icon.resize((px, px), Image.LANCZOS).save(ios / name)
 
-    res = Path("android/app/src/main/res")
+    res = root / Path("android/app/src/main/res")
     for density, k in ANDROID_DENSITIES.items():
         d = res / f"mipmap-{density}"
         d.mkdir(exist_ok=True)
@@ -73,6 +96,19 @@ def main() -> None:
         '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n'
         "</adaptive-icon>\n"
     )
+
+    for density, k in ANDROID_DENSITIES.items():
+        d = res / f"drawable-{density}"
+        d.mkdir(exist_ok=True)
+        rounded_logo(icon, round(LAUNCH_LOGO_DP * k)).save(d / "launch_logo.png")
+
+    launch = root / "ios/Runner/Assets.xcassets/LaunchImage.imageset"
+    for suffix, k in (("", 1), ("@2x", 2), ("@3x", 3)):
+        rounded_logo(icon, LAUNCH_LOGO_IOS_PT * k).save(launch / f"LaunchImage{suffix}.png")
+
+    images = root / "assets/images"
+    images.mkdir(parents=True, exist_ok=True)
+    rounded_logo(icon, IN_APP_LOGO_PX).save(images / "logo.png")
     print("icons written")
 
 

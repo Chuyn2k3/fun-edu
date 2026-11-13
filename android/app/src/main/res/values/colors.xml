@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same cream as AppColors.background, so the launch has no colour jump. -->
+    <color name="splash_bg">#FBF5EC</color>
+</resources>
