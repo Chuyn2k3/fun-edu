@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/voice/speaker.dart';
@@ -60,5 +61,22 @@ void main() {
     final s = TtsSpeaker();
     await s.speak('xin chào');
     expect(calls, isNot(contains('speak')));
+  });
+
+  test(
+      'iOS: sets shared instance (plugin sends the category only on a real iOS host); failure there '
+      'does not stop speech', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final args = <String, Object?>{};
+    mock((c) async {
+      args[c.method] = c.arguments;
+      if (c.method == 'setSharedInstance') throw PlatformException(code: 'x');
+      return 1;
+    });
+    final s = TtsSpeaker();
+    await s.speak('xin chào');
+    expect(args['setSharedInstance'], true);
+    expect(args['speak'], 'xin chào');
   });
 }

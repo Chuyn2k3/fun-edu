@@ -82,6 +82,8 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
 
   @override
   void dispose() {
+    // Assumes in-place swaps: a route replacement could clip the next
+    // screen's first line.
     _speaker.stop();
     _timer?.cancel();
     super.dispose();
@@ -215,7 +217,7 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
         excludeSemantics: true,
         child: IconButton(
           onPressed: _speakQuestion,
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          constraints: const BoxConstraints(minWidth: 64, minHeight: 64),
           icon: const Icon(Icons.volume_up_rounded, color: AppColors.primary),
         ),
       );

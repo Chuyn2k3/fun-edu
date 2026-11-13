@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -29,6 +30,7 @@ class TtsSpeaker implements Speaker {
   Future<bool> _init() async {
     try {
       final tts = _tts ??= FlutterTts();
+      await _configureIosAudio(tts);
       final lang = await tts.setLanguage('vi-VN');
       if (lang != 1) return false;
       await tts.setSpeechRate(0.45);
@@ -37,6 +39,19 @@ class TtsSpeaker implements Speaker {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Lets speech play with the iOS ringer switch off. Failure here must not
+  /// disable speech, so it has its own guard.
+  Future<void> _configureIosAudio(FlutterTts tts) async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+    try {
+      await tts.setSharedInstance(true);
+      await tts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.playback,
+        [IosTextToSpeechAudioCategoryOptions.mixWithOthers],
+      );
+    } catch (_) {}
   }
 
   @override

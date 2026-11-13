@@ -43,6 +43,8 @@ class _ChipSaysState extends ConsumerState<ChipSays> {
 
   @override
   void dispose() {
+    // Assumes in-place swaps keep the new line; a route replacement would
+    // clip it (old element unmounts after the new one speaks).
     _speaker.stop();
     super.dispose();
   }

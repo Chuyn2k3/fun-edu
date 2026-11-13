@@ -78,7 +78,7 @@ void main() {
     final btn = find.bySemanticsLabel('Nghe câu hỏi');
     expect(btn, findsOneWidget);
     expect(t.getSize(find.byType(IconButton)).shortestSide,
-        greaterThanOrEqualTo(48));
+        greaterThanOrEqualTo(64));
     await t.tap(find.byIcon(Icons.volume_up_rounded));
     expect(fake.spoken.length, 2);
     final q = qs[0] as ArithmeticQuestion;
