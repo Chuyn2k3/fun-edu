@@ -80,6 +80,7 @@ class KidRepository {
         .go();
     await (_db.delete(_db.subjectLevels)..where((t) => t.kidId.equals(id)))
         .go();
+    await (_db.delete(_db.dailyUsage)..where((t) => t.kidId.equals(id))).go();
   }
 
   Future<List<KidProfile>> kids() =>

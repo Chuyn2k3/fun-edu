@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'profile/kid_repository.dart';
 import 'progress/level_repository.dart';
 import 'router.dart';
+import 'screen_time/screen_time_guard.dart';
 import 'ui/theme/tokens.dart';
 import 'ui/theme/app_theme.dart';
 
@@ -78,7 +79,10 @@ class App extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return child ?? const SizedBox.shrink();
+            return ScreenTimeGuard(
+              router: appRouter,
+              child: child ?? const SizedBox.shrink(),
+            );
           },
         );
       },

@@ -217,4 +217,28 @@ CREATE TABLE subject_levels (
         .recordLessonCompleted(itemsCompleted: 1);
     expect(await ProgressRepository(db, kidId: kid.id).totalStars(), 3);
   });
+
+  test('upgrading from v4 adds daily_usage and keeps the kids', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute(
+            'CREATE TABLE kid_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'nickname TEXT NOT NULL, avatar TEXT NOT NULL, age INTEGER NOT NULL, '
+            'created_at INTEGER NOT NULL)',
+          );
+          raw.execute(
+            "INSERT INTO kid_profiles (nickname, avatar, age, created_at) VALUES ('Na', 'a', 5, 1700000000)",
+          );
+          raw.execute('PRAGMA user_version = 4');
+        },
+      ),
+    );
+    addTearDown(db.close);
+    await db.into(db.dailyUsage).insert(
+          DailyUsageCompanion.insert(kidId: 1, day: '2026-11-13'),
+        );
+    expect(await db.select(db.dailyUsage).get(), hasLength(1));
+    expect(await KidRepository(db).kids(), hasLength(1));
+  });
 }

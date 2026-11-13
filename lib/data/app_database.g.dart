@@ -1812,6 +1812,236 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   }
 }
 
+class $DailyUsageTable extends DailyUsage
+    with TableInfo<$DailyUsageTable, DailyUsageData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyUsageTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+      'day', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _secondsMeta =
+      const VerificationMeta('seconds');
+  @override
+  late final GeneratedColumn<int> seconds = GeneratedColumn<int>(
+      'seconds', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns => [kidId, day, seconds];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_usage';
+  @override
+  VerificationContext validateIntegrity(Insertable<DailyUsageData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+          _dayMeta, day.isAcceptableOrUnknown(data['day']!, _dayMeta));
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('seconds')) {
+      context.handle(_secondsMeta,
+          seconds.isAcceptableOrUnknown(data['seconds']!, _secondsMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kidId, day};
+  @override
+  DailyUsageData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyUsageData(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      day: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}day'])!,
+      seconds: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}seconds'])!,
+    );
+  }
+
+  @override
+  $DailyUsageTable createAlias(String alias) {
+    return $DailyUsageTable(attachedDatabase, alias);
+  }
+}
+
+class DailyUsageData extends DataClass implements Insertable<DailyUsageData> {
+  final int kidId;
+
+  /// Local date as `yyyy-MM-dd`.
+  final String day;
+  final int seconds;
+  const DailyUsageData(
+      {required this.kidId, required this.day, required this.seconds});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
+    map['day'] = Variable<String>(day);
+    map['seconds'] = Variable<int>(seconds);
+    return map;
+  }
+
+  DailyUsageCompanion toCompanion(bool nullToAbsent) {
+    return DailyUsageCompanion(
+      kidId: Value(kidId),
+      day: Value(day),
+      seconds: Value(seconds),
+    );
+  }
+
+  factory DailyUsageData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyUsageData(
+      kidId: serializer.fromJson<int>(json['kidId']),
+      day: serializer.fromJson<String>(json['day']),
+      seconds: serializer.fromJson<int>(json['seconds']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
+      'day': serializer.toJson<String>(day),
+      'seconds': serializer.toJson<int>(seconds),
+    };
+  }
+
+  DailyUsageData copyWith({int? kidId, String? day, int? seconds}) =>
+      DailyUsageData(
+        kidId: kidId ?? this.kidId,
+        day: day ?? this.day,
+        seconds: seconds ?? this.seconds,
+      );
+  DailyUsageData copyWithCompanion(DailyUsageCompanion data) {
+    return DailyUsageData(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      day: data.day.present ? data.day.value : this.day,
+      seconds: data.seconds.present ? data.seconds.value : this.seconds,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyUsageData(')
+          ..write('kidId: $kidId, ')
+          ..write('day: $day, ')
+          ..write('seconds: $seconds')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kidId, day, seconds);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyUsageData &&
+          other.kidId == this.kidId &&
+          other.day == this.day &&
+          other.seconds == this.seconds);
+}
+
+class DailyUsageCompanion extends UpdateCompanion<DailyUsageData> {
+  final Value<int> kidId;
+  final Value<String> day;
+  final Value<int> seconds;
+  final Value<int> rowid;
+  const DailyUsageCompanion({
+    this.kidId = const Value.absent(),
+    this.day = const Value.absent(),
+    this.seconds = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyUsageCompanion.insert({
+    required int kidId,
+    required String day,
+    this.seconds = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : kidId = Value(kidId),
+        day = Value(day);
+  static Insertable<DailyUsageData> custom({
+    Expression<int>? kidId,
+    Expression<String>? day,
+    Expression<int>? seconds,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
+      if (day != null) 'day': day,
+      if (seconds != null) 'seconds': seconds,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyUsageCompanion copyWith(
+      {Value<int>? kidId,
+      Value<String>? day,
+      Value<int>? seconds,
+      Value<int>? rowid}) {
+    return DailyUsageCompanion(
+      kidId: kidId ?? this.kidId,
+      day: day ?? this.day,
+      seconds: seconds ?? this.seconds,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (seconds.present) {
+      map['seconds'] = Variable<int>(seconds.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyUsageCompanion(')
+          ..write('kidId: $kidId, ')
+          ..write('day: $day, ')
+          ..write('seconds: $seconds, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1822,6 +2052,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SubjectLevelsTable subjectLevels = $SubjectLevelsTable(this);
   late final $KidProfilesTable kidProfiles = $KidProfilesTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $DailyUsageTable dailyUsage = $DailyUsageTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1832,7 +2063,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         lessonCompletions,
         subjectLevels,
         kidProfiles,
-        appSettings
+        appSettings,
+        dailyUsage
       ];
 }
 
@@ -2836,6 +3068,147 @@ typedef $$AppSettingsTableProcessedTableManager = ProcessedTableManager<
     (AppSetting, BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>),
     AppSetting,
     PrefetchHooks Function()>;
+typedef $$DailyUsageTableCreateCompanionBuilder = DailyUsageCompanion Function({
+  required int kidId,
+  required String day,
+  Value<int> seconds,
+  Value<int> rowid,
+});
+typedef $$DailyUsageTableUpdateCompanionBuilder = DailyUsageCompanion Function({
+  Value<int> kidId,
+  Value<String> day,
+  Value<int> seconds,
+  Value<int> rowid,
+});
+
+class $$DailyUsageTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyUsageTable> {
+  $$DailyUsageTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get day => $composableBuilder(
+      column: $table.day, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get seconds => $composableBuilder(
+      column: $table.seconds, builder: (column) => ColumnFilters(column));
+}
+
+class $$DailyUsageTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyUsageTable> {
+  $$DailyUsageTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get day => $composableBuilder(
+      column: $table.day, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get seconds => $composableBuilder(
+      column: $table.seconds, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DailyUsageTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyUsageTable> {
+  $$DailyUsageTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get seconds =>
+      $composableBuilder(column: $table.seconds, builder: (column) => column);
+}
+
+class $$DailyUsageTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $DailyUsageTable,
+    DailyUsageData,
+    $$DailyUsageTableFilterComposer,
+    $$DailyUsageTableOrderingComposer,
+    $$DailyUsageTableAnnotationComposer,
+    $$DailyUsageTableCreateCompanionBuilder,
+    $$DailyUsageTableUpdateCompanionBuilder,
+    (
+      DailyUsageData,
+      BaseReferences<_$AppDatabase, $DailyUsageTable, DailyUsageData>
+    ),
+    DailyUsageData,
+    PrefetchHooks Function()> {
+  $$DailyUsageTableTableManager(_$AppDatabase db, $DailyUsageTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyUsageTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyUsageTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyUsageTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<String> day = const Value.absent(),
+            Value<int> seconds = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DailyUsageCompanion(
+            kidId: kidId,
+            day: day,
+            seconds: seconds,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required int kidId,
+            required String day,
+            Value<int> seconds = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DailyUsageCompanion.insert(
+            kidId: kidId,
+            day: day,
+            seconds: seconds,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$DailyUsageTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $DailyUsageTable,
+    DailyUsageData,
+    $$DailyUsageTableFilterComposer,
+    $$DailyUsageTableOrderingComposer,
+    $$DailyUsageTableAnnotationComposer,
+    $$DailyUsageTableCreateCompanionBuilder,
+    $$DailyUsageTableUpdateCompanionBuilder,
+    (
+      DailyUsageData,
+      BaseReferences<_$AppDatabase, $DailyUsageTable, DailyUsageData>
+    ),
+    DailyUsageData,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2852,4 +3225,6 @@ class $AppDatabaseManager {
       $$KidProfilesTableTableManager(_db, _db.kidProfiles);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$DailyUsageTableTableManager get dailyUsage =>
+      $$DailyUsageTableTableManager(_db, _db.dailyUsage);
 }
