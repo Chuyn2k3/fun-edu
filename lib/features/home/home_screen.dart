@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
+import '../../data/app_database.dart';
 import '../../math/math_level.dart';
+import '../../profile/kid_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
@@ -14,6 +16,7 @@ import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/floating_nav_bar.dart';
 import '../../ui/widgets/info_pill.dart';
 import '../../ui/widgets/speech_bubble.dart';
+import 'kid_switcher.dart';
 import '../../ui/widgets/subject_card.dart';
 
 const _contentMaxWidth = 560.0;
@@ -50,11 +53,16 @@ class HomeScreen extends ConsumerWidget {
         ? null
         : ref.watch(glyphProvider(firstWriting.glyphId)).valueOrNull?.label;
 
+    final kids = ref.watch(kidsProvider).valueOrNull ?? const <KidProfile>[];
+    final currentId = ref.watch(currentKidIdProvider).valueOrNull;
+    final kid = kids.where((k) => k.id == currentId).firstOrNull;
+
     return Scaffold(
       body: DottedBackground(
         child: loading
             ? const Center(child: CircularProgressIndicator())
             : _HomeBody(
+                kid: kid,
                 summary: summary,
                 lessonTotal: lesson.length,
                 firstLabel: firstLabel,
@@ -66,11 +74,13 @@ class HomeScreen extends ConsumerWidget {
 
 class _HomeBody extends StatelessWidget {
   const _HomeBody({
+    required this.kid,
     required this.summary,
     required this.lessonTotal,
     required this.firstLabel,
   });
 
+  final KidProfile? kid;
   final HomeSummary summary;
   final int lessonTotal;
   final String? firstLabel;
@@ -135,9 +145,11 @@ class _HomeBody extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 120),
                 children: [
                   _TopRow(
+                    kid: kid,
                     level: summary.level,
                     stars: summary.totalStars,
                     onParents: () => _soon(context, 'Góc ba mẹ sắp có'),
+                    onSwitchKid: () => showKidSwitcher(context),
                   ),
                   const SizedBox(height: 16),
                   _ChipBlock(
@@ -205,59 +217,93 @@ class _HomeBody extends StatelessWidget {
 
 class _TopRow extends StatelessWidget {
   const _TopRow({
+    required this.kid,
     required this.level,
     required this.stars,
     required this.onParents,
+    required this.onSwitchKid,
   });
 
+  final KidProfile? kid;
   final int level;
   final int stars;
   final VoidCallback onParents;
+  final VoidCallback onSwitchKid;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Flexible(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-              boxShadow: const [AppShadows.card],
-            ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Chào bé!',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.text,
+          child: Semantics(
+            button: true,
+            label: 'Đổi bé',
+            excludeSemantics: true,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Ink(
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  boxShadow: const [AppShadows.card],
+                ),
+                child: InkWell(
+                  key: const ValueKey('greeting-pill'),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  onTap: onSwitchKid,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    padding: const EdgeInsets.fromLTRB(6, 6, 16, 6),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipOval(
+                            child: Image.asset(
+                              kid?.avatar ?? AppImages.chipMain,
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                kid == null ? 'Chào bé!' : 'Chào ${kid!.nickname}!',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(AppImages.icCrown,
+                                      width: 18, height: 13, fit: BoxFit.contain),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Cấp $level',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(AppImages.icCrown,
-                          width: 18, height: 13, fit: BoxFit.contain),
-                      const SizedBox(width: 3),
-                      Text(
-                        'Cấp $level',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),

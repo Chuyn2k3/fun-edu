@@ -9,6 +9,7 @@ import 'features/home/home_screen.dart';
 import 'features/lesson/lesson_done_screen.dart';
 import 'features/lesson/lesson_flow_screen.dart';
 import 'features/placement/placement_screen.dart';
+import 'features/setup/first_run_screen.dart';
 import 'features/subject/math_map_screen.dart';
 import 'features/subject/writing_map_screen.dart';
 import 'features/trace/trace_screen.dart';
@@ -55,6 +56,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/subject/viet',
       builder: (context, state) => const WritingMapScreen(),
+    ),
+    GoRoute(
+      path: '/setup',
+      builder: (context, state) => const FirstRunScreen(),
     ),
     GoRoute(
       path: '/placement',

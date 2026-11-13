@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/home/home_screen.dart';
+import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/avatars.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/learning/lesson_item.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/progress/progress_repository.dart';
@@ -43,6 +46,18 @@ Widget _app(
 }
 
 List<Override> _fakes() => [
+      kidsProvider.overrideWith(
+        (ref) async => [
+          KidProfile(
+            id: 1,
+            nickname: 'Na',
+            avatar: kidAvatars[0],
+            age: 5,
+            createdAt: DateTime(2026),
+          ),
+        ],
+      ),
+      currentKidIdProvider.overrideWith((ref) async => 1),
       homeSummaryProvider.overrideWith(
         (ref) async => const HomeSummary(
           totalStars: 12,
@@ -73,6 +88,26 @@ void _setSize(WidgetTester tester, double w, double h) {
 }
 
 void main() {
+  testWidgets('lời chào theo tên bé, mở bảng đổi bé khi chạm', (tester) async {
+    _setSize(tester, 375, 667);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    expect(find.text('Chào Na!'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('greeting-pill')));
+    await tester.pumpAndSettle();
+    expect(find.text('Thêm bé'), findsOneWidget);
+  });
+
+  testWidgets('chưa biết bé thì chào chung', (tester) async {
+    _setSize(tester, 375, 667);
+    await tester.pumpWidget(_app([
+      ..._fakes(),
+      kidsProvider.overrideWith((ref) async => const []),
+    ], []));
+    await tester.pumpAndSettle();
+    expect(find.text('Chào bé!'), findsOneWidget);
+  });
+
   testWidgets('thẻ môn học có nền trắng', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));

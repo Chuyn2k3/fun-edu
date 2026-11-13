@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/app.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/avatars.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/features/placement/placement_screen.dart';
@@ -235,6 +236,8 @@ void main() {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
       appRouter.go('/');
+      await t.runAsync(() => KidRepository(db)
+          .addKid(nickname: 'Na', avatar: kidAvatars[0], age: 5));
       if (placed) {
         await t.runAsync(() async {
           final r = LevelRepository(db, kidId: 1);
@@ -244,8 +247,7 @@ void main() {
       }
       await t.pumpWidget(
         ProviderScope(
-          overrides: [databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)],
+          overrides: [databaseProvider.overrideWithValue(db)],
           child: const App(),
         ),
       );
@@ -264,10 +266,11 @@ void main() {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
       appRouter.go('/');
+      await t.runAsync(() => KidRepository(db)
+          .addKid(nickname: 'Na', avatar: kidAvatars[0], age: 5));
       await t.pumpWidget(
         ProviderScope(
-          overrides: [databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)],
+          overrides: [databaseProvider.overrideWithValue(db)],
           child: const App(),
         ),
       );

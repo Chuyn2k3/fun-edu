@@ -1,33 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'profile/kid_repository.dart';
 import 'progress/level_repository.dart';
 import 'router.dart';
-import 'ui/theme/app_theme.dart';
 import 'ui/theme/tokens.dart';
+import 'ui/theme/app_theme.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
 
-  // GoRouter's redirect is synchronous, so the async placement check lives
-  // here: an unplaced child is sent to /placement, except on /dev/* routes.
+  // GoRouter's redirect is synchronous, so the async checks live here:
+  // no kid -> /setup, then an unplaced kid -> /placement.
   static String _currentPath() =>
       appRouter.routeInformationProvider.value.uri.path;
 
-  static bool _exempt(String path) =>
-      path.startsWith('/dev/') || path == '/placement';
+  static bool _isDev(String p) => p.startsWith('/dev/');
+  static bool _isParent(String p) => p == '/parent' || p.startsWith('/parent/');
 
-  void _redirectIfUnplaced(bool placed) {
-    if (placed || _exempt(_currentPath())) return;
-    appRouter.go('/placement');
+  /// Where the app must be sent from [path], or null to stay.
+  static String? _target(String path, {required bool hasKid, bool? placed}) {
+    if (_isDev(path) || path == '/setup' || _isParent(path)) return null;
+    if (!hasKid) return '/setup';
+    if (placed == false && path != '/placement') return '/placement';
+    return null;
+  }
+
+  void _redirect(WidgetRef ref) {
+    final kid = ref.read(currentKidIdProvider);
+    if (kid.isLoading || !kid.hasValue) return;
+    final hasKid = kid.value != null;
+    bool? placed;
+    if (hasKid) {
+      final p = ref.read(isPlacedProvider);
+      if (p.isLoading || !p.hasValue) return;
+      placed = p.value;
+    }
+    final target = _target(_currentPath(), hasKid: hasKid, placed: placed);
+    if (target != null) appRouter.go(target);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<AsyncValue<bool>>(isPlacedProvider, (_, next) {
-      final placed = next.isLoading ? null : next.valueOrNull;
-      if (placed != null) _redirectIfUnplaced(placed);
+    ref.listen<AsyncValue<int?>>(currentKidIdProvider, (_, __) {
+      _redirect(ref);
     });
+    ref.listen<AsyncValue<bool>>(isPlacedProvider, (_, __) {
+      _redirect(ref);
+    });
+    final kid = ref.watch(currentKidIdProvider);
     final placed = ref.watch(isPlacedProvider);
     return MaterialApp.router(
       title: 'Chíp Chíp',
@@ -35,13 +56,23 @@ class App extends ConsumerWidget {
       routerConfig: appRouter,
       builder: (context, child) {
         // Hold back the navigator until we know where to go: while loading,
-        // and while an unplaced child waits for the redirect to take effect.
+        // and while a redirect is due but has not taken effect yet.
         return ListenableBuilder(
           listenable: appRouter.routeInformationProvider,
           builder: (context, _) {
-            final waiting = (!placed.hasValue && placed.isLoading) ||
-                (placed.valueOrNull == false && !_exempt(_currentPath()));
-            if (waiting) {
+            final kidKnown = kid.hasValue;
+            final hasKid = kid.valueOrNull != null;
+            final placedKnown = placed.hasValue;
+            final loading = !kidKnown && kid.isLoading ||
+                hasKid && !placedKnown && placed.isLoading;
+            final due = kidKnown &&
+                _target(_currentPath(),
+                        hasKid: hasKid,
+                        placed: hasKid ? placed.valueOrNull : null) !=
+                    null;
+            // A reload keeps the previous value; only wait when it is a
+            // settled answer that demands a move.
+            if (loading || due) {
               return const ColoredBox(
                 color: AppColors.background,
                 child: Center(child: CircularProgressIndicator()),
