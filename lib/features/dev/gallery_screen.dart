@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/floating_nav_bar.dart';
 import '../../ui/widgets/info_pill.dart';
+import '../../ui/widgets/nav_rail.dart';
 import '../../ui/widgets/primary_button.dart';
 import '../../ui/widgets/progress_ring.dart';
 
@@ -35,104 +37,126 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: DottedBackground(
-        child: SafeArea(
-          child: Column(
+    final tablet = context.isTablet;
+    final content = Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              const Text(
+                'Bộ giao diện',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 16),
+              const Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  InfoPill(
+                    leading: Icon(Icons.local_fire_department,
+                        color: AppColors.accent, size: 20),
+                    label: '5 ngày',
+                  ),
+                  InfoPill(
+                    leading:
+                        Icon(Icons.star, color: AppColors.accent, size: 20),
+                    label: '120 sao',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Bộ giao diện',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+                      'Hôm nay học gì?',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Cùng Chíp Chíp tập viết nhé',
+                      style: TextStyle(color: AppColors.textMuted),
                     ),
                     const SizedBox(height: 16),
-                    const Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        InfoPill(
-                          leading: Icon(Icons.local_fire_department,
-                              color: AppColors.accent, size: 20),
-                          label: '5 ngày',
-                        ),
-                        InfoPill(
-                          leading: Icon(Icons.star, color: AppColors.accent, size: 20),
-                          label: '120 sao',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Hôm nay học gì?',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Cùng Chíp Chíp tập viết nhé',
-                            style: TextStyle(color: AppColors.textMuted),
-                          ),
-                          const SizedBox(height: 16),
-                          PrimaryButton(label: 'Bắt đầu', onPressed: () {}),
-                          const SizedBox(height: 12),
-                          const PrimaryButton(label: 'Chưa mở', onPressed: null),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    AppCard(
-                      child: Column(
-                        children: [
-                          for (final s in Subject.values)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: s.tint,
-                                  borderRadius: BorderRadius.circular(AppRadii.tile),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        _labels[s]!,
-                                        style: const TextStyle(
-                                            fontSize: 18, fontWeight: FontWeight.w800),
-                                      ),
-                                    ),
-                                    ProgressRing(
-                                      done: 6,
-                                      total: 14,
-                                      color: s.color,
-                                      size: 48,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                    PrimaryButton(label: 'Bắt đầu', onPressed: () {}),
+                    const SizedBox(height: 12),
+                    const PrimaryButton(label: 'Chưa mở', onPressed: null),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: FloatingNavBar(
-                  items: _items,
-                  selected: _tab,
-                  onSelect: (i) => setState(() => _tab = i),
+              const SizedBox(height: 16),
+              AppCard(
+                child: Column(
+                  children: [
+                    for (final s in Subject.values)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: s.tint,
+                            borderRadius: BorderRadius.circular(AppRadii.tile),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _labels[s]!,
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              ProgressRing(
+                                done: 6,
+                                total: 14,
+                                color: s.color,
+                                size: 48,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
           ),
+        ),
+        if (!tablet)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: FloatingNavBar(
+              items: _items,
+              selected: _tab,
+              onSelect: (i) => setState(() => _tab = i),
+            ),
+          ),
+      ],
+    );
+    return Scaffold(
+      body: DottedBackground(
+        child: SafeArea(
+          child: tablet
+              ? Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: NavRail(
+                          items: _items,
+                          selected: _tab,
+                          onSelect: (i) => setState(() => _tab = i),
+                        ),
+                      ),
+                    ),
+                    Expanded(child: content),
+                  ],
+                )
+              : content,
         ),
       ),
     );

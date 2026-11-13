@@ -3,6 +3,7 @@ import 'package:funedu/features/dev/gallery_screen.dart';
 import 'package:funedu/ui/theme/app_theme.dart';
 import 'package:funedu/ui/widgets/dotted_background.dart';
 import 'package:funedu/ui/widgets/floating_nav_bar.dart';
+import 'package:funedu/ui/widgets/nav_rail.dart';
 import 'package:funedu/ui/widgets/primary_button.dart';
 import 'package:funedu/ui/widgets/progress_ring.dart';
 import 'package:flutter/material.dart';
@@ -70,6 +71,40 @@ void main() {
     )));
     await tester.tap(find.text('Chơi'));
     expect(picked, 1);
+  });
+
+  testWidgets('NavRail shows every item at least 80x80 and reports index',
+      (tester) async {
+    int? picked;
+    await tester.pumpWidget(host(NavRail(
+      items: const [
+        NavItem(icon: Icons.edit, label: 'Học'),
+        NavItem(icon: Icons.star, label: 'Chơi'),
+        NavItem(icon: Icons.home, label: 'Nhà'),
+      ],
+      selected: 0,
+      onSelect: (i) => picked = i,
+    )));
+    for (final label in ['Học', 'Chơi', 'Nhà']) {
+      final size = tester.getSize(find
+          .ancestor(of: find.text(label), matching: find.byType(InkWell))
+          .first);
+      expect(size.width, greaterThanOrEqualTo(80));
+      expect(size.height, greaterThanOrEqualTo(80));
+    }
+    await tester.tap(find.text('Chơi'));
+    expect(picked, 1);
+  });
+
+  testWidgets('GalleryScreen shows the NavRail on a tablet', (tester) async {
+    tester.view.physicalSize = const Size(1024, 1366);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+        MaterialApp(theme: buildAppTheme(), home: const GalleryScreen()));
+    expect(find.byType(NavRail), findsOneWidget);
+    expect(find.byType(FloatingNavBar), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('GalleryScreen builds at 390x844 without overflow', (tester) async {

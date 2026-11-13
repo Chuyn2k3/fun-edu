@@ -12,6 +12,8 @@ import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/ui/theme/tokens.dart';
+import 'package:funedu/ui/widgets/floating_nav_bar.dart';
+import 'package:funedu/ui/widgets/nav_rail.dart';
 import 'package:funedu/ui/widgets/subject_card.dart';
 import 'package:funedu/stroke/glyph_repository.dart';
 import 'package:go_router/go_router.dart';
@@ -88,6 +90,26 @@ void _setSize(WidgetTester tester, double w, double h) {
 }
 
 void main() {
+  for (final size in const [Size(1024, 1366), Size(1366, 1024)]) {
+    testWidgets('tablet ${size.width.toInt()}x${size.height.toInt()} dùng NavRail',
+        (tester) async {
+      _setSize(tester, size.width, size.height);
+      await tester.pumpWidget(_app(_fakes(), []));
+      await tester.pumpAndSettle();
+      expect(find.byType(NavRail), findsOneWidget);
+      expect(find.byType(FloatingNavBar), findsNothing);
+    });
+  }
+
+  testWidgets('điện thoại dùng FloatingNavBar, không có NavRail',
+      (tester) async {
+    _setSize(tester, 390, 844);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    expect(find.byType(FloatingNavBar), findsOneWidget);
+    expect(find.byType(NavRail), findsNothing);
+  });
+
   testWidgets('lời chào theo tên bé, mở bảng đổi bé khi chạm', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));

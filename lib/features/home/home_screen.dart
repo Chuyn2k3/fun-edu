@@ -15,11 +15,13 @@ import '../../progress/progress_repository.dart';
 import '../../rewards/reward_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/floating_nav_bar.dart';
 import '../../ui/widgets/info_pill.dart';
+import '../../ui/widgets/nav_rail.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/speech_bubble.dart';
 import 'kid_switcher.dart';
@@ -111,7 +113,8 @@ class _HomeBody extends StatelessWidget {
         ? 'Hôm nay mình làm Toán nhé!'
         : 'Hôm nay mình viết $firstLabel và làm Toán nhé!';
 
-    return Stack(
+    final tablet = context.isTablet;
+    final stack = Stack(
       children: [
         // Sky image fading into the cream background.
         Positioned(
@@ -208,27 +211,49 @@ class _HomeBody extends StatelessWidget {
             ),
           ),
         ),
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 0,
-          child: SafeArea(
-            top: false,
-            minimum: const EdgeInsets.only(bottom: 12),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
-                child: FloatingNavBar(
-                  items: _navItems,
-                  selected: 0,
-                  onSelect: (i) {
-                    if (i != 0) _soon(context, 'Sắp có');
-                  },
+        if (!tablet)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.only(bottom: 12),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+                  child: FloatingNavBar(
+                    items: _navItems,
+                    selected: 0,
+                    onSelect: (i) {
+                      if (i != 0) _soon(context, 'Sắp có');
+                    },
+                  ),
                 ),
               ),
             ),
           ),
+      ],
+    );
+    if (!tablet) return stack;
+    return Row(
+      children: [
+        SafeArea(
+          right: false,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: NavRail(
+                items: _navItems,
+                selected: 0,
+                onSelect: (i) {
+                  if (i != 0) _soon(context, 'Sắp có');
+                },
+              ),
+            ),
+          ),
         ),
+        Expanded(child: stack),
       ],
     );
   }
