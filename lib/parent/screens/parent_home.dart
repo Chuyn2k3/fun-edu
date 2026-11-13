@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_database.dart';
 import '../../profile/kid_repository.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../parent_gate_route.dart';
 import '../parent_unlock.dart';
 import 'kids_tab.dart';
+import 'parent_home_tablet.dart';
 import 'progress_tab.dart';
 import 'rewards_tab.dart';
 import 'settings_tab.dart';
@@ -84,6 +86,18 @@ class _ParentHomeState extends ConsumerState<ParentHome> {
         : (kids.any((k) => k.id == currentId)
             ? currentId
             : kids.firstOrNull?.id);
+
+    if (context.isTablet) {
+      return ParentTabletShell(
+        tabs: _tabs,
+        tab: _tab,
+        onTab: (i) => setState(() => _tab = i),
+        kids: kids,
+        selectedKid: selected,
+        onSelectKid: (id) => setState(() => _pickedKid = id),
+        body: _body(selected),
+      );
+    }
 
     return Scaffold(
       body: DottedBackground(

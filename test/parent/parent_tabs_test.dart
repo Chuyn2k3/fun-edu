@@ -8,6 +8,7 @@ import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/parent/parent_unlock.dart';
 import 'package:funedu/parent/screens/parent_home.dart';
 import 'package:funedu/parent/screens/privacy_screen.dart';
+import 'package:funedu/parent/screens/time_tab.dart';
 import 'package:funedu/profile/avatars.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/progress/level_repository.dart';
@@ -192,8 +193,8 @@ void main() {
       expect(find.text('Bắt đầu'), findsOneWidget);
       expect(find.text('Kết thúc'), findsOneWidget);
       final kids = KidRepository(db);
-      expect(await t.runAsync(() => kids.setting(bedtimeStartKey(na))),
-          '20:30');
+      expect(
+          await t.runAsync(() => kids.setting(bedtimeStartKey(na))), '20:30');
       expect(await t.runAsync(() => kids.setting(bedtimeEndKey(na))), '06:30');
       // Pick a new start time: the dial opens in 24h format; OK keeps it.
       await t.tap(find.text('20:30'));
@@ -237,8 +238,8 @@ void main() {
       expect(find.text('Đã thưởng'), findsOneWidget); // section heading
       expect(find.text('Đi công viên'), findsOneWidget);
       final r = RewardRepository(db);
-      expect((await t.runAsync(() => r.list(na)))!.single.redeemedAt,
-          isNotNull);
+      expect(
+          (await t.runAsync(() => r.list(na)))!.single.redeemedAt, isNotNull);
       expect(await t.runAsync(() => r.totalStars(na)), 12);
     });
 
@@ -372,8 +373,7 @@ void main() {
     expect(find.text('10/10 sao: Đi công viên'), findsOneWidget);
   });
 
-  testWidgets('privacy policy names reward titles and kept strokes',
-      (t) async {
+  testWidgets('privacy policy names reward titles and kept strokes', (t) async {
     setSize(t, 375, 667);
     await t.pumpWidget(const MaterialApp(home: PrivacyScreen()));
     for (final s in ['phần thưởng do ba mẹ', 'tọa độ từng nét']) {
@@ -404,7 +404,8 @@ void main() {
 
   for (final size in [const Size(320, 568), const Size(430, 932)]) {
     testWidgets('no overflow on any tab at $size', (t) async {
-      await RewardRepository(db).add(na, 'Một phần thưởng có tên rất dài, dài lắm', 50);
+      await RewardRepository(db)
+          .add(na, 'Một phần thưởng có tên rất dài, dài lắm', 50);
       await _pumpParent(t, size: size);
       for (final tab in ['Hồ sơ', 'Thời gian', 'Phần thưởng', 'Cài đặt']) {
         await _openTab(t, tab);
@@ -416,4 +417,66 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+
+  group('tablet list-detail', () {
+    const tabLabels = [
+      'Tiến bộ',
+      'Hồ sơ',
+      'Thời gian',
+      'Phần thưởng',
+      'Cài đặt'
+    ];
+
+    testWidgets('1366x1024: no bottom bar, five tabs in one column', (t) async {
+      await _pumpParent(t, size: const Size(1366, 1024));
+      expect(find.byType(NavigationBar), findsNothing);
+      final xs = <double>[];
+      for (final l in tabLabels) {
+        final f = find.text(l);
+        expect(f, findsWidgets);
+        xs.add(t.getTopLeft(f.first).dx);
+      }
+      for (final x in xs) {
+        expect(x, closeTo(xs.first, 1));
+        expect(x, lessThan(300));
+      }
+      // Rows are at least 56 tall.
+      final row = find.ancestor(
+          of: find.text('Thời gian'), matching: find.byType(Container));
+      expect(t.getSize(row.first).height, greaterThanOrEqualTo(56));
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('tapping Thời gian shows its tab in the right pane', (t) async {
+      await _pumpParent(t, size: const Size(1366, 1024));
+      await t.tap(find.text('Thời gian'));
+      await settle(t);
+      expect(find.byType(TimeTab), findsOneWidget);
+      expect(t.getTopLeft(find.byType(TimeTab)).dx, greaterThanOrEqualTo(300));
+      expect(t.getSize(find.byType(TimeTab)).width, lessThanOrEqualTo(720));
+    });
+
+    testWidgets('1024x1366: all tabs render without overflow', (t) async {
+      await _pumpParent(t, size: const Size(1024, 1366));
+      for (final l in tabLabels) {
+        await t.tap(find.text(l).first);
+        await settle(t);
+        expect(t.takeException(), isNull, reason: l);
+      }
+    });
+
+    testWidgets('kid-name field stays above the keyboard', (t) async {
+      await _pumpParent(t, size: const Size(1024, 1366));
+      await t.tap(find.text('Hồ sơ'));
+      await settle(t);
+      await t.tap(find.byKey(ValueKey('edit-$bo')));
+      await settle(t);
+      t.view.viewInsets = const FakeViewPadding(bottom: 400);
+      addTearDown(t.view.resetViewInsets);
+      await t.tap(find.byType(TextField));
+      await settle(t);
+      final bottom = t.getBottomLeft(find.byType(TextField)).dy;
+      expect(bottom, lessThanOrEqualTo(1366 - 400));
+    });
+  });
 }

@@ -5,8 +5,10 @@ import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../screen_time/screen_time_service.dart';
 import '../../ui/assets.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
+import '../../ui/widgets/message_card.dart';
 import '../../ui/widgets/speech_bubble.dart';
 import '../../voice/speaker.dart';
 
@@ -110,6 +112,19 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tablet = context.isTablet;
+    final chipSize = tablet ? 200 * tabletChipScale : 200.0;
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset(AppImages.chipSleep, width: chipSize, height: chipSize),
+        const SizedBox(height: 16),
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: tablet ? 520 : 420),
+          child: SpeechBubble(text: _line),
+        ),
+      ],
+    );
     return Scaffold(
       backgroundColor: AppColors.background,
       body: DottedBackground(
@@ -119,17 +134,9 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(AppImages.chipSleep, width: 200, height: 200),
-                      const SizedBox(height: 16),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: SpeechBubble(text: _line),
-                      ),
-                    ],
-                  ),
+                  child: tablet
+                      ? TabletTextScale(child: MessageCard(child: content))
+                      : content,
                 ),
               ),
               Positioned(

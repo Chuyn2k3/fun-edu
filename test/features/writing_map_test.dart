@@ -94,6 +94,16 @@ class _FailingRepo extends ProgressRepository {
       throw StateError('disk full');
 }
 
+/// Tiles sharing the topmost tile's y.
+int _firstRowCount(WidgetTester t) {
+  final tops = [
+    for (final e in find.byType(Pressable).evaluate())
+      t.getTopLeft(find.byWidget(e.widget)).dy,
+  ];
+  final first = tops.reduce((a, b) => a < b ? a : b);
+  return tops.where((y) => (y - first).abs() < 1).length;
+}
+
 void main() {
   testWidgets('mastered glyph shows a tick, others do not', (t) async {
     _setSize(t, 375, 667);
@@ -213,4 +223,21 @@ void main() {
     expect(find.text('Viết Nét xiên'), findsNothing);
     expect(find.text('Không lưu được kết quả'), findsOneWidget);
   });
+
+  for (final (size, cols) in [
+    (const Size(1366, 1024), 5),
+    (const Size(1024, 1366), 4),
+    (const Size(390, 844), 3),
+  ]) {
+    testWidgets('grid has $cols columns at $size', (t) async {
+      _setSize(t, size.width, size.height);
+      await _pump(t);
+      expect(_firstRowCount(t), cols);
+      if (size.shortestSide >= 600) {
+        expect(t.getSize(find.byType(Pressable).first).width,
+            greaterThanOrEqualTo(120));
+      }
+      expect(t.takeException(), isNull);
+    });
+  }
 }

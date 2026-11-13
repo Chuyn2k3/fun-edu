@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../ui/layout/form_factor.dart';
 import '../ui/theme/depth.dart';
 import '../ui/theme/tokens.dart';
 import '../ui/widgets/app_card.dart';
@@ -91,7 +92,8 @@ class _ParentGateState extends State<ParentGate> {
         'Nhập kết quả: ${numberToVietnamese(_a)} nhân ${numberToVietnamese(_b)}';
     // Shorter keys on small screens so Xác nhận stays reachable unscrolled.
     final compact = MediaQuery.of(context).size.height < 640;
-    final keyHeight = compact ? 52.0 : 64.0;
+    final tablet = context.isTablet;
+    final keyHeight = compact ? 52.0 : (tablet ? 72.0 : 64.0);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: DottedBackground(
@@ -100,7 +102,9 @@ class _ParentGateState extends State<ParentGate> {
             child: SingleChildScrollView(
               padding: EdgeInsets.all(compact ? 8 : 16),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
+                constraints: BoxConstraints(
+                  maxWidth: tablet ? TabletSizes.messageMaxWidth : 420,
+                ),
                 child: AppCard(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

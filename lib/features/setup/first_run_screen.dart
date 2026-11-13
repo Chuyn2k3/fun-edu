@@ -7,8 +7,10 @@ import '../../parent/screens/privacy_screen.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
+import '../../ui/widgets/message_card.dart';
 import '../../ui/widgets/primary_button.dart';
 import 'kid_profile_form.dart';
 
@@ -81,8 +83,11 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: body,
+                constraints: BoxConstraints(
+                  maxWidth:
+                      context.isTablet ? TabletSizes.messageMaxWidth : 560,
+                ),
+                child: MessageCard(child: body),
               ),
             ),
           ),
@@ -104,7 +109,10 @@ class _GateStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ExcludeSemantics(
-          child: Image.asset(AppImages.chipMain, height: 140),
+          child: Image.asset(
+            AppImages.chipMain,
+            height: context.isTablet ? 140 * tabletChipScale : 140,
+          ),
         ),
         const SizedBox(height: 16),
         const Text(

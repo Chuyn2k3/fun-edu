@@ -13,6 +13,7 @@ import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/math/math_level.dart';
 import 'package:funedu/progress/level_repository.dart';
 import 'package:funedu/progress/progress_repository.dart';
+import 'package:funedu/ui/widgets/pressable.dart';
 import 'package:go_router/go_router.dart';
 
 void _setSize(WidgetTester t, double w, double h) {
@@ -68,13 +69,25 @@ Future<(AppDatabase, List<String>)> _pump(
   );
   await t.pumpWidget(
     ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)],
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
   await _settle(t);
   return (db, visited);
+}
+
+/// Tiles sharing the topmost tile's y.
+int _firstRowCount(WidgetTester t) {
+  final tops = [
+    for (final e in find.byType(Pressable).evaluate())
+      t.getTopLeft(find.byWidget(e.widget)).dy,
+  ];
+  final first = tops.reduce((a, b) => a < b ? a : b);
+  return tops.where((y) => (y - first).abs() < 1).length;
 }
 
 void main() {
@@ -171,4 +184,19 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('toan stub'), findsOneWidget);
   });
+
+  for (final (size, cols) in [
+    (const Size(1366, 1024), 5),
+    (const Size(1024, 1366), 4),
+    (const Size(390, 844), 1),
+  ]) {
+    testWidgets('math map has $cols tiles in the first row at $size',
+        (t) async {
+      await _pump(t, size: size);
+      expect(_firstRowCount(t), cols);
+      expect(t.getSize(find.byType(Pressable).first).width,
+          greaterThanOrEqualTo(120));
+      expect(t.takeException(), isNull);
+    });
+  }
 }

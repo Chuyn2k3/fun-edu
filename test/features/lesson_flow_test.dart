@@ -191,8 +191,10 @@ void main() {
       addTearDown(db.close);
       await t.pumpWidget(
         ProviderScope(
-          overrides: [databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)],
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            currentKidIdProvider.overrideWith((ref) async => 1)
+          ],
           child: const MaterialApp(home: LessonDoneScreen(starsEarned: 5)),
         ),
       );
@@ -346,5 +348,29 @@ void main() {
     second.complete([const WritingItem('new')]);
     await t.pumpAndSettle();
     expect(find.text('Viết Chữ new'), findsOneWidget);
+  });
+
+  testWidgets('done screen on iPad portrait is one centred card <= 640',
+      (t) async {
+    _setSize(t, 1024, 1366);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          currentKidIdProvider.overrideWith((ref) async => 1),
+        ],
+        child: const MaterialApp(home: LessonDoneScreen(starsEarned: 5)),
+      ),
+    );
+    await t.pumpAndSettle();
+    final card = find.byKey(const ValueKey('message-card'));
+    expect(card, findsOneWidget);
+    final r = t.getRect(card);
+    expect(r.width, lessThanOrEqualTo(640));
+    expect(r.center.dx, closeTo(512, 1));
+    expect(find.text('Về trang chính'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 }

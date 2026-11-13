@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../progress/progress_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
+import '../../ui/widgets/message_card.dart';
 import '../../ui/widgets/primary_button.dart';
 
 const _contentMaxWidth = 560.0;
@@ -27,6 +29,7 @@ class LessonDoneScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final days = ref.watch(learnedWeekdaysProvider).valueOrNull ?? const {};
     final level = ref.watch(homeSummaryProvider).valueOrNull?.level ?? 1;
+    final tablet = context.isTablet;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -68,46 +71,81 @@ class LessonDoneScreen extends ConsumerWidget {
             ),
           ),
           SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+            child: tablet
+                ? Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: MessageCard(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const _Title(),
+                            const SizedBox(height: 14),
+                            const _Hero(scale: tabletChipScale),
+                            const SizedBox(height: 14),
+                            _StatsCard(
+                              stars: starsEarned,
+                              days: days.length,
+                              level: level,
+                            ),
+                            const SizedBox(height: 14),
+                            _WeekCard(
+                              learned: days,
+                              today: DateTime.now().weekday,
+                            ),
+                            const SizedBox(height: 20),
+                            PrimaryButton(
+                              label: 'Về trang chính',
+                              onPressed: () => context.go('/'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(maxWidth: _contentMaxWidth),
+                      child: Column(
                         children: [
-                          const _Title(),
-                          const SizedBox(height: 14),
-                          const _Hero(),
-                          const SizedBox(height: 14),
-                          _StatsCard(
-                            stars: starsEarned,
-                            days: days.length,
-                            level: level,
+                          Expanded(
+                            child: ListView(
+                              padding:
+                                  const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                              children: [
+                                const _Title(),
+                                const SizedBox(height: 14),
+                                const _Hero(),
+                                const SizedBox(height: 14),
+                                _StatsCard(
+                                  stars: starsEarned,
+                                  days: days.length,
+                                  level: level,
+                                ),
+                                const SizedBox(height: 14),
+                                _WeekCard(
+                                  learned: days,
+                                  today: DateTime.now().weekday,
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 14),
-                          _WeekCard(
-                            learned: days,
-                            today: DateTime.now().weekday,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: PrimaryButton(
+                                label: 'Về trang chính',
+                                onPressed: () => context.go('/'),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: PrimaryButton(
-                          label: 'Về trang chính',
-                          onPressed: () => context.go('/'),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           ),
         ],
       ),
@@ -149,7 +187,10 @@ class _Title extends StatelessWidget {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero();
+  const _Hero({this.scale = 1});
+
+  /// Phone size multiplier (the tablet card uses [tabletChipScale]).
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -161,27 +202,27 @@ class _Hero extends StatelessWidget {
         );
     return ExcludeSemantics(
       child: SizedBox(
-        height: 190,
+        height: 190 * scale,
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              star(36),
+              star(36 * scale),
               const SizedBox(width: 8),
-              Align(alignment: Alignment.topCenter, child: star(52)),
+              Align(alignment: Alignment.topCenter, child: star(52 * scale)),
               const SizedBox(width: 4),
               Image.asset(
                 AppImages.chipThumb,
-                width: 180,
-                height: 180,
+                width: 180 * scale,
+                height: 180 * scale,
                 fit: BoxFit.contain,
               ),
               const SizedBox(width: 4),
-              Align(alignment: Alignment.topCenter, child: star(52)),
+              Align(alignment: Alignment.topCenter, child: star(52 * scale)),
               const SizedBox(width: 8),
-              star(36),
+              star(36 * scale),
             ],
           ),
         ),

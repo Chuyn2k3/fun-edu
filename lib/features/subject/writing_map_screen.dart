@@ -7,11 +7,13 @@ import '../../learning/writing_ladder.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../writing/writing_screen.dart';
+import 'map_layout.dart';
 
 const _contentMaxWidth = 560.0;
 
@@ -53,16 +55,19 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
       for (final id in writingLadder)
         if (byId.containsKey(id)) id,
     ];
-    return Scaffold(
+    final tablet = context.isTablet;
+    final body = Scaffold(
       body: DottedBackground(
         child: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+              constraints: BoxConstraints(
+                maxWidth: tablet ? tabletMapMaxWidth : _contentMaxWidth,
+              ),
               child: Column(
                 children: [
                   SizedBox(
-                    height: 72,
+                    height: tablet ? 96 : 72,
                     child: Row(
                       children: [
                         const SizedBox(width: 16),
@@ -74,16 +79,17 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
                             onTap: () => context.go('/'),
                             radius: 32,
                             child: Container(
-                              width: 64,
-                              height: 64,
+                              width: tablet ? TabletSizes.kidTarget : 64,
+                              height: tablet ? TabletSizes.kidTarget : 64,
                               alignment: Alignment.centerLeft,
                               child: Container(
-                                width: 48,
-                                height: 48,
-                                decoration: raisedDecoration(radius: 24),
-                                child: const Icon(
+                                width: tablet ? 64 : 48,
+                                height: tablet ? 64 : 48,
+                                decoration:
+                                    raisedDecoration(radius: tablet ? 32 : 24),
+                                child: Icon(
                                   Icons.chevron_left_rounded,
-                                  size: 36,
+                                  size: tablet ? 44 : 36,
                                   color: AppColors.text,
                                 ),
                               ),
@@ -105,15 +111,18 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
                   Expanded(
                     child: GridView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 1.1,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: mapColumnsFor(
+                          context.formFactor,
+                          phoneColumns: 3,
+                        ),
+                        mainAxisSpacing: tablet ? 16 : 12,
+                        crossAxisSpacing: tablet ? 16 : 12,
+                        childAspectRatio: tablet ? 1.0 : 1.1,
                       ),
                       itemCount: ids.length,
                       itemBuilder: (context, i) => _GlyphTile(
+                        tablet: tablet,
                         label: byId[ids[i]]!.label,
                         mastered: stats[ids[i]]?.mastered ?? false,
                         onTap: () => _openPractice(ids[i]),
@@ -127,6 +136,7 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
         ),
       ),
     );
+    return tablet ? TabletTextScale(child: body) : body;
   }
 }
 
@@ -135,8 +145,10 @@ class _GlyphTile extends StatelessWidget {
     required this.label,
     required this.mastered,
     required this.onTap,
+    this.tablet = false,
   });
 
+  final bool tablet;
   final String label;
   final bool mastered;
   final VoidCallback onTap;
@@ -162,8 +174,8 @@ class _GlyphTile extends StatelessWidget {
                   child: Text(
                     label,
                     maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: TextStyle(
+                      fontSize: tablet ? 22 : 20,
                       fontWeight: FontWeight.w900,
                       color: AppColors.text,
                     ),
@@ -178,7 +190,7 @@ class _GlyphTile extends StatelessWidget {
                 child: Icon(
                   Icons.check_circle_rounded,
                   key: const ValueKey('mastered'),
-                  size: 24,
+                  size: tablet ? 32 : 24,
                   color: Subject.viet.color,
                 ),
               ),

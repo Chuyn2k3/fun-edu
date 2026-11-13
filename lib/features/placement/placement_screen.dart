@@ -10,8 +10,10 @@ import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
+import '../../ui/widgets/message_card.dart';
 import '../../ui/widgets/primary_button.dart';
 import '../../voice/speaker.dart';
 import '../math/math_session_screen.dart';
@@ -280,50 +282,60 @@ class _MessageState extends ConsumerState<_Message> {
     final title = widget.title;
     final subtitle = widget.subtitle;
     final button = widget.button;
+    final tablet = context.isTablet;
+    final chipSize = tablet ? 200 * tabletChipScale : 200.0;
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ExcludeSemantics(
+          child: Image.asset(chip,
+              width: chipSize, height: chipSize, fit: BoxFit.contain),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            color: AppColors.text,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+        const SizedBox(height: 32),
+        button,
+      ],
+    );
     return Scaffold(
       body: DottedBackground(
         child: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+              constraints: BoxConstraints(
+                maxWidth: tablet ? double.infinity : _contentMaxWidth,
+              ),
               child: LayoutBuilder(
                 builder: (context, c) => SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: c.maxHeight - 48),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ExcludeSemantics(
-                          child: Image.asset(chip,
-                              width: 200, height: 200, fit: BoxFit.contain),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.text,
+                    child: tablet
+                        ? Center(child: MessageCard(child: content))
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [content],
                           ),
-                        ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            subtitle,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 32),
-                        button,
-                      ],
-                    ),
                   ),
                 ),
               ),

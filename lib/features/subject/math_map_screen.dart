@@ -6,11 +6,13 @@ import '../../learning/today_lesson_provider.dart';
 import '../../math/math_level.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../math/math_session_screen.dart';
+import 'map_layout.dart';
 
 const _contentMaxWidth = 560.0;
 
@@ -40,16 +42,19 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
   Widget build(BuildContext context) {
     final level = ref.watch(mathLevelIndexProvider);
     final current = level.valueOrNull;
-    return Scaffold(
+    final tablet = context.isTablet;
+    final body = Scaffold(
       body: DottedBackground(
         child: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
+              constraints: BoxConstraints(
+                maxWidth: tablet ? tabletMapMaxWidth : _contentMaxWidth,
+              ),
               child: Column(
                 children: [
                   SizedBox(
-                    height: 72,
+                    height: tablet ? 96 : 72,
                     child: Row(
                       children: [
                         const SizedBox(width: 16),
@@ -61,16 +66,17 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                             onTap: () => context.go('/'),
                             radius: 32,
                             child: Container(
-                              width: 64,
-                              height: 64,
+                              width: tablet ? TabletSizes.kidTarget : 64,
+                              height: tablet ? TabletSizes.kidTarget : 64,
                               alignment: Alignment.centerLeft,
                               child: Container(
-                                width: 48,
-                                height: 48,
-                                decoration: raisedDecoration(radius: 24),
-                                child: const Icon(
+                                width: tablet ? 64 : 48,
+                                height: tablet ? 64 : 48,
+                                decoration:
+                                    raisedDecoration(radius: tablet ? 32 : 24),
+                                child: Icon(
                                   Icons.chevron_left_rounded,
-                                  size: 36,
+                                  size: tablet ? 44 : 36,
                                   color: AppColors.text,
                                 ),
                               ),
@@ -92,19 +98,46 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                   Expanded(
                     child: current == null
                         ? const Center(child: CircularProgressIndicator())
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            itemCount: mathLevels.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, i) => _LevelTile(
-                              index: i,
-                              title: mathLevels[i].title,
-                              current: current,
-                              onTap:
-                                  i <= current ? () => _openPractice(i) : null,
-                            ),
-                          ),
+                        : tablet
+                            ? GridView.builder(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: mapColumnsFor(
+                                    context.formFactor,
+                                    phoneColumns: 1,
+                                  ),
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio: 1.0,
+                                ),
+                                itemCount: mathLevels.length,
+                                itemBuilder: (context, i) => _LevelTile(
+                                  index: i,
+                                  title: mathLevels[i].title,
+                                  current: current,
+                                  tablet: true,
+                                  onTap: i <= current
+                                      ? () => _openPractice(i)
+                                      : null,
+                                ),
+                              )
+                            : ListView.separated(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                                itemCount: mathLevels.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (context, i) => _LevelTile(
+                                  index: i,
+                                  title: mathLevels[i].title,
+                                  current: current,
+                                  onTap: i <= current
+                                      ? () => _openPractice(i)
+                                      : null,
+                                ),
+                              ),
                   ),
                 ],
               ),
@@ -113,6 +146,7 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
         ),
       ),
     );
+    return tablet ? TabletTextScale(child: body) : body;
   }
 }
 
@@ -122,12 +156,88 @@ class _LevelTile extends StatelessWidget {
     required this.title,
     required this.current,
     required this.onTap,
+    this.tablet = false,
   });
+
+  /// Tablet grid cell: a square card with the content stacked.
+  final bool tablet;
 
   final int index;
   final String title;
   final int current;
   final VoidCallback? onTap;
+
+  Widget _tabletContent({
+    required bool done,
+    required bool isCurrent,
+    required bool locked,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.text,
+                  ),
+                ),
+                if (isCurrent)
+                  const Text(
+                    'Đang học',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (done)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Icon(
+                Icons.check_circle_rounded,
+                key: ValueKey('done-$index'),
+                size: 32,
+                color: Subject.toan.color,
+              ),
+            ),
+          if (locked)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Icon(
+                Icons.lock_rounded,
+                key: ValueKey('locked-$index'),
+                size: 30,
+                color: AppColors.textMuted,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,65 +267,68 @@ class _LevelTile extends StatelessWidget {
                     ),
                   )
                 : raised,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 72),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            child: tablet
+                ? _tabletContent(
+                    done: done, isCurrent: isCurrent, locked: locked)
+                : ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 72),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Row(
                         children: [
                           Text(
-                            title,
+                            '${index + 1}',
                             style: const TextStyle(
-                              fontSize: 20,
+                              fontSize: 22,
                               fontWeight: FontWeight.w900,
-                              color: AppColors.text,
+                              color: AppColors.textMuted,
                             ),
                           ),
-                          if (isCurrent)
-                            const Text(
-                              'Đang học',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                                if (isCurrent)
+                                  const Text(
+                                    'Đang học',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (done)
+                            Icon(
+                              Icons.check_circle_rounded,
+                              key: ValueKey('done-$index'),
+                              size: 28,
+                              color: Subject.toan.color,
+                            ),
+                          if (locked)
+                            Icon(
+                              Icons.lock_rounded,
+                              key: ValueKey('locked-$index'),
+                              size: 26,
+                              color: AppColors.textMuted,
                             ),
                         ],
                       ),
                     ),
-                    if (done)
-                      Icon(
-                        Icons.check_circle_rounded,
-                        key: ValueKey('done-$index'),
-                        size: 28,
-                        color: Subject.toan.color,
-                      ),
-                    if (locked)
-                      Icon(
-                        Icons.lock_rounded,
-                        key: ValueKey('locked-$index'),
-                        size: 26,
-                        color: AppColors.textMuted,
-                      ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           );
         },
       ),
