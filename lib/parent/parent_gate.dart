@@ -88,13 +88,16 @@ class _ParentGateState extends State<ParentGate> {
   Widget build(BuildContext context) {
     final question =
         'Nhập kết quả: ${numberToVietnamese(_a)} nhân ${numberToVietnamese(_b)}';
+    // Shorter keys on small screens so Xác nhận stays reachable unscrolled.
+    final compact = MediaQuery.of(context).size.height < 640;
+    final keyHeight = compact ? 52.0 : 64.0;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: DottedBackground(
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(compact ? 8 : 16),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: AppCard(
@@ -122,7 +125,7 @@ class _ParentGateState extends State<ParentGate> {
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        height: 64,
+                        height: compact ? 52 : 64,
                         width: double.infinity,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
@@ -140,7 +143,7 @@ class _ParentGateState extends State<ParentGate> {
                         ),
                       ),
                       SizedBox(
-                        height: 28,
+                        height: compact ? 20 : 28,
                         child: _wrong
                             ? const Center(
                                 child: Text(
@@ -154,6 +157,7 @@ class _ParentGateState extends State<ParentGate> {
                             : null,
                       ),
                       _Keypad(
+                        keyHeight: keyHeight,
                         onDigit: _addDigit,
                         onDelete: _passed || _input.isEmpty ? null : _delete,
                         onClose: _passed ? null : widget.onCancel,
@@ -177,11 +181,13 @@ class _ParentGateState extends State<ParentGate> {
 
 class _Keypad extends StatelessWidget {
   const _Keypad({
+    required this.keyHeight,
     required this.onDigit,
     required this.onDelete,
     required this.onClose,
   });
 
+  final double keyHeight;
   final ValueChanged<String> onDigit;
   final VoidCallback? onDelete;
   final VoidCallback? onClose;
@@ -198,6 +204,7 @@ class _Keypad extends StatelessWidget {
                   child: _GateKey(
                     key: Key('gate-key-${digits[i]}'),
                     label: digits[i],
+                    height: keyHeight,
                     onTap: () => onDigit(digits[i]),
                   ),
                 ),
@@ -212,17 +219,22 @@ class _Keypad extends StatelessWidget {
         row(['7', '8', '9']),
         Row(
           children: [
-            Expanded(child: _GateKey(label: 'Xóa', onTap: onDelete)),
+            Expanded(
+                child:
+                    _GateKey(label: 'Xóa', height: keyHeight, onTap: onDelete)),
             const SizedBox(width: 8),
             Expanded(
               child: _GateKey(
                 key: const Key('gate-key-0'),
                 label: '0',
+                height: keyHeight,
                 onTap: () => onDigit('0'),
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: _GateKey(label: 'Đóng', onTap: onClose)),
+            Expanded(
+                child:
+                    _GateKey(label: 'Đóng', height: keyHeight, onTap: onClose)),
           ],
         ),
       ],
@@ -230,11 +242,17 @@ class _Keypad extends StatelessWidget {
   }
 }
 
-/// A 64 pt white key (digits and secondary actions).
+/// A white key (digits and secondary actions).
 class _GateKey extends StatelessWidget {
-  const _GateKey({super.key, required this.label, required this.onTap});
+  const _GateKey({
+    super.key,
+    required this.label,
+    required this.height,
+    required this.onTap,
+  });
 
   final String label;
+  final double height;
   final VoidCallback? onTap;
 
   @override
@@ -253,7 +271,7 @@ class _GateKey extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadii.tile),
             onTap: onTap,
             child: Container(
-              height: 64,
+              height: height,
               alignment: Alignment.center,
               child: Text(
                 label,

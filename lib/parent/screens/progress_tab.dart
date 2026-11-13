@@ -202,7 +202,7 @@ class _WeekCard extends StatelessWidget {
         runSpacing: 6,
         children: [
           Text('${d.learnedDays} ngày học', style: _bodyStyle),
-          Text('${d.stars} sao', style: _bodyStyle),
+          Text('Tổng ${d.stars} sao', style: _bodyStyle),
         ],
       ),
     );
@@ -335,7 +335,7 @@ class _MathCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = level;
+    final l = level?.clamp(0, mathLevels.length - 1);
     return _Card(
       title: 'Toán',
       child: l == null
@@ -344,7 +344,7 @@ class _MathCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Đang học: ${mathLevels[l.clamp(0, mathLevels.length - 1)].title}',
+                    'Đang học: ${mathLevels[l].title}',
                     style: _bodyStyle,
                   ),
                 ),

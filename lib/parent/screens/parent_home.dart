@@ -64,6 +64,8 @@ class _ParentHomeState extends ConsumerState<ParentHome> {
   @override
   Widget build(BuildContext context) {
     if (!_unlocked) {
+      // Expired while open (or never unlocked): ask again.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _ask());
       return const Scaffold(body: DottedBackground(child: SizedBox.expand()));
     }
     final kids = ref.watch(kidsProvider).valueOrNull ?? const <KidProfile>[];

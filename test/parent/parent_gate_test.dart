@@ -66,6 +66,20 @@ void main() {
     expect(passed, 1);
   });
 
+  testWidgets('at 320x568 Xác nhận is tappable without scrolling',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    var passed = 0;
+    await tester.pumpWidget(
+        _wrap(ParentGate(onPassed: () => passed++, random: Random(1))));
+    await _type(tester, _answerOf(_questionText(tester)));
+    await tester.tap(find.text('Xác nhận'));
+    await tester.pump();
+    expect(passed, 1);
+  });
+
   testWidgets('double tap on Xác nhận after a correct answer fires once',
       (tester) async {
     _phone(tester);

@@ -168,6 +168,45 @@ void main() {
     expect(find.text('Tiến bộ'), findsWidgets);
   });
 
+  testWidgets('expired unlock asks for the gate again on rebuild',
+      (tester) async {
+    setSize(tester, 375, 667);
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const Text('trang chủ')),
+      GoRoute(path: '/parent', builder: (_, __) => const ParentHome()),
+    ], initialLocation: '/parent');
+    final container = ProviderContainer(overrides: [
+      ..._overrides(),
+      parentUnlockedUntilProvider
+          .overrideWith((ref) => DateTime.now().add(const Duration(hours: 1))),
+    ]);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await settle(tester);
+    expect(find.text('Dành cho ba mẹ'), findsNothing);
+    container.read(parentUnlockedUntilProvider.notifier).state =
+        DateTime.now().subtract(const Duration(minutes: 1));
+    await tester.tap(find.text('Hồ sơ'));
+    await settle(tester);
+    expect(find.text('Dành cho ba mẹ'), findsOneWidget);
+    await passGate(tester);
+    expect(find.text('Dành cho ba mẹ'), findsNothing);
+    expect(find.text('Góc ba mẹ'), findsOneWidget);
+    expect(find.text('Hôm nay'), findsNothing);
+    expect(find.text('Sắp có'), findsOneWidget);
+  });
+
+  testWidgets('math label stays within 1..9', (tester) async {
+    await LevelRepository(db, kidId: na).setLevel('toan', 12);
+    await _pumpParent(tester, unlocked: true);
+    expect(find.text('9/9'), findsOneWidget);
+    expect(find.text('Đang học: Cộng trừ trong 20'), findsOneWidget);
+    expect(find.text('Tổng 0 sao'), findsOneWidget);
+  });
+
   for (final size in [const Size(320, 568), const Size(430, 932)]) {
     testWidgets('no overflow at $size', (tester) async {
       await _pumpParent(tester, size: size, unlocked: true);
