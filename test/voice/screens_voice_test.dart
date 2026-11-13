@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/math/exercise/choice_answers.dart';
 import 'package:funedu/features/math/math_session_screen.dart';
 import 'package:funedu/features/writing/writing_screen.dart';
@@ -25,6 +26,7 @@ Future<void> _pump(WidgetTester t, FakeSpeaker fake, Widget home) async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1),
         speakerProvider.overrideWithValue(fake),
       ],
       child: MaterialApp(home: home),

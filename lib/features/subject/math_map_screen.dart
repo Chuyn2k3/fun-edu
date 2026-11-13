@@ -237,7 +237,7 @@ class _PracticeMathScreenState extends ConsumerState<PracticeMathScreen> {
     _busy = true;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final repo = ref.read(levelRepositoryProvider);
+      final repo = await ref.read(levelRepositoryProvider.future);
       final current = await repo.levelOf('toan') ?? 0;
       if (widget.levelIndex == current) {
         await repo.recordMathSession(

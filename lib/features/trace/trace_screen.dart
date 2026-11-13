@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/app_database.dart';
+import '../../profile/kid_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../stroke/glyph_session.dart';
@@ -13,11 +14,11 @@ import 'trace_pad.dart';
 const String _okMessage = 'Đúng rồi!';
 
 String _errorMessage(StrokeError error) => switch (error) {
-  StrokeError.tooShort => 'Vẽ dài thêm chút nữa nhé',
-  StrokeError.wrongDirection => 'Bé vẽ ngược chiều rồi',
-  StrokeError.offPath => 'Đi theo đường chấm nhé',
-  StrokeError.wrongOrder => 'Nét này vẽ sau nhé',
-};
+      StrokeError.tooShort => 'Vẽ dài thêm chút nữa nhé',
+      StrokeError.wrongDirection => 'Bé vẽ ngược chiều rồi',
+      StrokeError.offPath => 'Đi theo đường chấm nhé',
+      StrokeError.wrongOrder => 'Nét này vẽ sau nhé',
+    };
 
 /// Screen where a child traces a glyph; every graded stroke is logged.
 class TraceScreen extends ConsumerWidget {
@@ -61,23 +62,28 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
     final index = _session.currentIndex;
     final result = _session.submit(drawn);
     final messenger = ScaffoldMessenger.of(context);
+    final db = ref.read(databaseProvider);
+    final kidIdFuture = ref.read(currentKidIdProvider.future);
     unawaited(
-      ref
-          .read(databaseProvider)
-          .logAttempt(
-            glyphId: widget.glyph.id,
-            strokeIndex: index,
-            ok: result.ok,
-            error: result.error?.name,
-            deviation: result.deviation,
-            drawn: drawn,
-          )
+      (() async {
+        final kidId = await kidIdFuture;
+        if (kidId == null) return;
+        await db.logAttempt(
+          kidId: kidId,
+          glyphId: widget.glyph.id,
+          strokeIndex: index,
+          ok: result.ok,
+          error: result.error?.name,
+          deviation: result.deviation,
+          drawn: drawn,
+        );
+      })()
           .catchError((Object e, StackTrace st) {
         debugPrint('logAttempt failed: $e\n$st');
-            messenger.showSnackBar(
-              const SnackBar(content: Text('Không lưu được kết quả')),
-            );
-          }),
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Không lưu được kết quả')),
+        );
+      }),
     );
     setState(() {
       _attempts++;

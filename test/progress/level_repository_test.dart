@@ -8,7 +8,7 @@ void main() {
   late LevelRepository repo;
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
-    repo = LevelRepository(db, now: () => DateTime(2026, 11, 12));
+    repo = LevelRepository(db, kidId: 1, now: () => DateTime(2026, 11, 12));
   });
   tearDown(() => db.close());
 

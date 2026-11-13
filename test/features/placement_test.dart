@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/app.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/features/placement/placement_screen.dart';
 import 'package:funedu/progress/level_repository.dart';
@@ -31,7 +32,7 @@ Future<void> _settle(WidgetTester t) async {
 }
 
 class _FailingRepo extends LevelRepository {
-  _FailingRepo(super.db);
+  _FailingRepo(super.db) : super(kidId: 1);
   bool fail = true;
 
   @override
@@ -93,7 +94,8 @@ Future<AppDatabase> _pumpPlacement(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
-        if (repo != null) levelRepositoryProvider.overrideWithValue(repo(db)),
+        currentKidIdProvider.overrideWith((ref) async => 1),
+        if (repo != null) levelRepositoryProvider.overrideWith((ref) async => repo(db)),
         glyphProvider.overrideWith(
           (ref, id) async => Glyph(
             id: id,
@@ -142,12 +144,12 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('toan cong-5'), findsOneWidget);
     // Nothing is stored before the end.
-    expect(await t.runAsync(() => LevelRepository(db).levelOf('viet')), isNull);
+    expect(await t.runAsync(() => LevelRepository(db, kidId: 1).levelOf('viet')), isNull);
     await t.tap(find.text('toan-bad'));
     await _settle(t);
 
     expect(find.text('Xong rồi! Mình cùng học nhé!'), findsOneWidget);
-    final repo = LevelRepository(db);
+    final repo = LevelRepository(db, kidId: 1);
     expect(await t.runAsync(() => repo.levelOf('viet')), 0);
     expect(await t.runAsync(() => repo.levelOf('toan')), 2);
     await t.tap(find.text('Vào học'));
@@ -169,7 +171,7 @@ void main() {
       await t.pumpAndSettle();
     }
     await _settle(t);
-    final repo = LevelRepository(db);
+    final repo = LevelRepository(db, kidId: 1);
     expect(await t.runAsync(() => repo.levelOf('viet')), 9);
     expect(await t.runAsync(() => repo.levelOf('toan')), 6);
   });
@@ -182,7 +184,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('toan-bad'));
     await _settle(t);
-    final repo = LevelRepository(db);
+    final repo = LevelRepository(db, kidId: 1);
     expect(await t.runAsync(() => repo.levelOf('viet')), 0);
     expect(await t.runAsync(() => repo.levelOf('toan')), 0);
   });
@@ -201,7 +203,7 @@ void main() {
     await t.tap(find.text('toan-back'));
     await t.pumpAndSettle();
     expect(find.text('Chào bé! Mình là Chíp Chíp'), findsOneWidget);
-    expect(await t.runAsync(() => LevelRepository(db).isPlaced()), isFalse);
+    expect(await t.runAsync(() => LevelRepository(db, kidId: 1).isPlaced()), isFalse);
   });
 
   testWidgets('a failed save shows the snackbar and Thử lại recovers',
@@ -218,13 +220,13 @@ void main() {
     expect(find.text('Không lưu được kết quả'), findsOneWidget);
     expect(find.text('Thử lại'), findsOneWidget);
     expect(find.text('Vào học'), findsNothing);
-    expect(await t.runAsync(() => LevelRepository(db).isPlaced()), isFalse);
+    expect(await t.runAsync(() => LevelRepository(db, kidId: 1).isPlaced()), isFalse);
 
     failing.fail = false;
     await t.tap(find.text('Thử lại'));
     await _settle(t);
     expect(find.text('Vào học'), findsOneWidget);
-    expect(await t.runAsync(() => LevelRepository(db).isPlaced()), isTrue);
+    expect(await t.runAsync(() => LevelRepository(db, kidId: 1).isPlaced()), isTrue);
   });
 
   group('real router', () {
@@ -235,14 +237,15 @@ void main() {
       appRouter.go('/');
       if (placed) {
         await t.runAsync(() async {
-          final r = LevelRepository(db);
+          final r = LevelRepository(db, kidId: 1);
           await r.setLevel('viet', 0);
           await r.setLevel('toan', 0);
         });
       }
       await t.pumpWidget(
         ProviderScope(
-          overrides: [databaseProvider.overrideWithValue(db)],
+          overrides: [databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)],
           child: const App(),
         ),
       );
@@ -263,7 +266,8 @@ void main() {
       appRouter.go('/');
       await t.pumpWidget(
         ProviderScope(
-          overrides: [databaseProvider.overrideWithValue(db)],
+          overrides: [databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)],
           child: const App(),
         ),
       );

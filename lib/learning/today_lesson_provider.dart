@@ -11,8 +11,9 @@ import 'writing_ladder.dart';
 /// child's progress and placed levels.
 final todayLessonProvider = FutureProvider<List<LessonItem>>((ref) async {
   final available = await ref.watch(glyphRepositoryProvider).listIds();
-  final stats = await ref.watch(progressRepositoryProvider).glyphStats();
-  final levels = ref.watch(levelRepositoryProvider);
+  final stats =
+      await (await ref.watch(progressRepositoryProvider.future)).glyphStats();
+  final levels = await ref.watch(levelRepositoryProvider.future);
   final writingStart = await levels.levelOf('viet') ?? 0;
   final mathLevel = await levels.levelOf('toan') ?? 0;
   return composeTodayLessonItems(

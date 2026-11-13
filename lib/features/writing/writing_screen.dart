@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
+import '../../profile/kid_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
@@ -78,17 +79,22 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
     final index = _session.currentIndex;
     final result = _session.submit(drawn);
     final messenger = ScaffoldMessenger.of(context);
+    final db = ref.read(databaseProvider);
+    final kidIdFuture = ref.read(currentKidIdProvider.future);
     unawaited(
-      ref
-          .read(databaseProvider)
-          .logAttempt(
-            glyphId: widget.glyph.id,
-            strokeIndex: index,
-            ok: result.ok,
-            error: result.error?.name,
-            deviation: result.deviation,
-            drawn: drawn,
-          )
+      (() async {
+        final kidId = await kidIdFuture;
+        if (kidId == null) return;
+        await db.logAttempt(
+          kidId: kidId,
+          glyphId: widget.glyph.id,
+          strokeIndex: index,
+          ok: result.ok,
+          error: result.error?.name,
+          deviation: result.deviation,
+          drawn: drawn,
+        );
+      })()
           .catchError((Object e, StackTrace st) {
         debugPrint('logAttempt failed: $e\n$st');
         messenger.showSnackBar(

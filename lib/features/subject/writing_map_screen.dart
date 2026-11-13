@@ -15,7 +15,8 @@ const _contentMaxWidth = 560.0;
 
 /// Per-glyph stats for the writing map; invalidated after each practice.
 final writingStatsProvider = FutureProvider.autoDispose<Map<String, GlyphStat>>(
-  (ref) => ref.watch(progressRepositoryProvider).glyphStats(),
+  (ref) async =>
+      (await ref.watch(progressRepositoryProvider.future)).glyphStats(),
 );
 
 /// Viết subject map: a grid of the writing ladder, tap a glyph to practice.
@@ -209,9 +210,8 @@ class PracticeScreen extends ConsumerWidget {
         onCompleted: (failed) async {
           final messenger = ScaffoldMessenger.of(context);
           try {
-            await ref
-                .read(progressRepositoryProvider)
-                .recordGlyphCompleted(g.id, failedStrokes: failed);
+            final repo = await ref.read(progressRepositoryProvider.future);
+            await repo.recordGlyphCompleted(g.id, failedStrokes: failed);
             ref.invalidate(homeSummaryProvider);
             ref.invalidate(todayLessonProvider);
             ref.invalidate(writingStatsProvider);

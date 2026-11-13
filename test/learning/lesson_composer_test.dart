@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/learning/lesson_composer.dart';
 import 'package:funedu/learning/lesson_item.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
@@ -134,6 +135,7 @@ void main() {
     final container = ProviderContainer(overrides: [
       glyphRepositoryProvider.overrideWithValue(_FakeGlyphRepository()),
       databaseProvider.overrideWithValue(db),
+      currentKidIdProvider.overrideWith((ref) async => 1),
     ]);
     addTearDown(container.dispose);
     expect(await container.read(todayLessonProvider.future), const [
@@ -149,9 +151,10 @@ void main() {
     final container = ProviderContainer(overrides: [
       glyphRepositoryProvider.overrideWithValue(_FakeGlyphRepository()),
       databaseProvider.overrideWithValue(db),
+      currentKidIdProvider.overrideWith((ref) async => 1),
     ]);
     addTearDown(container.dispose);
-    final levels = container.read(levelRepositoryProvider);
+    final levels = await container.read(levelRepositoryProvider.future);
     await levels.setLevel('viet', 5);
     await levels.setLevel('toan', 1);
     expect(await container.read(todayLessonProvider.future), const [

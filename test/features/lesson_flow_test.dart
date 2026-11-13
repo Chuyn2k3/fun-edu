@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/lesson/lesson_done_screen.dart';
 import 'package:funedu/features/lesson/lesson_flow_screen.dart';
 import 'package:funedu/features/math/exercise/choice_answers.dart';
@@ -64,7 +65,7 @@ Future<void> _finishGlyph(WidgetTester t) async {
 
 /// Fails the first [failures] math saves, then behaves normally.
 class _FlakyLevelRepository extends LevelRepository {
-  _FlakyLevelRepository(super.db, this.failures);
+  _FlakyLevelRepository(super.db, this.failures) : super(kidId: 1);
 
   int failures;
   int attempts = 0;
@@ -115,8 +116,9 @@ Future<AppDatabase> _pump(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1),
         if (flaky != null)
-          levelRepositoryProvider.overrideWith((ref) {
+          levelRepositoryProvider.overrideWith((ref) async {
             final repo = _FlakyLevelRepository(db, mathSaveFailures);
             flaky.add(repo);
             return repo;
@@ -189,7 +191,8 @@ void main() {
       addTearDown(db.close);
       await t.pumpWidget(
         ProviderScope(
-          overrides: [databaseProvider.overrideWithValue(db)],
+          overrides: [databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)],
           child: const MaterialApp(home: LessonDoneScreen(starsEarned: 5)),
         ),
       );
@@ -210,7 +213,7 @@ void main() {
       MathItem(4),
       WritingItem('b'),
     ]);
-    await t.runAsync(() => LevelRepository(db).setLevel('toan', 4));
+    await t.runAsync(() => LevelRepository(db, kidId: 1).setLevel('toan', 4));
     await _draw(t);
     await _finishGlyph(t);
 
@@ -241,7 +244,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Viết Chữ b'), findsOneWidget);
     expect(
-      await t.runAsync(() => LevelRepository(db).levelOf('toan')),
+      await t.runAsync(() => LevelRepository(db, kidId: 1).levelOf('toan')),
       5,
     );
 
@@ -266,7 +269,7 @@ void main() {
       mathSaveFailures: 1,
       flaky: flaky,
     );
-    await t.runAsync(() => LevelRepository(db).setLevel('toan', 4));
+    await t.runAsync(() => LevelRepository(db, kidId: 1).setLevel('toan', 4));
     final prompt = RegExp(r'^(\d+) \+ (\d+) = \?$');
     for (var i = 0; i < 5; i++) {
       final text = t
@@ -299,7 +302,7 @@ void main() {
     expect(flaky.single.attempts, 2);
     expect(find.text('Xong bài hôm nay!'), findsOneWidget);
     expect(
-      await t.runAsync(() => LevelRepository(db).levelOf('toan')),
+      await t.runAsync(() => LevelRepository(db, kidId: 1).levelOf('toan')),
       5,
     );
   });
@@ -314,6 +317,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1),
         todayLessonProvider.overrideWith(
           (ref) => ++calls == 1
               ? Future.value([const WritingItem('old')])

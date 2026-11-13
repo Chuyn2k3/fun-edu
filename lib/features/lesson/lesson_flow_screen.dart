@@ -54,9 +54,9 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
   Future<void> _completeItem(Future<void> Function() record) async {
     if (_busy) return;
     _busy = true;
-    final repo = ref.read(progressRepositoryProvider);
     final items = _items!;
     try {
+      final repo = await ref.read(progressRepositoryProvider.future);
       // A retry must not record the item twice if only a later step failed.
       if (!_recorded) {
         await record();
@@ -96,16 +96,18 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
   }
 
   Future<void> _onGlyphCompleted(String id, int failedStrokes) =>
-      _completeItem(() => ref
-          .read(progressRepositoryProvider)
-          .recordGlyphCompleted(id, failedStrokes: failedStrokes));
+      _completeItem(() async {
+        final repo = await ref.read(progressRepositoryProvider.future);
+        await repo.recordGlyphCompleted(id, failedStrokes: failedStrokes);
+      });
 
   Future<void> _onMathCompleted(int firstTryCorrect, int total) =>
       _completeItem(() async {
-        await ref.read(levelRepositoryProvider).recordMathSession(
-              firstTryCorrect: firstTryCorrect,
-              total: total,
-            );
+        final levels = await ref.read(levelRepositoryProvider.future);
+        await levels.recordMathSession(
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+        );
         ref.invalidate(mathLevelIndexProvider);
       });
 

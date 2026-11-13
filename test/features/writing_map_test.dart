@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/subject/writing_map_screen.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
 import 'package:funedu/progress/progress_repository.dart';
@@ -32,7 +33,7 @@ Future<AppDatabase> _pump(
   addTearDown(db.close);
   if (master) {
     await t.runAsync(
-      () => ProgressRepository(db)
+      () => ProgressRepository(db, kidId: 1)
           .recordGlyphCompleted('net-ngang', failedStrokes: 0),
     );
   }
@@ -57,8 +58,9 @@ Future<AppDatabase> _pump(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1),
         if (repo != null)
-          progressRepositoryProvider.overrideWithValue(repo(db)),
+          progressRepositoryProvider.overrideWith((ref) async => repo(db)),
         glyphListProvider.overrideWith(
           (ref) async => [
             for (final id in writingLadder)
@@ -81,7 +83,7 @@ Future<AppDatabase> _pump(
 }
 
 class _FailingRepo extends ProgressRepository {
-  _FailingRepo(super.db);
+  _FailingRepo(super.db) : super(kidId: 1);
 
   @override
   Future<void> recordGlyphCompleted(

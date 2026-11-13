@@ -12,7 +12,7 @@ void main() {
     // 2026-11-11 is a Wednesday.
     clock = DateTime(2026, 11, 11, 10);
     db = AppDatabase(NativeDatabase.memory());
-    repo = ProgressRepository(db, now: () => clock);
+    repo = ProgressRepository(db, kidId: 1, now: () => clock);
   });
   tearDown(() => db.close());
 

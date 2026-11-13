@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
 import 'package:funedu/features/trace/trace_screen.dart';
 import 'package:funedu/stroke/geometry.dart';
@@ -30,6 +31,7 @@ class _FailingDb extends AppDatabase {
 
   @override
   Future<void> logAttempt({
+    required int kidId,
     required String glyphId,
     required int strokeIndex,
     required bool ok,
@@ -46,6 +48,7 @@ Future<AppDatabase> _pump(WidgetTester t, {AppDatabase? database}) async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1),
         glyphRepositoryProvider.overrideWithValue(_FakeRepo()),
       ],
       child: const MaterialApp(home: TraceScreen('net-ngang')),
@@ -67,7 +70,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Giỏi quá!'), findsOneWidget);
     expect(find.text('Làm lại'), findsOneWidget);
-    expect(await t.runAsync(() => db.summary('net-ngang')), (total: 1, ok: 1));
+    expect(await t.runAsync(() => db.summary(1, 'net-ngang')), (total: 1, ok: 1));
     await t.tap(find.text('Làm lại'));
     await t.pumpAndSettle();
     expect(find.text('Giỏi quá!'), findsNothing);
@@ -84,9 +87,9 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Bé vẽ ngược chiều rồi'), findsOneWidget);
     expect(find.text('Giỏi quá!'), findsNothing);
-    expect(await t.runAsync(() => db.summary('net-ngang')), (total: 1, ok: 0));
+    expect(await t.runAsync(() => db.summary(1, 'net-ngang')), (total: 1, ok: 0));
     expect(find.text('Lần thử: 1'), findsOneWidget);
-    final rows = (await t.runAsync(() => db.attemptsFor('net-ngang')))!;
+    final rows = (await t.runAsync(() => db.attemptsFor(1, 'net-ngang')))!;
     expect(rows, hasLength(1));
     expect(rows.single.glyphId, 'net-ngang');
     expect(rows.single.strokeIndex, 0);
@@ -130,7 +133,7 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
     await t.pumpAndSettle();
-    expect(await t.runAsync(() => db.summary('net-ngang')), (total: 1, ok: 1));
+    expect(await t.runAsync(() => db.summary(1, 'net-ngang')), (total: 1, ok: 1));
   });
 
   testWidgets('a failing log write is surfaced to the adult', (t) async {

@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
 import 'package:funedu/features/writing/writing_screen.dart';
 import 'package:funedu/stroke/geometry.dart';
@@ -29,7 +30,8 @@ Future<List<int>> _pump(WidgetTester t, {Size? size, Glyph? glyph}) async {
   final completed = <int>[];
   await t.pumpWidget(
     ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db)],
+      overrides: [databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)],
       child: MaterialApp(
         home: WritingScreen(
           glyph: glyph ?? _glyph,

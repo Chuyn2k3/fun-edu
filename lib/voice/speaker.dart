@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import '../profile/kid_repository.dart';
+
 /// Speaks Vietnamese lines aloud.
 abstract class Speaker {
   Future<void> speak(String text);
@@ -73,4 +75,8 @@ class TtsSpeaker implements Speaker {
   }
 }
 
-final speakerProvider = Provider<Speaker>((ref) => TtsSpeaker());
+/// Silent when the parent switched the voice off in settings.
+final speakerProvider = Provider<Speaker>((ref) {
+  final enabled = ref.watch(voiceEnabledProvider).valueOrNull ?? true;
+  return enabled ? TtsSpeaker() : const SilentSpeaker();
+});

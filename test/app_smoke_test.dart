@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/app.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/progress/level_repository.dart';
 
 void main() {
@@ -13,13 +14,14 @@ void main() {
 
   testWidgets('app khởi động và hiện trang chủ', (tester) async {
     await tester.runAsync(() async {
-      final levels = LevelRepository(db);
+      final levels = LevelRepository(db, kidId: 1);
       await levels.setLevel('viet', 0);
       await levels.setLevel('toan', 0);
     });
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [databaseProvider.overrideWithValue(db)],
+        overrides: [databaseProvider.overrideWithValue(db),
+        currentKidIdProvider.overrideWith((ref) async => 1)],
         child: const App(),
       ),
     );

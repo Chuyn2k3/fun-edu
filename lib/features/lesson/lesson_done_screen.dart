@@ -13,7 +13,8 @@ const _weekLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 /// Weekdays (1 = Monday .. 7 = Sunday) learned in the current week.
 final learnedWeekdaysProvider = FutureProvider.autoDispose<Set<int>>(
-  (ref) => ref.watch(progressRepositoryProvider).learnedWeekdaysThisWeek(),
+  (ref) async => (await ref.watch(progressRepositoryProvider.future))
+      .learnedWeekdaysThisWeek(),
 );
 
 /// "Xong bài hôm nay!" celebration with this lesson's stars and the week.

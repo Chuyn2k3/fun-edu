@@ -7,6 +7,7 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     Future<void> log(bool ok, String glyph) => db.logAttempt(
+      kidId: 1,
       glyphId: glyph,
       strokeIndex: 0,
       ok: ok,
@@ -17,7 +18,7 @@ void main() {
     await log(false, 'net-ngang');
     await log(true, 'net-ngang');
     await log(true, 'net-thang-dung');
-    expect(await db.summary('net-ngang'), (total: 3, ok: 2));
-    expect(await db.summary('khac'), (total: 0, ok: 0));
+    expect(await db.summary(1, 'net-ngang'), (total: 3, ok: 2));
+    expect(await db.summary(1, 'khac'), (total: 0, ok: 0));
   });
 }

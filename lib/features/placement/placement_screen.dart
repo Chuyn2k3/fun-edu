@@ -148,7 +148,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final repo = ref.read(levelRepositoryProvider);
+      final repo = await ref.read(levelRepositoryProvider.future);
       await repo.setLevel('viet', _writingStart);
       await repo.setLevel('toan', _mathStart);
       ref.invalidate(isPlacedProvider);

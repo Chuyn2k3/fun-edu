@@ -18,6 +18,11 @@ class $StrokeAttemptsTable extends StrokeAttempts
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _glyphIdMeta =
       const VerificationMeta('glyphId');
   @override
@@ -61,8 +66,17 @@ class $StrokeAttemptsTable extends StrokeAttempts
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, glyphId, strokeIndex, ok, error, deviation, points, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        kidId,
+        glyphId,
+        strokeIndex,
+        ok,
+        error,
+        deviation,
+        points,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -75,6 +89,12 @@ class $StrokeAttemptsTable extends StrokeAttempts
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
     }
     if (data.containsKey('glyph_id')) {
       context.handle(_glyphIdMeta,
@@ -126,6 +146,8 @@ class $StrokeAttemptsTable extends StrokeAttempts
     return StrokeAttempt(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
       glyphId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}glyph_id'])!,
       strokeIndex: attachedDatabase.typeMapping
@@ -151,6 +173,7 @@ class $StrokeAttemptsTable extends StrokeAttempts
 
 class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   final int id;
+  final int kidId;
   final String glyphId;
   final int strokeIndex;
   final bool ok;
@@ -163,6 +186,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   final DateTime createdAt;
   const StrokeAttempt(
       {required this.id,
+      required this.kidId,
       required this.glyphId,
       required this.strokeIndex,
       required this.ok,
@@ -174,6 +198,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['kid_id'] = Variable<int>(kidId);
     map['glyph_id'] = Variable<String>(glyphId);
     map['stroke_index'] = Variable<int>(strokeIndex);
     map['ok'] = Variable<bool>(ok);
@@ -191,6 +216,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   StrokeAttemptsCompanion toCompanion(bool nullToAbsent) {
     return StrokeAttemptsCompanion(
       id: Value(id),
+      kidId: Value(kidId),
       glyphId: Value(glyphId),
       strokeIndex: Value(strokeIndex),
       ok: Value(ok),
@@ -208,6 +234,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return StrokeAttempt(
       id: serializer.fromJson<int>(json['id']),
+      kidId: serializer.fromJson<int>(json['kidId']),
       glyphId: serializer.fromJson<String>(json['glyphId']),
       strokeIndex: serializer.fromJson<int>(json['strokeIndex']),
       ok: serializer.fromJson<bool>(json['ok']),
@@ -222,6 +249,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'kidId': serializer.toJson<int>(kidId),
       'glyphId': serializer.toJson<String>(glyphId),
       'strokeIndex': serializer.toJson<int>(strokeIndex),
       'ok': serializer.toJson<bool>(ok),
@@ -234,6 +262,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
 
   StrokeAttempt copyWith(
           {int? id,
+          int? kidId,
           String? glyphId,
           int? strokeIndex,
           bool? ok,
@@ -243,6 +272,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
           DateTime? createdAt}) =>
       StrokeAttempt(
         id: id ?? this.id,
+        kidId: kidId ?? this.kidId,
         glyphId: glyphId ?? this.glyphId,
         strokeIndex: strokeIndex ?? this.strokeIndex,
         ok: ok ?? this.ok,
@@ -254,6 +284,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   StrokeAttempt copyWithCompanion(StrokeAttemptsCompanion data) {
     return StrokeAttempt(
       id: data.id.present ? data.id.value : this.id,
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
       glyphId: data.glyphId.present ? data.glyphId.value : this.glyphId,
       strokeIndex:
           data.strokeIndex.present ? data.strokeIndex.value : this.strokeIndex,
@@ -269,6 +300,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   String toString() {
     return (StringBuffer('StrokeAttempt(')
           ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
           ..write('glyphId: $glyphId, ')
           ..write('strokeIndex: $strokeIndex, ')
           ..write('ok: $ok, ')
@@ -282,12 +314,13 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
 
   @override
   int get hashCode => Object.hash(
-      id, glyphId, strokeIndex, ok, error, deviation, points, createdAt);
+      id, kidId, glyphId, strokeIndex, ok, error, deviation, points, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is StrokeAttempt &&
           other.id == this.id &&
+          other.kidId == this.kidId &&
           other.glyphId == this.glyphId &&
           other.strokeIndex == this.strokeIndex &&
           other.ok == this.ok &&
@@ -299,6 +332,7 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
 
 class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   final Value<int> id;
+  final Value<int> kidId;
   final Value<String> glyphId;
   final Value<int> strokeIndex;
   final Value<bool> ok;
@@ -308,6 +342,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   final Value<DateTime> createdAt;
   const StrokeAttemptsCompanion({
     this.id = const Value.absent(),
+    this.kidId = const Value.absent(),
     this.glyphId = const Value.absent(),
     this.strokeIndex = const Value.absent(),
     this.ok = const Value.absent(),
@@ -318,6 +353,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   });
   StrokeAttemptsCompanion.insert({
     this.id = const Value.absent(),
+    required int kidId,
     required String glyphId,
     required int strokeIndex,
     required bool ok,
@@ -325,13 +361,15 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     required double deviation,
     this.points = const Value.absent(),
     required DateTime createdAt,
-  })  : glyphId = Value(glyphId),
+  })  : kidId = Value(kidId),
+        glyphId = Value(glyphId),
         strokeIndex = Value(strokeIndex),
         ok = Value(ok),
         deviation = Value(deviation),
         createdAt = Value(createdAt);
   static Insertable<StrokeAttempt> custom({
     Expression<int>? id,
+    Expression<int>? kidId,
     Expression<String>? glyphId,
     Expression<int>? strokeIndex,
     Expression<bool>? ok,
@@ -342,6 +380,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (kidId != null) 'kid_id': kidId,
       if (glyphId != null) 'glyph_id': glyphId,
       if (strokeIndex != null) 'stroke_index': strokeIndex,
       if (ok != null) 'ok': ok,
@@ -354,6 +393,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
 
   StrokeAttemptsCompanion copyWith(
       {Value<int>? id,
+      Value<int>? kidId,
       Value<String>? glyphId,
       Value<int>? strokeIndex,
       Value<bool>? ok,
@@ -363,6 +403,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
       Value<DateTime>? createdAt}) {
     return StrokeAttemptsCompanion(
       id: id ?? this.id,
+      kidId: kidId ?? this.kidId,
       glyphId: glyphId ?? this.glyphId,
       strokeIndex: strokeIndex ?? this.strokeIndex,
       ok: ok ?? this.ok,
@@ -378,6 +419,9 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
     }
     if (glyphId.present) {
       map['glyph_id'] = Variable<String>(glyphId.value);
@@ -407,6 +451,7 @@ class StrokeAttemptsCompanion extends UpdateCompanion<StrokeAttempt> {
   String toString() {
     return (StringBuffer('StrokeAttemptsCompanion(')
           ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
           ..write('glyphId: $glyphId, ')
           ..write('strokeIndex: $strokeIndex, ')
           ..write('ok: $ok, ')
@@ -425,6 +470,11 @@ class $GlyphProgressTable extends GlyphProgress
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $GlyphProgressTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _glyphIdMeta =
       const VerificationMeta('glyphId');
   @override
@@ -455,7 +505,7 @@ class $GlyphProgressTable extends GlyphProgress
           type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
   List<GeneratedColumn> get $columns =>
-      [glyphId, completions, cleanCompletions, lastPracticedAt];
+      [kidId, glyphId, completions, cleanCompletions, lastPracticedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -466,6 +516,12 @@ class $GlyphProgressTable extends GlyphProgress
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
     if (data.containsKey('glyph_id')) {
       context.handle(_glyphIdMeta,
           glyphId.isAcceptableOrUnknown(data['glyph_id']!, _glyphIdMeta));
@@ -496,11 +552,13 @@ class $GlyphProgressTable extends GlyphProgress
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {glyphId};
+  Set<GeneratedColumn> get $primaryKey => {kidId, glyphId};
   @override
   GlyphProgressData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return GlyphProgressData(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
       glyphId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}glyph_id'])!,
       completions: attachedDatabase.typeMapping
@@ -520,6 +578,7 @@ class $GlyphProgressTable extends GlyphProgress
 
 class GlyphProgressData extends DataClass
     implements Insertable<GlyphProgressData> {
+  final int kidId;
   final String glyphId;
   final int completions;
 
@@ -527,13 +586,15 @@ class GlyphProgressData extends DataClass
   final int cleanCompletions;
   final DateTime lastPracticedAt;
   const GlyphProgressData(
-      {required this.glyphId,
+      {required this.kidId,
+      required this.glyphId,
       required this.completions,
       required this.cleanCompletions,
       required this.lastPracticedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
     map['glyph_id'] = Variable<String>(glyphId);
     map['completions'] = Variable<int>(completions);
     map['clean_completions'] = Variable<int>(cleanCompletions);
@@ -543,6 +604,7 @@ class GlyphProgressData extends DataClass
 
   GlyphProgressCompanion toCompanion(bool nullToAbsent) {
     return GlyphProgressCompanion(
+      kidId: Value(kidId),
       glyphId: Value(glyphId),
       completions: Value(completions),
       cleanCompletions: Value(cleanCompletions),
@@ -554,6 +616,7 @@ class GlyphProgressData extends DataClass
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return GlyphProgressData(
+      kidId: serializer.fromJson<int>(json['kidId']),
       glyphId: serializer.fromJson<String>(json['glyphId']),
       completions: serializer.fromJson<int>(json['completions']),
       cleanCompletions: serializer.fromJson<int>(json['cleanCompletions']),
@@ -564,6 +627,7 @@ class GlyphProgressData extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
       'glyphId': serializer.toJson<String>(glyphId),
       'completions': serializer.toJson<int>(completions),
       'cleanCompletions': serializer.toJson<int>(cleanCompletions),
@@ -572,11 +636,13 @@ class GlyphProgressData extends DataClass
   }
 
   GlyphProgressData copyWith(
-          {String? glyphId,
+          {int? kidId,
+          String? glyphId,
           int? completions,
           int? cleanCompletions,
           DateTime? lastPracticedAt}) =>
       GlyphProgressData(
+        kidId: kidId ?? this.kidId,
         glyphId: glyphId ?? this.glyphId,
         completions: completions ?? this.completions,
         cleanCompletions: cleanCompletions ?? this.cleanCompletions,
@@ -584,6 +650,7 @@ class GlyphProgressData extends DataClass
       );
   GlyphProgressData copyWithCompanion(GlyphProgressCompanion data) {
     return GlyphProgressData(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
       glyphId: data.glyphId.present ? data.glyphId.value : this.glyphId,
       completions:
           data.completions.present ? data.completions.value : this.completions,
@@ -599,6 +666,7 @@ class GlyphProgressData extends DataClass
   @override
   String toString() {
     return (StringBuffer('GlyphProgressData(')
+          ..write('kidId: $kidId, ')
           ..write('glyphId: $glyphId, ')
           ..write('completions: $completions, ')
           ..write('cleanCompletions: $cleanCompletions, ')
@@ -608,12 +676,13 @@ class GlyphProgressData extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(glyphId, completions, cleanCompletions, lastPracticedAt);
+  int get hashCode => Object.hash(
+      kidId, glyphId, completions, cleanCompletions, lastPracticedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is GlyphProgressData &&
+          other.kidId == this.kidId &&
           other.glyphId == this.glyphId &&
           other.completions == this.completions &&
           other.cleanCompletions == this.cleanCompletions &&
@@ -621,12 +690,14 @@ class GlyphProgressData extends DataClass
 }
 
 class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
+  final Value<int> kidId;
   final Value<String> glyphId;
   final Value<int> completions;
   final Value<int> cleanCompletions;
   final Value<DateTime> lastPracticedAt;
   final Value<int> rowid;
   const GlyphProgressCompanion({
+    this.kidId = const Value.absent(),
     this.glyphId = const Value.absent(),
     this.completions = const Value.absent(),
     this.cleanCompletions = const Value.absent(),
@@ -634,14 +705,17 @@ class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
     this.rowid = const Value.absent(),
   });
   GlyphProgressCompanion.insert({
+    required int kidId,
     required String glyphId,
     this.completions = const Value.absent(),
     this.cleanCompletions = const Value.absent(),
     required DateTime lastPracticedAt,
     this.rowid = const Value.absent(),
-  })  : glyphId = Value(glyphId),
+  })  : kidId = Value(kidId),
+        glyphId = Value(glyphId),
         lastPracticedAt = Value(lastPracticedAt);
   static Insertable<GlyphProgressData> custom({
+    Expression<int>? kidId,
     Expression<String>? glyphId,
     Expression<int>? completions,
     Expression<int>? cleanCompletions,
@@ -649,6 +723,7 @@ class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
       if (glyphId != null) 'glyph_id': glyphId,
       if (completions != null) 'completions': completions,
       if (cleanCompletions != null) 'clean_completions': cleanCompletions,
@@ -658,12 +733,14 @@ class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
   }
 
   GlyphProgressCompanion copyWith(
-      {Value<String>? glyphId,
+      {Value<int>? kidId,
+      Value<String>? glyphId,
       Value<int>? completions,
       Value<int>? cleanCompletions,
       Value<DateTime>? lastPracticedAt,
       Value<int>? rowid}) {
     return GlyphProgressCompanion(
+      kidId: kidId ?? this.kidId,
       glyphId: glyphId ?? this.glyphId,
       completions: completions ?? this.completions,
       cleanCompletions: cleanCompletions ?? this.cleanCompletions,
@@ -675,6 +752,9 @@ class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
     if (glyphId.present) {
       map['glyph_id'] = Variable<String>(glyphId.value);
     }
@@ -696,6 +776,7 @@ class GlyphProgressCompanion extends UpdateCompanion<GlyphProgressData> {
   @override
   String toString() {
     return (StringBuffer('GlyphProgressCompanion(')
+          ..write('kidId: $kidId, ')
           ..write('glyphId: $glyphId, ')
           ..write('completions: $completions, ')
           ..write('cleanCompletions: $cleanCompletions, ')
@@ -721,6 +802,11 @@ class $LessonCompletionsTable extends LessonCompletions
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _completedAtMeta =
       const VerificationMeta('completedAt');
   @override
@@ -734,7 +820,7 @@ class $LessonCompletionsTable extends LessonCompletions
       'stars_earned', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns => [id, completedAt, starsEarned];
+  List<GeneratedColumn> get $columns => [id, kidId, completedAt, starsEarned];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -747,6 +833,12 @@ class $LessonCompletionsTable extends LessonCompletions
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
     }
     if (data.containsKey('completed_at')) {
       context.handle(
@@ -775,6 +867,8 @@ class $LessonCompletionsTable extends LessonCompletions
     return LessonCompletion(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
       completedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at'])!,
       starsEarned: attachedDatabase.typeMapping
@@ -791,14 +885,19 @@ class $LessonCompletionsTable extends LessonCompletions
 class LessonCompletion extends DataClass
     implements Insertable<LessonCompletion> {
   final int id;
+  final int kidId;
   final DateTime completedAt;
   final int starsEarned;
   const LessonCompletion(
-      {required this.id, required this.completedAt, required this.starsEarned});
+      {required this.id,
+      required this.kidId,
+      required this.completedAt,
+      required this.starsEarned});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['kid_id'] = Variable<int>(kidId);
     map['completed_at'] = Variable<DateTime>(completedAt);
     map['stars_earned'] = Variable<int>(starsEarned);
     return map;
@@ -807,6 +906,7 @@ class LessonCompletion extends DataClass
   LessonCompletionsCompanion toCompanion(bool nullToAbsent) {
     return LessonCompletionsCompanion(
       id: Value(id),
+      kidId: Value(kidId),
       completedAt: Value(completedAt),
       starsEarned: Value(starsEarned),
     );
@@ -817,6 +917,7 @@ class LessonCompletion extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LessonCompletion(
       id: serializer.fromJson<int>(json['id']),
+      kidId: serializer.fromJson<int>(json['kidId']),
       completedAt: serializer.fromJson<DateTime>(json['completedAt']),
       starsEarned: serializer.fromJson<int>(json['starsEarned']),
     );
@@ -826,21 +927,24 @@ class LessonCompletion extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'kidId': serializer.toJson<int>(kidId),
       'completedAt': serializer.toJson<DateTime>(completedAt),
       'starsEarned': serializer.toJson<int>(starsEarned),
     };
   }
 
   LessonCompletion copyWith(
-          {int? id, DateTime? completedAt, int? starsEarned}) =>
+          {int? id, int? kidId, DateTime? completedAt, int? starsEarned}) =>
       LessonCompletion(
         id: id ?? this.id,
+        kidId: kidId ?? this.kidId,
         completedAt: completedAt ?? this.completedAt,
         starsEarned: starsEarned ?? this.starsEarned,
       );
   LessonCompletion copyWithCompanion(LessonCompletionsCompanion data) {
     return LessonCompletion(
       id: data.id.present ? data.id.value : this.id,
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
       completedAt:
           data.completedAt.present ? data.completedAt.value : this.completedAt,
       starsEarned:
@@ -852,6 +956,7 @@ class LessonCompletion extends DataClass
   String toString() {
     return (StringBuffer('LessonCompletion(')
           ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
           ..write('completedAt: $completedAt, ')
           ..write('starsEarned: $starsEarned')
           ..write(')'))
@@ -859,47 +964,58 @@ class LessonCompletion extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, completedAt, starsEarned);
+  int get hashCode => Object.hash(id, kidId, completedAt, starsEarned);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is LessonCompletion &&
           other.id == this.id &&
+          other.kidId == this.kidId &&
           other.completedAt == this.completedAt &&
           other.starsEarned == this.starsEarned);
 }
 
 class LessonCompletionsCompanion extends UpdateCompanion<LessonCompletion> {
   final Value<int> id;
+  final Value<int> kidId;
   final Value<DateTime> completedAt;
   final Value<int> starsEarned;
   const LessonCompletionsCompanion({
     this.id = const Value.absent(),
+    this.kidId = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.starsEarned = const Value.absent(),
   });
   LessonCompletionsCompanion.insert({
     this.id = const Value.absent(),
+    required int kidId,
     required DateTime completedAt,
     required int starsEarned,
-  })  : completedAt = Value(completedAt),
+  })  : kidId = Value(kidId),
+        completedAt = Value(completedAt),
         starsEarned = Value(starsEarned);
   static Insertable<LessonCompletion> custom({
     Expression<int>? id,
+    Expression<int>? kidId,
     Expression<DateTime>? completedAt,
     Expression<int>? starsEarned,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (kidId != null) 'kid_id': kidId,
       if (completedAt != null) 'completed_at': completedAt,
       if (starsEarned != null) 'stars_earned': starsEarned,
     });
   }
 
   LessonCompletionsCompanion copyWith(
-      {Value<int>? id, Value<DateTime>? completedAt, Value<int>? starsEarned}) {
+      {Value<int>? id,
+      Value<int>? kidId,
+      Value<DateTime>? completedAt,
+      Value<int>? starsEarned}) {
     return LessonCompletionsCompanion(
       id: id ?? this.id,
+      kidId: kidId ?? this.kidId,
       completedAt: completedAt ?? this.completedAt,
       starsEarned: starsEarned ?? this.starsEarned,
     );
@@ -910,6 +1026,9 @@ class LessonCompletionsCompanion extends UpdateCompanion<LessonCompletion> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
     }
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
@@ -924,6 +1043,7 @@ class LessonCompletionsCompanion extends UpdateCompanion<LessonCompletion> {
   String toString() {
     return (StringBuffer('LessonCompletionsCompanion(')
           ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
           ..write('completedAt: $completedAt, ')
           ..write('starsEarned: $starsEarned')
           ..write(')'))
@@ -937,6 +1057,11 @@ class $SubjectLevelsTable extends SubjectLevels
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $SubjectLevelsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _subjectMeta =
       const VerificationMeta('subject');
   @override
@@ -956,7 +1081,7 @@ class $SubjectLevelsTable extends SubjectLevels
       'placed_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns => [subject, levelIndex, placedAt];
+  List<GeneratedColumn> get $columns => [kidId, subject, levelIndex, placedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -967,6 +1092,12 @@ class $SubjectLevelsTable extends SubjectLevels
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
     if (data.containsKey('subject')) {
       context.handle(_subjectMeta,
           subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta));
@@ -991,11 +1122,13 @@ class $SubjectLevelsTable extends SubjectLevels
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {subject};
+  Set<GeneratedColumn> get $primaryKey => {kidId, subject};
   @override
   SubjectLevel map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SubjectLevel(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
       subject: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}subject'])!,
       levelIndex: attachedDatabase.typeMapping
@@ -1012,16 +1145,19 @@ class $SubjectLevelsTable extends SubjectLevels
 }
 
 class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
+  final int kidId;
   final String subject;
   final int levelIndex;
   final DateTime placedAt;
   const SubjectLevel(
-      {required this.subject,
+      {required this.kidId,
+      required this.subject,
       required this.levelIndex,
       required this.placedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
     map['subject'] = Variable<String>(subject);
     map['level_index'] = Variable<int>(levelIndex);
     map['placed_at'] = Variable<DateTime>(placedAt);
@@ -1030,6 +1166,7 @@ class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
 
   SubjectLevelsCompanion toCompanion(bool nullToAbsent) {
     return SubjectLevelsCompanion(
+      kidId: Value(kidId),
       subject: Value(subject),
       levelIndex: Value(levelIndex),
       placedAt: Value(placedAt),
@@ -1040,6 +1177,7 @@ class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SubjectLevel(
+      kidId: serializer.fromJson<int>(json['kidId']),
       subject: serializer.fromJson<String>(json['subject']),
       levelIndex: serializer.fromJson<int>(json['levelIndex']),
       placedAt: serializer.fromJson<DateTime>(json['placedAt']),
@@ -1049,6 +1187,7 @@ class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
       'subject': serializer.toJson<String>(subject),
       'levelIndex': serializer.toJson<int>(levelIndex),
       'placedAt': serializer.toJson<DateTime>(placedAt),
@@ -1056,14 +1195,16 @@ class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
   }
 
   SubjectLevel copyWith(
-          {String? subject, int? levelIndex, DateTime? placedAt}) =>
+          {int? kidId, String? subject, int? levelIndex, DateTime? placedAt}) =>
       SubjectLevel(
+        kidId: kidId ?? this.kidId,
         subject: subject ?? this.subject,
         levelIndex: levelIndex ?? this.levelIndex,
         placedAt: placedAt ?? this.placedAt,
       );
   SubjectLevel copyWithCompanion(SubjectLevelsCompanion data) {
     return SubjectLevel(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
       subject: data.subject.present ? data.subject.value : this.subject,
       levelIndex:
           data.levelIndex.present ? data.levelIndex.value : this.levelIndex,
@@ -1074,6 +1215,7 @@ class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
   @override
   String toString() {
     return (StringBuffer('SubjectLevel(')
+          ..write('kidId: $kidId, ')
           ..write('subject: $subject, ')
           ..write('levelIndex: $levelIndex, ')
           ..write('placedAt: $placedAt')
@@ -1082,42 +1224,49 @@ class SubjectLevel extends DataClass implements Insertable<SubjectLevel> {
   }
 
   @override
-  int get hashCode => Object.hash(subject, levelIndex, placedAt);
+  int get hashCode => Object.hash(kidId, subject, levelIndex, placedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SubjectLevel &&
+          other.kidId == this.kidId &&
           other.subject == this.subject &&
           other.levelIndex == this.levelIndex &&
           other.placedAt == this.placedAt);
 }
 
 class SubjectLevelsCompanion extends UpdateCompanion<SubjectLevel> {
+  final Value<int> kidId;
   final Value<String> subject;
   final Value<int> levelIndex;
   final Value<DateTime> placedAt;
   final Value<int> rowid;
   const SubjectLevelsCompanion({
+    this.kidId = const Value.absent(),
     this.subject = const Value.absent(),
     this.levelIndex = const Value.absent(),
     this.placedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SubjectLevelsCompanion.insert({
+    required int kidId,
     required String subject,
     required int levelIndex,
     required DateTime placedAt,
     this.rowid = const Value.absent(),
-  })  : subject = Value(subject),
+  })  : kidId = Value(kidId),
+        subject = Value(subject),
         levelIndex = Value(levelIndex),
         placedAt = Value(placedAt);
   static Insertable<SubjectLevel> custom({
+    Expression<int>? kidId,
     Expression<String>? subject,
     Expression<int>? levelIndex,
     Expression<DateTime>? placedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
       if (subject != null) 'subject': subject,
       if (levelIndex != null) 'level_index': levelIndex,
       if (placedAt != null) 'placed_at': placedAt,
@@ -1126,11 +1275,13 @@ class SubjectLevelsCompanion extends UpdateCompanion<SubjectLevel> {
   }
 
   SubjectLevelsCompanion copyWith(
-      {Value<String>? subject,
+      {Value<int>? kidId,
+      Value<String>? subject,
       Value<int>? levelIndex,
       Value<DateTime>? placedAt,
       Value<int>? rowid}) {
     return SubjectLevelsCompanion(
+      kidId: kidId ?? this.kidId,
       subject: subject ?? this.subject,
       levelIndex: levelIndex ?? this.levelIndex,
       placedAt: placedAt ?? this.placedAt,
@@ -1141,6 +1292,9 @@ class SubjectLevelsCompanion extends UpdateCompanion<SubjectLevel> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
     if (subject.present) {
       map['subject'] = Variable<String>(subject.value);
     }
@@ -1159,9 +1313,499 @@ class SubjectLevelsCompanion extends UpdateCompanion<SubjectLevel> {
   @override
   String toString() {
     return (StringBuffer('SubjectLevelsCompanion(')
+          ..write('kidId: $kidId, ')
           ..write('subject: $subject, ')
           ..write('levelIndex: $levelIndex, ')
           ..write('placedAt: $placedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $KidProfilesTable extends KidProfiles
+    with TableInfo<$KidProfilesTable, KidProfile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $KidProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _nicknameMeta =
+      const VerificationMeta('nickname');
+  @override
+  late final GeneratedColumn<String> nickname = GeneratedColumn<String>(
+      'nickname', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 20),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _avatarMeta = const VerificationMeta('avatar');
+  @override
+  late final GeneratedColumn<String> avatar = GeneratedColumn<String>(
+      'avatar', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ageMeta = const VerificationMeta('age');
+  @override
+  late final GeneratedColumn<int> age = GeneratedColumn<int>(
+      'age', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, nickname, avatar, age, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'kid_profiles';
+  @override
+  VerificationContext validateIntegrity(Insertable<KidProfile> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('nickname')) {
+      context.handle(_nicknameMeta,
+          nickname.isAcceptableOrUnknown(data['nickname']!, _nicknameMeta));
+    } else if (isInserting) {
+      context.missing(_nicknameMeta);
+    }
+    if (data.containsKey('avatar')) {
+      context.handle(_avatarMeta,
+          avatar.isAcceptableOrUnknown(data['avatar']!, _avatarMeta));
+    } else if (isInserting) {
+      context.missing(_avatarMeta);
+    }
+    if (data.containsKey('age')) {
+      context.handle(
+          _ageMeta, age.isAcceptableOrUnknown(data['age']!, _ageMeta));
+    } else if (isInserting) {
+      context.missing(_ageMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  KidProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return KidProfile(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      nickname: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}nickname'])!,
+      avatar: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}avatar'])!,
+      age: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}age'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $KidProfilesTable createAlias(String alias) {
+    return $KidProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class KidProfile extends DataClass implements Insertable<KidProfile> {
+  final int id;
+  final String nickname;
+  final String avatar;
+  final int age;
+  final DateTime createdAt;
+  const KidProfile(
+      {required this.id,
+      required this.nickname,
+      required this.avatar,
+      required this.age,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['nickname'] = Variable<String>(nickname);
+    map['avatar'] = Variable<String>(avatar);
+    map['age'] = Variable<int>(age);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  KidProfilesCompanion toCompanion(bool nullToAbsent) {
+    return KidProfilesCompanion(
+      id: Value(id),
+      nickname: Value(nickname),
+      avatar: Value(avatar),
+      age: Value(age),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory KidProfile.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return KidProfile(
+      id: serializer.fromJson<int>(json['id']),
+      nickname: serializer.fromJson<String>(json['nickname']),
+      avatar: serializer.fromJson<String>(json['avatar']),
+      age: serializer.fromJson<int>(json['age']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nickname': serializer.toJson<String>(nickname),
+      'avatar': serializer.toJson<String>(avatar),
+      'age': serializer.toJson<int>(age),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  KidProfile copyWith(
+          {int? id,
+          String? nickname,
+          String? avatar,
+          int? age,
+          DateTime? createdAt}) =>
+      KidProfile(
+        id: id ?? this.id,
+        nickname: nickname ?? this.nickname,
+        avatar: avatar ?? this.avatar,
+        age: age ?? this.age,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  KidProfile copyWithCompanion(KidProfilesCompanion data) {
+    return KidProfile(
+      id: data.id.present ? data.id.value : this.id,
+      nickname: data.nickname.present ? data.nickname.value : this.nickname,
+      avatar: data.avatar.present ? data.avatar.value : this.avatar,
+      age: data.age.present ? data.age.value : this.age,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KidProfile(')
+          ..write('id: $id, ')
+          ..write('nickname: $nickname, ')
+          ..write('avatar: $avatar, ')
+          ..write('age: $age, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, nickname, avatar, age, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is KidProfile &&
+          other.id == this.id &&
+          other.nickname == this.nickname &&
+          other.avatar == this.avatar &&
+          other.age == this.age &&
+          other.createdAt == this.createdAt);
+}
+
+class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
+  final Value<int> id;
+  final Value<String> nickname;
+  final Value<String> avatar;
+  final Value<int> age;
+  final Value<DateTime> createdAt;
+  const KidProfilesCompanion({
+    this.id = const Value.absent(),
+    this.nickname = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.age = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  KidProfilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String nickname,
+    required String avatar,
+    required int age,
+    required DateTime createdAt,
+  })  : nickname = Value(nickname),
+        avatar = Value(avatar),
+        age = Value(age),
+        createdAt = Value(createdAt);
+  static Insertable<KidProfile> custom({
+    Expression<int>? id,
+    Expression<String>? nickname,
+    Expression<String>? avatar,
+    Expression<int>? age,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nickname != null) 'nickname': nickname,
+      if (avatar != null) 'avatar': avatar,
+      if (age != null) 'age': age,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  KidProfilesCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? nickname,
+      Value<String>? avatar,
+      Value<int>? age,
+      Value<DateTime>? createdAt}) {
+    return KidProfilesCompanion(
+      id: id ?? this.id,
+      nickname: nickname ?? this.nickname,
+      avatar: avatar ?? this.avatar,
+      age: age ?? this.age,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nickname.present) {
+      map['nickname'] = Variable<String>(nickname.value);
+    }
+    if (avatar.present) {
+      map['avatar'] = Variable<String>(avatar.value);
+    }
+    if (age.present) {
+      map['age'] = Variable<int>(age.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('KidProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('nickname: $nickname, ')
+          ..write('avatar: $avatar, ')
+          ..write('age: $age, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AppSettingsTable extends AppSettings
+    with TableInfo<$AppSettingsTable, AppSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+      'key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+      'value', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(Insertable<AppSetting> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+          _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+          _valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSetting(
+      key: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      value: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}value'])!,
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSetting extends DataClass implements Insertable<AppSetting> {
+  final String key;
+  final String value;
+  const AppSetting({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(
+      key: Value(key),
+      value: Value(value),
+    );
+  }
+
+  factory AppSetting.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSetting(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  AppSetting copyWith({String? key, String? value}) => AppSetting(
+        key: key ?? this.key,
+        value: value ?? this.value,
+      );
+  AppSetting copyWithCompanion(AppSettingsCompanion data) {
+    return AppSetting(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSetting(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSetting &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const AppSettingsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  })  : key = Value(key),
+        value = Value(value);
+  static Insertable<AppSetting> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppSettingsCompanion copyWith(
+      {Value<String>? key, Value<String>? value, Value<int>? rowid}) {
+    return AppSettingsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1176,17 +1820,26 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LessonCompletionsTable lessonCompletions =
       $LessonCompletionsTable(this);
   late final $SubjectLevelsTable subjectLevels = $SubjectLevelsTable(this);
+  late final $KidProfilesTable kidProfiles = $KidProfilesTable(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [strokeAttempts, glyphProgress, lessonCompletions, subjectLevels];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        strokeAttempts,
+        glyphProgress,
+        lessonCompletions,
+        subjectLevels,
+        kidProfiles,
+        appSettings
+      ];
 }
 
 typedef $$StrokeAttemptsTableCreateCompanionBuilder = StrokeAttemptsCompanion
     Function({
   Value<int> id,
+  required int kidId,
   required String glyphId,
   required int strokeIndex,
   required bool ok,
@@ -1198,6 +1851,7 @@ typedef $$StrokeAttemptsTableCreateCompanionBuilder = StrokeAttemptsCompanion
 typedef $$StrokeAttemptsTableUpdateCompanionBuilder = StrokeAttemptsCompanion
     Function({
   Value<int> id,
+  Value<int> kidId,
   Value<String> glyphId,
   Value<int> strokeIndex,
   Value<bool> ok,
@@ -1218,6 +1872,9 @@ class $$StrokeAttemptsTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get glyphId => $composableBuilder(
       column: $table.glyphId, builder: (column) => ColumnFilters(column));
@@ -1253,6 +1910,9 @@ class $$StrokeAttemptsTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get glyphId => $composableBuilder(
       column: $table.glyphId, builder: (column) => ColumnOrderings(column));
 
@@ -1286,6 +1946,9 @@ class $$StrokeAttemptsTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
 
   GeneratedColumn<String> get glyphId =>
       $composableBuilder(column: $table.glyphId, builder: (column) => column);
@@ -1337,6 +2000,7 @@ class $$StrokeAttemptsTableTableManager extends RootTableManager<
               $$StrokeAttemptsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<int> kidId = const Value.absent(),
             Value<String> glyphId = const Value.absent(),
             Value<int> strokeIndex = const Value.absent(),
             Value<bool> ok = const Value.absent(),
@@ -1347,6 +2011,7 @@ class $$StrokeAttemptsTableTableManager extends RootTableManager<
           }) =>
               StrokeAttemptsCompanion(
             id: id,
+            kidId: kidId,
             glyphId: glyphId,
             strokeIndex: strokeIndex,
             ok: ok,
@@ -1357,6 +2022,7 @@ class $$StrokeAttemptsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            required int kidId,
             required String glyphId,
             required int strokeIndex,
             required bool ok,
@@ -1367,6 +2033,7 @@ class $$StrokeAttemptsTableTableManager extends RootTableManager<
           }) =>
               StrokeAttemptsCompanion.insert(
             id: id,
+            kidId: kidId,
             glyphId: glyphId,
             strokeIndex: strokeIndex,
             ok: ok,
@@ -1399,6 +2066,7 @@ typedef $$StrokeAttemptsTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$GlyphProgressTableCreateCompanionBuilder = GlyphProgressCompanion
     Function({
+  required int kidId,
   required String glyphId,
   Value<int> completions,
   Value<int> cleanCompletions,
@@ -1407,6 +2075,7 @@ typedef $$GlyphProgressTableCreateCompanionBuilder = GlyphProgressCompanion
 });
 typedef $$GlyphProgressTableUpdateCompanionBuilder = GlyphProgressCompanion
     Function({
+  Value<int> kidId,
   Value<String> glyphId,
   Value<int> completions,
   Value<int> cleanCompletions,
@@ -1423,6 +2092,9 @@ class $$GlyphProgressTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get glyphId => $composableBuilder(
       column: $table.glyphId, builder: (column) => ColumnFilters(column));
 
@@ -1447,6 +2119,9 @@ class $$GlyphProgressTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get glyphId => $composableBuilder(
       column: $table.glyphId, builder: (column) => ColumnOrderings(column));
 
@@ -1471,6 +2146,9 @@ class $$GlyphProgressTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
   GeneratedColumn<String> get glyphId =>
       $composableBuilder(column: $table.glyphId, builder: (column) => column);
 
@@ -1510,6 +2188,7 @@ class $$GlyphProgressTableTableManager extends RootTableManager<
           createComputedFieldComposer: () =>
               $$GlyphProgressTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
             Value<String> glyphId = const Value.absent(),
             Value<int> completions = const Value.absent(),
             Value<int> cleanCompletions = const Value.absent(),
@@ -1517,6 +2196,7 @@ class $$GlyphProgressTableTableManager extends RootTableManager<
             Value<int> rowid = const Value.absent(),
           }) =>
               GlyphProgressCompanion(
+            kidId: kidId,
             glyphId: glyphId,
             completions: completions,
             cleanCompletions: cleanCompletions,
@@ -1524,6 +2204,7 @@ class $$GlyphProgressTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           createCompanionCallback: ({
+            required int kidId,
             required String glyphId,
             Value<int> completions = const Value.absent(),
             Value<int> cleanCompletions = const Value.absent(),
@@ -1531,6 +2212,7 @@ class $$GlyphProgressTableTableManager extends RootTableManager<
             Value<int> rowid = const Value.absent(),
           }) =>
               GlyphProgressCompanion.insert(
+            kidId: kidId,
             glyphId: glyphId,
             completions: completions,
             cleanCompletions: cleanCompletions,
@@ -1562,12 +2244,14 @@ typedef $$GlyphProgressTableProcessedTableManager = ProcessedTableManager<
 typedef $$LessonCompletionsTableCreateCompanionBuilder
     = LessonCompletionsCompanion Function({
   Value<int> id,
+  required int kidId,
   required DateTime completedAt,
   required int starsEarned,
 });
 typedef $$LessonCompletionsTableUpdateCompanionBuilder
     = LessonCompletionsCompanion Function({
   Value<int> id,
+  Value<int> kidId,
   Value<DateTime> completedAt,
   Value<int> starsEarned,
 });
@@ -1583,6 +2267,9 @@ class $$LessonCompletionsTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnFilters(column));
@@ -1603,6 +2290,9 @@ class $$LessonCompletionsTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnOrderings(column));
 
@@ -1621,6 +2311,9 @@ class $$LessonCompletionsTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => column);
@@ -1658,21 +2351,25 @@ class $$LessonCompletionsTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<int> kidId = const Value.absent(),
             Value<DateTime> completedAt = const Value.absent(),
             Value<int> starsEarned = const Value.absent(),
           }) =>
               LessonCompletionsCompanion(
             id: id,
+            kidId: kidId,
             completedAt: completedAt,
             starsEarned: starsEarned,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            required int kidId,
             required DateTime completedAt,
             required int starsEarned,
           }) =>
               LessonCompletionsCompanion.insert(
             id: id,
+            kidId: kidId,
             completedAt: completedAt,
             starsEarned: starsEarned,
           ),
@@ -1700,6 +2397,7 @@ typedef $$LessonCompletionsTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$SubjectLevelsTableCreateCompanionBuilder = SubjectLevelsCompanion
     Function({
+  required int kidId,
   required String subject,
   required int levelIndex,
   required DateTime placedAt,
@@ -1707,6 +2405,7 @@ typedef $$SubjectLevelsTableCreateCompanionBuilder = SubjectLevelsCompanion
 });
 typedef $$SubjectLevelsTableUpdateCompanionBuilder = SubjectLevelsCompanion
     Function({
+  Value<int> kidId,
   Value<String> subject,
   Value<int> levelIndex,
   Value<DateTime> placedAt,
@@ -1722,6 +2421,9 @@ class $$SubjectLevelsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get subject => $composableBuilder(
       column: $table.subject, builder: (column) => ColumnFilters(column));
 
@@ -1741,6 +2443,9 @@ class $$SubjectLevelsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get subject => $composableBuilder(
       column: $table.subject, builder: (column) => ColumnOrderings(column));
 
@@ -1760,6 +2465,9 @@ class $$SubjectLevelsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
   GeneratedColumn<String> get subject =>
       $composableBuilder(column: $table.subject, builder: (column) => column);
 
@@ -1796,24 +2504,28 @@ class $$SubjectLevelsTableTableManager extends RootTableManager<
           createComputedFieldComposer: () =>
               $$SubjectLevelsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
             Value<String> subject = const Value.absent(),
             Value<int> levelIndex = const Value.absent(),
             Value<DateTime> placedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SubjectLevelsCompanion(
+            kidId: kidId,
             subject: subject,
             levelIndex: levelIndex,
             placedAt: placedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
+            required int kidId,
             required String subject,
             required int levelIndex,
             required DateTime placedAt,
             Value<int> rowid = const Value.absent(),
           }) =>
               SubjectLevelsCompanion.insert(
+            kidId: kidId,
             subject: subject,
             levelIndex: levelIndex,
             placedAt: placedAt,
@@ -1841,6 +2553,289 @@ typedef $$SubjectLevelsTableProcessedTableManager = ProcessedTableManager<
     ),
     SubjectLevel,
     PrefetchHooks Function()>;
+typedef $$KidProfilesTableCreateCompanionBuilder = KidProfilesCompanion
+    Function({
+  Value<int> id,
+  required String nickname,
+  required String avatar,
+  required int age,
+  required DateTime createdAt,
+});
+typedef $$KidProfilesTableUpdateCompanionBuilder = KidProfilesCompanion
+    Function({
+  Value<int> id,
+  Value<String> nickname,
+  Value<String> avatar,
+  Value<int> age,
+  Value<DateTime> createdAt,
+});
+
+class $$KidProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $KidProfilesTable> {
+  $$KidProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get nickname => $composableBuilder(
+      column: $table.nickname, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get age => $composableBuilder(
+      column: $table.age, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$KidProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $KidProfilesTable> {
+  $$KidProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get nickname => $composableBuilder(
+      column: $table.nickname, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get age => $composableBuilder(
+      column: $table.age, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$KidProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $KidProfilesTable> {
+  $$KidProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nickname =>
+      $composableBuilder(column: $table.nickname, builder: (column) => column);
+
+  GeneratedColumn<String> get avatar =>
+      $composableBuilder(column: $table.avatar, builder: (column) => column);
+
+  GeneratedColumn<int> get age =>
+      $composableBuilder(column: $table.age, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$KidProfilesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $KidProfilesTable,
+    KidProfile,
+    $$KidProfilesTableFilterComposer,
+    $$KidProfilesTableOrderingComposer,
+    $$KidProfilesTableAnnotationComposer,
+    $$KidProfilesTableCreateCompanionBuilder,
+    $$KidProfilesTableUpdateCompanionBuilder,
+    (KidProfile, BaseReferences<_$AppDatabase, $KidProfilesTable, KidProfile>),
+    KidProfile,
+    PrefetchHooks Function()> {
+  $$KidProfilesTableTableManager(_$AppDatabase db, $KidProfilesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$KidProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$KidProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$KidProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> nickname = const Value.absent(),
+            Value<String> avatar = const Value.absent(),
+            Value<int> age = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              KidProfilesCompanion(
+            id: id,
+            nickname: nickname,
+            avatar: avatar,
+            age: age,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String nickname,
+            required String avatar,
+            required int age,
+            required DateTime createdAt,
+          }) =>
+              KidProfilesCompanion.insert(
+            id: id,
+            nickname: nickname,
+            avatar: avatar,
+            age: age,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$KidProfilesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $KidProfilesTable,
+    KidProfile,
+    $$KidProfilesTableFilterComposer,
+    $$KidProfilesTableOrderingComposer,
+    $$KidProfilesTableAnnotationComposer,
+    $$KidProfilesTableCreateCompanionBuilder,
+    $$KidProfilesTableUpdateCompanionBuilder,
+    (KidProfile, BaseReferences<_$AppDatabase, $KidProfilesTable, KidProfile>),
+    KidProfile,
+    PrefetchHooks Function()>;
+typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
+    Function({
+  required String key,
+  required String value,
+  Value<int> rowid,
+});
+typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
+    Function({
+  Value<String> key,
+  Value<String> value,
+  Value<int> rowid,
+});
+
+class $$AppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get value => $composableBuilder(
+      column: $table.value, builder: (column) => ColumnFilters(column));
+}
+
+class $$AppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get value => $composableBuilder(
+      column: $table.value, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AppSettingsTable,
+    AppSetting,
+    $$AppSettingsTableFilterComposer,
+    $$AppSettingsTableOrderingComposer,
+    $$AppSettingsTableAnnotationComposer,
+    $$AppSettingsTableCreateCompanionBuilder,
+    $$AppSettingsTableUpdateCompanionBuilder,
+    (AppSetting, BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>),
+    AppSetting,
+    PrefetchHooks Function()> {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<String> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AppSettingsCompanion(
+            key: key,
+            value: value,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String key,
+            required String value,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AppSettingsCompanion.insert(
+            key: key,
+            value: value,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AppSettingsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AppSettingsTable,
+    AppSetting,
+    $$AppSettingsTableFilterComposer,
+    $$AppSettingsTableOrderingComposer,
+    $$AppSettingsTableAnnotationComposer,
+    $$AppSettingsTableCreateCompanionBuilder,
+    $$AppSettingsTableUpdateCompanionBuilder,
+    (AppSetting, BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>),
+    AppSetting,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1853,4 +2848,8 @@ class $AppDatabaseManager {
       $$LessonCompletionsTableTableManager(_db, _db.lessonCompletions);
   $$SubjectLevelsTableTableManager get subjectLevels =>
       $$SubjectLevelsTableTableManager(_db, _db.subjectLevels);
+  $$KidProfilesTableTableManager get kidProfiles =>
+      $$KidProfilesTableTableManager(_db, _db.kidProfiles);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
 }
