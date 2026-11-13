@@ -8,7 +8,7 @@ Quy tắc ngắn (chi tiết trong `docs/PROJECT_STATE.md` mục 3):
 - Chỉ dùng Riverpod cho trạng thái. Màu, bo góc, bóng chỉ lấy từ `lib/ui/theme/tokens.dart`; ảnh chỉ qua `lib/ui/assets.dart`.
 - Thẻ trắng: một `BoxDecoration` có cả màu và bóng (bóng không màu phủ lên Material sẽ ra xám).
 - Thẻ dùng `raisedDecoration` (`lib/ui/theme/depth.dart`); thứ bé bấm được bọc `Pressable`.
-- Tablet = cạnh ngắn cửa sổ ≥ 600, xét bằng `context.formFactor`. Không phóng to giao diện điện thoại; bố cục tablet nằm ở file anh em (ví dụ `home_tablet.dart`, `parent_home_tablet.dart`). Nút bé ≥ 80 trên tablet.
+- Tablet = cạnh ngắn cửa sổ ≥ 600, xét bằng `context.formFactor`. Không phóng to giao diện điện thoại; chỉ trang chủ và Góc ba mẹ có bố cục tablet ở file anh em (`home_tablet.dart`, `parent_home_tablet.dart`); các màn khác rẽ nhánh tablet ngay trong cùng file. Nút bé ≥ 80 trên tablet.
 - Chỉ đánh giá hiệu năng bằng `flutter run --profile` (không dùng debug). Chụp màn hình: `docs/perf.md`.
 - Nút cho bé ≥ 64, góc ba mẹ ≥ 48, tương phản chữ ≥ 4.5:1. Chuỗi giao diện tiếng Việt.
 - Không quảng cáo, không SDK theo dõi, không gọi mạng; dữ liệu của bé tối thiểu và lưu trên máy.

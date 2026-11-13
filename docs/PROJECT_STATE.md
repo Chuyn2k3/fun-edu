@@ -43,7 +43,7 @@ Nguồn đầy đủ: **spec** `docs/superpowers/specs/2026-11-12-fun-edu-overha
 - **Không gọi mạng** trong app hiện tại (thống kê ẩn danh đã được chủ dự án hoãn lại).
 - Sửa bảng drift → chạy `dart run build_runner build --delete-conflicting-outputs` và **commit file `.g.dart`**. Đổi schema → tăng `schemaVersion` và thêm bước migration; giữ mọi đường nâng cấp cũ (có test trong `test/data/migration_test.dart`).
 - Chuỗi hiển thị cho bé/ba mẹ bằng **tiếng Việt**; chú thích code bằng tiếng Anh.
-- **iPad/máy tính bảng:** `context.formFactor` (`lib/ui/layout/form_factor.dart`): tablet = cạnh ngắn cửa sổ ≥ 600. Không phóng to bố cục điện thoại; mỗi màn có bố cục tablet riêng ở file anh em (`home_tablet.dart`, `parent_home_tablet.dart`...). Nút bé ≥ 80 trên tablet (`TabletSizes.kidTarget`), chữ ×1.2 (`TabletTextScale`), thanh điều hướng dọc `NavRail`, thẻ thông báo giữa màn `MessageCard`.
+- **iPad/máy tính bảng:** `context.formFactor` (`lib/ui/layout/form_factor.dart`): tablet = cạnh ngắn cửa sổ ≥ 600. Không phóng to bố cục điện thoại; chỉ trang chủ và Góc ba mẹ có bố cục tablet ở file anh em (`home_tablet.dart`, `parent_home_tablet.dart`), các màn khác rẽ nhánh tablet ngay trong cùng file. Nút bé ≥ 80 trên tablet (`TabletSizes.kidTarget`), chữ ×1.2 (`TabletTextScale`), thanh điều hướng dọc `NavRail`, thẻ thông báo giữa màn `MessageCard`.
 - **Hiệu năng:** chỉ kết luận bằng `flutter run --profile` trên máy thật (xem `docs/perf.md`). Chụp màn hình để rà bố cục: `tools/shot/home_shot_test.dart` (cách chạy trong `docs/perf.md`).
 - Lệnh kiểm tra (phải sạch trước khi commit):
   ```
@@ -123,10 +123,10 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | 1A | Ảnh 3D, nét mẫu tạm (nét cơ bản + số 0–9), lưu sao/ngày học, "Bài hôm nay", trang chủ, màn tập viết, màn xong bài, bản đồ Viết | Xong |
 | 1B | Toán 9 cấp, 3 dạng bài, màn Toán, bài xếp cấp lần đầu, bản đồ Toán, bài hôm nay gồm Viết + Toán | Xong |
 | 1C | Giọng đọc (giọng máy), nhiều hồ sơ bé, cổng người lớn, lần đầu mở app có đồng ý, giới hạn giờ + giờ ngủ, góc ba mẹ 5 tab, phần thưởng thật, xóa toàn bộ dữ liệu, chính sách quyền riêng tư | Xong |
-| 1D | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ. Task 6: bản đồ Viết/Toán dạng lưới 5 cột (ngang) / 4 cột (dọc) trên iPad; Góc ba mẹ iPad dạng danh sách-chi tiết (trái 300: chip bé + 5 mục, phải ≤ 720); màn thông báo (xong bài, ngủ, chào/xong placement, cổng ba mẹ, lần đầu) là một thẻ nổi giữa màn ≤ 640 (`MessageCard`), Chíp ×1.4; bản đồ Toán trên iPad là lưới 3×3 (dọc) | Xong (chờ thử máy thật) |
+| 1D | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ. Task 6: bản đồ Viết trên iPad dạng lưới 5 cột (ngang) / 4 cột (dọc), bản đồ Toán là lưới 3×3 ở cả hai chiều (ô cao theo màn, không cuộn); Góc ba mẹ iPad dạng danh sách-chi tiết (trái 300: chip bé + 5 mục, phải ≤ 720); màn thông báo (xong bài, ngủ, chào/xong placement, lần đầu) là một thẻ nổi giữa màn ≤ 640 (`MessageCard`), Chíp ×1.4; cổng ba mẹ dùng `AppCard` (không phải `MessageCard`). Đợt sửa sau rà soát cuối: bố cục iPad chịu được chữ hệ thống lớn (`ScaleDownToFit`, `_fits` tính theo cỡ chữ), nhãn đang chọn trên `NavRail` đủ tương phản, khóa dọc chỉ quyết khi đã biết kích thước cửa sổ (`PortraitLock`), logo khởi động iOS 160pt khớp màn chào, nạp sẵn logo trước, `Pressable` là một nút (tắt khi không bấm được), màn xong bài/placement có chữ ×1.2 trên iPad, nhãn "Đang học" dùng `AppColors.primaryOnTint` | Xong (chờ thử máy thật) |
 | Ảnh | Thay 13 ảnh độ phân giải cao | Xong (trừ ngọn lửa) |
 
-Trạng thái kiểm tra cuối: `flutter analyze` sạch, **443 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
+Trạng thái kiểm tra cuối: `flutter analyze` sạch, **466 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
@@ -146,8 +146,9 @@ Trạng thái kiểm tra cuối: `flutter analyze` sạch, **443 test đạt** t
 - iPad: còn khoảng trống dưới câu hỏi Toán ngắn; màn viết dọc còn khoảng trống dưới hàng nút.
 - Điện thoại: thẻ bài hôm nay trên trang chủ có thể bị cắt khi cỡ chữ hệ thống lớn nhất.
 - Android 12+: chưa có theme màn chào cho chế độ tối (`values-night-v31`).
-- iOS: logo ảnh khởi động 168pt, màn chào Flutter 160pt (nhảy nhẹ khi chuyển).
-- iPad ngang: trang chủ giả định thanh trên ~120pt (`_fits` cố định), có thể lệch khi chữ rất lớn.
+- iPad ngang: trang chủ vẫn giả định thanh trên ~120pt; ngân sách `_fits` nhân theo cỡ chữ hệ thống nên chữ lớn sẽ chuyển sang bố cục cuộn, các khối có chiều cao cố định (thẻ bài hôm nay, `WeekPanel`, thẻ môn, ô bản đồ Toán) thu nhỏ nội dung thay vì tràn. Ở cỡ chữ hệ thống 2.0 trên iPad ngang nhỏ, thẻ môn dạng gọn vẫn tràn ngang vài chục điểm (thẻ dùng chung với điện thoại, chưa sửa).
+- Màn Toán: xoay iPad giữa bài thì các lần chạm/kéo đang dở của câu hiện tại bị đặt lại (điểm vẫn giữ).
+- Màn "lần đầu" (cổng, đồng ý, hồ sơ) là cho ba mẹ nên không phóng chữ ×1.2 trên iPad, giống Góc ba mẹ.
 - Góc ba mẹ: hàng tab không có hiệu ứng chạm (ripple).
 - Nút "Chơi", "Sưu tập", "Nhà Chíp" trên trang chủ và môn Tiếng Việt, Tiếng Anh còn hiện "Sắp có".
 
