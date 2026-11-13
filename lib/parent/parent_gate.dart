@@ -156,7 +156,7 @@ class _ParentGateState extends State<ParentGate> {
                       _Keypad(
                         onDigit: _addDigit,
                         onDelete: _passed || _input.isEmpty ? null : _delete,
-                        onClose: widget.onCancel,
+                        onClose: _passed ? null : widget.onCancel,
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(

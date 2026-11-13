@@ -182,6 +182,20 @@ void main() {
       expect(find.text('Dành cho ba mẹ'), findsNothing);
     });
 
+    testWidgets('Đóng right after a correct answer does not pop again',
+        (tester) async {
+      Future<bool>? f;
+      await open(tester, (x) => f = x);
+      await _type(tester, _answerOf(_questionText(tester)));
+      await tester.tap(find.text('Xác nhận'));
+      await tester.tap(find.text('Đóng'), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(await f, isTrue);
+      expect(find.byType(Scaffold), findsOneWidget);
+      expect(find.text('Dành cho ba mẹ'), findsNothing);
+    });
+
     testWidgets('returns true after correct answer', (tester) async {
       _phone(tester);
       Future<bool>? f;
