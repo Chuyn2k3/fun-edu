@@ -8,7 +8,7 @@
 
 ## 1. App là gì
 
-**Chíp Chíp** (mã gói `com.ibme.funedu`, Dart package `funedu`) là app học cho bé **3–6 tuổi**, thay thế hoàn toàn app "Fun Edu" cũ.
+**ChipChip** — tên trên kho `ChipChip: Bé Tập Viết, Học Chữ`, nhà phát triển FunEdu (mã gói `com.ibme.funedu`, Dart package `funedu`; nội dung trang kho: `docs/store-listing.md`). Đây là app học cho bé **3–6 tuổi**, thay thế hoàn toàn app "Fun Edu" cũ. Linh vật trong app vẫn gọi "Chíp Chíp" (có dấu, để giọng đọc đọc đúng).
 
 - **Điểm khác biệt chính: tập viết bằng ngón tay, app chấm từng nét** (đúng thứ tự, đúng chiều, không lệch đường mẫu). Các app cùng loại (ví dụ StarJar Quiz) chủ yếu chỉ "nhìn câu hỏi, chạm đáp án".
 - **Theo trình độ, không theo tuổi.** Mỗi môn là một thang cấp; bài thử xếp cấp lúc đầu; app tự lên/lùi cấp.
@@ -29,6 +29,7 @@ Nguồn đầy đủ: **spec** `docs/superpowers/specs/2026-11-12-fun-edu-overha
 - **Font Nunito** (đóng kèm trong `assets/fonts/`), tiêu đề đậm 800–900.
 - **Thẻ trắng** = MỘT `BoxDecoration` có cả `color: AppColors.card` và `AppShadows.card`. **Không** để một Container chỉ có bóng (không màu) phủ lên `Material` trắng — sẽ ra màu xám (lỗi đã gặp nhiều lần). Nút trắng: `Material(transparency) > Ink(decoration có màu) > InkWell`.
 - **Nút cho bé ≥ 64 pt**, góc ba mẹ ≥ 48. Chữ đạt tương phản ≥ 4.5:1 (có `contrastRatio` và test).
+- **Icon app:** minh họa phẳng nét sáp màu (chim sẻ cầm bút sáp trên nền vàng), nguồn `docs/superpowers/specs/assets/generated/app-icon-source.webp`, tạo lại bằng `python3 tools/assets/make_app_icons.py`. Đã bỏ kiểu 3D bóng cho icon vì trông "giả AI"; ảnh 3D trong app vẫn giữ (có thể đổi sang phong cách phẳng sau).
 - **Linh vật Chíp Chíp:** chim sẻ con nâu kem, khăn quàng cam, cầm bút sáp cam. 7 tư thế: chính, vui, giơ ngón cái, ngạc nhiên, động viên, ngủ (mũ ngủ), đang viết. Ảnh nguồn đã duyệt: `docs/superpowers/specs/assets/generated/` (bản độ phân giải cao) và `docs/superpowers/specs/assets/` (bản mẫu ban đầu).
 - Ảnh trong app chỉ truy cập qua `lib/ui/assets.dart` (`AppImages`). Tạo lại ảnh: `bash tools/assets/build_app_images.sh` (cấu hình ở `tools/assets/configs/hd/`). Danh sách ảnh cần làm và mẹo dùng Gemini: `docs/phase0/asset-list.md`.
 
