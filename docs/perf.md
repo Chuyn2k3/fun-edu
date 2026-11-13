@@ -12,8 +12,16 @@
 - Ảnh: `precacheAppImages` nạp sẵn mọi ảnh trong `AppImages.all`.
 
 ## §screenshots
-Chụp màn hình bằng test dựng riêng (không đưa vào repo):
-- Sao chép mẫu `home_shot_test2.dart` (trong thư mục scratchpad của phiên) vào `test/_shot/`.
-- Chạy với biến môi trường `W`, `H`, `SHOT_OUT` và `FLUTTER_ROOT=$HOME/flutter324`.
-- `flutter_tester` vẽ bóng không có độ mờ, nên bóng trông gắt hơn máy thật.
-- Xoá `test/_shot/` trước khi commit.
+Render a screen to a PNG with a purpose-built widget test. The harness is `tools/shot/home_shot_test.dart` (it is not under `test/`, so `flutter test` never runs it). It draws `HomeScreen` with fake providers; edit the overrides and `home:` to shoot another screen.
+
+```
+export PATH=$HOME/flutter324/bin:$PATH
+mkdir -p test/_shot && cp tools/shot/home_shot_test.dart test/_shot/
+W=1024 H=1366 SHOT_OUT=/tmp/home-ipad.png FLUTTER_ROOT=$HOME/flutter324 \
+  flutter test test/_shot/home_shot_test.dart
+rm -rf test/_shot
+```
+
+- `W`, `H` are logical points (default 390x844; iPad portrait 1024x1366, landscape 1366x1024); `SHOT_OUT` is the PNG path.
+- `flutter_tester` draws shadows without blur, so they look harsher than on a device.
+- Always delete `test/_shot/` before committing.

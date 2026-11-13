@@ -1,7 +1,7 @@
 # Chíp Chíp — Tình trạng dự án và hướng dẫn tiếp nhận
 
 > **Đọc file này trước tiên** nếu bạn (người hoặc AI) mới tiếp nhận dự án. Nó tóm tắt: app là gì, vì sao làm như vậy, giao diện trông ra sao, code tổ chức thế nào, đã làm tới đâu, còn gì dở, và làm gì tiếp.
-> Cập nhật lần cuối: 2026-11-13, sau khi xong giai đoạn 1C. Nhánh làm việc: `chipchip`.
+> Cập nhật lần cuối: 2026-11-13, sau khi xong giai đoạn 1D (chờ chủ dự án thử trên máy thật). Nhánh làm việc: `chipchip`.
 > Khi xong một phần việc, **cập nhật mục 6 (Đã làm), 7 (Còn dở) và 8 (Làm gì tiếp)** của file này.
 
 ---
@@ -28,6 +28,7 @@ Nguồn đầy đủ: **spec** `docs/superpowers/specs/2026-11-12-fun-edu-overha
   - Màu môn (enum `Subject`): Viết cam, Tiếng Việt tím, Toán xanh dương, Tiếng Anh xanh lá — mỗi môn có `color` và `tint`.
 - **Font Nunito** (đóng kèm trong `assets/fonts/`), tiêu đề đậm 800–900.
 - **Thẻ nổi (candy)** = `raisedDecoration(accent:, tint:)` trong `lib/ui/theme/depth.dart` (nền chuyển màu, gờ màu dày 5px ở đáy, bóng có màu). Thẻ bé bấm được bọc `Pressable` để lún xuống khi chạm; góc ba mẹ giữ `InkWell`. Thẻ vẫn là MỘT `BoxDecoration` có cả nền và bóng. **Không** để một Container chỉ có bóng (không màu) phủ lên `Material` trắng — sẽ ra màu xám (lỗi đã gặp nhiều lần). Nút trắng: `Material(transparency) > Ink(decoration có màu) > InkWell`.
+- **Màn chào + khóa dọc:** `lib/features/splash/splash_view.dart` (nền kem, logo thở, nạp sẵn ảnh trong lúc chờ); ảnh khởi động native Android/iOS cùng nền kem. Điện thoại khóa dọc; iPad xoay tự do.
 - **Nút cho bé ≥ 64 pt**, góc ba mẹ ≥ 48. Chữ đạt tương phản ≥ 4.5:1 (có `contrastRatio` và test).
 - **Icon app:** minh họa phẳng nét sáp màu (chim sẻ cầm bút sáp trên nền vàng), nguồn `docs/superpowers/specs/assets/generated/app-icon-source.webp`, tạo lại bằng `python3 tools/assets/make_app_icons.py`. Đã bỏ kiểu 3D bóng cho icon vì trông "giả AI"; ảnh 3D trong app vẫn giữ (có thể đổi sang phong cách phẳng sau).
 - **Linh vật Chíp Chíp:** chim sẻ con nâu kem, khăn quàng cam, cầm bút sáp cam. 7 tư thế: chính, vui, giơ ngón cái, ngạc nhiên, động viên, ngủ (mũ ngủ), đang viết. Ảnh nguồn đã duyệt: `docs/superpowers/specs/assets/generated/` (bản độ phân giải cao) và `docs/superpowers/specs/assets/` (bản mẫu ban đầu).
@@ -42,6 +43,8 @@ Nguồn đầy đủ: **spec** `docs/superpowers/specs/2026-11-12-fun-edu-overha
 - **Không gọi mạng** trong app hiện tại (thống kê ẩn danh đã được chủ dự án hoãn lại).
 - Sửa bảng drift → chạy `dart run build_runner build --delete-conflicting-outputs` và **commit file `.g.dart`**. Đổi schema → tăng `schemaVersion` và thêm bước migration; giữ mọi đường nâng cấp cũ (có test trong `test/data/migration_test.dart`).
 - Chuỗi hiển thị cho bé/ba mẹ bằng **tiếng Việt**; chú thích code bằng tiếng Anh.
+- **iPad/máy tính bảng:** `context.formFactor` (`lib/ui/layout/form_factor.dart`): tablet = cạnh ngắn cửa sổ ≥ 600. Không phóng to bố cục điện thoại; mỗi màn có bố cục tablet riêng ở file anh em (`home_tablet.dart`, `parent_home_tablet.dart`...). Nút bé ≥ 80 trên tablet (`TabletSizes.kidTarget`), chữ ×1.2 (`TabletTextScale`), thanh điều hướng dọc `NavRail`, thẻ thông báo giữa màn `MessageCard`.
+- **Hiệu năng:** chỉ kết luận bằng `flutter run --profile` trên máy thật (xem `docs/perf.md`). Chụp màn hình để rà bố cục: `tools/shot/home_shot_test.dart` (cách chạy trong `docs/perf.md`).
 - Lệnh kiểm tra (phải sạch trước khi commit):
   ```
   flutter pub get
@@ -78,8 +81,10 @@ lib/
   parent/                      # cổng người lớn (phép nhân viết bằng chữ), góc ba mẹ (5 tab), chính sách
   rewards/                     # phần thưởng thật do ba mẹ đặt
   voice/                       # Speaker (giọng máy qua flutter_tts), số → chữ tiếng Việt
-  ui/                          # tokens, theme, AppImages, widget dùng chung
+  ui/                          # tokens, theme (depth.dart: thẻ nổi), AppImages, layout/ (form_factor: tablet), widgets (Pressable, NavRail, MessageCard)
+  features/splash/             # SplashView (màn chào)
   features/dev/                # công cụ cho người phát triển (chỉ bản debug)
+tools/shot/                    # harness chụp màn hình (không thuộc test/), xem docs/perf.md
 tools/assets/                  # cắt + tách nền ảnh Gemini (Python, có test)
 tools/glyphs/make_glyphs.py    # sinh nét mẫu TẠM cho nét cơ bản và số 0–9
 assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuống)
@@ -104,6 +109,8 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | `docs/superpowers/plans/2026-11-12-giai-doan-1a-giao-dien-be.md` | Kế hoạch 1A (đã xong) |
 | `docs/superpowers/plans/2026-11-12-giai-doan-1b-toan-xep-cap.md` | Kế hoạch 1B (đã xong) |
 | `docs/superpowers/plans/2026-11-13-giai-doan-1c-goc-ba-me.md` | Kế hoạch 1C (đã xong) |
+| `docs/superpowers/plans/2026-11-13-giai-doan-1d-muot-va-ipad.md` | Kế hoạch 1D (đã xong, chờ thử máy thật) |
+| `docs/perf.md` | Cách đo hiệu năng (profile), điểm nóng đã xử lý, cách chụp màn hình |
 | `docs/phase0/stroke-test.md` | Cách ghi nét mẫu và thử bộ chấm nét với bé thật |
 | `docs/phase0/asset-list.md` | Danh sách ảnh cần làm, mẹo dùng Gemini |
 | `docs/superpowers/specs/assets/generated-assets-gallery.md` | Bộ ảnh 3D độ phân giải cao đã tạo |
@@ -116,10 +123,10 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | 1A | Ảnh 3D, nét mẫu tạm (nét cơ bản + số 0–9), lưu sao/ngày học, "Bài hôm nay", trang chủ, màn tập viết, màn xong bài, bản đồ Viết | Xong |
 | 1B | Toán 9 cấp, 3 dạng bài, màn Toán, bài xếp cấp lần đầu, bản đồ Toán, bài hôm nay gồm Viết + Toán | Xong |
 | 1C | Giọng đọc (giọng máy), nhiều hồ sơ bé, cổng người lớn, lần đầu mở app có đồng ý, giới hạn giờ + giờ ngủ, góc ba mẹ 5 tab, phần thưởng thật, xóa toàn bộ dữ liệu, chính sách quyền riêng tư | Xong |
-| 1D (đang làm) | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ. Task 6: bản đồ Viết/Toán dạng lưới 5 cột (ngang) / 4 cột (dọc) trên iPad; Góc ba mẹ iPad dạng danh sách-chi tiết (trái 300: chip bé + 5 mục, phải ≤ 720); màn thông báo (xong bài, ngủ, chào/xong placement, cổng ba mẹ, lần đầu) là một thẻ nổi giữa màn ≤ 640 (`MessageCard`), Chíp ×1.4 | Đang làm |
+| 1D | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ. Task 6: bản đồ Viết/Toán dạng lưới 5 cột (ngang) / 4 cột (dọc) trên iPad; Góc ba mẹ iPad dạng danh sách-chi tiết (trái 300: chip bé + 5 mục, phải ≤ 720); màn thông báo (xong bài, ngủ, chào/xong placement, cổng ba mẹ, lần đầu) là một thẻ nổi giữa màn ≤ 640 (`MessageCard`), Chíp ×1.4; bản đồ Toán trên iPad là lưới 3×3 (dọc) | Xong (chờ thử máy thật) |
 | Ảnh | Thay 13 ảnh độ phân giải cao | Xong (trừ ngọn lửa) |
 
-Trạng thái kiểm tra cuối: `flutter analyze` sạch, **426 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI (chủ dự án đã chạy thử trên iPhone ở giai đoạn 0).
+Trạng thái kiểm tra cuối: `flutter analyze` sạch, **443 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
@@ -136,13 +143,18 @@ Trạng thái kiểm tra cuối: `flutter analyze` sạch, **426 test đạt** t
 - Bé bị lùi cấp Toán thì ô trên bản đồ khóa lại (không thông báo, nhưng bé thấy).
 - Giọng đọc: chuyển hẳn sang route khác có thể cắt câu đầu của màn mới (hiện chưa xảy ra vì các màn nói đều đổi tại chỗ); "Đúng rồi!" có thể bị câu hỏi kế cắt ngang.
 - `CNAME` (tên miền web `hocvui.ibme.edu.vn`) đã bị xóa trên nhánh `chipchip` — **không gộp `chipchip` vào `new-web` hay nhánh GitHub Pages** khi chưa khôi phục.
-- iPad: màn Toán dọc dùng bố cục điện thoại rộng 720 nên còn khoảng trống dưới đáp án; màn viết dọc còn khoảng trống dưới hàng nút.
+- iPad: còn khoảng trống dưới câu hỏi Toán ngắn; màn viết dọc còn khoảng trống dưới hàng nút.
+- Điện thoại: thẻ bài hôm nay trên trang chủ có thể bị cắt khi cỡ chữ hệ thống lớn nhất.
+- Android 12+: chưa có theme màn chào cho chế độ tối (`values-night-v31`).
+- iOS: logo ảnh khởi động 168pt, màn chào Flutter 160pt (nhảy nhẹ khi chuyển).
+- iPad ngang: trang chủ giả định thanh trên ~120pt (`_fits` cố định), có thể lệch khi chữ rất lớn.
+- Góc ba mẹ: hàng tab không có hiệu ứng chạm (ripple).
 - Nút "Chơi", "Sưu tập", "Nhà Chíp" trên trang chủ và môn Tiếng Việt, Tiếng Anh còn hiện "Sắp có".
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-1. **Hoàn tất 1D** (các task còn lại của kế hoạch `.superpowers/sdd/2026-11-13-giai-doan-1d-muot-va-ipad`), rồi chủ dự án chạy thử trên iPhone và iPad thật.
-2. **Chủ dự án chạy thử bản 1C trên máy thật**, gom lỗi/ý kiến → sửa trước.
+1. **Chủ dự án thử 1D trên iPhone và iPad thật** (bản profile/release: `flutter run --profile`), đo độ mượt, xem bố cục iPad dọc + ngang; gom lỗi/ý kiến → sửa trước.
+2. **Chạy thử cả bản 1C trên máy thật**, gom lỗi/ý kiến cùng đợt.
 3. **Giai đoạn 2 — bắt đầu thu tiền** (cần spec + kế hoạch riêng trước khi code):
    - Backend **Java Spring Boot + PostgreSQL** trên máy chủ Oracle (24 GB RAM, 100 GB SSD) — tài khoản gia đình, đồng bộ tiến độ, xác thực giao dịch Apple/Google, sao lưu ra nơi khác.
    - Gói năm/tháng (mua qua Apple/Google, khôi phục giao dịch); quyết định giá và số cấp miễn phí mỗi môn (**đang mở**).
