@@ -12,6 +12,8 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
 import '../../ui/widgets/chip_says.dart';
 import '../../ui/widgets/session_header.dart';
+import '../../voice/speaker.dart';
+import '../../voice/voice_lines.dart';
 import 'exercise/choice_answers.dart';
 import 'exercise/compare_groups.dart';
 import 'exercise/drag_number_match.dart';
@@ -67,9 +69,20 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
   bool _finished = false;
   String _chip = AppImages.chipMain;
   String _message = 'Mình cùng làm Toán nhé!';
+  late final Speaker _speaker;
+
+  @override
+  void initState() {
+    super.initState();
+    _speaker = ref.read(speakerProvider);
+    _speakQuestion();
+  }
+
+  void _speakQuestion() => _speaker.speak(spokenQuestion(_questions[_index]));
 
   @override
   void dispose() {
+    _speaker.stop();
     _timer?.cancel();
     super.dispose();
   }
@@ -99,6 +112,7 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
         _index++;
         _missed = false;
       });
+      _speakQuestion();
       return;
     }
     setState(() {
@@ -141,7 +155,8 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
                   const SizedBox(height: 8),
                   Expanded(child: _questionCard()),
                   const SizedBox(height: 8),
-                  ChipSays(image: _chip, text: _message),
+                  // The first question is read on opening, so Chíp stays quiet then.
+                  ChipSays(image: _chip, text: _message, speakFirst: false),
                   const SizedBox(height: 12),
                 ],
               ),
@@ -164,14 +179,22 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (q is! ArithmeticQuestion)
-                  Text(
-                    q.prompt,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.text,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          q.prompt,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
+                          ),
+                        ),
+                      ),
+                      _listenButton(),
+                    ],
                   ),
                 const SizedBox(height: 12),
                 // The key resets exercise state even when consecutive
@@ -184,6 +207,18 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
       ),
     );
   }
+
+  /// Small speaker button that re-reads the current question.
+  Widget _listenButton() => Semantics(
+        button: true,
+        label: 'Nghe câu hỏi',
+        excludeSemantics: true,
+        child: IconButton(
+          onPressed: _speakQuestion,
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          icon: const Icon(Icons.volume_up_rounded, color: AppColors.primary),
+        ),
+      );
 
   /// Pictures for an arithmetic question, empty when there would be more
   /// than [_maxIllustratedObjects]. Addition shows both groups; subtraction
@@ -222,18 +257,26 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
         ArithmeticQuestion() => Column(
             key: key,
             children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  q.prompt,
-                  maxLines: 1,
-                  softWrap: false,
-                  style: const TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.text,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        q.prompt,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: const TextStyle(
+                          fontSize: 44,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  _listenButton(),
+                ],
               ),
               ..._illustration(q),
               const SizedBox(height: 16),

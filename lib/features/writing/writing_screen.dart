@@ -13,6 +13,7 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/app_card.dart';
 import '../../ui/widgets/chip_says.dart';
 import '../../ui/widgets/session_header.dart';
+import '../../voice/speaker.dart';
 import '../trace/trace_pad.dart';
 import 'ruled_paper.dart';
 
@@ -121,9 +122,7 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
   }
 
   void _listen() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Giọng đọc sắp có')));
+    ref.read(speakerProvider).speak(_message);
   }
 
   void _showSample() {

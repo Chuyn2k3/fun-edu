@@ -13,6 +13,7 @@ import '../../ui/assets.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/primary_button.dart';
+import '../../voice/speaker.dart';
 import '../math/math_session_screen.dart';
 import '../writing/writing_screen.dart';
 
@@ -231,7 +232,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 }
 
-class _Message extends StatelessWidget {
+class _Message extends ConsumerStatefulWidget {
   const _Message({
     required this.chip,
     required this.title,
@@ -246,7 +247,37 @@ class _Message extends StatelessWidget {
   final Widget button;
 
   @override
+  ConsumerState<_Message> createState() => _MessageState();
+}
+
+class _MessageState extends ConsumerState<_Message> {
+  late final Speaker _speaker;
+
+  @override
+  void initState() {
+    super.initState();
+    _speaker = ref.read(speakerProvider);
+    _speaker.speak(widget.title);
+  }
+
+  @override
+  void didUpdateWidget(_Message old) {
+    super.didUpdateWidget(old);
+    if (old.title != widget.title) _speaker.speak(widget.title);
+  }
+
+  @override
+  void dispose() {
+    _speaker.stop();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final chip = widget.chip;
+    final title = widget.title;
+    final subtitle = widget.subtitle;
+    final button = widget.button;
     return Scaffold(
       body: DottedBackground(
         child: SafeArea(
@@ -278,7 +309,7 @@ class _Message extends StatelessWidget {
                         if (subtitle != null) ...[
                           const SizedBox(height: 8),
                           Text(
-                            subtitle!,
+                            subtitle,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 18,

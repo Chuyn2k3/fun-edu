@@ -96,12 +96,12 @@ void main() {
     expect(find.text('Bé tô nét số 1 nhé!'), findsOneWidget);
   });
 
-  testWidgets('Nghe shows a snackbar; Xem mẫu does not block drawing',
+  testWidgets('Xem mẫu does not block drawing',
       (t) async {
     await _pump(t);
     await t.tap(find.text('Nghe'));
     await t.pump();
-    expect(find.text('Giọng đọc sắp có'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
     await t.tap(find.text('Xem mẫu'));
     await t.pump(const Duration(milliseconds: 300));
     await _draw(t, _line(0.3));
