@@ -7,6 +7,7 @@ import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
 import '../../data/app_database.dart';
 import '../../math/math_level.dart';
+import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
@@ -91,6 +92,11 @@ class _HomeBody extends StatelessWidget {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _openParents(BuildContext context) async {
+    final passed = await showParentGate(context);
+    if (passed && context.mounted) context.push('/parent');
+  }
+
   @override
   Widget build(BuildContext context) {
     final bubbleText = firstLabel == null
@@ -148,7 +154,7 @@ class _HomeBody extends StatelessWidget {
                     kid: kid,
                     level: summary.level,
                     stars: summary.totalStars,
-                    onParents: () => _soon(context, 'Góc ba mẹ sắp có'),
+                    onParents: () => _openParents(context),
                     onSwitchKid: () => showKidSwitcher(context),
                   ),
                   const SizedBox(height: 16),
@@ -274,7 +280,9 @@ class _TopRow extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                kid == null ? 'Chào bé!' : 'Chào ${kid!.nickname}!',
+                                kid == null
+                                    ? 'Chào bé!'
+                                    : 'Chào ${kid!.nickname}!',
                                 style: const TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w900,
@@ -285,7 +293,9 @@ class _TopRow extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Image.asset(AppImages.icCrown,
-                                      width: 18, height: 13, fit: BoxFit.contain),
+                                      width: 18,
+                                      height: 13,
+                                      fit: BoxFit.contain),
                                   const SizedBox(width: 3),
                                   Text(
                                     'Cấp $level',

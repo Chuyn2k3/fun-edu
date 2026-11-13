@@ -13,6 +13,7 @@ import 'features/setup/first_run_screen.dart';
 import 'features/subject/math_map_screen.dart';
 import 'features/subject/writing_map_screen.dart';
 import 'features/trace/trace_screen.dart';
+import 'parent/screens/parent_home.dart';
 import 'stroke/glyph_repository.dart';
 
 /// Dev-only: lists the bundled glyphs to pick one to trace.
@@ -56,6 +57,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/subject/viet',
       builder: (context, state) => const WritingMapScreen(),
+    ),
+    GoRoute(
+      path: '/parent',
+      builder: (context, state) => const ParentHome(),
     ),
     GoRoute(
       path: '/setup',

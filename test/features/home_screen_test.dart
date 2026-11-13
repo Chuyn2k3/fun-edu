@@ -173,13 +173,14 @@ void main() {
     expect(visited, ['/subject/viet']);
   });
 
-  testWidgets('bấm ổ khóa hiện thông báo Góc ba mẹ sắp có', (tester) async {
+  testWidgets('bấm ổ khóa mở cổng người lớn', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));
     await tester.pumpAndSettle();
     await tester.tap(_labeled('Góc ba mẹ'));
-    await tester.pump();
-    expect(find.text('Góc ba mẹ sắp có'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Dành cho ba mẹ'), findsOneWidget);
+    expect(find.text('Góc ba mẹ sắp có'), findsNothing);
   });
 
   testWidgets('mục điều hướng khác hiện Sắp có', (tester) async {

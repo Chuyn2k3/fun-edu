@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'parent_gate.dart';
+import 'parent_unlock.dart';
 
 /// Opens the parent gate full screen. Resolves to true only when the adult
 /// answered correctly; closing or system back resolves to false.
@@ -22,5 +24,16 @@ Future<bool> showParentGate(BuildContext context) async {
       ),
     ),
   );
+  if (passed == true && context.mounted) {
+    // Remember the pass so the parent corner does not ask again right away.
+    // Some callers (tests) have no ProviderScope above them.
+    try {
+      ProviderScope.containerOf(context, listen: false)
+          .read(parentUnlockedUntilProvider.notifier)
+          .state = DateTime.now().add(parentUnlockDuration);
+    } on StateError {
+      // No ProviderScope: nothing to remember.
+    }
+  }
   return passed ?? false;
 }
