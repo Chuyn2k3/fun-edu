@@ -99,29 +99,47 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                     child: current == null
                         ? const Center(child: CircularProgressIndicator())
                         : tablet
-                            ? GridView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: mapColumnsFor(
-                                    context.formFactor,
-                                    phoneColumns: 1,
-                                  ),
-                                  mainAxisSpacing: 16,
-                                  crossAxisSpacing: 16,
-                                  childAspectRatio: 1.0,
-                                ),
-                                itemCount: mathLevels.length,
-                                itemBuilder: (context, i) => _LevelTile(
-                                  index: i,
-                                  title: mathLevels[i].title,
-                                  current: current,
-                                  tablet: true,
-                                  onTap: i <= current
-                                      ? () => _openPractice(i)
-                                      : null,
-                                ),
+                            ? LayoutBuilder(
+                                // 3x3 in both orientations; tile height comes
+                                // from the free height so nine levels fill the
+                                // screen without scrolling.
+                                builder: (context, c) {
+                                  const pad =
+                                      EdgeInsets.fromLTRB(16, 8, 16, 24);
+                                  const gap = 16.0;
+                                  const cols = 3;
+                                  final rows =
+                                      (mathLevels.length / cols).ceil();
+                                  final tileW = (c.maxWidth -
+                                          pad.horizontal -
+                                          gap * (cols - 1)) /
+                                      cols;
+                                  final tileH = (c.maxHeight -
+                                          pad.vertical -
+                                          gap * (rows - 1)) /
+                                      rows;
+                                  return GridView.builder(
+                                    padding: pad,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: cols,
+                                      mainAxisSpacing: gap,
+                                      crossAxisSpacing: gap,
+                                      childAspectRatio:
+                                          tileW / tileH.clamp(120.0, 400.0),
+                                    ),
+                                    itemCount: mathLevels.length,
+                                    itemBuilder: (context, i) => _LevelTile(
+                                      index: i,
+                                      title: mathLevels[i].title,
+                                      current: current,
+                                      tablet: true,
+                                      onTap: i <= current
+                                          ? () => _openPractice(i)
+                                          : null,
+                                    ),
+                                  );
+                                },
                               )
                             : ListView.separated(
                                 padding:

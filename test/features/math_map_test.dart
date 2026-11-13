@@ -186,8 +186,8 @@ void main() {
   });
 
   for (final (size, cols) in [
-    (const Size(1366, 1024), 5),
-    (const Size(1024, 1366), 4),
+    (const Size(1366, 1024), 3),
+    (const Size(1024, 1366), 3),
     (const Size(390, 844), 1),
   ]) {
     testWidgets('math map has $cols tiles in the first row at $size',
@@ -199,4 +199,31 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+
+  testWidgets('tablet portrait: no orphan row, nine tiles all on screen',
+      (t) async {
+    await _pump(t, size: const Size(1024, 1366));
+    final tops = <double>[];
+    for (final e in find.byType(Pressable).evaluate()) {
+      final r = t.getRect(find.byWidget(e.widget));
+      expect(r.bottom, lessThanOrEqualTo(1366));
+      expect(r.width, greaterThanOrEqualTo(120));
+      expect(r.height, greaterThanOrEqualTo(120));
+      tops.add(r.top);
+    }
+    expect(tops.length, 9);
+    for (final y in tops.toSet()) {
+      expect(tops.where((x) => (x - y).abs() < 1).length, 3);
+    }
+  });
+
+  testWidgets('tablet landscape: nine tiles fit without scrolling', (t) async {
+    await _pump(t, size: const Size(1366, 1024));
+    for (final e in find.byType(Pressable).evaluate()) {
+      final r = t.getRect(find.byWidget(e.widget));
+      expect(r.bottom, lessThanOrEqualTo(1024));
+      expect(r.width, greaterThanOrEqualTo(120));
+    }
+    expect(find.byType(Pressable), findsNWidgets(9));
+  });
 }
