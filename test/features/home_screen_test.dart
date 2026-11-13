@@ -199,6 +199,7 @@ void main() {
   testWidgets('lỗi tải thì hiện số không, không văng', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app([
+      ..._fakes().take(2),
       homeSummaryProvider.overrideWith((ref) async => throw StateError('x')),
       todayLessonProvider.overrideWith((ref) async => throw StateError('x')),
     ], []));
@@ -232,7 +233,8 @@ void main() {
     final gate = Completer<HomeSummary>();
     var calls = 0;
     final overrides = [
-      ..._fakes().skip(1),
+      ..._fakes().take(2),
+      ..._fakes().skip(3),
       homeSummaryProvider.overrideWith(
         (ref) => ++calls == 1
             ? Future.value(const HomeSummary(
