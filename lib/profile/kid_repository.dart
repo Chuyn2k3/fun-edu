@@ -81,6 +81,14 @@ class KidRepository {
     await (_db.delete(_db.subjectLevels)..where((t) => t.kidId.equals(id)))
         .go();
     await (_db.delete(_db.dailyUsage)..where((t) => t.kidId.equals(id))).go();
+    // Screen-time settings (limit, bedtime, extra minutes) of this kid.
+    await (_db.delete(_db.appSettings)
+          ..where((t) =>
+              t.key.equals('dailyLimitMinutes.$id') |
+              t.key.equals('bedtimeStart.$id') |
+              t.key.equals('bedtimeEnd.$id') |
+              t.key.like('extraMinutes.$id.%')))
+        .go();
   }
 
   Future<List<KidProfile>> kids() =>

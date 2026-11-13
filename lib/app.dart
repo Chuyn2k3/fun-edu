@@ -54,7 +54,10 @@ class App extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Chíp Chíp',
       theme: buildAppTheme(),
-      routerConfig: appRouter,
+      routeInformationProvider: appRouter.routeInformationProvider,
+      routeInformationParser: appRouter.routeInformationParser,
+      routerDelegate: appRouter.routerDelegate,
+      backButtonDispatcher: screenTimeBackDispatcher,
       builder: (context, child) {
         // Hold back the navigator until we know where to go: while loading,
         // and while a redirect is due but has not taken effect yet.

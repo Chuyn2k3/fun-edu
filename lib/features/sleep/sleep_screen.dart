@@ -67,21 +67,28 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
       final choice = await showDialog<_Choice>(
         context: context,
         builder: (_) => SimpleDialog(
-          title: const Text('Cho bé chơi thêm'),
+          title: const Text('Dành cho ba mẹ'),
           children: [
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(_Choice.fifteen),
-              child: const Text('15 phút'),
-            ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(_Choice.thirty),
-              child: const Text('30 phút'),
-            ),
+            // Extra minutes do not lift bedtime, so offer them only for the limit.
+            if (widget.status == ScreenTimeStatus.limitReached) ...[
+              SimpleDialogOption(
+                onPressed: () => Navigator.of(context).pop(_Choice.fifteen),
+                child: const Text('15 phút'),
+              ),
+              SimpleDialogOption(
+                onPressed: () => Navigator.of(context).pop(_Choice.thirty),
+                child: const Text('30 phút'),
+              ),
+            ],
             if (widget.onOpenParentCorner != null)
               SimpleDialogOption(
                 onPressed: () => Navigator.of(context).pop(_Choice.corner),
                 child: const Text('Góc ba mẹ'),
               ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Đóng'),
+            ),
           ],
         ),
       );

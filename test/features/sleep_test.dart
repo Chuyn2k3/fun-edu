@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart' show Key;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +9,9 @@ import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/router.dart';
 import 'package:funedu/screen_time/screen_time_service.dart';
 
+import '../voice/fake_speaker.dart';
 import 'setup_helpers.dart';
+import 'package:funedu/voice/speaker.dart';
 
 const _sleepy = 'Chíp Chíp buồn ngủ rồi. Mai mình học tiếp nhé!';
 
@@ -16,6 +19,8 @@ void main() {
   late AppDatabase db;
   late int kid;
   var now = DateTime(2026, 11, 13, 10);
+
+  FakeSpeaker? speaker;
 
   Future<void> boot(WidgetTester t, {Duration used = Duration.zero}) async {
     now = DateTime(2026, 11, 13, 10);
@@ -35,6 +40,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           screenTimeClockProvider.overrideWithValue(() => now),
+          if (speaker != null) speakerProvider.overrideWithValue(speaker!),
         ],
         child: const App(),
       ),
@@ -85,6 +91,92 @@ void main() {
           () => KidRepository(db).setting('extraMinutes.$kid.2026-11-13')),
       '15',
     );
+  });
+
+  Future<Duration> usedBy(WidgetTester t, int id) => t
+      .runAsync(() => ScreenTimeService(db, KidRepository(db), now: () => now)
+          .usedToday(id))
+      .then((v) => v!);
+
+  testWidgets('no usage accrues while the sleep screen is shown', (t) async {
+    await boot(t, used: const Duration(minutes: 15));
+    appRouter.go('/subject/viet');
+    await settle(t);
+    expect(find.text(_sleepy), findsOneWidget);
+    now = now.add(const Duration(minutes: 10));
+    await t.pump(const Duration(minutes: 10));
+    await settle(t);
+    expect(await usedBy(t, kid), const Duration(minutes: 15));
+  });
+
+  testWidgets('switching kid credits the old kid and re-checks the new one',
+      (t) async {
+    await boot(t);
+    late int other;
+    await t.runAsync(() async {
+      other = await KidRepository(db)
+          .addKid(nickname: 'Bo', avatar: kidAvatars[0], age: 6);
+      await placeKid(db, other);
+      await KidRepository(db).setSetting('dailyLimitMinutes.$other', '15');
+      await ScreenTimeService(db, KidRepository(db), now: () => now)
+          .addUsage(other, const Duration(minutes: 20));
+    });
+    appRouter.go('/subject/viet');
+    await settle(t);
+    now = now.add(const Duration(seconds: 10));
+    final container = ProviderScope.containerOf(t.element(find.byType(App)));
+    await t.runAsync(() => KidRepository(db).setCurrentKid(other));
+    container.invalidate(currentKidIdProvider);
+    await settle(t);
+    expect(await usedBy(t, kid), const Duration(seconds: 10));
+    expect(await usedBy(t, other), const Duration(minutes: 20));
+    // The new kid is over the limit: sleep screen without a route change.
+    expect(find.text(_sleepy), findsOneWidget);
+  });
+
+  testWidgets('system back is handled by the sleep screen', (t) async {
+    speaker = FakeSpeaker();
+    addTearDown(() => speaker = null);
+    await boot(t, used: const Duration(minutes: 15));
+    appRouter.go('/subject/viet');
+    await settle(t);
+    expect(find.text(_sleepy), findsOneWidget);
+    final spokenBefore = speaker!.spoken.length;
+    expect(speaker!.spoken.last, _sleepy);
+
+    await t.binding.handlePopRoute();
+    await settle(t);
+    expect(find.text(_sleepy), findsOneWidget);
+
+    await t.tap(find.text('Ba mẹ'));
+    await settle(t);
+    expect(find.byKey(const Key('parent-gate-question')), findsOneWidget);
+    await t.binding.handlePopRoute();
+    await settle(t);
+    expect(find.byKey(const Key('parent-gate-question')), findsNothing);
+    expect(find.text(_sleepy), findsOneWidget);
+
+    // Nothing else spoke, and the hidden kid stack is still intact.
+    expect(speaker!.spoken.length, spokenBefore);
+    appRouter.go('/');
+    await settle(t);
+    expect(find.text(_sleepy), findsOneWidget);
+  });
+
+  testWidgets('bedtime offers no extra minutes', (t) async {
+    await boot(t);
+    await t.runAsync(() async {
+      final kids = KidRepository(db);
+      await kids.setSetting('bedtimeStart.$kid', '09:00');
+      await kids.setSetting('bedtimeEnd.$kid', '11:00');
+    });
+    appRouter.go('/subject/viet');
+    await settle(t);
+    await t.tap(find.text('Ba mẹ'));
+    await settle(t);
+    await passGate(t);
+    expect(find.text('15 phút'), findsNothing);
+    expect(find.text('Đóng'), findsOneWidget);
   });
 
   testWidgets('bedtime shows its own line', (t) async {

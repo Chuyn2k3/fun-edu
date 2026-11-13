@@ -145,4 +145,22 @@ void main() {
     expect(await c.read(voiceEnabledProvider.future), isFalse);
     expect(c.read(speakerProvider), isA<SilentSpeaker>());
   });
+
+  test('deleteKid removes the kid\'s screen-time settings and usage', () async {
+    final a = await kids.addKid(nickname: 'A', avatar: kidAvatars[0], age: 5);
+    final b = await kids.addKid(nickname: 'B', avatar: kidAvatars[0], age: 5);
+    for (final id in [a, b]) {
+      await kids.setSetting('dailyLimitMinutes.$id', '30');
+      await kids.setSetting('bedtimeStart.$id', '20:00');
+      await kids.setSetting('bedtimeEnd.$id', '06:00');
+      await kids.setSetting('extraMinutes.$id.2026-11-13', '15');
+    }
+    await kids.deleteKid(a);
+    expect(await kids.setting('dailyLimitMinutes.$a'), isNull);
+    expect(await kids.setting('bedtimeStart.$a'), isNull);
+    expect(await kids.setting('bedtimeEnd.$a'), isNull);
+    expect(await kids.setting('extraMinutes.$a.2026-11-13'), isNull);
+    expect(await kids.setting('dailyLimitMinutes.$b'), '30');
+    expect(await kids.setting('extraMinutes.$b.2026-11-13'), '15');
+  });
 }
