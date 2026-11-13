@@ -167,6 +167,7 @@ class _HomeBody extends StatelessWidget {
                   _ChipBlock(
                     bubbleText: bubbleText,
                     total: lessonTotal,
+                    doneToday: summary.lessonsToday,
                     onStart: () => context.push('/lesson'),
                   ),
                   const SizedBox(height: 14),
@@ -406,10 +407,12 @@ class _ChipBlock extends StatelessWidget {
     required this.bubbleText,
     required this.total,
     required this.onStart,
+    this.doneToday = 0,
   });
 
   final String bubbleText;
   final int total;
+  final int doneToday;
   final VoidCallback onStart;
 
   @override
@@ -449,7 +452,9 @@ class _ChipBlock extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '0/$total bài',
+                    doneToday == 0
+                        ? '0/$total bài'
+                        : 'Xong $total/$total bài · $doneToday lần',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,

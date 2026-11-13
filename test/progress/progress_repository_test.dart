@@ -57,4 +57,14 @@ void main() {
     await repo.recordLessonCompleted(itemsCompleted: 1);
     expect(await repo.learnedWeekdaysThisWeek(), {1});
   });
+
+  test('lessonsCompletedToday counts only today', () async {
+    clock = DateTime(2026, 11, 12, 23, 59);
+    await repo.recordLessonCompleted(itemsCompleted: 3);
+    clock = DateTime(2026, 11, 13, 8);
+    expect(await repo.lessonsCompletedToday(), 0);
+    await repo.recordLessonCompleted(itemsCompleted: 3);
+    await repo.recordLessonCompleted(itemsCompleted: 3);
+    expect(await repo.lessonsCompletedToday(), 2);
+  });
 }

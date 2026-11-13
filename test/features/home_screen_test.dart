@@ -262,4 +262,29 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('Viết'), findsWidgets);
   });
+
+  testWidgets('lesson card shows the lesson as done after finishing today',
+      (tester) async {
+    final visited = <String>[];
+    await tester.pumpWidget(_app([
+      ..._fakes(),
+      homeSummaryProvider.overrideWith(
+        (ref) async => const HomeSummary(
+          totalStars: 12,
+          learnedDaysThisWeek: 3,
+          masteredWriting: 2,
+          lessonsToday: 2,
+        ),
+      ),
+    ], visited));
+    await tester.pumpAndSettle();
+    expect(find.text('0/3 bài'), findsNothing);
+    expect(find.text('Xong 3/3 bài · 2 lần'), findsOneWidget);
+  });
+
+  testWidgets('lesson card shows 0/3 before any lesson today', (tester) async {
+    await tester.pumpWidget(_app(_fakes(), <String>[]));
+    await tester.pumpAndSettle();
+    expect(find.text('0/3 bài'), findsOneWidget);
+  });
 }

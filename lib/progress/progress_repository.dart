@@ -99,6 +99,25 @@ class ProgressRepository {
     };
   }
 
+  /// Lessons this kid finished since local midnight today.
+  Future<int> lessonsCompletedToday() async {
+    final kid = kidId;
+    if (kid == null) return 0;
+    final now = _now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final count = _db.lessonCompletions.id.count();
+    final row = await (_db.selectOnly(_db.lessonCompletions)
+          ..addColumns([count])
+          ..where(
+            _db.lessonCompletions.kidId.equals(kid) &
+                _db.lessonCompletions.completedAt.isBiggerOrEqualValue(today) &
+                _db.lessonCompletions.completedAt.isSmallerThanValue(tomorrow),
+          ))
+        .getSingle();
+    return row.read(count) ?? 0;
+  }
+
   /// Weekdays (1 = Monday .. 7 = Sunday) of the current local week that have
   /// at least one completed lesson.
   Future<Set<int>> learnedWeekdaysThisWeek() async {
@@ -125,12 +144,16 @@ class HomeSummary {
     required this.learnedDaysThisWeek,
     required this.masteredWriting,
     this.mathLevelIndex = 0,
+    this.lessonsToday = 0,
   });
 
   final int totalStars;
   final int learnedDaysThisWeek;
   final int masteredWriting;
   final int mathLevelIndex;
+
+  /// Lessons finished today; the home card shows the lesson as done when > 0.
+  final int lessonsToday;
 
   int get level => 1 + masteredWriting ~/ 3;
 }
@@ -153,5 +176,6 @@ final homeSummaryProvider = FutureProvider<HomeSummary>((ref) async {
     learnedDaysThisWeek: (await repo.learnedWeekdaysThisWeek()).length,
     masteredWriting: mastered,
     mathLevelIndex: await ref.watch(mathLevelIndexProvider.future),
+    lessonsToday: await repo.lessonsCompletedToday(),
   );
 });
