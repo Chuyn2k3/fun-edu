@@ -35,6 +35,10 @@ class _ParentGateState extends State<ParentGate> {
   String _input = '';
   bool _wrong = false;
 
+  /// One-shot latch: set once the answer is correct so a double tap during
+  /// the route exit cannot fire [ParentGate.onPassed] twice.
+  bool _passed = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +56,7 @@ class _ParentGateState extends State<ParentGate> {
   }
 
   void _addDigit(String d) {
+    if (_passed) return;
     if (_input.length >= _maxDigits) return;
     setState(() {
       _input += d;
@@ -60,13 +65,15 @@ class _ParentGateState extends State<ParentGate> {
   }
 
   void _delete() {
+    if (_passed) return;
     if (_input.isEmpty) return;
     setState(() => _input = _input.substring(0, _input.length - 1));
   }
 
   void _confirm() {
-    if (_input.isEmpty) return;
+    if (_passed || _input.isEmpty) return;
     if (int.parse(_input) == _a * _b) {
+      setState(() => _passed = true);
       widget.onPassed();
       return;
     }
@@ -148,13 +155,13 @@ class _ParentGateState extends State<ParentGate> {
                       ),
                       _Keypad(
                         onDigit: _addDigit,
-                        onDelete: _input.isEmpty ? null : _delete,
+                        onDelete: _passed || _input.isEmpty ? null : _delete,
                         onClose: widget.onCancel,
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(
                         label: 'Xác nhận',
-                        onPressed: _input.isEmpty ? null : _confirm,
+                        onPressed: _passed || _input.isEmpty ? null : _confirm,
                       ),
                     ],
                   ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/parent/parent_gate.dart';
 import 'package:funedu/parent/parent_gate_route.dart';
+import 'package:funedu/ui/widgets/primary_button.dart';
 import 'package:funedu/voice/voice_lines.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
@@ -38,8 +39,7 @@ Future<void> _type(WidgetTester tester, int value) async {
 }
 
 void main() {
-  testWidgets('shows title, word-only question and keypad; does not speak',
-      (tester) async {
+  testWidgets('shows title, word-only question and keypad', (tester) async {
     _phone(tester);
     await tester
         .pumpWidget(_wrap(ParentGate(onPassed: () {}, random: Random(1))));
@@ -64,6 +64,21 @@ void main() {
     await tester.tap(find.text('Xác nhận'));
     await tester.pump();
     expect(passed, 1);
+  });
+
+  testWidgets('double tap on Xác nhận after a correct answer fires once',
+      (tester) async {
+    _phone(tester);
+    var passed = 0;
+    await tester.pumpWidget(
+        _wrap(ParentGate(onPassed: () => passed++, random: Random(1))));
+    await _type(tester, _answerOf(_questionText(tester)));
+    await tester.tap(find.text('Xác nhận'));
+    await tester.tap(find.text('Xác nhận'), warnIfMissed: false);
+    await tester.pump();
+    expect(passed, 1);
+    expect(tester.widget<PrimaryButton>(find.byType(PrimaryButton)).onPressed,
+        isNull);
   });
 
   testWidgets('wrong answer shows error and changes the question',
@@ -92,7 +107,10 @@ void main() {
         .pumpWidget(_wrap(ParentGate(onPassed: () {}, random: Random(1))));
     String input() =>
         tester.widget<Text>(find.byKey(const Key('parent-gate-input'))).data!;
-    await tester.tap(find.text('Xác nhận'));
+    PrimaryButton confirm() =>
+        tester.widget<PrimaryButton>(find.byType(PrimaryButton));
+    expect(confirm().onPressed, isNull);
+    await tester.tap(find.text('Xác nhận'), warnIfMissed: false);
     await tester.pump();
     expect(find.text('Chưa đúng, thử lại nhé'), findsNothing);
     for (final d in ['1', '2', '3', '4']) {
@@ -149,6 +167,19 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(await f, isFalse);
+    });
+
+    testWidgets('double tap on pass pops only the gate route', (tester) async {
+      Future<bool>? f;
+      await open(tester, (x) => f = x);
+      await _type(tester, _answerOf(_questionText(tester)));
+      await tester.tap(find.text('Xác nhận'));
+      await tester.tap(find.text('Xác nhận'), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(await f, isTrue);
+      expect(find.byType(Scaffold), findsOneWidget);
+      expect(find.text('Dành cho ba mẹ'), findsNothing);
     });
 
     testWidgets('returns true after correct answer', (tester) async {
