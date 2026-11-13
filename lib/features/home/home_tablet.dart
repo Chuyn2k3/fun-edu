@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../ui/assets.dart';
@@ -10,6 +12,18 @@ import '../../ui/widgets/speech_bubble.dart';
 const _gap = 20.0;
 const _landscapeHeroHeight = 320.0;
 const _landscapeHeroMaxHeight = 380.0;
+
+// Landscape pages that fit: the hero/week row and the subject row share
+// the height between the top bar and the bottom edge.
+const _fillHeroMin = 300.0;
+const _fillHeroMax = 420.0;
+const _fillCardMin = 180.0;
+const _fillCardMax = 260.0;
+const _headingBox = 48.0;
+const _headingGap = 16.0;
+const _minAboveHeading = 28.0;
+const _rewardReserve = 110.0;
+const _bottomPad = 24.0;
 const _portraitHeroHeight = 360.0;
 const _playSize = 110.0;
 const _minSideBySideWidth = 900.0;
@@ -39,8 +53,9 @@ class HomeTabletBody extends StatelessWidget {
   final Widget hero;
   final Widget weekPanel;
 
-  /// Builds the subject grid with the given number of columns.
-  final Widget Function(int columns) subjects;
+  /// Builds the subject grid with the given number of columns and, when
+  /// the page fills the screen, a fixed card height.
+  final Widget Function(int columns, double? cardHeight) subjects;
   final Widget? reward;
 
   @override
@@ -64,23 +79,121 @@ class HomeTabletBody extends StatelessWidget {
                 left: false,
                 bottom: false,
                 child: LayoutBuilder(
-                  builder: (context, c) => _content(
-                    // Narrow landscape windows (small Android tablets,
-                    // split view) fall back to the portrait arrangement.
-                    landscape && c.maxWidth >= _minSideBySideWidth,
-                    // Taller screens get a taller hero so the page does
-                    // not end in a band of empty space.
-                    (c.maxHeight * 0.36).clamp(
-                      _landscapeHeroHeight,
-                      _landscapeHeroMaxHeight,
-                    ),
-                  ),
+                  builder: (context, c) {
+                    final sideBySide =
+                        landscape && c.maxWidth >= _minSideBySideWidth;
+                    if (sideBySide && _fits(c.maxHeight)) {
+                      return TabletTextScale(child: _filled());
+                    }
+                    return _content(
+                      // Narrow landscape windows (small Android tablets,
+                      // split view) fall back to the portrait arrangement.
+                      landscape && c.maxWidth >= _minSideBySideWidth,
+                      // Taller screens get a taller hero so the page does
+                      // not end in a band of empty space.
+                      (c.maxHeight * 0.36).clamp(
+                        _landscapeHeroHeight,
+                        _landscapeHeroMaxHeight,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  /// Height left for the hero row and the subject row inside the area
+  /// under the top bar.
+  double _rowsSpace(double area) =>
+      area -
+      _minAboveHeading -
+      _headingBox -
+      _headingGap -
+      (reward == null ? 0 : _rewardReserve);
+
+  /// Whether the whole landscape page fits [height] without scrolling.
+  /// 120 covers the top padding, the top bar and the gap under it.
+  bool _fits(double height) =>
+      _rowsSpace(height - 120 - _bottomPad) >= _fillHeroMin + _fillCardMin;
+
+  Widget _heading() => const SizedBox(
+        height: _headingBox,
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Hôm nay học gì?',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: AppColors.text,
+              ),
+            ),
+          ),
+        ),
+      );
+
+  /// Landscape page without scrolling: top bar, hero + week row, then the
+  /// heading and the subject row pinned to the bottom. Spare height grows
+  /// the rows (within their clamps), then the gaps around the hero row.
+  Widget _filled() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 24, 32, _bottomPad),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          topBar,
+          const SizedBox(height: _gap),
+          Expanded(
+            child: LayoutBuilder(builder: (context, c) {
+              final rows = _rowsSpace(c.maxHeight);
+              final hero = math
+                  .min(rows * 0.62, rows - _fillCardMin)
+                  .clamp(_fillHeroMin, _fillHeroMax);
+              final card = (rows - hero).clamp(_fillCardMin, _fillCardMax);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Spare height is split between the gap above the hero
+                  // row and the gap above the heading.
+                  const Spacer(),
+                  SizedBox(
+                    height: hero,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(flex: 62, child: this.hero),
+                        const SizedBox(width: _gap),
+                        Expanded(flex: 38, child: weekPanel),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  const SizedBox(height: _minAboveHeading),
+                  if (reward != null) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: reward,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  _heading(),
+                  const SizedBox(height: _headingGap),
+                  subjects(4, card),
+                ],
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 
@@ -127,7 +240,7 @@ class HomeTabletBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            subjects(landscape ? 4 : 2),
+            subjects(landscape ? 4 : 2, null),
             if (!landscape) ...[
               const SizedBox(height: 28),
               weekPanel,

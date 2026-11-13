@@ -28,6 +28,9 @@ const _phoneAnswerHeight = 72.0;
 const _tabletAnswerHeight = 96.0;
 const _matchTileSize = 80.0;
 const _tabletChipSize = 140.0;
+const _questionFlex = 3;
+const _answersFlex = 2;
+const _columnGap = 24.0;
 const _nextDelay = Duration(milliseconds: 900);
 const _completeDelay = Duration(milliseconds: 1200);
 
@@ -193,48 +196,51 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
     );
   }
 
-  /// Tablet landscape: the question (and Chíp) on the left, the answers in
-  /// a column on the right.
+  /// Tablet landscape: the question card on the left; on the right the
+  /// answers start level with the card's top and Chíp sits right under
+  /// them.
   Widget _landscape() {
     final q = _questions[_index];
     Widget arrange(Widget question, Widget answers) => Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              flex: 3,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: AppCard(
-                      key: const ValueKey('math-question-area'),
-                      padding: const EdgeInsets.all(20),
-                      child: _scrollCentered(
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (q is! ArithmeticQuestion) _promptRow(q),
-                            const SizedBox(height: 12),
-                            question,
-                          ],
-                        ),
-                      ),
-                    ),
+              flex: _questionFlex,
+              child: AppCard(
+                key: const ValueKey('math-question-area'),
+                padding: const EdgeInsets.all(20),
+                child: _scrollCentered(
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (q is! ArithmeticQuestion) _promptRow(q),
+                      const SizedBox(height: 12),
+                      question,
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  ChipSays(
-                    key: _chipKey,
-                    image: _chip,
-                    text: _message,
-                    speakFirst: false,
-                    layout: _tabletChip,
-                  ),
-                ],
+                ),
               ),
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: _columnGap),
             Expanded(
-              flex: 2,
-              child: _scrollCentered(answers),
+              flex: _answersFlex,
+              child: SingleChildScrollView(
+                key: const ValueKey('math-answers-column'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    answers,
+                    const SizedBox(height: 24),
+                    ChipSays(
+                      key: _chipKey,
+                      image: _chip,
+                      text: _message,
+                      speakFirst: false,
+                      layout: _tabletChip,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         );
@@ -247,7 +253,17 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
           child: Column(
             children: [
               _header(),
-              _counter(),
+              // The counter is centred over the question card.
+              Row(
+                children: [
+                  Expanded(
+                    flex: _questionFlex,
+                    child: Center(child: _counter()),
+                  ),
+                  const SizedBox(width: _columnGap),
+                  const Spacer(flex: _answersFlex),
+                ],
+              ),
               const SizedBox(height: 12),
               Expanded(
                 child: KeyedSubtree(

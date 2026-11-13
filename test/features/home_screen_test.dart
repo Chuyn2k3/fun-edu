@@ -389,6 +389,29 @@ void tabletLayoutTests() {
     });
   }
 
+  for (final size in const [Size(1366, 1024), Size(1180, 820)]) {
+    testWidgets('tablet landscape $size fills the screen without scrolling',
+        (tester) async {
+      _setSize(tester, size.width, size.height);
+      await tester.pumpWidget(_app(_fakes(), []));
+      await tester.pumpAndSettle();
+      final cards = tester
+          .widgetList(find.byType(SubjectCard))
+          .map((w) => tester.getRect(find.byWidget(w)))
+          .toList();
+      expect(cards, hasLength(4));
+      for (final r in cards) {
+        expect(r.height, inInclusiveRange(180, 260));
+        expect(size.height - r.bottom, lessThanOrEqualTo(80));
+        expect(r.bottom, lessThanOrEqualTo(size.height));
+      }
+      final hero = rectOf(tester, find.byKey(const ValueKey('home-hero')));
+      expect(hero.height, inInclusiveRange(300, 420));
+      expect(find.byType(SingleChildScrollView), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('phone has no WeekPanel', (tester) async {
     _setSize(tester, 390, 844);
     await tester.pumpWidget(_app(_fakes(), []));

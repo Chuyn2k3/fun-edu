@@ -207,6 +207,26 @@ void main() {
     });
   }
 
+  for (final size in const [Size(1366, 1024), Size(1180, 820)]) {
+    testWidgets('tablet landscape $size: answers top-aligned, counter and Chip',
+        (t) async {
+      await _pump(t, 'cong-5', size: size);
+      final q = t.getRect(find.byKey(const ValueKey('math-question-area')));
+      final col = t.getRect(find.byKey(const ValueKey('math-answers-column')));
+      expect((col.top - q.top).abs(), lessThanOrEqualTo(1));
+      final rs = tiles(t);
+      expect((rs.first.top - q.top).abs(), lessThanOrEqualTo(1));
+      final counter = t.getCenter(find.text('Câu 1/5'));
+      expect(counter.dx, inInclusiveRange(q.left, q.right));
+      expect((counter.dx - q.center.dx).abs(), lessThanOrEqualTo(1));
+      // Chíp sits under the answers, on the right.
+      final chip = t.getRect(find.image(const AssetImage(AppImages.chipMain)));
+      expect(chip.left, greaterThan(q.right));
+      expect(chip.top, greaterThan(rs.last.bottom));
+      expect(t.takeException(), isNull);
+    });
+  }
+
   testWidgets('tablet portrait: phone layout, max width 720, tiles >= 96',
       (t) async {
     await _pump(t, 'cong-5', size: const Size(1024, 1366));

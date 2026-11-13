@@ -284,7 +284,8 @@ class _HomeBody extends StatelessWidget {
         mathTotal: mathLevels.length,
       ),
       reward: reward == null ? null : _RewardPill(reward: reward!),
-      subjects: (columns) => _SubjectGrid(
+      subjects: (columns, cardHeight) => _SubjectGrid(
+        cardHeight: cardHeight,
         masteredWriting: summary.masteredWriting,
         mathLevelIndex: summary.mathLevelIndex,
         columns: columns,
@@ -588,6 +589,7 @@ class _SubjectGrid extends StatelessWidget {
     required this.mathLevelIndex,
     this.columns = 2,
     this.gap = 12,
+    this.cardHeight,
   });
 
   final int masteredWriting;
@@ -595,11 +597,15 @@ class _SubjectGrid extends StatelessWidget {
   final int columns;
   final double gap;
 
+  /// Fixed card height for tablet landscape; null sizes cards by content.
+  final double? cardHeight;
+
   @override
   Widget build(BuildContext context) {
     final cards = [
       SubjectCard(
         subject: Subject.viet,
+        height: cardHeight,
         imagePath: AppImages.icViet,
         title: 'Viết',
         subtitle: 'Nét và số',
@@ -607,14 +613,16 @@ class _SubjectGrid extends StatelessWidget {
         total: writingLadder.length,
         onTap: () => context.push('/subject/viet'),
       ),
-      const SubjectCard(
+      SubjectCard(
         subject: Subject.tiengViet,
+        height: cardHeight,
         imagePath: AppImages.icTiengViet,
         title: 'Tiếng Việt',
         subtitle: 'Chữ, âm, vần',
       ),
       SubjectCard(
         subject: Subject.toan,
+        height: cardHeight,
         imagePath: AppImages.icToan,
         title: 'Toán',
         subtitle: 'Đếm, cộng trừ',
@@ -622,8 +630,9 @@ class _SubjectGrid extends StatelessWidget {
         total: mathLevels.length,
         onTap: () => context.push('/subject/toan'),
       ),
-      const SubjectCard(
+      SubjectCard(
         subject: Subject.tiengAnh,
+        height: cardHeight,
         imagePath: AppImages.icTiengAnh,
         title: 'Tiếng Anh',
         subtitle: 'Chữ cái, từ',
