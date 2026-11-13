@@ -1,6 +1,10 @@
 # Chíp Chíp (funedu)
 
-Ứng dụng học viết cho trẻ em, linh vật Chíp Chíp. Dự án Flutter nằm ngay ở thư mục gốc (thay cho app cũ; mã cũ tra trong lịch sử git, nhánh `new-web`, `develop`).
+Ứng dụng học cho trẻ 3–6 tuổi, linh vật Chíp Chíp.
+
+> **Mới tiếp nhận dự án (người hoặc AI)? Đọc [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) trước** — app là gì, giao diện, kiến trúc, đã làm tới đâu, làm gì tiếp.
+
+ Dự án Flutter nằm ngay ở thư mục gốc (thay cho app cũ; mã cũ tra trong lịch sử git, nhánh `new-web`, `develop`).
 
 - `lib/`, `test/`, `assets/`, `android/`, `ios/` — app Flutter, mã gói `com.ibme.funedu`.
 - `tools/` — công cụ hỗ trợ (cắt và tách nền ảnh).
