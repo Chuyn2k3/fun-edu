@@ -95,13 +95,7 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
     if (ctx == null) return null;
     if (!identical(ctx, _contextSource)) {
       _contextSource = ctx;
-      // Both glyphs share the 12-ô-li frame; place it in *this* window.
-      _context = Glyph(
-        id: ctx.id,
-        label: ctx.label,
-        strokes: ctx.strokes,
-        ruling: widget.glyph.ruling ?? ctx.ruling,
-      ).inWindow().strokes;
+      _context = contextInWindow(widget.glyph, ctx);
     }
     return _context;
   }

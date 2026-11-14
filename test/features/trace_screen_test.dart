@@ -180,4 +180,29 @@ void main() {
     expect(t.widget<TracePad>(find.byType(TracePad)).guide, win.strokes);
     expect(t.widget<RuledPaper>(find.byType(RuledPaper)).ruling, win.ruling);
   });
+
+  testWidgets('a tone mark shows the faint context letter (dev route)',
+      (t) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repo = _AssetRepo();
+    final mark = await repo.load('dau-sac');
+    final a = await repo.load('chu-a');
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          currentKidIdProvider.overrideWith((ref) async => 1),
+          glyphRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: const MaterialApp(home: TraceScreen('dau-sac')),
+      ),
+    );
+    await t.pumpAndSettle();
+    final layer = find.byKey(const ValueKey('glyph-context'));
+    expect(layer, findsOneWidget);
+    expect(t.widget<FaintLetter>(layer).strokes, contextInWindow(mark, a));
+    expect(t.widget<TracePad>(find.byType(TracePad)).guide,
+        mark.inWindow().strokes);
+  });
 }

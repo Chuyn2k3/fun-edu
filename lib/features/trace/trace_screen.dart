@@ -60,6 +60,22 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
   String? _message;
   int _attempts = 0;
 
+  /// Faint reference letter under a tone mark (as on the writing screen).
+  List<Stroke>? _context;
+  Glyph? _contextSource;
+
+  List<Stroke>? _watchContext() {
+    final id = widget.glyph.context;
+    if (id == null) return null;
+    final ctx = ref.watch(glyphProvider(id)).valueOrNull;
+    if (ctx == null) return null;
+    if (!identical(ctx, _contextSource)) {
+      _contextSource = ctx;
+      _context = contextInWindow(widget.glyph, ctx);
+    }
+    return _context;
+  }
+
   void _onStrokeEnd(Stroke drawn) {
     if (_session.isComplete) return;
     final index = _session.currentIndex;
@@ -111,6 +127,7 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
   @override
   Widget build(BuildContext context) {
     final complete = _session.isComplete;
+    final contextStrokes = _watchContext();
     final textStyle = Theme.of(context).textTheme.headlineSmall;
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -124,6 +141,11 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
                   fit: StackFit.expand,
                   children: [
                     if (_glyph.ruling != null) RuledPaper(ruling: _glyph.ruling),
+                    if (contextStrokes != null)
+                      FaintLetter(
+                        key: const ValueKey('glyph-context'),
+                        strokes: contextStrokes,
+                      ),
                     TracePad(
                       onStrokeEnd: _onStrokeEnd,
                       guide: _glyph.strokes,

@@ -124,6 +124,15 @@ class _OLiPainter extends CustomPainter {
   bool shouldRepaint(_OLiPainter old) => old.ruling != ruling;
 }
 
+/// [context]'s strokes (the "a" under a tone mark) placed in [glyph]'s writing
+/// window: both share the 12-ô-li frame, so only [glyph]'s window is used.
+List<Stroke> contextInWindow(Glyph glyph, Glyph context) => Glyph(
+      id: context.id,
+      label: context.label,
+      strokes: context.strokes,
+      ruling: glyph.ruling ?? context.ruling,
+    ).inWindow().strokes;
+
 /// A letter drawn faintly as a position reference (the "a" under a tone
 /// mark). Points are in [0,1] of the square; never graded.
 class FaintLetter extends StatelessWidget {

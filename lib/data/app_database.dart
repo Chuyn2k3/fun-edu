@@ -24,7 +24,9 @@ class StrokeAttempts extends Table {
   RealColumn get deviation => real()();
 
   /// JSON array of [x, y] pairs (4 decimals) of the drawn stroke, so a false
-  /// rejection can be replayed in a test.
+  /// rejection can be replayed in a test. Old glyphs (no ruling) use the
+  /// glyph's own [0,1] square; letters and tone marks are stored in *window*
+  /// coordinates, so replay them against `glyph.inWindow()`.
   TextColumn get points => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 }
