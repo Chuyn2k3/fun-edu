@@ -12,6 +12,7 @@ Quy tắc ngắn (chi tiết trong `docs/PROJECT_STATE.md` mục 3):
 - Chỉ đánh giá hiệu năng bằng `flutter run --profile` (không dùng debug). Chụp màn hình: `docs/perf.md`.
 - Nút cho bé ≥ 64, góc ba mẹ ≥ 48, tương phản chữ ≥ 4.5:1. Chuỗi giao diện tiếng Việt.
 - Không quảng cáo, không SDK theo dõi, không gọi mạng; dữ liệu của bé tối thiểu và lưu trên máy.
+- Nét chữ cái và dấu thanh nằm ở `tools/glyphs/letters.py`; tạo lại bằng `python3 tools/glyphs/make_glyphs.py`; không sửa tay file JSON sinh ra trong `assets/glyphs/` (chạy `cd tools/glyphs && python3 -m pytest -q`).
 - Đổi bảng drift → tăng `schemaVersion`, thêm migration, chạy build_runner, commit `.g.dart`.
 - Trước khi commit: `flutter analyze` sạch và `flutter test` đạt hết.
 - Làm việc trên nhánh `chipchip`. Không gộp vào `new-web` khi chưa khôi phục `CNAME`.

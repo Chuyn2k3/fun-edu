@@ -1,7 +1,7 @@
 # Chíp Chíp — Tình trạng dự án và hướng dẫn tiếp nhận
 
 > **Đọc file này trước tiên** nếu bạn (người hoặc AI) mới tiếp nhận dự án. Nó tóm tắt: app là gì, vì sao làm như vậy, giao diện trông ra sao, code tổ chức thế nào, đã làm tới đâu, còn gì dở, và làm gì tiếp.
-> Cập nhật lần cuối: 2026-11-13, sau khi xong giai đoạn 1D (chờ chủ dự án thử trên máy thật). Nhánh làm việc: `chipchip`.
+> Cập nhật lần cuối: 2026-11-14, sau khi xong giai đoạn 2A (chữ cái thường + dấu thanh; chờ chủ dự án duyệt nét mẫu). Nhánh làm việc: `chipchip`.
 > Khi xong một phần việc, **cập nhật mục 6 (Đã làm), 7 (Còn dở) và 8 (Làm gì tiếp)** của file này.
 
 ---
@@ -63,12 +63,12 @@ lib/
   router.dart                  # appRouter (go_router) — danh sách route ở dưới
   router_location.dart         # theo dõi vị trí route kể cả khi pop (go_router 15 không báo khi pop)
   data/app_database.dart       # drift, schemaVersion 6, migration từ 1→6
-  stroke/                      # BỘ CHẤM NÉT (Dart thuần): geometry, glyph (JSON), grader, glyph_session (thứ tự nét)
+  stroke/                      # BỘ CHẤM NÉT (Dart thuần): geometry, glyph (JSON; GlyphRuling, inWindow() quy nét về vùng chữ), grader, glyph_session (thứ tự nét)
   features/trace/trace_pad.dart# khung vẽ ngón tay (chuẩn hóa [0,1], 1 ngón, kiểu sáp màu)
   features/writing/            # màn tập viết (ô li, Chíp phản ứng, Xem mẫu, Nghe, Xóa)
   math/                        # Toán (Dart thuần): 9 cấp, sinh câu hỏi, luật lên/lùi cấp
   features/math/               # màn làm Toán + dạng bài (chạm đếm, chọn, so sánh, kéo số)
-  learning/                    # thang chữ Viết, soạn "Bài hôm nay" (Viết mới + Toán + Viết ôn)
+  learning/                    # thang chữ Viết (49 mục: 15 cũ + 29 chữ cái + 5 dấu thanh), `writing_sections.dart` chia nhóm cho bản đồ và tab tiến độ, soạn "Bài hôm nay" (Viết mới + Toán + Viết ôn)
   features/lesson/             # luồng bài học, màn "Xong bài hôm nay!"
   features/subject/            # bản đồ môn Viết và Toán
   features/placement/          # bài thử xếp cấp lần đầu
@@ -86,8 +86,11 @@ lib/
   features/dev/                # công cụ cho người phát triển (chỉ bản debug)
 tools/shot/                    # harness chụp màn hình (không thuộc test/), xem docs/perf.md
 tools/assets/                  # cắt + tách nền ảnh Gemini (Python, có test)
-tools/glyphs/make_glyphs.py    # sinh nét mẫu TẠM cho nét cơ bản và số 0–9
-assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuống)
+tools/glyphs/make_glyphs.py    # sinh nét mẫu TẠM cho nét cơ bản, số 0–9, chữ cái và dấu thanh (gọi letters.py)
+tools/glyphs/letters.py        # NGUỒN của 29 chữ thường (kiểu chữ viết trường học) + 5 dấu thanh: khung 12 ô li, ruling/context/speech
+tools/glyphs/render_sheet.py   # vẽ bảng xem nét -> docs/superpowers/specs/assets/letters-sheet.png
+tools/glyphs/test_letters.py   # pytest cho chữ cái (9 test)
+assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướng xuống); chữ cái `chu-*`, dấu `dau-*` có thêm ruling/context/speech
 ```
 
 **Route:** `/` trang chủ · `/lesson` · `/lesson/done` · `/subject/viet` · `/subject/toan` · `/practice/:glyphId` · `/practice-math/:levelIndex` · `/placement` · `/setup` · `/parent` (sau cổng) · `/trace/:glyphId` · debug: `/dev/glyphs`, `/dev/recorder` (ghi nét mẫu), `/dev/gallery` (xem linh kiện giao diện). Mở trực tiếp: `flutter run --route=/dev/recorder`.
@@ -124,17 +127,18 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | 1B | Toán 9 cấp, 3 dạng bài, màn Toán, bài xếp cấp lần đầu, bản đồ Toán, bài hôm nay gồm Viết + Toán | Xong |
 | 1C | Giọng đọc (giọng máy), nhiều hồ sơ bé, cổng người lớn, lần đầu mở app có đồng ý, giới hạn giờ + giờ ngủ, góc ba mẹ 5 tab, phần thưởng thật, xóa toàn bộ dữ liệu, chính sách quyền riêng tư | Xong |
 | 1D | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ. Task 6: bản đồ Viết trên iPad dạng lưới 5 cột (ngang) / 4 cột (dọc), bản đồ Toán là lưới 3×3 ở cả hai chiều (ô cao theo màn, không cuộn); Góc ba mẹ iPad dạng danh sách-chi tiết (trái 300: chip bé + 5 mục, phải ≤ 720); màn thông báo (xong bài, ngủ, chào/xong placement, lần đầu) là một thẻ nổi giữa màn ≤ 640 (`MessageCard`), Chíp ×1.4; cổng ba mẹ dùng `AppCard` (không phải `MessageCard`). Đợt sửa sau rà soát cuối: bố cục iPad chịu được chữ hệ thống lớn (`ScaleDownToFit`, `_fits` tính theo cỡ chữ), nhãn đang chọn trên `NavRail` đủ tương phản, khóa dọc chỉ quyết khi đã biết kích thước cửa sổ (`PortraitLock`), logo khởi động iOS 160pt khớp màn chào, nạp sẵn logo trước, `Pressable` là một nút (tắt khi không bấm được), màn xong bài/placement có chữ ×1.2 trên iPad, nhãn "Đang học" dùng `AppColors.primaryOnTint` | Xong (chờ thử máy thật) |
-| 2A | Viết chữ cái thường + dấu thanh (đang làm). Task 1: 29 chữ + 5 dấu tạm `chu-*`/`dau-*` trên khung 12 ô li. Task 2: `GlyphRuling`, `Glyph.inWindow()`, `context`, `speech`. Task 3: màn tập viết (điện thoại + iPad) và màn tô thử dùng nét đã quy về vùng chữ (`inWindow`), giấy ô li `RuledPaper(ruling:)` (đường chân chữ và đường đầu chữ thường đậm hơn), dấu thanh tô trên chữ "a" mờ (`FaintLetter`, không chấm), nét chấm (chấm chữ i, dấu nặng) có chấm gợi ý và nhấp nháy khi "Xem mẫu", Chíp đọc tên chữ theo `spokenName` ("Mình viết chữ bờ nhé!") còn tiêu đề giữ nhãn | Đang làm |
+| 2A | Viết chữ cái thường + dấu thanh. Task 1: 29 chữ + 5 dấu tạm `chu-*`/`dau-*` trên khung 12 ô li (nguồn `tools/glyphs/letters.py`). Task 2: `GlyphRuling`, `Glyph.inWindow()`, `context`, `speech`. Task 3: màn tập viết (điện thoại + iPad) và màn tô thử dùng nét đã quy về vùng chữ, giấy ô li `RuledPaper(ruling:)` (đường chân chữ và đường đầu chữ thường đậm hơn), dấu thanh tô trên chữ "a" mờ (`FaintLetter`, không chấm), nét chấm (chấm chữ i, dấu nặng) có chấm gợi ý và nhấp nháy khi "Xem mẫu", Chíp đọc tên chữ theo `spokenName` ("Mình viết chữ bờ nhé!"). Task 4: thang Viết 49 mục; bản đồ Viết chia nhóm (nét cơ bản, số, chữ cái, dấu thanh) dạng cuộn lười; tab Tiến độ ba mẹ nhóm theo mục; trang chủ "Nét, số, chữ cái"; `speech` của dấu thanh viết thường ("Mình viết dấu hỏi nhé!"). Nét chữ cái là **dữ liệu tạm máy sinh, chờ chủ dự án duyệt** | Xong (chờ duyệt nét) |
 | Ảnh | Thay 13 ảnh độ phân giải cao | Xong (trừ ngọn lửa) |
 
-Trạng thái kiểm tra cuối: `flutter analyze` sạch, **553 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
+Trạng thái kiểm tra cuối: `flutter analyze` sạch, **664 test Dart đạt** (và 9 test pytest cho chữ cái) trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
 **Việc của chủ dự án (chưa xác nhận xong):**
 - Thu hồi khóa OpenAI cũ (nằm trong lịch sử git của app cũ).
 - Điền `[EMAIL LIÊN HỆ]` trong `lib/parent/screens/privacy_screen.dart`.
-- Ghi lại nét mẫu thật bằng `/dev/recorder` (hiện nét cơ bản và số 0–9 là **dữ liệu tạm máy sinh**) và thử với bé theo `docs/phase0/stroke-test.md`.
+- Ghi lại nét mẫu thật bằng `/dev/recorder` (hiện nét cơ bản, số 0–9, **chữ cái và dấu thanh** là **dữ liệu tạm máy sinh**) và thử với bé theo `docs/phase0/stroke-test.md`.
+- **Duyệt nét chữ cái:** nét chữ cái là dữ liệu tạm máy sinh — cần chủ dự án duyệt `docs/superpowers/specs/assets/letters-sheet.png` đối chiếu vở tập tô thật (chữ `s` và `r` đáng ngờ nhất; xác nhận số nét của a/ă/â/d/đ/q/g và u/y/n/m/h/k/p). Sửa trong `tools/glyphs/letters.py`, chạy lại `make_glyphs.py`.
 - Tạo ảnh ngọn lửa độ phân giải cao (`ic-flame` vẫn là ảnh cũ).
 
 **Điểm biết là chưa hoàn hảo (nhỏ, có thể sửa sau):**
@@ -151,19 +155,22 @@ Trạng thái kiểm tra cuối: `flutter analyze` sạch, **553 test đạt** t
 - Màn Toán: xoay iPad giữa bài thì các lần chạm/kéo đang dở của câu hiện tại bị đặt lại (điểm vẫn giữ).
 - Màn "lần đầu" (cổng, đồng ý, hồ sơ) là cho ba mẹ nên không phóng chữ ×1.2 trên iPad, giống Góc ba mẹ.
 - Góc ba mẹ: hàng tab không có hiệu ứng chạm (ripple).
-- 2A: câu Chíp đọc chèn nguyên `speech` nên dấu thanh nghe/hiện "Mình viết Dấu hỏi nhé!" (chữ D hoa giữa câu) — sửa dữ liệu `speech` của `dau-*` hoặc viết thường khi chèn.
+- 2A (nhỏ, hoãn): `test_old_glyphs_unchanged` (pytest) so với HEAD chứ chưa so với commit gốc; chưa có test khoảng cách điểm tối thiểu giữa các điểm nét; chưa có test khi nạp glyph `context` lỗi; mỗi chấm gợi ý tạo một `Paint` riêng; `dau-nang`/chấm chữ i là nét 1 điểm (đã xử lý ở màn, test đảo thứ tự bỏ qua `dau-nang`); `GlyphRuling.window` chưa kiểm độ dài; test số ô bản đồ chưa khẳng định trực tiếp 49.
 - Nút "Chơi", "Sưu tập", "Nhà Chíp" trên trang chủ và môn Tiếng Việt, Tiếng Anh còn hiện "Sắp có".
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
 1. **Chủ dự án thử 1D trên iPhone và iPad thật** (bản profile/release: `flutter run --profile`), đo độ mượt, xem bố cục iPad dọc + ngang; gom lỗi/ý kiến → sửa trước.
 2. **Chạy thử cả bản 1C trên máy thật**, gom lỗi/ý kiến cùng đợt.
-3. **Giai đoạn 2 — bắt đầu thu tiền** (cần spec + kế hoạch riêng trước khi code):
-   - Backend **Java Spring Boot + PostgreSQL** trên máy chủ Oracle (24 GB RAM, 100 GB SSD) — tài khoản gia đình, đồng bộ tiến độ, xác thực giao dịch Apple/Google, sao lưu ra nơi khác.
-   - Gói năm/tháng (mua qua Apple/Google, khôi phục giao dịch); quyết định giá và số cấp miễn phí mỗi môn (**đang mở**).
-   - Viết chữ cái (thường, hoa, dấu thanh); Tiếng Việt âm/vần theo sách Tiếng Việt 1 (có giáo viên rà); in phiếu tập tô PDF.
-   - Trò chơi đầu tiên **Đua tên lửa** (một mình, 2 bé chung máy đối kháng/thay phiên; ảnh bìa đã có `docs/superpowers/specs/assets/cover-rocket.webp`).
-   - Thống kê ẩn danh (đã hoãn ở 1C) — dịch vụ Java nhỏ.
+3. **Giai đoạn 2 — thứ tự đã thống nhất** (mỗi phần cần spec + kế hoạch riêng trước khi code):
+   1. **2A xong** (chữ cái thường + dấu thanh, nét tạm).
+   2. **Chủ dự án duyệt** `docs/superpowers/specs/assets/letters-sheet.png` so với vở tập tô thật: chữ `s` và `r` đáng ngờ nhất; xác nhận số nét của a/ă/â/d/đ/q/g và u/y/n/m/h/k/p. Sửa `tools/glyphs/letters.py` rồi chạy lại `make_glyphs.py`.
+   3. **2B Đua tên lửa** — trò chơi đầu tiên (một mình, 2 bé chung máy đối kháng/thay phiên; ảnh bìa `docs/superpowers/specs/assets/cover-rocket.webp`).
+   4. **2C In phiếu tập tô PDF.**
+   5. **2E Gói trả phí + máy chủ nhỏ** — mua qua Apple/Google, khôi phục giao dịch, **xác thực giao dịch** phía máy chủ, **thống kê ẩn danh** (đã hoãn ở 1C); quyết định giá và số cấp miễn phí mỗi môn (**đang mở**).
+   6. **2D Tài khoản gia đình + đồng bộ tiến độ** (backend Java Spring Boot + PostgreSQL trên máy chủ Oracle 24 GB RAM, 100 GB SSD; sao lưu ra nơi khác).
+   7. **2F Tiếng Việt âm/vần** theo sách Tiếng Việt 1, chỉ làm khi có giáo viên rà.
+   - **Phần nào cần backend:** chỉ 2E (xác thực giao dịch, thống kê ẩn danh) và 2D (tài khoản, đồng bộ). 2B, 2C, 2F và chữ hoa chạy hoàn toàn trên máy, không gọi mạng.
    - Tùy chọn: đổi giọng máy sang file âm thanh tạo sẵn bằng Google Cloud TTS (lớp `Speaker` đã sẵn để thay).
 4. **Giai đoạn 3–5:** Tiếng Anh, Toán đến 100, các trò Kéo co/Xây tháp/Tàu chở hàng/Bắn bóng bay, nuôi Chíp Chíp, Vở của bé, giấy khen, báo cáo tuần, trang quản trị + AI sinh nội dung, ba mẹ tự tạo bộ câu hỏi; giai đoạn 4 chơi qua mạng, "Bé khám phá" (vòng kín), web ba mẹ (React); giai đoạn 5 đảo Sinh học/Địa lý/Lịch sử.
 
