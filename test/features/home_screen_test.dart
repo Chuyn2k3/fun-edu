@@ -154,6 +154,17 @@ void main() {
         AppColors.card);
   });
 
+  testWidgets('thẻ Viết ghi "Nét, số, chữ cái" và tổng 49', (tester) async {
+    _setSize(tester, 375, 667);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+    final card = find.ancestor(
+        of: find.text('Viết'), matching: find.byType(SubjectCard));
+    expect(find.descendant(of: card, matching: find.text('Nét, số, chữ cái')),
+        findsOneWidget);
+    expect(tester.widget<SubjectCard>(card.first).total, 49);
+  });
+
   testWidgets('hiện đủ nội dung trang chủ', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));
@@ -163,7 +174,7 @@ void main() {
     expect(find.text('12'), findsOneWidget);
     expect(find.text('3 ngày học tuần này'), findsOneWidget);
     expect(find.text('Cấp 1'), findsOneWidget);
-    expect(find.text('2/15'), findsOneWidget);
+    expect(find.text('2/49'), findsOneWidget);
     expect(find.text('0/3 bài'), findsOneWidget);
     expect(
       find.text('Hôm nay mình viết Nét xiên và làm Toán nhé!'),

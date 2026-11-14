@@ -608,7 +608,7 @@ class _SubjectGrid extends StatelessWidget {
         height: cardHeight,
         imagePath: AppImages.icViet,
         title: 'Viết',
-        subtitle: 'Nét và số',
+        subtitle: 'Nét, số, chữ cái',
         done: masteredWriting,
         total: writingLadder.length,
         onTap: () => context.push('/subject/viet'),

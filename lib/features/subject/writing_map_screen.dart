@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
+import '../../learning/writing_sections.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
@@ -109,23 +110,40 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
                     ),
                   ),
                   Expanded(
-                    child: GridView.builder(
+                    child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: mapColumnsFor(
-                          context.formFactor,
-                          phoneColumns: 3,
-                        ),
-                        mainAxisSpacing: tablet ? 16 : 12,
-                        crossAxisSpacing: tablet ? 16 : 12,
-                        childAspectRatio: tablet ? 1.0 : 1.1,
-                      ),
-                      itemCount: ids.length,
-                      itemBuilder: (context, i) => _GlyphTile(
-                        tablet: tablet,
-                        label: byId[ids[i]]!.label,
-                        mastered: stats[ids[i]]?.mastered ?? false,
-                        onTap: () => _openPractice(ids[i]),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final entry in groupLadder(ids).entries) ...[
+                            _SectionHeading(entry.key.title, tablet: tablet),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: EdgeInsets.zero,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: mapColumnsFor(
+                                  context.formFactor,
+                                  phoneColumns: 3,
+                                ),
+                                mainAxisSpacing: tablet ? 16 : 12,
+                                crossAxisSpacing: tablet ? 16 : 12,
+                                childAspectRatio: tablet ? 1.0 : 1.1,
+                              ),
+                              itemCount: entry.value.length,
+                              itemBuilder: (context, i) {
+                                final id = entry.value[i];
+                                return _GlyphTile(
+                                  tablet: tablet,
+                                  label: byId[id]!.label,
+                                  mastered: stats[id]?.mastered ?? false,
+                                  onTap: () => _openPractice(id),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),
@@ -137,6 +155,31 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
       ),
     );
     return tablet ? TabletTextScale(child: body) : body;
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading(this.title, {required this.tablet});
+
+  final String title;
+  final bool tablet;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Padding(
+        padding: EdgeInsets.only(top: tablet ? 20 : 16, bottom: 10),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: tablet ? 24 : 20,
+            fontWeight: FontWeight.w900,
+            color: AppColors.text,
+          ),
+        ),
+      ),
+    );
   }
 }
 

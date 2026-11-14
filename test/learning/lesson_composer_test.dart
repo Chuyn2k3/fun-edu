@@ -128,6 +128,23 @@ void main() {
     );
   });
 
+  test('child who mastered all 15 old glyphs is offered chu-i first', () {
+    final stats = {
+      for (final id in writingLadder.take(15)) id: clean(),
+    };
+    final r = items(stats: stats);
+    expect(r.first, const WritingItem('chu-i'));
+  });
+
+  test('a letter missing from available is skipped', () {
+    final stats = {
+      for (final id in [...writingLadder.take(15), 'chu-i']) id: clean(),
+    };
+    final avail = writingLadder.toSet()..remove('chu-t');
+    final r = items(stats: stats, avail: avail);
+    expect(r.first, const WritingItem('chu-u'));
+  });
+
   test('todayLessonProvider yields writing, math, writing for a new child',
       () async {
     final db = AppDatabase(NativeDatabase.memory());

@@ -112,6 +112,23 @@ void main() {
     expect(find.text('3/9'), findsOneWidget);
   });
 
+  testWidgets('glyph chips are grouped under the four section headings',
+      (tester) async {
+    await unlockedParent(tester);
+    final titles = ['Nét cơ bản', 'Chữ số', 'Chữ cái', 'Dấu thanh'];
+    final ys = <double>[];
+    for (final t in titles) {
+      final f = find.text(t, skipOffstage: false);
+      expect(f, findsOneWidget, reason: t);
+      ys.add(tester.getTopLeft(f).dy);
+    }
+    expect(ys, orderedEquals([...ys]..sort()));
+    // Nét ngang sits under its heading, above the digits heading.
+    final ngang = tester.getTopLeft(find.text('Nét ngang')).dy;
+    expect(ngang, greaterThan(ys[0]));
+    expect(ngang, lessThan(ys[1]));
+  });
+
   testWidgets('glyph tiles use the three state styles', (tester) async {
     await unlockedParent(tester);
     BoxDecoration deco(String label) => tester

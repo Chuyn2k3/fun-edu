@@ -181,6 +181,51 @@ void main() {
     });
   }
 
+  for (final size in [const Size(390, 844), const Size(1366, 1024)]) {
+    testWidgets('map shows four section headings and 49 tiles at $size',
+        (t) async {
+      _setSize(t, size.width, size.height);
+      await _pump(t);
+      final titles = ['Nét cơ bản', 'Chữ số', 'Chữ cái', 'Dấu thanh'];
+      final ys = <double>[];
+      for (final title in titles) {
+        final f = find.text(title, skipOffstage: false);
+        expect(f, findsOneWidget, reason: title);
+        ys.add(t.getTopLeft(f).dy);
+      }
+      expect(ys, orderedEquals([...ys]..sort()));
+      int tiles(String prefix) => find
+          .byWidgetPredicate(
+              (w) => w is Text && (w.data ?? '').startsWith(prefix),
+              skipOffstage: false)
+          .evaluate()
+          .length;
+      expect(tiles('chu-'), 29);
+      expect(tiles('dau-'), 5);
+      expect(find.byType(Pressable, skipOffstage: false), findsNWidgets(49));
+    });
+  }
+
+  testWidgets('tapping a letter tile opens its practice screen', (t) async {
+    _setSize(t, 390, 844);
+    await _pump(t);
+    await t.ensureVisible(find.text('chu-aw'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('chu-aw'));
+    await t.pumpAndSettle();
+    expect(find.text('Viết chu-aw'), findsOneWidget);
+  });
+
+  testWidgets('no overflow at text scale 1.3 on tablet with headings',
+      (t) async {
+    _setSize(t, 1366, 1024);
+    t.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+    await _pump(t, master: true);
+    expect(t.takeException(), isNull);
+    expect(find.text('Dấu thanh', skipOffstage: false), findsOneWidget);
+  });
+
   testWidgets('double tap on a tile opens only one practice screen', (t) async {
     _setSize(t, 375, 667);
     await _pump(t);

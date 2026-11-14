@@ -597,7 +597,7 @@ def letters():
     a_pts = [p for s in a['strokes'] for p in s]
     for key, label, build in MARKS:
         stroke = frame(_pts(build(0.75)), a_shift)
-        out.append({'id': 'dau-' + key, 'label': label, 'speech': label,
+        out.append({'id': 'dau-' + key, 'label': label, 'speech': label[0].lower() + label[1:],
                     'ruling': _ruling(stroke + a_pts), 'context': 'chu-a',
                     'strokes': [stroke], 'body': 0})
     ladder = ('chu-i chu-t chu-u chu-uw chu-n chu-m chu-v chu-r chu-s chu-o chu-oo '

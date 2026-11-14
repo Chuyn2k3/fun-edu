@@ -82,7 +82,7 @@ def test_ids_and_labels(glyphs):
             assert 'context' not in g
         else:
             assert g['label'] == MARKS[g['id']]
-            assert g['speech'] == g['label']
+            assert g['speech'] == g['label'][0].lower() + g['label'][1:]
             assert g['context'] == 'chu-a'
         assert g['ruling']['cell'] == 0.083333
         assert g['ruling']['baseline'] == 0.666667

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
 import '../../learning/writing_ladder.dart';
+import '../../learning/writing_sections.dart';
 import '../../math/math_level.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
@@ -224,17 +225,31 @@ class _WritingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final id in writingLadder)
-                _GlyphTile(
-                  label: labels[id] ?? id,
-                  state: glyphStateOf(stats[id]),
+          for (final entry in groupLadder(writingLadder).entries) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 8),
+              child: Text(
+                entry.key.title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.text,
                 ),
-            ],
-          ),
+              ),
+            ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final id in entry.value)
+                  _GlyphTile(
+                    label: labels[id] ?? id,
+                    state: glyphStateOf(stats[id]),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
           const SizedBox(height: 14),
           const Wrap(
             spacing: 16,
