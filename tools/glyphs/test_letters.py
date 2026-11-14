@@ -152,7 +152,7 @@ def test_window_contains_glyph(glyphs):
     ids = by_id(glyphs)
     for g in glyphs:
         x, y, side = g['ruling']['window']
-        assert side >= 5 * CELL - 1e-9
+        assert side >= 3 * CELL - 1e-9
         assert 0 <= x and 0 <= y and x + side <= 1 + 1e-9 and y + side <= 1 + 1e-9
         pts = [p for s in g['strokes'] for p in s]
         if 'context' in g:
@@ -161,6 +161,23 @@ def test_window_contains_glyph(glyphs):
         for px, py in pts:
             assert x + m <= px <= x + side - m, (g['id'], px)
             assert y + m <= py <= y + side - m, (g['id'], py)
+
+
+def test_window_is_tight(glyphs):
+    # Design §6b: window = glyph (+ context) + ~0.5 ô li margin, so small
+    # letters fill the pad instead of floating in a 5-ô-li window. One extra
+    # ô li is allowed for landing on the grid.
+    ids = by_id(glyphs)
+    for g in glyphs:
+        pts = [p for s in g['strokes'] for p in s]
+        if 'context' in g:
+            pts += [p for s in ids[g['context']]['strokes'] for p in s]
+        w = (max(p[0] for p in pts) - min(p[0] for p in pts)) / CELL
+        h = (max(p[1] for p in pts) - min(p[1] for p in pts)) / CELL
+        side = g['ruling']['window'][2] / CELL
+        assert side <= max(3, math.ceil(max(w, h) + 1 - 1e-3)) + 1 + 1e-3, (g['id'], side)
+    for key in 'a c e n o u v x'.split():
+        assert abs(ids['chu-' + key]['ruling']['window'][2] / CELL - 4) < 1e-4, key
 
 
 def test_window_on_grid(glyphs):

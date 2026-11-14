@@ -463,12 +463,14 @@ def _k():
     p = Pen(0.0, 1.0)
     khuyet_tren(p, 0.7)
     p.line(0.7, 0.0)
-    # Móc hai đầu with a nét thắt (small loop) in the middle, on line 2.
+    # Móc hai đầu with a clear nét thắt (a round loop under line 2, about
+    # 0.8 ô li across) between the shoulder and the hook. The loop must be
+    # this pronounced or a drawn h is graded as k (review I3).
     p.line(0.7, 0.9)
-    p.curve((0.85, 1.65), (1.3, 2.0), (1.72, 1.78), (1.6, 1.35), (1.2, 1.12),
-            (1.02, 0.95), (1.2, 0.8), (1.42, 0.98), (1.52, 0.75), (1.58, 0.5),
-            smooth=True, end=(0, -1))
-    moc_nguoc(p, 2.4, 1.0, r=0.4)
+    p.curve((0.85, 1.75), (1.4, 2.1), (1.95, 1.85), (1.9, 1.35), (1.35, 1.15),
+            (0.9, 1.1), (0.82, 0.6), (1.25, 0.4), (1.6, 0.8), (1.4, 1.18),
+            (1.7, 1.12), (1.95, 0.75), (2.0, 0.45), smooth=True, end=(0, -1))
+    moc_nguoc(p, 2.8, 1.0, r=0.4)
     return [p], []
 
 
@@ -552,11 +554,13 @@ def frame(points, du):
 
 
 def _window(points):
-    """Square window on whole ô li holding points with >= 0.5 ô li margin."""
+    """Tight square window on whole ô li around points (design §6b: bao chữ +
+    lề ~0,5 ô li): side = extent + 1 ô li rounded up (at least 3), grown only
+    until every point keeps >= 0.5 ô li margin on the grid."""
     us = [p[0] / CELL for p in points]
     vs = [p[1] / CELL for p in points]
     lo_u, hi_u, lo_v, hi_v = min(us), max(us), min(vs), max(vs)
-    side = max(5, math.ceil(max(hi_u - lo_u, hi_v - lo_v) + 1 - 1e-9))
+    side = max(3, math.ceil(max(hi_u - lo_u, hi_v - lo_v) + 1 - 1e-3))
     while True:
         x0 = round((lo_u + hi_u - side) / 2)
         y0 = round((lo_v + hi_v - side) / 2)

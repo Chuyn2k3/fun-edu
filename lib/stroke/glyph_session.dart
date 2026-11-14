@@ -8,8 +8,12 @@ import 'grader.dart';
 /// Call [submit] on every finger lift. A failed stroke never advances
 /// [currentIndex]; a stroke that matches a later reference stroke is reported
 /// as [StrokeError.wrongOrder].
+///
+/// The grading [config] is fitted to the glyph with [GradeConfig.forGlyph]
+/// (unchanged for glyphs without a ruling).
 class GlyphSession {
-  GlyphSession(this.glyph, {this.config = const GradeConfig()});
+  GlyphSession(this.glyph, {GradeConfig config = const GradeConfig()})
+      : config = config.forGlyph(glyph);
 
   final Glyph glyph;
   final GradeConfig config;
