@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -6,7 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
+import 'package:funedu/features/writing/ruled_paper.dart';
 import 'package:funedu/features/writing/writing_screen.dart';
+import 'package:funedu/stroke/glyph_repository.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/ui/theme/tokens.dart';
 import 'package:funedu/stroke/glyph.dart';
@@ -22,7 +27,21 @@ Stroke _line(double y, {bool reversed = false}) {
 final _glyph =
     Glyph(id: 'hai-net', label: 'Hai nét', strokes: [_line(0.3), _line(0.7)]);
 
-Future<List<int>> _pump(WidgetTester t, {Size? size, Glyph? glyph}) async {
+/// A bundled glyph read straight from the asset file.
+Glyph _asset(String id) => Glyph.fromJson(
+    jsonDecode(File('assets/glyphs/$id.json').readAsStringSync())
+        as Map<String, dynamic>);
+
+class _FileRepo implements GlyphRepository {
+  @override
+  Future<List<String>> listIds() async => [];
+
+  @override
+  Future<Glyph> load(String id) async => _asset(id);
+}
+
+Future<List<int>> _pump(WidgetTester t,
+    {Size? size, Glyph? glyph, FakeSpeaker? speaker}) async {
   if (size != null) {
     t.view.physicalSize = size;
     t.view.devicePixelRatio = 1;
@@ -35,7 +54,9 @@ Future<List<int>> _pump(WidgetTester t, {Size? size, Glyph? glyph}) async {
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
-        currentKidIdProvider.overrideWith((ref) async => 1)
+        currentKidIdProvider.overrideWith((ref) async => 1),
+        glyphRepositoryProvider.overrideWithValue(_FileRepo()),
+        if (speaker != null) speakerProvider.overrideWithValue(speaker),
       ],
       child: MaterialApp(
         home: WritingScreen(
@@ -61,6 +82,22 @@ Future<void> _draw(WidgetTester t, Stroke s) async {
       o + Offset(a.x * side, a.y * side),
       Offset((b.x - a.x) * side, (b.y - a.y) * side),
     );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+  });
+  await t.pump();
+}
+
+/// Draws [s] point by point (window coordinates of the pad).
+Future<void> _trace(WidgetTester t, Stroke s) async {
+  final o = t.getTopLeft(find.byType(TracePad));
+  final side = t.getSize(find.byType(TracePad)).width;
+  Offset at(Point2 p) => o + Offset(p.x * side, p.y * side);
+  await t.runAsync(() async {
+    final g = await t.startGesture(at(s.points.first));
+    for (final p in s.points.skip(1)) {
+      await g.moveTo(at(p));
+    }
+    await g.up();
     await Future<void>.delayed(const Duration(milliseconds: 50));
   });
   await t.pump();
@@ -277,5 +314,145 @@ void main() {
     }
     expect(fake.spoken, first);
     expect(t.takeException(), isNull);
+  });
+  group('letters on o li', () {
+    testWidgets('chu-b: windowed guide and ruling; tracing finishes it',
+        (t) async {
+      final glyph = _asset('chu-b');
+      final win = glyph.inWindow();
+      final completed = await _pump(t, glyph: glyph);
+      final pad = t.widget<TracePad>(find.byType(TracePad));
+      expect(pad.guide, win.strokes);
+      final paper = t.widget<RuledPaper>(find.byType(RuledPaper));
+      expect(paper.ruling, win.ruling);
+      expect(find.text('Viết Chữ b'), findsOneWidget);
+      for (final s in win.strokes) {
+        await _trace(t, s);
+      }
+      expect(find.textContaining('đẹp lắm'), findsOneWidget);
+      await t.runAsync(() async {
+        for (var i = 0; i < 50 && completed.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+      });
+      expect(completed, [0]);
+    });
+
+    testWidgets('chu-i: the dot stroke can be traced and the hint survives',
+        (t) async {
+      final win = _asset('chu-i').inWindow();
+      expect(win.strokes.last.points, hasLength(1));
+      final completed = await _pump(t, glyph: _asset('chu-i'));
+      await _trace(t, win.strokes.first);
+      await t.tap(find.text('Xem mẫu'));
+      await t.pump(const Duration(milliseconds: 300));
+      expect(t.takeException(), isNull);
+      await t.pumpAndSettle();
+      final p = win.strokes.last.points.single;
+      final o = t.getTopLeft(find.byType(TracePad));
+      final side = t.getSize(find.byType(TracePad)).width;
+      await t.runAsync(() async {
+        await t.tapAt(o + Offset(p.x * side, p.y * side));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await t.pump();
+      expect(find.textContaining('đẹp lắm'), findsOneWidget);
+      await t.runAsync(() async {
+        for (var i = 0; i < 50 && completed.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+      });
+      expect(completed, [0]);
+    });
+
+    testWidgets('dau-sac: faint chu-a under the guide, never graded',
+        (t) async {
+      final mark = _asset('dau-sac');
+      await _pump(t, glyph: mark);
+      final layer = find.byKey(const ValueKey('glyph-context'));
+      expect(layer, findsOneWidget);
+      // The faint letter sits below the pad (earlier in the same Stack).
+      final stack = t.widget<Stack>(find
+          .ancestor(of: find.byType(TracePad), matching: find.byType(Stack))
+          .first);
+      int indexOf(Finder f) => stack.children.indexWhere((c) => find
+          .descendant(of: find.byWidget(c), matching: f)
+          .evaluate()
+          .isNotEmpty);
+      expect(indexOf(layer), lessThan(indexOf(find.byType(TracePad))));
+      expect(indexOf(layer), greaterThan(indexOf(find.byType(RuledPaper))));
+      // Its strokes are chu-a's, placed in dau-sac's window.
+      final a = _asset('chu-a');
+      final expected = Glyph(
+              id: a.id, label: a.label, strokes: a.strokes, ruling: mark.ruling)
+          .inWindow()
+          .strokes;
+      expect(t.widget<FaintLetter>(layer).strokes, expected);
+      expect(t.widget<TracePad>(find.byType(TracePad)).guide,
+          mark.inWindow().strokes);
+      // Drawing the letter itself does not advance the mark.
+      await _trace(t, expected.first);
+      expect(find.textContaining('đẹp lắm'), findsNothing);
+      expect(find.textContaining('Giỏi quá'), findsNothing);
+      await t.pumpAndSettle();
+    });
+
+    testWidgets('speaks the name the teacher says; title keeps the label',
+        (t) async {
+      final fake = FakeSpeaker();
+      final glyph = _asset('chu-b');
+      await _pump(t, glyph: glyph, speaker: fake);
+      expect(find.text('Viết Chữ b'), findsOneWidget);
+      expect(fake.spoken.single, contains('chữ bờ'));
+      expect(fake.spoken.single, isNot(contains('Chữ b ')));
+      for (final s in glyph.inWindow().strokes) {
+        await _trace(t, s);
+      }
+      expect(fake.spoken.last, 'Bé viết chữ bờ đẹp lắm!');
+      await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 1500)));
+    });
+
+    testWidgets('old glyph so-2: plain paper, raw strokes, old prompt',
+        (t) async {
+      final glyph = _asset('so-2');
+      final fake = FakeSpeaker();
+      await _pump(t, glyph: glyph, speaker: fake);
+      expect(t.widget<RuledPaper>(find.byType(RuledPaper)).ruling, isNull);
+      expect(t.widget<TracePad>(find.byType(TracePad)).guide, glyph.strokes);
+      expect(find.byKey(const ValueKey('glyph-context')), findsNothing);
+      expect(fake.spoken.single, 'Bé tô nét số 1 nhé!');
+    });
+
+    testWidgets('iPad rotation mid-stroke on chu-g drops the half stroke',
+        (t) async {
+      final glyph = _asset('chu-g');
+      final win = glyph.inWindow();
+      final completed = await _pump(t, size: const Size(1366, 1024), glyph: glyph);
+      Rect pad() => t.getRect(find.byType(TracePad));
+      final before = pad();
+      final pts = win.strokes.first.points;
+      Offset at(Point2 p, Rect r) =>
+          r.topLeft + Offset(p.x * r.width, p.y * r.height);
+      final g = await t.startGesture(at(pts.first, before));
+      for (final p in pts.take(pts.length ~/ 2)) {
+        await g.moveTo(at(p, before));
+      }
+      await t.pump();
+      t.view.physicalSize = const Size(1024, 1366);
+      await t.pump();
+      final after = pad();
+      for (final p in pts.skip(pts.length ~/ 2)) {
+        await g.moveTo(at(p, after));
+      }
+      await g.up();
+      await t.pump();
+      expect(t.takeException(), isNull);
+      expect(after.width, isNot(before.width));
+      expect(t.getRect(find.byType(RuledPaper)).size, after.size);
+      expect(find.textContaining('Giỏi quá'), findsNothing);
+      expect(completed, isEmpty);
+      await t.pumpAndSettle();
+    });
   });
 }

@@ -124,9 +124,10 @@ assets/glyphs/*.json           # nét mẫu (toạ độ [0,1], y hướng xuố
 | 1B | Toán 9 cấp, 3 dạng bài, màn Toán, bài xếp cấp lần đầu, bản đồ Toán, bài hôm nay gồm Viết + Toán | Xong |
 | 1C | Giọng đọc (giọng máy), nhiều hồ sơ bé, cổng người lớn, lần đầu mở app có đồng ý, giới hạn giờ + giờ ngủ, góc ba mẹ 5 tab, phần thưởng thật, xóa toàn bộ dữ liệu, chính sách quyền riêng tư | Xong |
 | 1D | Task 1: tách lớp vẽ nền chấm và nét gợi ý. Task 2: thẻ nổi `raisedDecoration` + `Pressable`, bỏ `AppShadows.card`. Task 3: màn chào `SplashView` (nền kem, logo thở), ảnh khởi động native Android/iOS, khóa dọc trên điện thoại. Task 5: bố cục iPad cho trang chủ (thẻ bài hôm nay + `WeekPanel` "Tuần này"), màn tập viết (khung tô vuông, cột Chíp + nút) và màn Toán (đáp án cột phải khi ngang); chữ trên iPad ×1.2 (`TabletTextScale`); xoay máy giữa nét thì bỏ nét đang vẽ. Task 6: bản đồ Viết trên iPad dạng lưới 5 cột (ngang) / 4 cột (dọc), bản đồ Toán là lưới 3×3 ở cả hai chiều (ô cao theo màn, không cuộn); Góc ba mẹ iPad dạng danh sách-chi tiết (trái 300: chip bé + 5 mục, phải ≤ 720); màn thông báo (xong bài, ngủ, chào/xong placement, lần đầu) là một thẻ nổi giữa màn ≤ 640 (`MessageCard`), Chíp ×1.4; cổng ba mẹ dùng `AppCard` (không phải `MessageCard`). Đợt sửa sau rà soát cuối: bố cục iPad chịu được chữ hệ thống lớn (`ScaleDownToFit`, `_fits` tính theo cỡ chữ), nhãn đang chọn trên `NavRail` đủ tương phản, khóa dọc chỉ quyết khi đã biết kích thước cửa sổ (`PortraitLock`), logo khởi động iOS 160pt khớp màn chào, nạp sẵn logo trước, `Pressable` là một nút (tắt khi không bấm được), màn xong bài/placement có chữ ×1.2 trên iPad, nhãn "Đang học" dùng `AppColors.primaryOnTint` | Xong (chờ thử máy thật) |
+| 2A | Viết chữ cái thường + dấu thanh (đang làm). Task 1: 29 chữ + 5 dấu tạm `chu-*`/`dau-*` trên khung 12 ô li. Task 2: `GlyphRuling`, `Glyph.inWindow()`, `context`, `speech`. Task 3: màn tập viết (điện thoại + iPad) và màn tô thử dùng nét đã quy về vùng chữ (`inWindow`), giấy ô li `RuledPaper(ruling:)` (đường chân chữ và đường đầu chữ thường đậm hơn), dấu thanh tô trên chữ "a" mờ (`FaintLetter`, không chấm), nét chấm (chấm chữ i, dấu nặng) có chấm gợi ý và nhấp nháy khi "Xem mẫu", Chíp đọc tên chữ theo `spokenName` ("Mình viết chữ bờ nhé!") còn tiêu đề giữ nhãn | Đang làm |
 | Ảnh | Thay 13 ảnh độ phân giải cao | Xong (trừ ngọn lửa) |
 
-Trạng thái kiểm tra cuối: `flutter analyze` sạch, **466 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
+Trạng thái kiểm tra cuối: `flutter analyze` sạch, **553 test đạt** trên Flutter 3.24.5. **Chưa** có lần build/chạy kiểm chứng trên máy thật bởi AI; hiệu năng 1D chưa đo bằng `--profile` trên iPhone/iPad (chủ dự án đã chạy thử iPhone ở giai đoạn 0).
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
@@ -150,6 +151,7 @@ Trạng thái kiểm tra cuối: `flutter analyze` sạch, **466 test đạt** t
 - Màn Toán: xoay iPad giữa bài thì các lần chạm/kéo đang dở của câu hiện tại bị đặt lại (điểm vẫn giữ).
 - Màn "lần đầu" (cổng, đồng ý, hồ sơ) là cho ba mẹ nên không phóng chữ ×1.2 trên iPad, giống Góc ba mẹ.
 - Góc ba mẹ: hàng tab không có hiệu ứng chạm (ripple).
+- 2A: câu Chíp đọc chèn nguyên `speech` nên dấu thanh nghe/hiện "Mình viết Dấu hỏi nhé!" (chữ D hoa giữa câu) — sửa dữ liệu `speech` của `dau-*` hoặc viết thường khi chèn.
 - Nút "Chơi", "Sưu tập", "Nhà Chíp" trên trang chủ và môn Tiếng Việt, Tiếng Anh còn hiện "Sắp có".
 
 ## 8. Làm gì tiếp (theo spec, mục 10)

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/dev/gallery_screen.dart';
+import 'package:funedu/features/writing/ruled_paper.dart';
+import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/ui/theme/app_theme.dart';
 import 'package:funedu/ui/theme/contrast.dart';
 import 'package:funedu/ui/theme/tokens.dart';
@@ -139,5 +141,64 @@ void main() {
     await tester.pumpWidget(MaterialApp(theme: buildAppTheme(), home: const GalleryScreen()));
     expect(tester.takeException(), isNull);
     expect(find.byType(GalleryScreen), findsOneWidget);
+  });
+  group('RuledPaper', () {
+    // chu-b's ruling in window coordinates: 7 o li tall, baseline 6 down.
+    const windowed = GlyphRuling(
+      cell: 1 / 7,
+      baseline: 6 / 7,
+      windowX: 0,
+      windowY: 0,
+      windowSide: 1,
+    );
+
+    Future<void> pumpPaper(WidgetTester t, RuledPaper paper) => t.pumpWidget(
+        host(SizedBox(width: 350, height: 350, child: paper)));
+
+    test('horizontal lines: one per o li, closed grid, baseline included', () {
+      final ys = RuledPaper.horizontalLines(windowed);
+      expect(ys, hasLength(7 + 1));
+      expect(ys.first, closeTo(0, 1e-9));
+      expect(ys.last, closeTo(1, 1e-9));
+      expect(ys.any((y) => (y - 6 / 7).abs() < 1e-9), isTrue);
+      for (var i = 1; i < ys.length; i++) {
+        expect(ys[i] - ys[i - 1], closeTo(1 / 7, 1e-9));
+      }
+    });
+
+    test('heavy lines are the baseline and the x-height line', () {
+      final heavy = RuledPaper.heavyLines(windowed);
+      expect(heavy, hasLength(2));
+      expect(heavy[0], closeTo(4 / 7, 1e-9));
+      expect(heavy[1], closeTo(6 / 7, 1e-9));
+    });
+
+    test('lines in frame units are mapped into the window', () {
+      // chu-a: frame cell 1/12, window 5 o li from row 5, baseline row 8.
+      const frame = GlyphRuling(
+        cell: 1 / 12,
+        baseline: 8 / 12,
+        windowX: 4 / 12,
+        windowY: 5 / 12,
+        windowSide: 5 / 12,
+      );
+      final ys = RuledPaper.horizontalLines(frame);
+      expect(ys, hasLength(6));
+      expect(ys.any((y) => (y - 3 / 5).abs() < 1e-9), isTrue);
+      expect(RuledPaper.verticalLines(frame), hasLength(6));
+      expect(RuledPaper.heavyLines(frame)[0], closeTo(1 / 5, 1e-9));
+    });
+
+    testWidgets('without a ruling: the five exercise-book lines', (t) async {
+      await pumpPaper(t, const RuledPaper());
+      expect(find.byType(RuledPaper), paintsExactlyCountTimes(#drawLine, 5));
+    });
+
+    testWidgets('with a ruling: o li squares (horizontal + vertical lines)',
+        (t) async {
+      await pumpPaper(t, const RuledPaper(ruling: windowed));
+      expect(
+          find.byType(RuledPaper), paintsExactlyCountTimes(#drawLine, 8 + 8));
+    });
   });
 }

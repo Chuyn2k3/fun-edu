@@ -191,7 +191,18 @@ class GuidePainter extends CustomPainter {
     final dash = side * 0.04;
     final out = <Path>[];
     for (final s in guide) {
-      if (s.points.length < 2) continue;
+      if (s.points.isEmpty) continue;
+      if (s.points.length == 1) {
+        // A dot stroke (dot of "i", dấu nặng): a small solid dot, which the
+        // stroke width below fills in.
+        final p = s.points.single;
+        out.add(Path()
+          ..addOval(Rect.fromCircle(
+            center: Offset(p.x * side, p.y * side),
+            radius: side * 0.01,
+          )));
+        continue;
+      }
       for (final PathMetric m in _pathOf(s, side).computeMetrics()) {
         for (var d = 0.0; d < m.length; d += dash * 2) {
           out.add(m.extractPath(d, d + dash));

@@ -9,6 +9,7 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
+import '../writing/ruled_paper.dart';
 import 'trace_pad.dart';
 
 const String _okMessage = 'Đúng rồi!';
@@ -52,7 +53,9 @@ class _TraceBody extends ConsumerStatefulWidget {
 }
 
 class _TraceBodyState extends ConsumerState<_TraceBody> {
-  late final GlyphSession _session = GlyphSession(widget.glyph);
+  /// The glyph in writing-window coordinates (unchanged without a ruling).
+  late final Glyph _glyph = widget.glyph.inWindow();
+  late final GlyphSession _session = GlyphSession(_glyph);
   final List<Stroke> _inked = [];
   String? _message;
   int _attempts = 0;
@@ -117,10 +120,16 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
             child: Center(
               child: AspectRatio(
                 aspectRatio: 1,
-                child: TracePad(
-                  onStrokeEnd: _onStrokeEnd,
-                  guide: widget.glyph.strokes,
-                  inked: List.of(_inked),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (_glyph.ruling != null) RuledPaper(ruling: _glyph.ruling),
+                    TracePad(
+                      onStrokeEnd: _onStrokeEnd,
+                      guide: _glyph.strokes,
+                      inked: List.of(_inked),
+                    ),
+                  ],
                 ),
               ),
             ),

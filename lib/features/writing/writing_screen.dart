@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/app_database.dart';
 import '../../profile/kid_repository.dart';
 import '../../stroke/glyph.dart';
+import '../../stroke/glyph_repository.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
 import '../../ui/assets.dart';
@@ -61,7 +62,10 @@ class WritingScreen extends ConsumerStatefulWidget {
 
 class _WritingScreenState extends ConsumerState<WritingScreen>
     with SingleTickerProviderStateMixin {
-  late final GlyphSession _session = GlyphSession(widget.glyph);
+  /// The glyph in writing-window coordinates: guide, grading, hints and the
+  /// ô li paper all use it (old glyphs without a ruling are unchanged).
+  late final Glyph _glyph = widget.glyph.inWindow();
+  late final GlyphSession _session = GlyphSession(_glyph);
   late final AnimationController _flash = AnimationController(
     vsync: this,
     duration: _flashDuration,
@@ -70,7 +74,37 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
   Timer? _completeTimer;
   bool _completed = false;
   String _chip = AppImages.chipMain;
-  late String _message = 'Bé tô nét số 1 nhé!';
+  late String _message = _opening;
+
+  /// Faint reference letter (the "a" under a tone mark), in this glyph's
+  /// window; null when there is none or it is still loading.
+  List<Stroke>? _context;
+  Glyph? _contextSource;
+
+  /// First line; letters are named the way the teacher says them.
+  String get _opening => widget.glyph.speech == null
+      ? 'Bé tô nét số 1 nhé!'
+      : 'Mình viết ${widget.glyph.spokenName} nhé! Bé tô nét số 1.';
+
+  /// Watches the context glyph and maps it into this glyph's window. Called
+  /// from [build] (not from a layout callback).
+  List<Stroke>? _watchContext() {
+    final id = widget.glyph.context;
+    if (id == null) return null;
+    final ctx = ref.watch(glyphProvider(id)).valueOrNull;
+    if (ctx == null) return null;
+    if (!identical(ctx, _contextSource)) {
+      _contextSource = ctx;
+      // Both glyphs share the 12-ô-li frame; place it in *this* window.
+      _context = Glyph(
+        id: ctx.id,
+        label: ctx.label,
+        strokes: ctx.strokes,
+        ruling: widget.glyph.ruling ?? ctx.ruling,
+      ).inWindow().strokes;
+    }
+    return _context;
+  }
 
   /// Keeps Chíp's line (and its voice) across tablet rotations.
   final _chipKey = GlobalKey();
@@ -124,7 +158,7 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
       if (_session.isComplete) {
         _completed = true;
         _chip = AppImages.chipThumb;
-        _message = 'Bé viết ${widget.glyph.label} đẹp lắm!';
+        _message = 'Bé viết ${widget.glyph.spokenName} đẹp lắm!';
         final failed = _session.history.where((r) => !r.ok).length;
         _completeTimer =
             Timer(_completeDelay, () => widget.onCompleted(failed));
@@ -152,12 +186,13 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
     setState(() {
       _inked.clear();
       _chip = AppImages.chipMain;
-      _message = 'Bé tô nét số 1 nhé!';
+      _message = _opening;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    _watchContext();
     final formFactor = context.formFactor;
     if (formFactor != FormFactor.phone) {
       return Scaffold(
@@ -275,7 +310,7 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
                 const SizedBox(height: 12),
                 _StrokeProgress(
                   done: _session.currentIndex,
-                  total: widget.glyph.strokes.length,
+                  total: _glyph.strokes.length,
                 ),
               ],
             ),
@@ -399,8 +434,12 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
   }
 
   Widget _paperCard() {
-    final strokes = widget.glyph.strokes;
+    final strokes = _glyph.strokes;
     final next = _session.isComplete ? null : strokes[_session.currentIndex];
+    final contextStrokes = _context;
+    // A dot stroke is its own start point: keep the badge off the dot.
+    final badgeShift =
+        next != null && next.points.length == 1 ? _badgeSize * 0.9 : 0.0;
     return AppCard(
       padding: const EdgeInsets.all(_cardPadding),
       child: LayoutBuilder(
@@ -412,7 +451,14 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
               height: side,
               child: Stack(
                 children: [
-                  const Positioned.fill(child: RuledPaper()),
+                  Positioned.fill(child: RuledPaper(ruling: _glyph.ruling)),
+                  if (contextStrokes != null)
+                    Positioned.fill(
+                      child: FaintLetter(
+                        key: const ValueKey('glyph-context'),
+                        strokes: contextStrokes,
+                      ),
+                    ),
                   if (next != null)
                     Positioned.fill(
                       child: IgnorePointer(
@@ -434,8 +480,12 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
                   ),
                   if (next != null && next.points.isNotEmpty)
                     Positioned(
-                      left: next.points.first.x * side - _badgeSize / 2,
-                      top: next.points.first.y * side - _badgeSize / 2,
+                      left: next.points.first.x * side -
+                          _badgeSize / 2 -
+                          badgeShift,
+                      top: next.points.first.y * side -
+                          _badgeSize / 2 -
+                          badgeShift,
                       child: IgnorePointer(
                         child: _NumberBadge(_session.currentIndex + 1),
                       ),
@@ -593,8 +643,20 @@ class _FlashPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (t <= 0 || t >= 1 || stroke.points.length < 2) return;
+    if (t <= 0 || t >= 1 || stroke.points.isEmpty) return;
     final side = size.shortestSide;
+    final pulse = math.sin(t * _flashCount * math.pi).abs();
+    final color = AppColors.accent.withOpacity(pulse);
+    if (stroke.points.length == 1) {
+      // A dot (the dot of "i", dấu nặng): pulse a filled circle.
+      final p = stroke.points.single;
+      canvas.drawCircle(
+        Offset(p.x * side, p.y * side),
+        side * 0.035,
+        Paint()..color = color,
+      );
+      return;
+    }
     final path = Path();
     for (var i = 0; i < stroke.points.length; i++) {
       final p = stroke.points[i];
@@ -602,11 +664,10 @@ class _FlashPainter extends CustomPainter {
           ? path.moveTo(p.x * side, p.y * side)
           : path.lineTo(p.x * side, p.y * side);
     }
-    final pulse = math.sin(t * _flashCount * math.pi).abs();
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.accent.withOpacity(pulse)
+        ..color = color
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round

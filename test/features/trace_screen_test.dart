@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:funedu/data/app_database.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/trace/trace_pad.dart';
 import 'package:funedu/features/trace/trace_screen.dart';
+import 'package:funedu/features/writing/ruled_paper.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/stroke/glyph_repository.dart';
@@ -24,6 +26,16 @@ class _FakeRepo implements GlyphRepository {
       Stroke([for (var i = 0; i <= 10; i++) Point2(0.1 + 0.08 * i, 0.5)]),
     ],
   );
+}
+
+class _AssetRepo implements GlyphRepository {
+  @override
+  Future<List<String>> listIds() async => ['chu-b'];
+
+  @override
+  Future<Glyph> load(String id) async => Glyph.fromJson(
+      jsonDecode(File('assets/glyphs/$id.json').readAsStringSync())
+          as Map<String, dynamic>);
 }
 
 class _FailingDb extends AppDatabase {
@@ -146,5 +158,26 @@ void main() {
     });
     await t.pumpAndSettle();
     expect(find.text('Không lưu được kết quả'), findsOneWidget);
+  });
+  testWidgets('a letter is traced in its window on o li paper', (t) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repo = _AssetRepo();
+    final glyph = await repo.load('chu-b');
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          currentKidIdProvider.overrideWith((ref) async => 1),
+          glyphRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: const MaterialApp(home: TraceScreen('chu-b')),
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(find.text('Chữ b'), findsOneWidget);
+    final win = glyph.inWindow();
+    expect(t.widget<TracePad>(find.byType(TracePad)).guide, win.strokes);
+    expect(t.widget<RuledPaper>(find.byType(RuledPaper)).ruling, win.ruling);
   });
 }
