@@ -182,34 +182,54 @@ void main() {
   }
 
   for (final size in [const Size(390, 844), const Size(1366, 1024)]) {
-    testWidgets('map shows four section headings and 49 tiles at $size',
+    testWidgets('map shows four section headings and all tiles at $size',
         (t) async {
       _setSize(t, size.width, size.height);
       await _pump(t);
       final titles = ['Nét cơ bản', 'Chữ số', 'Chữ cái', 'Dấu thanh'];
-      final ys = <double>[];
-      for (final title in titles) {
-        final f = find.text(title, skipOffstage: false);
-        expect(f, findsOneWidget, reason: title);
-        ys.add(t.getTopLeft(f).dy);
+      final seen = <String>{};
+      final headingY = <String, double>{};
+      final list = find.byType(Scrollable).first;
+      void collect() {
+        for (final w in t.widgetList<Text>(find.byType(Text))) {
+          final d = w.data ?? '';
+          if (d.startsWith('chu-') ||
+              d.startsWith('dau-') ||
+              d.startsWith('so-') ||
+              d.startsWith('net-')) {
+            seen.add(d);
+          }
+        }
+        final offset = t.state<ScrollableState>(list).position.pixels;
+        for (final title in titles) {
+          final f = find.text(title);
+          if (f.evaluate().isNotEmpty) {
+            headingY[title] = t.getTopLeft(f).dy + offset;
+          }
+        }
       }
+
+      collect();
+      for (var i = 0; i < 40; i++) {
+        await t.drag(list, const Offset(0, -300));
+        await t.pump();
+        collect();
+      }
+      expect(headingY.keys, containsAll(titles));
+      final ys = [for (final title in titles) headingY[title]!];
       expect(ys, orderedEquals([...ys]..sort()));
-      int tiles(String prefix) => find
-          .byWidgetPredicate(
-              (w) => w is Text && (w.data ?? '').startsWith(prefix),
-              skipOffstage: false)
-          .evaluate()
-          .length;
-      expect(tiles('chu-'), 29);
-      expect(tiles('dau-'), 5);
-      expect(find.byType(Pressable, skipOffstage: false), findsNWidgets(49));
+      expect(seen.where((d) => d.startsWith('chu-')), hasLength(29));
+      expect(seen.where((d) => d.startsWith('dau-')), hasLength(5));
+      expect(seen.where((d) => d.startsWith('so-')), hasLength(10));
+      // net-ngang / net-xien have display labels in this harness: 3 + 44.
+      expect(seen, hasLength(47));
     });
   }
 
   testWidgets('tapping a letter tile opens its practice screen', (t) async {
     _setSize(t, 390, 844);
     await _pump(t);
-    await t.ensureVisible(find.text('chu-aw'));
+    await t.scrollUntilVisible(find.text('chu-aw'), 300);
     await t.pumpAndSettle();
     await t.tap(find.text('chu-aw'));
     await t.pumpAndSettle();
@@ -223,7 +243,9 @@ void main() {
     addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
     await _pump(t, master: true);
     expect(t.takeException(), isNull);
-    expect(find.text('Dấu thanh', skipOffstage: false), findsOneWidget);
+    await t.scrollUntilVisible(find.text('Dấu thanh'), 300);
+    expect(find.text('Dấu thanh'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 
   testWidgets('double tap on a tile opens only one practice screen', (t) async {

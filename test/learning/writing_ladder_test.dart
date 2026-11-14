@@ -71,18 +71,15 @@ void main() {
       });
 
       test('submitting stroke 2 first is wrongOrder', () {
-        final glyph = _load(id);
-        if (glyph.strokes.length < 2) return;
-        // Letters are small on the ô li and graded with a looser tolerance,
-        // so a later stroke may legitimately match the first one's slot.
-        if (id.startsWith('chu-')) return;
-        final result = GlyphSession(glyph).submit(glyph.strokes[1]);
+        final win = _load(id).inWindow();
+        if (win.strokes.length < 2) return;
+        final result = GlyphSession(win).submit(win.strokes[1]);
         expect(result.ok, isFalse);
         expect(result.error, StrokeError.wrongOrder);
       });
 
       test('every reversed stroke is rejected', () {
-        final glyph = _load(id);
+        final glyph = _load(id).inWindow();
         for (var i = 0; i < glyph.strokes.length; i++) {
           final stroke = glyph.strokes[i];
           if (_length(stroke) <= 0.05) continue;

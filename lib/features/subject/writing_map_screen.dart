@@ -110,17 +110,22 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
                     ),
                   ),
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (final entry in groupLadder(ids).entries) ...[
-                            _SectionHeading(entry.key.title, tablet: tablet),
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: EdgeInsets.zero,
+                    child: CustomScrollView(
+                      slivers: [
+                        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                        for (final entry in groupLadder(ids).entries) ...[
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            sliver: SliverToBoxAdapter(
+                              child: _SectionHeading(
+                                entry.key.title,
+                                tablet: tablet,
+                              ),
+                            ),
+                          ),
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            sliver: SliverGrid(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: mapColumnsFor(
@@ -131,20 +136,23 @@ class _WritingMapScreenState extends ConsumerState<WritingMapScreen> {
                                 crossAxisSpacing: tablet ? 16 : 12,
                                 childAspectRatio: tablet ? 1.0 : 1.1,
                               ),
-                              itemCount: entry.value.length,
-                              itemBuilder: (context, i) {
-                                final id = entry.value[i];
-                                return _GlyphTile(
-                                  tablet: tablet,
-                                  label: byId[id]!.label,
-                                  mastered: stats[id]?.mastered ?? false,
-                                  onTap: () => _openPractice(id),
-                                );
-                              },
+                              delegate: SliverChildBuilderDelegate(
+                                childCount: entry.value.length,
+                                (context, i) {
+                                  final id = entry.value[i];
+                                  return _GlyphTile(
+                                    tablet: tablet,
+                                    label: byId[id]!.label,
+                                    mastered: stats[id]?.mastered ?? false,
+                                    onTap: () => _openPractice(id),
+                                  );
+                                },
+                              ),
                             ),
-                          ],
+                          ),
                         ],
-                      ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      ],
                     ),
                   ),
                 ],
