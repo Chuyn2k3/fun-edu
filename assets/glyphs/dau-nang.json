@@ -1,0 +1,25 @@
+{
+ "id": "dau-nang",
+ "label": "Dấu nặng",
+ "speech": "Dấu nặng",
+ "ruling": {
+  "cell": 0.083333,
+  "baseline": 0.666667,
+  "window": [
+   0.333333,
+   0.416667,
+   0.416667
+  ]
+ },
+ "context": "chu-a",
+ "strokes": [
+  {
+   "points": [
+    [
+     0.4708,
+     0.7417
+    ]
+   ]
+  }
+ ]
+}

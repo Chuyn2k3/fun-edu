@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generate provisional reference glyphs (basic strokes and digits 0-9).
+"""Generate provisional reference glyphs: basic strokes, digits 0-9, and the
+lowercase letters and tone marks of phase 2A (see letters.py).
 
 Usage: python3 tools/glyphs/make_glyphs.py --out assets/glyphs
 Unit square, y grows downward. Placeholder data until the owner re-records it.
@@ -8,6 +9,10 @@ import argparse
 import json
 import math
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import letters  # noqa: E402
 
 
 def r4(p):
@@ -50,6 +55,8 @@ def join(*parts):
 
 def glyphs():
     g = {}
+    g['net-ngang'] = ('Nét ngang', [line((0.1, 0.5), (0.9, 0.5), 11)])
+    g['net-thang-dung'] = ('Nét thẳng đứng', [line((0.5, 0.1), (0.5, 0.9), 11)])
     g['net-xien'] = ('Nét xiên', [line((0.7, 0.1), (0.3, 0.9), 16)])
     # C shape opening to the right: starts upper right, runs counter-clockwise.
     g['net-cong'] = ('Nét cong', [
@@ -95,8 +102,17 @@ def main():
     for gid, (label, strokes) in glyphs().items():
         data = {'id': gid, 'label': label,
                 'strokes': [{'points': [r4(p) for p in s]} for s in strokes]}
-        with open(os.path.join(args.out, gid + '.json'), 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=1)
+        # The two hand-written originals had no trailing newline; keep them
+        # byte-identical.
+        write(args.out, gid, data, newline=gid not in ('net-ngang', 'net-thang-dung'))
+    for g in letters.letters():
+        write(args.out, g['id'], letters.to_json(g))
+
+
+def write(out, gid, data, newline=True):
+    with open(os.path.join(out, gid + '.json'), 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+        if newline:
             f.write('\n')
 
 
