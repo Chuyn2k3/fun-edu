@@ -23,6 +23,7 @@ class GradeConfig {
     this.dotRadius = 0.1,
     this.dotLength = 0.02,
     this.shortStrokeLength = 0,
+    this.endpointTolerance,
   });
 
   final int samples;
@@ -38,10 +39,15 @@ class GradeConfig {
   /// marks and diacritics (sắc vs huyền, ă vs â) are told apart. 0 = off.
   final double shortStrokeLength;
 
+  /// How far a short stroke's start and end may be from the reference's
+  /// (see [shortStrokeLength]); null = [tolerance].
+  final double? endpointTolerance;
+
   GradeConfig copyWith({
     double? tolerance,
     double? maxPointDistance,
     double? shortStrokeLength,
+    double? endpointTolerance,
   }) =>
       GradeConfig(
         samples: samples,
@@ -52,6 +58,7 @@ class GradeConfig {
         dotRadius: dotRadius,
         dotLength: dotLength,
         shortStrokeLength: shortStrokeLength ?? this.shortStrokeLength,
+        endpointTolerance: endpointTolerance ?? this.endpointTolerance,
       );
 
   /// This config fitted to [glyph] (design §2: small letters must not be
@@ -64,6 +71,14 @@ class GradeConfig {
   /// a digit is 0.8 tall, so the tolerance stays the same fraction of the
   /// glyph's height. Strokes shorter than 2.5 ô li get the endpoint check
   /// (see [shortStrokeLength]).
+  ///
+  /// Tone marks (every stroke shorter than 2.5 ô li) are drawn zoomed, about
+  /// 0.4 of the pad (letters.py `_mark_windows`). Their factor has a floor of
+  /// 0.7 instead of 0.5, and their start and end may be off by the unscaled
+  /// [tolerance] (a digit's), so a child's honest mark passes while another
+  /// mark, which starts or ends about 0.15 of the pad away, does not
+  /// (mark-zoom probe, typical child: ≥ 96 % of correct marks accepted,
+  /// ≤ 2 % of wrong marks).
   GradeConfig forGlyph(Glyph glyph) {
     final r = glyph.ruling;
     if (r == null) return this;
@@ -75,11 +90,14 @@ class GradeConfig {
       }
     }
     final height = hi > lo ? (hi - lo) / r.windowSide : 0.0;
-    final f = (height / 0.8).clamp(0.5, 1.0);
+    final short = 2.5 * r.cell / r.windowSide;
+    final mark = glyph.strokes.every((s) => pathLength(s.points) < short);
+    final f = (height / 0.8).clamp(mark ? 0.7 : 0.5, 1.0);
     return copyWith(
       tolerance: tolerance * f,
       maxPointDistance: maxPointDistance * f,
-      shortStrokeLength: 2.5 * r.cell / r.windowSide,
+      shortStrokeLength: short,
+      endpointTolerance: mark ? tolerance : null,
     );
   }
 }
@@ -135,11 +153,18 @@ StrokeResult gradeStroke(Stroke drawn, Stroke reference,
     return StrokeResult(ok: false, error: StrokeError.offPath, deviation: fwd);
   }
 
-  // Rule 6: short strokes start and end where the reference does.
+  // Rule 6: short strokes start and end where the reference does. A stroke
+  // clearly shorter than the reference most likely stopped early.
+  final endTol = config.endpointTolerance ?? config.tolerance;
   if (refLen < config.shortStrokeLength &&
-      (!(distance(d.first, r.first) <= config.tolerance) ||
-          !(distance(d.last, r.last) <= config.tolerance))) {
-    return StrokeResult(ok: false, error: StrokeError.offPath, deviation: fwd);
+      (!(distance(d.first, r.first) <= endTol) ||
+          !(distance(d.last, r.last) <= endTol))) {
+    return StrokeResult(
+        ok: false,
+        error: refLen - pathLength(d) > endTol
+            ? StrokeError.tooShort
+            : StrokeError.offPath,
+        deviation: fwd);
   }
 
   return StrokeResult(ok: true, deviation: fwd);

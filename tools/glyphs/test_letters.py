@@ -149,14 +149,16 @@ def test_marks_placed_on_context(glyphs):
 
 
 def test_window_contains_glyph(glyphs):
-    ids = by_id(glyphs)
     for g in glyphs:
         x, y, side = g['ruling']['window']
-        assert side >= 3 * CELL - 1e-9
         assert 0 <= x and 0 <= y and x + side <= 1 + 1e-9 and y + side <= 1 + 1e-9
         pts = [p for s in g['strokes'] for p in s]
         if 'context' in g:
-            pts += [p for s in ids[g['context']]['strokes'] for p in s]
+            # Tone marks are zoomed: only the near edge of the context letter
+            # shows (test_mark_window_zoomed).
+            assert side >= 2.5 * CELL - 1e-6
+        else:
+            assert side >= 3 * CELL - 1e-6
         m = 0.5 * CELL - 1e-6
         for px, py in pts:
             assert x + m <= px <= x + side - m, (g['id'], px)
@@ -167,24 +169,56 @@ def test_window_is_tight(glyphs):
     # Design §6b: window = glyph (+ context) + ~0.5 ô li margin, so small
     # letters fill the pad instead of floating in a 5-ô-li window. One extra
     # ô li is allowed for landing on the grid.
-    ids = by_id(glyphs)
     for g in glyphs:
-        pts = [p for s in g['strokes'] for p in s]
         if 'context' in g:
-            pts += [p for s in ids[g['context']]['strokes'] for p in s]
+            continue  # tone marks: test_mark_window_zoomed
+        pts = [p for s in g['strokes'] for p in s]
         w = (max(p[0] for p in pts) - min(p[0] for p in pts)) / CELL
         h = (max(p[1] for p in pts) - min(p[1] for p in pts)) / CELL
         side = g['ruling']['window'][2] / CELL
         assert side <= max(3, math.ceil(max(w, h) + 1 - 1e-3)) + 1 + 1e-3, (g['id'], side)
+    ids = by_id(glyphs)
     for key in 'a c e n o u v x'.split():
         assert abs(ids['chu-' + key]['ruling']['window'][2] / CELL - 4) < 1e-4, key
 
 
 def test_window_on_grid(glyphs):
-    # Whole ô li so the pad's ruling lines land on the baseline.
+    # Whole ô li so the pad's ruling lines land on the baseline; zoomed tone
+    # marks use half ô li.
     for g in glyphs:
+        step = 0.5 if 'context' in g else 1
         for v in g['ruling']['window']:
-            assert abs(v / CELL - round(v / CELL)) < 1e-3, g['id']
+            q = v / CELL / step
+            assert abs(q - round(q)) < 1e-3, g['id']
+
+
+def test_mark_window_zoomed(glyphs):
+    # Owner decision (mark-zoom): the tone mark fills the pad like a digit
+    # instead of floating over a whole "a", so a child's mark is big enough
+    # to grade; only the near edge of the "a" shows, as a position cue.
+    ids = by_id(glyphs)
+    a = [p for s in ids['chu-a']['strokes'] for p in s]
+    a_top, a_bottom = min(p[1] for p in a), max(p[1] for p in a)
+    above = ['dau-huyen', 'dau-sac', 'dau-hoi', 'dau-nga']
+    # The four marks over the letter share one window, so drawing the wrong
+    # mark is graded in the same place as the right one.
+    assert len({tuple(ids[m]['ruling']['window']) for m in above}) == 1
+    for mid in MARKS:
+        g = ids[mid]
+        x, y, side = g['ruling']['window']
+        assert side <= 2.5 * CELL + 1e-6, mid
+        pts = g['strokes'][0]
+        if mid == 'dau-nang':
+            # Dot under the letter; the bottom of the "a" shows at the top.
+            assert a_bottom - y >= 0.4 * CELL - 1e-6, mid
+            assert a_bottom - y <= 1.0 * CELL + 1e-6, mid
+            continue
+        w = (max(p[0] for p in pts) - min(p[0] for p in pts)) / side
+        h = (max(p[1] for p in pts) - min(p[1] for p in pts)) / side
+        assert max(w, h) >= 0.35, (mid, w, h)
+        # At least 0.4 ô li (and at most 1 ô li) of the top of "a" shows.
+        assert y + side - a_top >= 0.4 * CELL - 1e-6, mid
+        assert y + side - a_top <= 1.0 * CELL + 1e-6, mid
 
 
 def test_smooth_points(glyphs):

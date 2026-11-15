@@ -23,10 +23,18 @@ class RuledPaper extends StatelessWidget {
   static List<double> horizontalLines(GlyphRuling r) =>
       _gridLines(r.baseline, r.cell, r.windowY, r.windowSide);
 
-  /// Window-relative x of every vertical ô li line (cells start at frame 0).
+  /// Window-relative x of every vertical ô li line (cells start at the
+  /// window's left edge). A window that is not a whole number of ô li wide
+  /// (a zoomed tone mark) has its columns centred instead, so the part cells
+  /// at both sides match.
   @visibleForTesting
-  static List<double> verticalLines(GlyphRuling r) =>
-      _gridLines(0, r.cell, r.windowX, r.windowSide);
+  static List<double> verticalLines(GlyphRuling r) {
+    if (r.cell <= 0) return const [];
+    final n = r.windowSide / r.cell;
+    final rest = n - (n + _eps).floor();
+    final shift = rest < _eps ? 0.0 : rest * r.cell / 2;
+    return _gridLines(r.windowX + shift, r.cell, r.windowX, r.windowSide);
+  }
 
   /// Window-relative y of the x-height line and the baseline, in that order.
   @visibleForTesting
@@ -157,6 +165,8 @@ class _FaintPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final side = size.shortestSide;
+    // A zoomed tone mark shows only the near edge of its letter.
+    canvas.clipRect(Offset.zero & Size(side, side));
     final paint = Paint()
       ..color = AppColors.dot.withOpacity(0.8)
       ..style = PaintingStyle.stroke

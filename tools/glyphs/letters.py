@@ -573,9 +573,45 @@ def _window(points):
     return [round(x0 * CELL, 6), round(y0 * CELL, 6), round(side * CELL, 6)]
 
 
-def _ruling(points):
+def _ruling(points, window=None):
     return {'cell': round(CELL, 6), 'baseline': round(BASELINE, 6),
-            'window': _window(points)}
+            'window': window or _window(points)}
+
+
+def _floor_half(v):
+    return math.floor(v * 2 + 1e-6) / 2
+
+
+def _ceil_half(v):
+    return math.ceil(v * 2 - 1e-6) / 2
+
+
+def _round_half(v):
+    return round(v * 2) / 2
+
+
+def _mark_windows(marks, a_pts):
+    """Zoomed windows for the tone marks (owner decision "phóng to dấu").
+
+    A mark is about 1 ô li, so in a window around the whole "a" it is too
+    small to grade: huyền and hỏi differ by ~4 mm on screen. Instead the four
+    marks over the letter share one window around them (0.5 ô li margin) that
+    ends 0.5 ô li into the top of the "a", and nặng gets the mirror window
+    starting 0.5 ô li above the bottom of the "a". Sides and corners are on
+    half ô li; the child still sees where the mark sits on the letter."""
+    a_top = min(p[1] for p in a_pts) / CELL
+    a_bottom = max(p[1] for p in a_pts) / CELL
+    above = [p for k, s in marks.items() if k != 'nang' for p in s]
+    us = [p[0] / CELL for p in above]
+    vs = [p[1] / CELL for p in above]
+    top = _floor_half(min(vs) - 0.5)
+    side = max(_ceil_half(a_top + 0.5 - top), _ceil_half(max(us) - min(us) + 1))
+    x0 = _round_half((min(us) + max(us) - side) / 2)
+    out = {}
+    for k in marks:
+        y0 = _round_half(a_bottom - 0.5) if k == 'nang' else top
+        out[k] = [round(x0 * CELL, 6), round(y0 * CELL, 6), round(side * CELL, 6)]
+    return out
 
 
 def letters():
@@ -599,10 +635,12 @@ def letters():
                     'strokes': strokes, 'body': len(body)})
     a = next(g for g in out if g['id'] == 'chu-a')
     a_pts = [p for s in a['strokes'] for p in s]
-    for key, label, build in MARKS:
-        stroke = frame(_pts(build(0.75)), a_shift)
+    marks = {key: frame(_pts(build(0.75)), a_shift) for key, _, build in MARKS}
+    windows = _mark_windows(marks, a_pts)
+    for key, label, _ in MARKS:
+        stroke = marks[key]
         out.append({'id': 'dau-' + key, 'label': label, 'speech': label[0].lower() + label[1:],
-                    'ruling': _ruling(stroke + a_pts), 'context': 'chu-a',
+                    'ruling': _ruling(stroke, windows[key]), 'context': 'chu-a',
                     'strokes': [stroke], 'body': 0})
     ladder = ('chu-i chu-t chu-u chu-uw chu-n chu-m chu-v chu-r chu-s chu-o chu-oo '
               'chu-ow chu-c chu-x chu-e chu-ee chu-a chu-aw chu-aa chu-d chu-dd chu-q '

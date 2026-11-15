@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/stroke/glyph_session.dart';
+import 'package:funedu/stroke/grader.dart';
 
 /// Regression tests for the phase 2A review: wrong tone marks and similar
 /// letters must not be praised, and small letters must not be graded looser
@@ -33,6 +34,28 @@ bool _praised(Glyph target, List<Stroke> drawn) {
     if (!session.submit(s).ok) return false;
   }
   return session.isComplete;
+}
+
+/// [s] resampled, scaled by the size about its centroid, moved by
+/// (dx, dy) and waved sideways by the amplitude (1.5 waves along it).
+Stroke _wobble(Stroke s, (double, double, double, double) w) {
+  final (dx, dy, amp, size) = w;
+  final pts = resample(s.points, 40);
+  final c = centroid(pts);
+  final n = pts.length;
+  return Stroke([
+    for (var i = 0; i < n; i++)
+      () {
+        final a = pts[math.max(0, i - 1)], b = pts[math.min(n - 1, i + 1)];
+        final tx = b.x - a.x, ty = b.y - a.y;
+        final l = math.sqrt(tx * tx + ty * ty);
+        final nx = l == 0 ? 0.0 : -ty / l, ny = l == 0 ? 0.0 : tx / l;
+        final off = amp * math.sin(2 * math.pi * 1.5 * i / (n - 1));
+        final p = pts[i];
+        return Point2(c.x + size * (p.x - c.x) + dx + off * nx,
+            c.y + size * (p.y - c.y) + dy + off * ny);
+      }(),
+  ]);
 }
 
 const _marks = ['dau-huyen', 'dau-sac', 'dau-nang', 'dau-hoi', 'dau-nga'];
@@ -91,6 +114,71 @@ void main() {
         });
       }
     }
+  });
+
+  // Owner decision (mark-zoom): the marks are drawn big on the pad, so a
+  // child's honest mark is accepted while a different mark is not. Wobble and
+  // offsets are in pad units (what the child's hand does on screen): an offset
+  // of 0.05 of the pad is about 4 mm on a phone, about 0.15 of the zoomed
+  // mark's length. Under the old 5-ô-li window most of these were rejected.
+  group('tone marks a child can write', () {
+    const lineMarks = ['dau-huyen', 'dau-sac', 'dau-hoi', 'dau-nga'];
+    // (dx, dy, wobble amplitude, size) in pad units.
+    const wobbles = [
+      (0.035, 0.035, 0.025, 1.1),
+      (0.04, -0.03, 0.03, 0.9),
+      (-0.04, 0.03, 0.03, 1.1),
+    ];
+
+    test('each mark fills at least a third of the pad', () {
+      for (final id in lineMarks) {
+        final pts = glyphs[id]!.inWindow().strokes.single.points;
+        final w = pts.map((p) => p.x).reduce(math.max) -
+            pts.map((p) => p.x).reduce(math.min);
+        final h = pts.map((p) => p.y).reduce(math.max) -
+            pts.map((p) => p.y).reduce(math.min);
+        expect(math.max(w, h), greaterThanOrEqualTo(0.35), reason: id);
+      }
+    });
+
+    for (final (i, w) in wobbles.indexed) {
+      for (final id in lineMarks) {
+        test('$id drawn with wobble ${i + 1} is accepted', () {
+          final g = glyphs[id]!.inWindow();
+          final drawn = _wobble(g.strokes.single, w);
+          final r = GlyphSession(g).submit(drawn);
+          expect(r.ok, isTrue,
+              reason: 'error ${r.error}, deviation '
+                  '${r.deviation.toStringAsFixed(3)}');
+        });
+        for (final other in lineMarks) {
+          if (other == id) continue;
+          test('$other drawn with wobble ${i + 1} for $id is graded wrong', () {
+            final target = glyphs[id]!;
+            final drawn = _wobble(
+                _intoWindowOf(target, glyphs[other]!.strokes).single, w);
+            expect(_praised(target, [drawn]), isFalse);
+          });
+        }
+      }
+    }
+
+    test('dau-nang: a tap 0.06 of the pad off the dot is accepted', () {
+      final g = glyphs['dau-nang']!.inWindow();
+      final p = g.strokes.single.points.single;
+      final r =
+          GlyphSession(g).submit(Stroke([Point2(p.x + 0.04, p.y - 0.045)]));
+      expect(r.ok, isTrue);
+    });
+
+    test('a mark that stops early is told to draw longer', () {
+      final g = glyphs['dau-huyen']!.inWindow();
+      final pts = g.strokes.single.points;
+      final r = GlyphSession(g)
+          .submit(Stroke(pts.sublist(0, (pts.length * 0.65).round())));
+      expect(r.ok, isFalse);
+      expect(r.error, StrokeError.tooShort);
+    });
   });
 
   group('letter confusion', () {

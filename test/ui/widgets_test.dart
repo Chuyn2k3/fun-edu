@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/dev/gallery_screen.dart';
 import 'package:funedu/features/writing/ruled_paper.dart';
+import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/ui/theme/app_theme.dart';
 import 'package:funedu/ui/theme/contrast.dart';
@@ -187,6 +188,38 @@ void main() {
       expect(ys.any((y) => (y - 3 / 5).abs() < 1e-9), isTrue);
       expect(RuledPaper.verticalLines(frame), hasLength(6));
       expect(RuledPaper.heavyLines(frame)[0], closeTo(1 / 5, 1e-9));
+    });
+
+    test('a half-ô-li window centres its vertical lines', () {
+      // Zoomed tone mark: 2.5 o li square, left edge between two columns.
+      const mark = GlyphRuling(
+        cell: 1 / 12,
+        baseline: 8 / 12,
+        windowX: 4.5 / 12,
+        windowY: 4 / 12,
+        windowSide: 2.5 / 12,
+      );
+      final xs = RuledPaper.verticalLines(mark);
+      expect(xs, hasLength(3));
+      expect(xs.first, closeTo(0.1, 1e-9));
+      expect(xs.last, closeTo(0.9, 1e-9));
+      // Horizontal lines stay on the baseline grid.
+      final ys = RuledPaper.horizontalLines(mark);
+      expect(ys, hasLength(3));
+      expect(ys.first, closeTo(0, 1e-9));
+      expect(ys.last, closeTo(0.8, 1e-9));
+    });
+
+    testWidgets('the faint context letter is clipped to the pad', (t) async {
+      await t.pumpWidget(host(const SizedBox(
+        width: 200,
+        height: 200,
+        child: FaintLetter(strokes: [
+          Stroke([Point2(0.5, 0.9), Point2(0.5, 1.6)]),
+        ]),
+      )));
+      expect(find.byType(FaintLetter),
+          paints..clipRect(rect: const Rect.fromLTWH(0, 0, 200, 200)));
     });
 
     testWidgets('without a ruling: the five exercise-book lines', (t) async {
