@@ -81,7 +81,7 @@ Máy chủ cho phòng đua: chủ dự án chọn **Java Spring Boot tự chạy
   - Chữ trên phím **vẽ bằng nét mẫu của app** (đúng mẫu chữ trường học), không dùng phông chữ in.
   - Vốn chữ: các chữ bé đã học tới trong thang Viết cộng 3 chữ kế tiếp; bé chưa học tới chữ cái thì dùng nhóm đầu (i, t, u, ư, n, m, v, r, s).
 - **Dạng câu hỏi Toán trong trận:** chỉ dùng câu có đáp án là một số và đưa về **3 phím số**: câu đếm (hiện hình để đếm rồi chọn số), câu cộng/trừ, câu ghép số. Câu so sánh (đáp án trái/phải) **không dùng** trong trận — bộ sinh bỏ qua và lấy câu khác cùng cấp. Trận đua **không** làm đổi cấp Toán của bé.
-- **Lưu kết quả:** **bảng mới** `race_results` (bé, môn, lúc xong, hạng, thời gian về đích, số câu đúng ngay lần đầu, sao vũ trụ) trong cùng migration `schemaVersion` 7 với bảng món độ. **Không** đụng bảng sao bài học, cấp môn hay ngày học; trang chủ không đổi. Góc ba mẹ (Tiến bộ) chỉ thêm một dòng thông tin "Đua tên lửa: N trận" để ba mẹ biết bé có chơi (mình đề xuất; bỏ được nếu chủ dự án không muốn).
+- **Lưu kết quả:** **bảng mới** `race_results` (bé, môn, lúc xong, hạng, thời gian về đích, số câu đúng ngay lần đầu, sao vũ trụ) trong cùng migration `schemaVersion` 7 với bảng món độ. **Không** đụng bảng sao bài học, cấp môn hay ngày học; trang chủ không đổi. Góc ba mẹ không hiển thị gì về trò chơi (chủ dự án chốt).
 - **Đếm trận để mở món:** tính theo từng bé; trận thua vẫn tính; bỏ ngang giữa trận thì không tính và không có sao.
 - **Vào trò chơi:** cùng luật điều hướng như các màn khác (bé chưa xếp cấp thì vào bài xếp cấp trước).
 
