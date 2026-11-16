@@ -12,16 +12,18 @@
 
 **Mục tiêu**
 - **Góc Chơi** (tab "Chơi"): thẻ lớn "Đua tên lửa" → "Đua với Chíp"; ô "Xưởng độ tên lửa" (số món mới); ô "Mời bạn đua" / "Nhập mã" hiện nhưng báo "Sắp có" (làm ở 2B-2).
-- **Đua với Chíp**: 10 câu Toán theo đúng cấp Toán hiện tại của bé (bộ sinh câu hỏi có sẵn), dạng **chọn đáp án** (3 phím đáp án to, mỗi phím một màu). Tên lửa bé và tên lửa Chíp leo lên đường đua 2,5D về hành tinh đích.
+- **Đua với Chíp**: trước trận bé **chọn môn: Toán hoặc Tiếng Việt** (chủ dự án chốt: câu hỏi không chỉ là phép toán). 10 câu, dạng **chọn đáp án** (3 phím to, mỗi phím một màu). Toán: theo đúng cấp Toán hiện tại (bộ sinh câu hỏi có sẵn). Tiếng Việt: nhận mặt chữ cái và dấu thanh (xem §6b). Tên lửa bé và tên lửa Chíp leo lên đường đua 2,5D về hành tinh đích.
 - **Sao chổi tăng tốc**: một số câu là "câu sao chổi" — trả lời đúng thì bay vọt 2 nấc.
 - **Chíp đua vừa sức**: tốc độ Chíp tự điều chỉnh theo tốc độ trả lời của chính bé, để trận thường sát nút; bé trả lời đúng đều đặn thì thắng.
-- **Về đích**: màn kết quả (thắng/thua), sao nhận được — **thua vẫn được sao** (spec), nút "Đua lại" / "Về nhà".
+- **Về đích**: màn kết quả (thắng/thua), phần thưởng của trò chơi — **thua vẫn được thưởng** (spec), nút "Đua lại" / "Về nhà".
+- **Thống kê riêng của trò chơi** (chủ dự án chốt): kết quả lưu riêng, **không** cộng vào sao, cấp hay ngày học ở trang chủ. Góc Chơi có ô "Thành tích": số trận, số lần về nhất, kỷ lục về đích nhanh nhất, số câu đúng — theo từng môn.
 - **Xưởng độ tên lửa** (chủ dự án chốt): 2 loại món — **Tên lửa** (chọn một trong 4 tên lửa 3D nguyên chiếc: cam, xanh dương, xanh lá, tím) và **Vệt khói/lửa** (vẽ bằng code: lửa thường, khói cầu vồng, sao lấp lánh, …); mở món bằng cách đua đủ số trận; chọn món; tên lửa đã chọn hiện trong trận và ở Góc Chơi. Cánh/Mũi lắp rời để sau, khi có bộ ảnh bộ phận cùng góc nhìn.
 - **Chuyển động thật và mượt** (yêu cầu của chủ dự án): lửa đẩy nhiều lớp lập lòe, khói phun và tan, tên lửa vọt lên có gia tốc và rung nhẹ, mây trôi nhiều lớp tạo chiều sâu, phím bấm lún. **60 khung hình/giây** trên điện thoại tầm trung và iPad, đo bằng `flutter run --profile`.
 - **Hình 3D**: bộ ảnh đất sét/đồ chơi nhám chủ dự án đã tạo (`docs/superpowers/specs/assets/generated/game-rocket/`, danh sách ở `game-rocket-gallery.md`), tách nền đưa vào app.
 - Điện thoại và iPad (dọc + ngang) theo quy tắc tablet hiện có.
 
 **Không làm (để sau)**
+- Âm/vần, ghép chữ, đọc từ (2F, cần giáo viên rà).
 - Phòng đua qua mạng, mã mời, thiệp mời, đua với bóng, sticker cảm xúc gửi cho bạn (2B-2).
 - Câu hỏi Viết/chữ cái trong trận (cần ô viết lớn; cân nhắc ở chế độ khác sau).
 - Âm thanh/hiệu ứng tiếng (app chưa có gói âm thanh; đề xuất riêng sau). Giọng đọc câu hỏi dùng `Speaker` có sẵn.
@@ -64,7 +66,7 @@ Máy chủ cho phòng đua: chủ dự án chọn **Java Spring Boot tự chạy
 
 1. **Trận đua**: 10 câu; câu thứ 3, 6, 9 là câu sao chổi (đúng = +2 nấc, các câu khác +1); đích = 10 nấc nên bé có thể về đích sớm hơn câu thứ 10. Sai thì tên lửa rung nhẹ, bé chọn lại (không lùi). Câu hỏi đọc to khi xuất hiện, có nút "Nghe".
 2. **Chíp vừa sức**: Chíp tiến 1 nấc sau mỗi khoảng thời gian bằng ~1,25 lần thời gian trả lời trung bình của bé trong trận (khởi đầu theo thời gian trung bình của bé ở các trận trước, mặc định 6 giây); không bao giờ vượt bé quá 2 nấc; không có câu sao chổi.
-3. **Sao**: về nhất 5 sao, về nhì 3 sao; ghi vào sổ sao chung như bài học (để Góc ba mẹ thấy). Không tính là "ngày học" (ngày học vẫn chỉ tính "Bài hôm nay").
+3. **Thưởng trong trò chơi**: về nhất được 5 "sao vũ trụ", về nhì 3 — đơn vị riêng của trò chơi, chỉ hiện ở Góc Chơi (không lẫn với sao học ở trang chủ). Không tính là "ngày học".
 4. **Xưởng độ**: Tên lửa — cam có sẵn, xanh dương mở ở 1 trận, xanh lá 3 trận, tím 6 trận; Vệt — lửa thường có sẵn, cầu vồng 2 trận, sao lấp lánh 5 trận, lửa xanh 8 trận. Lưu món đã chọn và tổng số trận theo từng bé (bảng mới, `schemaVersion` 7). Tên lửa trắng của Chíp Chíp chỉ dành cho Chíp.
 5. **Chuyển động** (code, không thêm gói): lửa = vẽ bằng `CustomPainter` nhiều lớp (lõi trắng, giữa vàng, ngoài cam→đỏ mờ dần, quầng sáng) với nhiễu theo thời gian để lập lòe + hạt khói phun ra rồi tan; tên lửa dịch chuyển bằng đường cong lò xo, lửa bùng dài lúc vọt; mây 2–3 lớp trôi khác tốc độ; sao chổi bay ngang có vệt sáng. Mỗi lớp động trong `RepaintBoundary` riêng; một `Ticker` cho cả cảnh.
 6. **Ảnh mây và lửa-khói** hiện bị lỗ khi tách nền (nền trắng): dùng mây vẽ bằng code theo kiểu 2,5D cho tới khi chủ dự án tạo lại ảnh trên nền xanh lá; lửa luôn vẽ bằng code (không dùng ảnh).
@@ -73,8 +75,13 @@ Máy chủ cho phòng đua: chủ dự án chọn **Java Spring Boot tự chạy
 ## 6b. Chi tiết đã chốt sau lượt rà soát của người làm (mình quyết)
 
 - **Giới hạn giờ:** thời gian trong trò chơi **được tính** vào giới hạn giờ và giờ ngủ như mọi màn của bé (không thêm đường dẫn miễn trừ).
-- **Dạng câu hỏi trong trận:** chỉ dùng câu có đáp án là một số và đưa về **3 phím số**: câu đếm (hiện hình để đếm rồi chọn số), câu cộng/trừ, câu ghép số. Câu so sánh (đáp án trái/phải) **không dùng** trong trận — bộ sinh bỏ qua và lấy câu khác cùng cấp. Trận đua **không** làm đổi cấp Toán của bé.
-- **Sao và ngày học:** kết quả trận lưu vào **bảng mới** `race_results` (bé, lúc xong, hạng, số câu đúng ngay lần đầu, sao) trong cùng migration `schemaVersion` 7 với bảng món độ. Tổng sao của bé = sao bài học + sao trận đua; "ngày học trong tuần" vẫn chỉ tính bài học. Góc ba mẹ (Tiến bộ) thêm một dòng "Đua tên lửa: N trận".
+- **Câu Tiếng Việt (mình đề xuất, nội dung đơn giản không cần giáo viên rà như phần âm vần 2F):**
+  - *Nghe chọn chữ:* Chíp đọc tên chữ ("chữ bờ", lấy từ trường `speech` của nét mẫu) → 3 phím chữ, phương án nhiễu là chữ trông giống (b/d/h, n/m/u, o/ô/ơ, a/ă/â…).
+  - *Chọn dấu thanh:* hiện chữ "a" mang một dấu (á, à, ả, ã, ạ) → chọn tên dấu trong 3 phím; hoặc nghe "dấu hỏi" → chọn hình dấu.
+  - Chữ trên phím **vẽ bằng nét mẫu của app** (đúng mẫu chữ trường học), không dùng phông chữ in.
+  - Vốn chữ: các chữ bé đã học tới trong thang Viết cộng 3 chữ kế tiếp; bé chưa học tới chữ cái thì dùng nhóm đầu (i, t, u, ư, n, m, v, r, s).
+- **Dạng câu hỏi Toán trong trận:** chỉ dùng câu có đáp án là một số và đưa về **3 phím số**: câu đếm (hiện hình để đếm rồi chọn số), câu cộng/trừ, câu ghép số. Câu so sánh (đáp án trái/phải) **không dùng** trong trận — bộ sinh bỏ qua và lấy câu khác cùng cấp. Trận đua **không** làm đổi cấp Toán của bé.
+- **Lưu kết quả:** **bảng mới** `race_results` (bé, môn, lúc xong, hạng, thời gian về đích, số câu đúng ngay lần đầu, sao vũ trụ) trong cùng migration `schemaVersion` 7 với bảng món độ. **Không** đụng bảng sao bài học, cấp môn hay ngày học; trang chủ không đổi. Góc ba mẹ (Tiến bộ) chỉ thêm một dòng thông tin "Đua tên lửa: N trận" để ba mẹ biết bé có chơi (mình đề xuất; bỏ được nếu chủ dự án không muốn).
 - **Đếm trận để mở món:** tính theo từng bé; trận thua vẫn tính; bỏ ngang giữa trận thì không tính và không có sao.
 - **Vào trò chơi:** cùng luật điều hướng như các màn khác (bé chưa xếp cấp thì vào bài xếp cấp trước).
 
@@ -86,6 +93,6 @@ Máy chủ cho phòng đua: chủ dự án chọn **Java Spring Boot tự chạy
 
 ## 8. Xong khi
 
-- Bé vào tab "Chơi" → đua với Chíp → về đích → nhận sao → mở món → lắp món → thấy tên lửa mới trong trận sau; mọi thứ chạy không cần mạng.
-- Logic trận đua có test (tiến nấc, sao chổi, Chíp vừa sức, sao, mở món); màn hình có test widget cho điện thoại và iPad.
+- Bé vào tab "Chơi" → chọn môn → đua với Chíp → về đích → nhận sao vũ trụ → mở món → lắp món → thấy tên lửa mới trong trận sau; mọi thứ chạy không cần mạng.
+- Logic trận đua có test (tiến nấc, sao chổi, Chíp vừa sức, thưởng, mở món, câu Tiếng Việt, thống kê riêng không đụng trang chủ); màn hình có test widget cho điện thoại và iPad.
 - `flutter analyze` sạch, toàn bộ test đạt; `docs/PROJECT_STATE.md` cập nhật mục 6–8.
