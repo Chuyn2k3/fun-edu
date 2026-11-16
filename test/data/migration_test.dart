@@ -257,4 +257,40 @@ CREATE TABLE subject_levels (
         );
     expect(await db.select(db.realRewards).get(), hasLength(1));
   });
+
+  test('upgrading from v6 keeps data and adds empty game tables', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute(
+            'CREATE TABLE kid_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'nickname TEXT NOT NULL, avatar TEXT NOT NULL, age INTEGER NOT NULL, '
+            'created_at INTEGER NOT NULL)',
+          );
+          raw.execute(
+            "INSERT INTO kid_profiles (nickname, avatar, age, created_at) VALUES ('Na', 'a', 5, 1700000000)",
+          );
+          raw.execute(
+            'CREATE TABLE lesson_completions (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'kid_id INTEGER NOT NULL, completed_at INTEGER NOT NULL, '
+            'stars_earned INTEGER NOT NULL)',
+          );
+          raw.execute(
+            'INSERT INTO lesson_completions (kid_id, completed_at, stars_earned) '
+            'VALUES (1, 1700000000, 7)',
+          );
+          raw.execute('PRAGMA user_version = 6');
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    expect(await KidRepository(db).kids(), hasLength(1));
+    expect((await db.select(db.lessonCompletions).get()).single.starsEarned, 7);
+    expect(await db.select(db.raceResults).get(), isEmpty);
+    expect(await db.select(db.gameProfile).get(), isEmpty);
+    expect(await db.select(db.gameItems).get(), isEmpty);
+    expect(await db.select(db.gameBadges).get(), isEmpty);
+    expect(await db.select(db.gameCounters).get(), isEmpty);
+  });
 }

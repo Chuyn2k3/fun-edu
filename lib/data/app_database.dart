@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../game/data/game_tables.dart';
 import '../profile/kid_tables.dart';
 import '../progress/progress_tables.dart';
 import '../rewards/reward_tables.dart';
@@ -41,13 +42,18 @@ class StrokeAttempts extends Table {
     AppSettings,
     DailyUsage,
     RealRewards,
+    RaceResults,
+    GameProfile,
+    GameItems,
+    GameBadges,
+    GameCounters,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -62,6 +68,13 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) await _upgradeToV4(m, from);
           if (from < 5) await m.createTable(dailyUsage);
           if (from < 6) await m.createTable(realRewards);
+          if (from < 7) {
+            await m.createTable(raceResults);
+            await m.createTable(gameProfile);
+            await m.createTable(gameItems);
+            await m.createTable(gameBadges);
+            await m.createTable(gameCounters);
+          }
         },
       );
 

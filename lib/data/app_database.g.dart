@@ -181,7 +181,9 @@ class StrokeAttempt extends DataClass implements Insertable<StrokeAttempt> {
   final double deviation;
 
   /// JSON array of [x, y] pairs (4 decimals) of the drawn stroke, so a false
-  /// rejection can be replayed in a test.
+  /// rejection can be replayed in a test. Old glyphs (no ruling) use the
+  /// glyph's own [0,1] square; letters and tone marks are stored in *window*
+  /// coordinates, so replay them against `glyph.inWindow()`.
   final String? points;
   final DateTime createdAt;
   const StrokeAttempt(
@@ -2387,6 +2389,1528 @@ class RealRewardsCompanion extends UpdateCompanion<RealReward> {
   }
 }
 
+class $RaceResultsTable extends RaceResults
+    with TableInfo<$RaceResultsTable, RaceResult> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RaceResultsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _subjectMeta =
+      const VerificationMeta('subject');
+  @override
+  late final GeneratedColumn<String> subject = GeneratedColumn<String>(
+      'subject', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _finishedAtMeta =
+      const VerificationMeta('finishedAt');
+  @override
+  late final GeneratedColumn<DateTime> finishedAt = GeneratedColumn<DateTime>(
+      'finished_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _wonMeta = const VerificationMeta('won');
+  @override
+  late final GeneratedColumn<bool> won = GeneratedColumn<bool>(
+      'won', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("won" IN (0, 1))'));
+  static const VerificationMeta _kidTimeMsMeta =
+      const VerificationMeta('kidTimeMs');
+  @override
+  late final GeneratedColumn<int> kidTimeMs = GeneratedColumn<int>(
+      'kid_time_ms', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _firstTryCorrectMeta =
+      const VerificationMeta('firstTryCorrect');
+  @override
+  late final GeneratedColumn<int> firstTryCorrect = GeneratedColumn<int>(
+      'first_try_correct', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _cometsFirstTryMeta =
+      const VerificationMeta('cometsFirstTry');
+  @override
+  late final GeneratedColumn<int> cometsFirstTry = GeneratedColumn<int>(
+      'comets_first_try', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _starsMeta = const VerificationMeta('stars');
+  @override
+  late final GeneratedColumn<int> stars = GeneratedColumn<int>(
+      'stars', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        kidId,
+        subject,
+        finishedAt,
+        won,
+        kidTimeMs,
+        firstTryCorrect,
+        cometsFirstTry,
+        stars
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'race_results';
+  @override
+  VerificationContext validateIntegrity(Insertable<RaceResult> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('subject')) {
+      context.handle(_subjectMeta,
+          subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta));
+    } else if (isInserting) {
+      context.missing(_subjectMeta);
+    }
+    if (data.containsKey('finished_at')) {
+      context.handle(
+          _finishedAtMeta,
+          finishedAt.isAcceptableOrUnknown(
+              data['finished_at']!, _finishedAtMeta));
+    } else if (isInserting) {
+      context.missing(_finishedAtMeta);
+    }
+    if (data.containsKey('won')) {
+      context.handle(
+          _wonMeta, won.isAcceptableOrUnknown(data['won']!, _wonMeta));
+    } else if (isInserting) {
+      context.missing(_wonMeta);
+    }
+    if (data.containsKey('kid_time_ms')) {
+      context.handle(
+          _kidTimeMsMeta,
+          kidTimeMs.isAcceptableOrUnknown(
+              data['kid_time_ms']!, _kidTimeMsMeta));
+    } else if (isInserting) {
+      context.missing(_kidTimeMsMeta);
+    }
+    if (data.containsKey('first_try_correct')) {
+      context.handle(
+          _firstTryCorrectMeta,
+          firstTryCorrect.isAcceptableOrUnknown(
+              data['first_try_correct']!, _firstTryCorrectMeta));
+    } else if (isInserting) {
+      context.missing(_firstTryCorrectMeta);
+    }
+    if (data.containsKey('comets_first_try')) {
+      context.handle(
+          _cometsFirstTryMeta,
+          cometsFirstTry.isAcceptableOrUnknown(
+              data['comets_first_try']!, _cometsFirstTryMeta));
+    } else if (isInserting) {
+      context.missing(_cometsFirstTryMeta);
+    }
+    if (data.containsKey('stars')) {
+      context.handle(
+          _starsMeta, stars.isAcceptableOrUnknown(data['stars']!, _starsMeta));
+    } else if (isInserting) {
+      context.missing(_starsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RaceResult map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RaceResult(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      subject: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject'])!,
+      finishedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}finished_at'])!,
+      won: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}won'])!,
+      kidTimeMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_time_ms'])!,
+      firstTryCorrect: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}first_try_correct'])!,
+      cometsFirstTry: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}comets_first_try'])!,
+      stars: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}stars'])!,
+    );
+  }
+
+  @override
+  $RaceResultsTable createAlias(String alias) {
+    return $RaceResultsTable(attachedDatabase, alias);
+  }
+}
+
+class RaceResult extends DataClass implements Insertable<RaceResult> {
+  final int id;
+  final int kidId;
+  final String subject;
+  final DateTime finishedAt;
+  final bool won;
+  final int kidTimeMs;
+  final int firstTryCorrect;
+  final int cometsFirstTry;
+  final int stars;
+  const RaceResult(
+      {required this.id,
+      required this.kidId,
+      required this.subject,
+      required this.finishedAt,
+      required this.won,
+      required this.kidTimeMs,
+      required this.firstTryCorrect,
+      required this.cometsFirstTry,
+      required this.stars});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kid_id'] = Variable<int>(kidId);
+    map['subject'] = Variable<String>(subject);
+    map['finished_at'] = Variable<DateTime>(finishedAt);
+    map['won'] = Variable<bool>(won);
+    map['kid_time_ms'] = Variable<int>(kidTimeMs);
+    map['first_try_correct'] = Variable<int>(firstTryCorrect);
+    map['comets_first_try'] = Variable<int>(cometsFirstTry);
+    map['stars'] = Variable<int>(stars);
+    return map;
+  }
+
+  RaceResultsCompanion toCompanion(bool nullToAbsent) {
+    return RaceResultsCompanion(
+      id: Value(id),
+      kidId: Value(kidId),
+      subject: Value(subject),
+      finishedAt: Value(finishedAt),
+      won: Value(won),
+      kidTimeMs: Value(kidTimeMs),
+      firstTryCorrect: Value(firstTryCorrect),
+      cometsFirstTry: Value(cometsFirstTry),
+      stars: Value(stars),
+    );
+  }
+
+  factory RaceResult.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RaceResult(
+      id: serializer.fromJson<int>(json['id']),
+      kidId: serializer.fromJson<int>(json['kidId']),
+      subject: serializer.fromJson<String>(json['subject']),
+      finishedAt: serializer.fromJson<DateTime>(json['finishedAt']),
+      won: serializer.fromJson<bool>(json['won']),
+      kidTimeMs: serializer.fromJson<int>(json['kidTimeMs']),
+      firstTryCorrect: serializer.fromJson<int>(json['firstTryCorrect']),
+      cometsFirstTry: serializer.fromJson<int>(json['cometsFirstTry']),
+      stars: serializer.fromJson<int>(json['stars']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kidId': serializer.toJson<int>(kidId),
+      'subject': serializer.toJson<String>(subject),
+      'finishedAt': serializer.toJson<DateTime>(finishedAt),
+      'won': serializer.toJson<bool>(won),
+      'kidTimeMs': serializer.toJson<int>(kidTimeMs),
+      'firstTryCorrect': serializer.toJson<int>(firstTryCorrect),
+      'cometsFirstTry': serializer.toJson<int>(cometsFirstTry),
+      'stars': serializer.toJson<int>(stars),
+    };
+  }
+
+  RaceResult copyWith(
+          {int? id,
+          int? kidId,
+          String? subject,
+          DateTime? finishedAt,
+          bool? won,
+          int? kidTimeMs,
+          int? firstTryCorrect,
+          int? cometsFirstTry,
+          int? stars}) =>
+      RaceResult(
+        id: id ?? this.id,
+        kidId: kidId ?? this.kidId,
+        subject: subject ?? this.subject,
+        finishedAt: finishedAt ?? this.finishedAt,
+        won: won ?? this.won,
+        kidTimeMs: kidTimeMs ?? this.kidTimeMs,
+        firstTryCorrect: firstTryCorrect ?? this.firstTryCorrect,
+        cometsFirstTry: cometsFirstTry ?? this.cometsFirstTry,
+        stars: stars ?? this.stars,
+      );
+  RaceResult copyWithCompanion(RaceResultsCompanion data) {
+    return RaceResult(
+      id: data.id.present ? data.id.value : this.id,
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      subject: data.subject.present ? data.subject.value : this.subject,
+      finishedAt:
+          data.finishedAt.present ? data.finishedAt.value : this.finishedAt,
+      won: data.won.present ? data.won.value : this.won,
+      kidTimeMs: data.kidTimeMs.present ? data.kidTimeMs.value : this.kidTimeMs,
+      firstTryCorrect: data.firstTryCorrect.present
+          ? data.firstTryCorrect.value
+          : this.firstTryCorrect,
+      cometsFirstTry: data.cometsFirstTry.present
+          ? data.cometsFirstTry.value
+          : this.cometsFirstTry,
+      stars: data.stars.present ? data.stars.value : this.stars,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RaceResult(')
+          ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
+          ..write('subject: $subject, ')
+          ..write('finishedAt: $finishedAt, ')
+          ..write('won: $won, ')
+          ..write('kidTimeMs: $kidTimeMs, ')
+          ..write('firstTryCorrect: $firstTryCorrect, ')
+          ..write('cometsFirstTry: $cometsFirstTry, ')
+          ..write('stars: $stars')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, kidId, subject, finishedAt, won,
+      kidTimeMs, firstTryCorrect, cometsFirstTry, stars);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RaceResult &&
+          other.id == this.id &&
+          other.kidId == this.kidId &&
+          other.subject == this.subject &&
+          other.finishedAt == this.finishedAt &&
+          other.won == this.won &&
+          other.kidTimeMs == this.kidTimeMs &&
+          other.firstTryCorrect == this.firstTryCorrect &&
+          other.cometsFirstTry == this.cometsFirstTry &&
+          other.stars == this.stars);
+}
+
+class RaceResultsCompanion extends UpdateCompanion<RaceResult> {
+  final Value<int> id;
+  final Value<int> kidId;
+  final Value<String> subject;
+  final Value<DateTime> finishedAt;
+  final Value<bool> won;
+  final Value<int> kidTimeMs;
+  final Value<int> firstTryCorrect;
+  final Value<int> cometsFirstTry;
+  final Value<int> stars;
+  const RaceResultsCompanion({
+    this.id = const Value.absent(),
+    this.kidId = const Value.absent(),
+    this.subject = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+    this.won = const Value.absent(),
+    this.kidTimeMs = const Value.absent(),
+    this.firstTryCorrect = const Value.absent(),
+    this.cometsFirstTry = const Value.absent(),
+    this.stars = const Value.absent(),
+  });
+  RaceResultsCompanion.insert({
+    this.id = const Value.absent(),
+    required int kidId,
+    required String subject,
+    required DateTime finishedAt,
+    required bool won,
+    required int kidTimeMs,
+    required int firstTryCorrect,
+    required int cometsFirstTry,
+    required int stars,
+  })  : kidId = Value(kidId),
+        subject = Value(subject),
+        finishedAt = Value(finishedAt),
+        won = Value(won),
+        kidTimeMs = Value(kidTimeMs),
+        firstTryCorrect = Value(firstTryCorrect),
+        cometsFirstTry = Value(cometsFirstTry),
+        stars = Value(stars);
+  static Insertable<RaceResult> custom({
+    Expression<int>? id,
+    Expression<int>? kidId,
+    Expression<String>? subject,
+    Expression<DateTime>? finishedAt,
+    Expression<bool>? won,
+    Expression<int>? kidTimeMs,
+    Expression<int>? firstTryCorrect,
+    Expression<int>? cometsFirstTry,
+    Expression<int>? stars,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kidId != null) 'kid_id': kidId,
+      if (subject != null) 'subject': subject,
+      if (finishedAt != null) 'finished_at': finishedAt,
+      if (won != null) 'won': won,
+      if (kidTimeMs != null) 'kid_time_ms': kidTimeMs,
+      if (firstTryCorrect != null) 'first_try_correct': firstTryCorrect,
+      if (cometsFirstTry != null) 'comets_first_try': cometsFirstTry,
+      if (stars != null) 'stars': stars,
+    });
+  }
+
+  RaceResultsCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? kidId,
+      Value<String>? subject,
+      Value<DateTime>? finishedAt,
+      Value<bool>? won,
+      Value<int>? kidTimeMs,
+      Value<int>? firstTryCorrect,
+      Value<int>? cometsFirstTry,
+      Value<int>? stars}) {
+    return RaceResultsCompanion(
+      id: id ?? this.id,
+      kidId: kidId ?? this.kidId,
+      subject: subject ?? this.subject,
+      finishedAt: finishedAt ?? this.finishedAt,
+      won: won ?? this.won,
+      kidTimeMs: kidTimeMs ?? this.kidTimeMs,
+      firstTryCorrect: firstTryCorrect ?? this.firstTryCorrect,
+      cometsFirstTry: cometsFirstTry ?? this.cometsFirstTry,
+      stars: stars ?? this.stars,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (subject.present) {
+      map['subject'] = Variable<String>(subject.value);
+    }
+    if (finishedAt.present) {
+      map['finished_at'] = Variable<DateTime>(finishedAt.value);
+    }
+    if (won.present) {
+      map['won'] = Variable<bool>(won.value);
+    }
+    if (kidTimeMs.present) {
+      map['kid_time_ms'] = Variable<int>(kidTimeMs.value);
+    }
+    if (firstTryCorrect.present) {
+      map['first_try_correct'] = Variable<int>(firstTryCorrect.value);
+    }
+    if (cometsFirstTry.present) {
+      map['comets_first_try'] = Variable<int>(cometsFirstTry.value);
+    }
+    if (stars.present) {
+      map['stars'] = Variable<int>(stars.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RaceResultsCompanion(')
+          ..write('id: $id, ')
+          ..write('kidId: $kidId, ')
+          ..write('subject: $subject, ')
+          ..write('finishedAt: $finishedAt, ')
+          ..write('won: $won, ')
+          ..write('kidTimeMs: $kidTimeMs, ')
+          ..write('firstTryCorrect: $firstTryCorrect, ')
+          ..write('cometsFirstTry: $cometsFirstTry, ')
+          ..write('stars: $stars')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $GameProfileTable extends GameProfile
+    with TableInfo<$GameProfileTable, GameProfileData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GameProfileTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _cosmicStarsMeta =
+      const VerificationMeta('cosmicStars');
+  @override
+  late final GeneratedColumn<int> cosmicStars = GeneratedColumn<int>(
+      'cosmic_stars', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _selectedRocketMeta =
+      const VerificationMeta('selectedRocket');
+  @override
+  late final GeneratedColumn<String> selectedRocket = GeneratedColumn<String>(
+      'selected_rocket', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('rocket_orange'));
+  static const VerificationMeta _selectedTrailMeta =
+      const VerificationMeta('selectedTrail');
+  @override
+  late final GeneratedColumn<String> selectedTrail = GeneratedColumn<String>(
+      'selected_trail', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('trail_flame'));
+  static const VerificationMeta _meanAnswerMsMeta =
+      const VerificationMeta('meanAnswerMs');
+  @override
+  late final GeneratedColumn<int> meanAnswerMs = GeneratedColumn<int>(
+      'mean_answer_ms', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(6000));
+  static const VerificationMeta _slowNextRaceMeta =
+      const VerificationMeta('slowNextRace');
+  @override
+  late final GeneratedColumn<bool> slowNextRace = GeneratedColumn<bool>(
+      'slow_next_race', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("slow_next_race" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _retryAfterLossPendingMeta =
+      const VerificationMeta('retryAfterLossPending');
+  @override
+  late final GeneratedColumn<bool> retryAfterLossPending =
+      GeneratedColumn<bool>('retry_after_loss_pending', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("retry_after_loss_pending" IN (0, 1))'),
+          defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns => [
+        kidId,
+        cosmicStars,
+        selectedRocket,
+        selectedTrail,
+        meanAnswerMs,
+        slowNextRace,
+        retryAfterLossPending
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'game_profile';
+  @override
+  VerificationContext validateIntegrity(Insertable<GameProfileData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    }
+    if (data.containsKey('cosmic_stars')) {
+      context.handle(
+          _cosmicStarsMeta,
+          cosmicStars.isAcceptableOrUnknown(
+              data['cosmic_stars']!, _cosmicStarsMeta));
+    }
+    if (data.containsKey('selected_rocket')) {
+      context.handle(
+          _selectedRocketMeta,
+          selectedRocket.isAcceptableOrUnknown(
+              data['selected_rocket']!, _selectedRocketMeta));
+    }
+    if (data.containsKey('selected_trail')) {
+      context.handle(
+          _selectedTrailMeta,
+          selectedTrail.isAcceptableOrUnknown(
+              data['selected_trail']!, _selectedTrailMeta));
+    }
+    if (data.containsKey('mean_answer_ms')) {
+      context.handle(
+          _meanAnswerMsMeta,
+          meanAnswerMs.isAcceptableOrUnknown(
+              data['mean_answer_ms']!, _meanAnswerMsMeta));
+    }
+    if (data.containsKey('slow_next_race')) {
+      context.handle(
+          _slowNextRaceMeta,
+          slowNextRace.isAcceptableOrUnknown(
+              data['slow_next_race']!, _slowNextRaceMeta));
+    }
+    if (data.containsKey('retry_after_loss_pending')) {
+      context.handle(
+          _retryAfterLossPendingMeta,
+          retryAfterLossPending.isAcceptableOrUnknown(
+              data['retry_after_loss_pending']!, _retryAfterLossPendingMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kidId};
+  @override
+  GameProfileData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GameProfileData(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      cosmicStars: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}cosmic_stars'])!,
+      selectedRocket: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}selected_rocket'])!,
+      selectedTrail: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}selected_trail'])!,
+      meanAnswerMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}mean_answer_ms'])!,
+      slowNextRace: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}slow_next_race'])!,
+      retryAfterLossPending: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool,
+          data['${effectivePrefix}retry_after_loss_pending'])!,
+    );
+  }
+
+  @override
+  $GameProfileTable createAlias(String alias) {
+    return $GameProfileTable(attachedDatabase, alias);
+  }
+}
+
+class GameProfileData extends DataClass implements Insertable<GameProfileData> {
+  final int kidId;
+  final int cosmicStars;
+  final String selectedRocket;
+  final String selectedTrail;
+  final int meanAnswerMs;
+  final bool slowNextRace;
+  final bool retryAfterLossPending;
+  const GameProfileData(
+      {required this.kidId,
+      required this.cosmicStars,
+      required this.selectedRocket,
+      required this.selectedTrail,
+      required this.meanAnswerMs,
+      required this.slowNextRace,
+      required this.retryAfterLossPending});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
+    map['cosmic_stars'] = Variable<int>(cosmicStars);
+    map['selected_rocket'] = Variable<String>(selectedRocket);
+    map['selected_trail'] = Variable<String>(selectedTrail);
+    map['mean_answer_ms'] = Variable<int>(meanAnswerMs);
+    map['slow_next_race'] = Variable<bool>(slowNextRace);
+    map['retry_after_loss_pending'] = Variable<bool>(retryAfterLossPending);
+    return map;
+  }
+
+  GameProfileCompanion toCompanion(bool nullToAbsent) {
+    return GameProfileCompanion(
+      kidId: Value(kidId),
+      cosmicStars: Value(cosmicStars),
+      selectedRocket: Value(selectedRocket),
+      selectedTrail: Value(selectedTrail),
+      meanAnswerMs: Value(meanAnswerMs),
+      slowNextRace: Value(slowNextRace),
+      retryAfterLossPending: Value(retryAfterLossPending),
+    );
+  }
+
+  factory GameProfileData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GameProfileData(
+      kidId: serializer.fromJson<int>(json['kidId']),
+      cosmicStars: serializer.fromJson<int>(json['cosmicStars']),
+      selectedRocket: serializer.fromJson<String>(json['selectedRocket']),
+      selectedTrail: serializer.fromJson<String>(json['selectedTrail']),
+      meanAnswerMs: serializer.fromJson<int>(json['meanAnswerMs']),
+      slowNextRace: serializer.fromJson<bool>(json['slowNextRace']),
+      retryAfterLossPending:
+          serializer.fromJson<bool>(json['retryAfterLossPending']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
+      'cosmicStars': serializer.toJson<int>(cosmicStars),
+      'selectedRocket': serializer.toJson<String>(selectedRocket),
+      'selectedTrail': serializer.toJson<String>(selectedTrail),
+      'meanAnswerMs': serializer.toJson<int>(meanAnswerMs),
+      'slowNextRace': serializer.toJson<bool>(slowNextRace),
+      'retryAfterLossPending': serializer.toJson<bool>(retryAfterLossPending),
+    };
+  }
+
+  GameProfileData copyWith(
+          {int? kidId,
+          int? cosmicStars,
+          String? selectedRocket,
+          String? selectedTrail,
+          int? meanAnswerMs,
+          bool? slowNextRace,
+          bool? retryAfterLossPending}) =>
+      GameProfileData(
+        kidId: kidId ?? this.kidId,
+        cosmicStars: cosmicStars ?? this.cosmicStars,
+        selectedRocket: selectedRocket ?? this.selectedRocket,
+        selectedTrail: selectedTrail ?? this.selectedTrail,
+        meanAnswerMs: meanAnswerMs ?? this.meanAnswerMs,
+        slowNextRace: slowNextRace ?? this.slowNextRace,
+        retryAfterLossPending:
+            retryAfterLossPending ?? this.retryAfterLossPending,
+      );
+  GameProfileData copyWithCompanion(GameProfileCompanion data) {
+    return GameProfileData(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      cosmicStars:
+          data.cosmicStars.present ? data.cosmicStars.value : this.cosmicStars,
+      selectedRocket: data.selectedRocket.present
+          ? data.selectedRocket.value
+          : this.selectedRocket,
+      selectedTrail: data.selectedTrail.present
+          ? data.selectedTrail.value
+          : this.selectedTrail,
+      meanAnswerMs: data.meanAnswerMs.present
+          ? data.meanAnswerMs.value
+          : this.meanAnswerMs,
+      slowNextRace: data.slowNextRace.present
+          ? data.slowNextRace.value
+          : this.slowNextRace,
+      retryAfterLossPending: data.retryAfterLossPending.present
+          ? data.retryAfterLossPending.value
+          : this.retryAfterLossPending,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameProfileData(')
+          ..write('kidId: $kidId, ')
+          ..write('cosmicStars: $cosmicStars, ')
+          ..write('selectedRocket: $selectedRocket, ')
+          ..write('selectedTrail: $selectedTrail, ')
+          ..write('meanAnswerMs: $meanAnswerMs, ')
+          ..write('slowNextRace: $slowNextRace, ')
+          ..write('retryAfterLossPending: $retryAfterLossPending')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kidId, cosmicStars, selectedRocket,
+      selectedTrail, meanAnswerMs, slowNextRace, retryAfterLossPending);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GameProfileData &&
+          other.kidId == this.kidId &&
+          other.cosmicStars == this.cosmicStars &&
+          other.selectedRocket == this.selectedRocket &&
+          other.selectedTrail == this.selectedTrail &&
+          other.meanAnswerMs == this.meanAnswerMs &&
+          other.slowNextRace == this.slowNextRace &&
+          other.retryAfterLossPending == this.retryAfterLossPending);
+}
+
+class GameProfileCompanion extends UpdateCompanion<GameProfileData> {
+  final Value<int> kidId;
+  final Value<int> cosmicStars;
+  final Value<String> selectedRocket;
+  final Value<String> selectedTrail;
+  final Value<int> meanAnswerMs;
+  final Value<bool> slowNextRace;
+  final Value<bool> retryAfterLossPending;
+  const GameProfileCompanion({
+    this.kidId = const Value.absent(),
+    this.cosmicStars = const Value.absent(),
+    this.selectedRocket = const Value.absent(),
+    this.selectedTrail = const Value.absent(),
+    this.meanAnswerMs = const Value.absent(),
+    this.slowNextRace = const Value.absent(),
+    this.retryAfterLossPending = const Value.absent(),
+  });
+  GameProfileCompanion.insert({
+    this.kidId = const Value.absent(),
+    this.cosmicStars = const Value.absent(),
+    this.selectedRocket = const Value.absent(),
+    this.selectedTrail = const Value.absent(),
+    this.meanAnswerMs = const Value.absent(),
+    this.slowNextRace = const Value.absent(),
+    this.retryAfterLossPending = const Value.absent(),
+  });
+  static Insertable<GameProfileData> custom({
+    Expression<int>? kidId,
+    Expression<int>? cosmicStars,
+    Expression<String>? selectedRocket,
+    Expression<String>? selectedTrail,
+    Expression<int>? meanAnswerMs,
+    Expression<bool>? slowNextRace,
+    Expression<bool>? retryAfterLossPending,
+  }) {
+    return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
+      if (cosmicStars != null) 'cosmic_stars': cosmicStars,
+      if (selectedRocket != null) 'selected_rocket': selectedRocket,
+      if (selectedTrail != null) 'selected_trail': selectedTrail,
+      if (meanAnswerMs != null) 'mean_answer_ms': meanAnswerMs,
+      if (slowNextRace != null) 'slow_next_race': slowNextRace,
+      if (retryAfterLossPending != null)
+        'retry_after_loss_pending': retryAfterLossPending,
+    });
+  }
+
+  GameProfileCompanion copyWith(
+      {Value<int>? kidId,
+      Value<int>? cosmicStars,
+      Value<String>? selectedRocket,
+      Value<String>? selectedTrail,
+      Value<int>? meanAnswerMs,
+      Value<bool>? slowNextRace,
+      Value<bool>? retryAfterLossPending}) {
+    return GameProfileCompanion(
+      kidId: kidId ?? this.kidId,
+      cosmicStars: cosmicStars ?? this.cosmicStars,
+      selectedRocket: selectedRocket ?? this.selectedRocket,
+      selectedTrail: selectedTrail ?? this.selectedTrail,
+      meanAnswerMs: meanAnswerMs ?? this.meanAnswerMs,
+      slowNextRace: slowNextRace ?? this.slowNextRace,
+      retryAfterLossPending:
+          retryAfterLossPending ?? this.retryAfterLossPending,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (cosmicStars.present) {
+      map['cosmic_stars'] = Variable<int>(cosmicStars.value);
+    }
+    if (selectedRocket.present) {
+      map['selected_rocket'] = Variable<String>(selectedRocket.value);
+    }
+    if (selectedTrail.present) {
+      map['selected_trail'] = Variable<String>(selectedTrail.value);
+    }
+    if (meanAnswerMs.present) {
+      map['mean_answer_ms'] = Variable<int>(meanAnswerMs.value);
+    }
+    if (slowNextRace.present) {
+      map['slow_next_race'] = Variable<bool>(slowNextRace.value);
+    }
+    if (retryAfterLossPending.present) {
+      map['retry_after_loss_pending'] =
+          Variable<bool>(retryAfterLossPending.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameProfileCompanion(')
+          ..write('kidId: $kidId, ')
+          ..write('cosmicStars: $cosmicStars, ')
+          ..write('selectedRocket: $selectedRocket, ')
+          ..write('selectedTrail: $selectedTrail, ')
+          ..write('meanAnswerMs: $meanAnswerMs, ')
+          ..write('slowNextRace: $slowNextRace, ')
+          ..write('retryAfterLossPending: $retryAfterLossPending')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $GameItemsTable extends GameItems
+    with TableInfo<$GameItemsTable, GameItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GameItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+      'item_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [kidId, itemId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'game_items';
+  @override
+  VerificationContext validateIntegrity(Insertable<GameItem> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta,
+          itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kidId, itemId};
+  @override
+  GameItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GameItem(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      itemId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}item_id'])!,
+    );
+  }
+
+  @override
+  $GameItemsTable createAlias(String alias) {
+    return $GameItemsTable(attachedDatabase, alias);
+  }
+}
+
+class GameItem extends DataClass implements Insertable<GameItem> {
+  final int kidId;
+  final String itemId;
+  const GameItem({required this.kidId, required this.itemId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
+    map['item_id'] = Variable<String>(itemId);
+    return map;
+  }
+
+  GameItemsCompanion toCompanion(bool nullToAbsent) {
+    return GameItemsCompanion(
+      kidId: Value(kidId),
+      itemId: Value(itemId),
+    );
+  }
+
+  factory GameItem.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GameItem(
+      kidId: serializer.fromJson<int>(json['kidId']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
+      'itemId': serializer.toJson<String>(itemId),
+    };
+  }
+
+  GameItem copyWith({int? kidId, String? itemId}) => GameItem(
+        kidId: kidId ?? this.kidId,
+        itemId: itemId ?? this.itemId,
+      );
+  GameItem copyWithCompanion(GameItemsCompanion data) {
+    return GameItem(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameItem(')
+          ..write('kidId: $kidId, ')
+          ..write('itemId: $itemId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kidId, itemId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GameItem &&
+          other.kidId == this.kidId &&
+          other.itemId == this.itemId);
+}
+
+class GameItemsCompanion extends UpdateCompanion<GameItem> {
+  final Value<int> kidId;
+  final Value<String> itemId;
+  final Value<int> rowid;
+  const GameItemsCompanion({
+    this.kidId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GameItemsCompanion.insert({
+    required int kidId,
+    required String itemId,
+    this.rowid = const Value.absent(),
+  })  : kidId = Value(kidId),
+        itemId = Value(itemId);
+  static Insertable<GameItem> custom({
+    Expression<int>? kidId,
+    Expression<String>? itemId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
+      if (itemId != null) 'item_id': itemId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GameItemsCompanion copyWith(
+      {Value<int>? kidId, Value<String>? itemId, Value<int>? rowid}) {
+    return GameItemsCompanion(
+      kidId: kidId ?? this.kidId,
+      itemId: itemId ?? this.itemId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameItemsCompanion(')
+          ..write('kidId: $kidId, ')
+          ..write('itemId: $itemId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $GameBadgesTable extends GameBadges
+    with TableInfo<$GameBadgesTable, GameBadgeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GameBadgesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _badgeIdMeta =
+      const VerificationMeta('badgeId');
+  @override
+  late final GeneratedColumn<String> badgeId = GeneratedColumn<String>(
+      'badge_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _earnedAtMeta =
+      const VerificationMeta('earnedAt');
+  @override
+  late final GeneratedColumn<DateTime> earnedAt = GeneratedColumn<DateTime>(
+      'earned_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [kidId, badgeId, earnedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'game_badges';
+  @override
+  VerificationContext validateIntegrity(Insertable<GameBadgeRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('badge_id')) {
+      context.handle(_badgeIdMeta,
+          badgeId.isAcceptableOrUnknown(data['badge_id']!, _badgeIdMeta));
+    } else if (isInserting) {
+      context.missing(_badgeIdMeta);
+    }
+    if (data.containsKey('earned_at')) {
+      context.handle(_earnedAtMeta,
+          earnedAt.isAcceptableOrUnknown(data['earned_at']!, _earnedAtMeta));
+    } else if (isInserting) {
+      context.missing(_earnedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kidId, badgeId};
+  @override
+  GameBadgeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GameBadgeRow(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      badgeId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}badge_id'])!,
+      earnedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}earned_at'])!,
+    );
+  }
+
+  @override
+  $GameBadgesTable createAlias(String alias) {
+    return $GameBadgesTable(attachedDatabase, alias);
+  }
+}
+
+class GameBadgeRow extends DataClass implements Insertable<GameBadgeRow> {
+  final int kidId;
+  final String badgeId;
+  final DateTime earnedAt;
+  const GameBadgeRow(
+      {required this.kidId, required this.badgeId, required this.earnedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
+    map['badge_id'] = Variable<String>(badgeId);
+    map['earned_at'] = Variable<DateTime>(earnedAt);
+    return map;
+  }
+
+  GameBadgesCompanion toCompanion(bool nullToAbsent) {
+    return GameBadgesCompanion(
+      kidId: Value(kidId),
+      badgeId: Value(badgeId),
+      earnedAt: Value(earnedAt),
+    );
+  }
+
+  factory GameBadgeRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GameBadgeRow(
+      kidId: serializer.fromJson<int>(json['kidId']),
+      badgeId: serializer.fromJson<String>(json['badgeId']),
+      earnedAt: serializer.fromJson<DateTime>(json['earnedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
+      'badgeId': serializer.toJson<String>(badgeId),
+      'earnedAt': serializer.toJson<DateTime>(earnedAt),
+    };
+  }
+
+  GameBadgeRow copyWith({int? kidId, String? badgeId, DateTime? earnedAt}) =>
+      GameBadgeRow(
+        kidId: kidId ?? this.kidId,
+        badgeId: badgeId ?? this.badgeId,
+        earnedAt: earnedAt ?? this.earnedAt,
+      );
+  GameBadgeRow copyWithCompanion(GameBadgesCompanion data) {
+    return GameBadgeRow(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      badgeId: data.badgeId.present ? data.badgeId.value : this.badgeId,
+      earnedAt: data.earnedAt.present ? data.earnedAt.value : this.earnedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameBadgeRow(')
+          ..write('kidId: $kidId, ')
+          ..write('badgeId: $badgeId, ')
+          ..write('earnedAt: $earnedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kidId, badgeId, earnedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GameBadgeRow &&
+          other.kidId == this.kidId &&
+          other.badgeId == this.badgeId &&
+          other.earnedAt == this.earnedAt);
+}
+
+class GameBadgesCompanion extends UpdateCompanion<GameBadgeRow> {
+  final Value<int> kidId;
+  final Value<String> badgeId;
+  final Value<DateTime> earnedAt;
+  final Value<int> rowid;
+  const GameBadgesCompanion({
+    this.kidId = const Value.absent(),
+    this.badgeId = const Value.absent(),
+    this.earnedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GameBadgesCompanion.insert({
+    required int kidId,
+    required String badgeId,
+    required DateTime earnedAt,
+    this.rowid = const Value.absent(),
+  })  : kidId = Value(kidId),
+        badgeId = Value(badgeId),
+        earnedAt = Value(earnedAt);
+  static Insertable<GameBadgeRow> custom({
+    Expression<int>? kidId,
+    Expression<String>? badgeId,
+    Expression<DateTime>? earnedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
+      if (badgeId != null) 'badge_id': badgeId,
+      if (earnedAt != null) 'earned_at': earnedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GameBadgesCompanion copyWith(
+      {Value<int>? kidId,
+      Value<String>? badgeId,
+      Value<DateTime>? earnedAt,
+      Value<int>? rowid}) {
+    return GameBadgesCompanion(
+      kidId: kidId ?? this.kidId,
+      badgeId: badgeId ?? this.badgeId,
+      earnedAt: earnedAt ?? this.earnedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (badgeId.present) {
+      map['badge_id'] = Variable<String>(badgeId.value);
+    }
+    if (earnedAt.present) {
+      map['earned_at'] = Variable<DateTime>(earnedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameBadgesCompanion(')
+          ..write('kidId: $kidId, ')
+          ..write('badgeId: $badgeId, ')
+          ..write('earnedAt: $earnedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $GameCountersTable extends GameCounters
+    with TableInfo<$GameCountersTable, GameCounter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GameCountersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+      'key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<int> value = GeneratedColumn<int>(
+      'value', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns => [kidId, key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'game_counters';
+  @override
+  VerificationContext validateIntegrity(Insertable<GameCounter> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('key')) {
+      context.handle(
+          _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+          _valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kidId, key};
+  @override
+  GameCounter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GameCounter(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      key: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      value: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}value'])!,
+    );
+  }
+
+  @override
+  $GameCountersTable createAlias(String alias) {
+    return $GameCountersTable(attachedDatabase, alias);
+  }
+}
+
+class GameCounter extends DataClass implements Insertable<GameCounter> {
+  final int kidId;
+  final String key;
+  final int value;
+  const GameCounter(
+      {required this.kidId, required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<int>(value);
+    return map;
+  }
+
+  GameCountersCompanion toCompanion(bool nullToAbsent) {
+    return GameCountersCompanion(
+      kidId: Value(kidId),
+      key: Value(key),
+      value: Value(value),
+    );
+  }
+
+  factory GameCounter.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GameCounter(
+      kidId: serializer.fromJson<int>(json['kidId']),
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<int>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<int>(value),
+    };
+  }
+
+  GameCounter copyWith({int? kidId, String? key, int? value}) => GameCounter(
+        kidId: kidId ?? this.kidId,
+        key: key ?? this.key,
+        value: value ?? this.value,
+      );
+  GameCounter copyWithCompanion(GameCountersCompanion data) {
+    return GameCounter(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameCounter(')
+          ..write('kidId: $kidId, ')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kidId, key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GameCounter &&
+          other.kidId == this.kidId &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class GameCountersCompanion extends UpdateCompanion<GameCounter> {
+  final Value<int> kidId;
+  final Value<String> key;
+  final Value<int> value;
+  final Value<int> rowid;
+  const GameCountersCompanion({
+    this.kidId = const Value.absent(),
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GameCountersCompanion.insert({
+    required int kidId,
+    required String key,
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : kidId = Value(kidId),
+        key = Value(key);
+  static Insertable<GameCounter> custom({
+    Expression<int>? kidId,
+    Expression<String>? key,
+    Expression<int>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GameCountersCompanion copyWith(
+      {Value<int>? kidId,
+      Value<String>? key,
+      Value<int>? value,
+      Value<int>? rowid}) {
+    return GameCountersCompanion(
+      kidId: kidId ?? this.kidId,
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<int>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GameCountersCompanion(')
+          ..write('kidId: $kidId, ')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2399,6 +3923,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $DailyUsageTable dailyUsage = $DailyUsageTable(this);
   late final $RealRewardsTable realRewards = $RealRewardsTable(this);
+  late final $RaceResultsTable raceResults = $RaceResultsTable(this);
+  late final $GameProfileTable gameProfile = $GameProfileTable(this);
+  late final $GameItemsTable gameItems = $GameItemsTable(this);
+  late final $GameBadgesTable gameBadges = $GameBadgesTable(this);
+  late final $GameCountersTable gameCounters = $GameCountersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2411,7 +3940,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         kidProfiles,
         appSettings,
         dailyUsage,
-        realRewards
+        realRewards,
+        raceResults,
+        gameProfile,
+        gameItems,
+        gameBadges,
+        gameCounters
       ];
 }
 
@@ -3732,6 +5266,839 @@ typedef $$RealRewardsTableProcessedTableManager = ProcessedTableManager<
     (RealReward, BaseReferences<_$AppDatabase, $RealRewardsTable, RealReward>),
     RealReward,
     PrefetchHooks Function()>;
+typedef $$RaceResultsTableCreateCompanionBuilder = RaceResultsCompanion
+    Function({
+  Value<int> id,
+  required int kidId,
+  required String subject,
+  required DateTime finishedAt,
+  required bool won,
+  required int kidTimeMs,
+  required int firstTryCorrect,
+  required int cometsFirstTry,
+  required int stars,
+});
+typedef $$RaceResultsTableUpdateCompanionBuilder = RaceResultsCompanion
+    Function({
+  Value<int> id,
+  Value<int> kidId,
+  Value<String> subject,
+  Value<DateTime> finishedAt,
+  Value<bool> won,
+  Value<int> kidTimeMs,
+  Value<int> firstTryCorrect,
+  Value<int> cometsFirstTry,
+  Value<int> stars,
+});
+
+class $$RaceResultsTableFilterComposer
+    extends Composer<_$AppDatabase, $RaceResultsTable> {
+  $$RaceResultsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subject => $composableBuilder(
+      column: $table.subject, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get finishedAt => $composableBuilder(
+      column: $table.finishedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get won => $composableBuilder(
+      column: $table.won, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get kidTimeMs => $composableBuilder(
+      column: $table.kidTimeMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get firstTryCorrect => $composableBuilder(
+      column: $table.firstTryCorrect,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get cometsFirstTry => $composableBuilder(
+      column: $table.cometsFirstTry,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get stars => $composableBuilder(
+      column: $table.stars, builder: (column) => ColumnFilters(column));
+}
+
+class $$RaceResultsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RaceResultsTable> {
+  $$RaceResultsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subject => $composableBuilder(
+      column: $table.subject, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get finishedAt => $composableBuilder(
+      column: $table.finishedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get won => $composableBuilder(
+      column: $table.won, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get kidTimeMs => $composableBuilder(
+      column: $table.kidTimeMs, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get firstTryCorrect => $composableBuilder(
+      column: $table.firstTryCorrect,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cometsFirstTry => $composableBuilder(
+      column: $table.cometsFirstTry,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get stars => $composableBuilder(
+      column: $table.stars, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RaceResultsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RaceResultsTable> {
+  $$RaceResultsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get subject =>
+      $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get finishedAt => $composableBuilder(
+      column: $table.finishedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get won =>
+      $composableBuilder(column: $table.won, builder: (column) => column);
+
+  GeneratedColumn<int> get kidTimeMs =>
+      $composableBuilder(column: $table.kidTimeMs, builder: (column) => column);
+
+  GeneratedColumn<int> get firstTryCorrect => $composableBuilder(
+      column: $table.firstTryCorrect, builder: (column) => column);
+
+  GeneratedColumn<int> get cometsFirstTry => $composableBuilder(
+      column: $table.cometsFirstTry, builder: (column) => column);
+
+  GeneratedColumn<int> get stars =>
+      $composableBuilder(column: $table.stars, builder: (column) => column);
+}
+
+class $$RaceResultsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RaceResultsTable,
+    RaceResult,
+    $$RaceResultsTableFilterComposer,
+    $$RaceResultsTableOrderingComposer,
+    $$RaceResultsTableAnnotationComposer,
+    $$RaceResultsTableCreateCompanionBuilder,
+    $$RaceResultsTableUpdateCompanionBuilder,
+    (RaceResult, BaseReferences<_$AppDatabase, $RaceResultsTable, RaceResult>),
+    RaceResult,
+    PrefetchHooks Function()> {
+  $$RaceResultsTableTableManager(_$AppDatabase db, $RaceResultsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RaceResultsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RaceResultsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RaceResultsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> kidId = const Value.absent(),
+            Value<String> subject = const Value.absent(),
+            Value<DateTime> finishedAt = const Value.absent(),
+            Value<bool> won = const Value.absent(),
+            Value<int> kidTimeMs = const Value.absent(),
+            Value<int> firstTryCorrect = const Value.absent(),
+            Value<int> cometsFirstTry = const Value.absent(),
+            Value<int> stars = const Value.absent(),
+          }) =>
+              RaceResultsCompanion(
+            id: id,
+            kidId: kidId,
+            subject: subject,
+            finishedAt: finishedAt,
+            won: won,
+            kidTimeMs: kidTimeMs,
+            firstTryCorrect: firstTryCorrect,
+            cometsFirstTry: cometsFirstTry,
+            stars: stars,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int kidId,
+            required String subject,
+            required DateTime finishedAt,
+            required bool won,
+            required int kidTimeMs,
+            required int firstTryCorrect,
+            required int cometsFirstTry,
+            required int stars,
+          }) =>
+              RaceResultsCompanion.insert(
+            id: id,
+            kidId: kidId,
+            subject: subject,
+            finishedAt: finishedAt,
+            won: won,
+            kidTimeMs: kidTimeMs,
+            firstTryCorrect: firstTryCorrect,
+            cometsFirstTry: cometsFirstTry,
+            stars: stars,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RaceResultsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RaceResultsTable,
+    RaceResult,
+    $$RaceResultsTableFilterComposer,
+    $$RaceResultsTableOrderingComposer,
+    $$RaceResultsTableAnnotationComposer,
+    $$RaceResultsTableCreateCompanionBuilder,
+    $$RaceResultsTableUpdateCompanionBuilder,
+    (RaceResult, BaseReferences<_$AppDatabase, $RaceResultsTable, RaceResult>),
+    RaceResult,
+    PrefetchHooks Function()>;
+typedef $$GameProfileTableCreateCompanionBuilder = GameProfileCompanion
+    Function({
+  Value<int> kidId,
+  Value<int> cosmicStars,
+  Value<String> selectedRocket,
+  Value<String> selectedTrail,
+  Value<int> meanAnswerMs,
+  Value<bool> slowNextRace,
+  Value<bool> retryAfterLossPending,
+});
+typedef $$GameProfileTableUpdateCompanionBuilder = GameProfileCompanion
+    Function({
+  Value<int> kidId,
+  Value<int> cosmicStars,
+  Value<String> selectedRocket,
+  Value<String> selectedTrail,
+  Value<int> meanAnswerMs,
+  Value<bool> slowNextRace,
+  Value<bool> retryAfterLossPending,
+});
+
+class $$GameProfileTableFilterComposer
+    extends Composer<_$AppDatabase, $GameProfileTable> {
+  $$GameProfileTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get cosmicStars => $composableBuilder(
+      column: $table.cosmicStars, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get selectedRocket => $composableBuilder(
+      column: $table.selectedRocket,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get selectedTrail => $composableBuilder(
+      column: $table.selectedTrail, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get meanAnswerMs => $composableBuilder(
+      column: $table.meanAnswerMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get slowNextRace => $composableBuilder(
+      column: $table.slowNextRace, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get retryAfterLossPending => $composableBuilder(
+      column: $table.retryAfterLossPending,
+      builder: (column) => ColumnFilters(column));
+}
+
+class $$GameProfileTableOrderingComposer
+    extends Composer<_$AppDatabase, $GameProfileTable> {
+  $$GameProfileTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cosmicStars => $composableBuilder(
+      column: $table.cosmicStars, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get selectedRocket => $composableBuilder(
+      column: $table.selectedRocket,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get selectedTrail => $composableBuilder(
+      column: $table.selectedTrail,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get meanAnswerMs => $composableBuilder(
+      column: $table.meanAnswerMs,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get slowNextRace => $composableBuilder(
+      column: $table.slowNextRace,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get retryAfterLossPending => $composableBuilder(
+      column: $table.retryAfterLossPending,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$GameProfileTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GameProfileTable> {
+  $$GameProfileTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<int> get cosmicStars => $composableBuilder(
+      column: $table.cosmicStars, builder: (column) => column);
+
+  GeneratedColumn<String> get selectedRocket => $composableBuilder(
+      column: $table.selectedRocket, builder: (column) => column);
+
+  GeneratedColumn<String> get selectedTrail => $composableBuilder(
+      column: $table.selectedTrail, builder: (column) => column);
+
+  GeneratedColumn<int> get meanAnswerMs => $composableBuilder(
+      column: $table.meanAnswerMs, builder: (column) => column);
+
+  GeneratedColumn<bool> get slowNextRace => $composableBuilder(
+      column: $table.slowNextRace, builder: (column) => column);
+
+  GeneratedColumn<bool> get retryAfterLossPending => $composableBuilder(
+      column: $table.retryAfterLossPending, builder: (column) => column);
+}
+
+class $$GameProfileTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $GameProfileTable,
+    GameProfileData,
+    $$GameProfileTableFilterComposer,
+    $$GameProfileTableOrderingComposer,
+    $$GameProfileTableAnnotationComposer,
+    $$GameProfileTableCreateCompanionBuilder,
+    $$GameProfileTableUpdateCompanionBuilder,
+    (
+      GameProfileData,
+      BaseReferences<_$AppDatabase, $GameProfileTable, GameProfileData>
+    ),
+    GameProfileData,
+    PrefetchHooks Function()> {
+  $$GameProfileTableTableManager(_$AppDatabase db, $GameProfileTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GameProfileTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GameProfileTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GameProfileTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<int> cosmicStars = const Value.absent(),
+            Value<String> selectedRocket = const Value.absent(),
+            Value<String> selectedTrail = const Value.absent(),
+            Value<int> meanAnswerMs = const Value.absent(),
+            Value<bool> slowNextRace = const Value.absent(),
+            Value<bool> retryAfterLossPending = const Value.absent(),
+          }) =>
+              GameProfileCompanion(
+            kidId: kidId,
+            cosmicStars: cosmicStars,
+            selectedRocket: selectedRocket,
+            selectedTrail: selectedTrail,
+            meanAnswerMs: meanAnswerMs,
+            slowNextRace: slowNextRace,
+            retryAfterLossPending: retryAfterLossPending,
+          ),
+          createCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<int> cosmicStars = const Value.absent(),
+            Value<String> selectedRocket = const Value.absent(),
+            Value<String> selectedTrail = const Value.absent(),
+            Value<int> meanAnswerMs = const Value.absent(),
+            Value<bool> slowNextRace = const Value.absent(),
+            Value<bool> retryAfterLossPending = const Value.absent(),
+          }) =>
+              GameProfileCompanion.insert(
+            kidId: kidId,
+            cosmicStars: cosmicStars,
+            selectedRocket: selectedRocket,
+            selectedTrail: selectedTrail,
+            meanAnswerMs: meanAnswerMs,
+            slowNextRace: slowNextRace,
+            retryAfterLossPending: retryAfterLossPending,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$GameProfileTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $GameProfileTable,
+    GameProfileData,
+    $$GameProfileTableFilterComposer,
+    $$GameProfileTableOrderingComposer,
+    $$GameProfileTableAnnotationComposer,
+    $$GameProfileTableCreateCompanionBuilder,
+    $$GameProfileTableUpdateCompanionBuilder,
+    (
+      GameProfileData,
+      BaseReferences<_$AppDatabase, $GameProfileTable, GameProfileData>
+    ),
+    GameProfileData,
+    PrefetchHooks Function()>;
+typedef $$GameItemsTableCreateCompanionBuilder = GameItemsCompanion Function({
+  required int kidId,
+  required String itemId,
+  Value<int> rowid,
+});
+typedef $$GameItemsTableUpdateCompanionBuilder = GameItemsCompanion Function({
+  Value<int> kidId,
+  Value<String> itemId,
+  Value<int> rowid,
+});
+
+class $$GameItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $GameItemsTable> {
+  $$GameItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnFilters(column));
+}
+
+class $$GameItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $GameItemsTable> {
+  $$GameItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+      column: $table.itemId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$GameItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GameItemsTable> {
+  $$GameItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+}
+
+class $$GameItemsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $GameItemsTable,
+    GameItem,
+    $$GameItemsTableFilterComposer,
+    $$GameItemsTableOrderingComposer,
+    $$GameItemsTableAnnotationComposer,
+    $$GameItemsTableCreateCompanionBuilder,
+    $$GameItemsTableUpdateCompanionBuilder,
+    (GameItem, BaseReferences<_$AppDatabase, $GameItemsTable, GameItem>),
+    GameItem,
+    PrefetchHooks Function()> {
+  $$GameItemsTableTableManager(_$AppDatabase db, $GameItemsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GameItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GameItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GameItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<String> itemId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GameItemsCompanion(
+            kidId: kidId,
+            itemId: itemId,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required int kidId,
+            required String itemId,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GameItemsCompanion.insert(
+            kidId: kidId,
+            itemId: itemId,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$GameItemsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $GameItemsTable,
+    GameItem,
+    $$GameItemsTableFilterComposer,
+    $$GameItemsTableOrderingComposer,
+    $$GameItemsTableAnnotationComposer,
+    $$GameItemsTableCreateCompanionBuilder,
+    $$GameItemsTableUpdateCompanionBuilder,
+    (GameItem, BaseReferences<_$AppDatabase, $GameItemsTable, GameItem>),
+    GameItem,
+    PrefetchHooks Function()>;
+typedef $$GameBadgesTableCreateCompanionBuilder = GameBadgesCompanion Function({
+  required int kidId,
+  required String badgeId,
+  required DateTime earnedAt,
+  Value<int> rowid,
+});
+typedef $$GameBadgesTableUpdateCompanionBuilder = GameBadgesCompanion Function({
+  Value<int> kidId,
+  Value<String> badgeId,
+  Value<DateTime> earnedAt,
+  Value<int> rowid,
+});
+
+class $$GameBadgesTableFilterComposer
+    extends Composer<_$AppDatabase, $GameBadgesTable> {
+  $$GameBadgesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get badgeId => $composableBuilder(
+      column: $table.badgeId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get earnedAt => $composableBuilder(
+      column: $table.earnedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$GameBadgesTableOrderingComposer
+    extends Composer<_$AppDatabase, $GameBadgesTable> {
+  $$GameBadgesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get badgeId => $composableBuilder(
+      column: $table.badgeId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get earnedAt => $composableBuilder(
+      column: $table.earnedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$GameBadgesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GameBadgesTable> {
+  $$GameBadgesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get badgeId =>
+      $composableBuilder(column: $table.badgeId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get earnedAt =>
+      $composableBuilder(column: $table.earnedAt, builder: (column) => column);
+}
+
+class $$GameBadgesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $GameBadgesTable,
+    GameBadgeRow,
+    $$GameBadgesTableFilterComposer,
+    $$GameBadgesTableOrderingComposer,
+    $$GameBadgesTableAnnotationComposer,
+    $$GameBadgesTableCreateCompanionBuilder,
+    $$GameBadgesTableUpdateCompanionBuilder,
+    (
+      GameBadgeRow,
+      BaseReferences<_$AppDatabase, $GameBadgesTable, GameBadgeRow>
+    ),
+    GameBadgeRow,
+    PrefetchHooks Function()> {
+  $$GameBadgesTableTableManager(_$AppDatabase db, $GameBadgesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GameBadgesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GameBadgesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GameBadgesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<String> badgeId = const Value.absent(),
+            Value<DateTime> earnedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GameBadgesCompanion(
+            kidId: kidId,
+            badgeId: badgeId,
+            earnedAt: earnedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required int kidId,
+            required String badgeId,
+            required DateTime earnedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GameBadgesCompanion.insert(
+            kidId: kidId,
+            badgeId: badgeId,
+            earnedAt: earnedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$GameBadgesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $GameBadgesTable,
+    GameBadgeRow,
+    $$GameBadgesTableFilterComposer,
+    $$GameBadgesTableOrderingComposer,
+    $$GameBadgesTableAnnotationComposer,
+    $$GameBadgesTableCreateCompanionBuilder,
+    $$GameBadgesTableUpdateCompanionBuilder,
+    (
+      GameBadgeRow,
+      BaseReferences<_$AppDatabase, $GameBadgesTable, GameBadgeRow>
+    ),
+    GameBadgeRow,
+    PrefetchHooks Function()>;
+typedef $$GameCountersTableCreateCompanionBuilder = GameCountersCompanion
+    Function({
+  required int kidId,
+  required String key,
+  Value<int> value,
+  Value<int> rowid,
+});
+typedef $$GameCountersTableUpdateCompanionBuilder = GameCountersCompanion
+    Function({
+  Value<int> kidId,
+  Value<String> key,
+  Value<int> value,
+  Value<int> rowid,
+});
+
+class $$GameCountersTableFilterComposer
+    extends Composer<_$AppDatabase, $GameCountersTable> {
+  $$GameCountersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get value => $composableBuilder(
+      column: $table.value, builder: (column) => ColumnFilters(column));
+}
+
+class $$GameCountersTableOrderingComposer
+    extends Composer<_$AppDatabase, $GameCountersTable> {
+  $$GameCountersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get value => $composableBuilder(
+      column: $table.value, builder: (column) => ColumnOrderings(column));
+}
+
+class $$GameCountersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GameCountersTable> {
+  $$GameCountersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<int> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$GameCountersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $GameCountersTable,
+    GameCounter,
+    $$GameCountersTableFilterComposer,
+    $$GameCountersTableOrderingComposer,
+    $$GameCountersTableAnnotationComposer,
+    $$GameCountersTableCreateCompanionBuilder,
+    $$GameCountersTableUpdateCompanionBuilder,
+    (
+      GameCounter,
+      BaseReferences<_$AppDatabase, $GameCountersTable, GameCounter>
+    ),
+    GameCounter,
+    PrefetchHooks Function()> {
+  $$GameCountersTableTableManager(_$AppDatabase db, $GameCountersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GameCountersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GameCountersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GameCountersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<String> key = const Value.absent(),
+            Value<int> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GameCountersCompanion(
+            kidId: kidId,
+            key: key,
+            value: value,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required int kidId,
+            required String key,
+            Value<int> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              GameCountersCompanion.insert(
+            kidId: kidId,
+            key: key,
+            value: value,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$GameCountersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $GameCountersTable,
+    GameCounter,
+    $$GameCountersTableFilterComposer,
+    $$GameCountersTableOrderingComposer,
+    $$GameCountersTableAnnotationComposer,
+    $$GameCountersTableCreateCompanionBuilder,
+    $$GameCountersTableUpdateCompanionBuilder,
+    (
+      GameCounter,
+      BaseReferences<_$AppDatabase, $GameCountersTable, GameCounter>
+    ),
+    GameCounter,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3752,4 +6119,14 @@ class $AppDatabaseManager {
       $$DailyUsageTableTableManager(_db, _db.dailyUsage);
   $$RealRewardsTableTableManager get realRewards =>
       $$RealRewardsTableTableManager(_db, _db.realRewards);
+  $$RaceResultsTableTableManager get raceResults =>
+      $$RaceResultsTableTableManager(_db, _db.raceResults);
+  $$GameProfileTableTableManager get gameProfile =>
+      $$GameProfileTableTableManager(_db, _db.gameProfile);
+  $$GameItemsTableTableManager get gameItems =>
+      $$GameItemsTableTableManager(_db, _db.gameItems);
+  $$GameBadgesTableTableManager get gameBadges =>
+      $$GameBadgesTableTableManager(_db, _db.gameBadges);
+  $$GameCountersTableTableManager get gameCounters =>
+      $$GameCountersTableTableManager(_db, _db.gameCounters);
 }
