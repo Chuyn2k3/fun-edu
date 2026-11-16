@@ -111,5 +111,8 @@ Tổng hợp các hình ảnh 3D phong cách đồ chơi đất sét mềm (soft
 ---
 
 ### 4.4. Cánh tên lửa hình trái tim màu hồng
-> [!NOTE]
-> Món này tạm thời chạm giới hạn quota API của `gemini-3.1-flash-image`. Sẽ được tạo bổ sung ngay khi hạn mức được hồi phục.
+- **File**: [pink_heart_rocket_fins_1794815279160.jpg](generated/game-rocket/pink_heart_rocket_fins_1794815279160.jpg)
+- **Object**: `rocket fins shaped like hearts, pink`
+
+![Cánh tên lửa hình trái tim](generated/game-rocket/pink_heart_rocket_fins_1794815279160.jpg)
+
