@@ -17,6 +17,26 @@ abstract final class AppImages {
   static const logo = 'assets/images/logo.png';
   static const bgSky = 'assets/images/bg-sky.jpg';
 
+  // Game art (rocket race), under assets/images/game/.
+  static const rocketOrange = 'assets/images/game/rocket-orange.png';
+  static const rocketBlue = 'assets/images/game/rocket-blue.png';
+  static const rocketGreen = 'assets/images/game/rocket-green.png';
+  static const rocketPurple = 'assets/images/game/rocket-purple.png';
+  static const rocketChip = 'assets/images/game/rocket-chip.png';
+  static const planet = 'assets/images/game/planet.png';
+  static const comet = 'assets/images/game/comet.png';
+  static const finsBolt = 'assets/images/game/fins-bolt.png';
+  static const noseStar = 'assets/images/game/nose-star.png';
+  static const trailRainbow = 'assets/images/game/trail-rainbow.png';
+  static const badgeSpeedKing = 'assets/images/game/badge-speed-king.png';
+  static const badgeScholar = 'assets/images/game/badge-scholar.png';
+  static const badgeCometHunter = 'assets/images/game/badge-comet-hunter.png';
+  static const badgeNeverGiveUp = 'assets/images/game/badge-never-give-up.png';
+  static const badgeChipBuddy = 'assets/images/game/badge-chip-buddy.png';
+  static const badgeMathWhiz = 'assets/images/game/badge-math-whiz.png';
+  static const badgeLetterMaster = 'assets/images/game/badge-letter-master.png';
+  static const badgePilot = 'assets/images/game/badge-pilot.png';
+
   static const all = [
     chipMain,
     chipJoy,
@@ -33,5 +53,23 @@ abstract final class AppImages {
     icFlame,
     icCrown,
     bgSky,
+    rocketOrange,
+    rocketBlue,
+    rocketGreen,
+    rocketPurple,
+    rocketChip,
+    planet,
+    comet,
+    finsBolt,
+    noseStar,
+    trailRainbow,
+    badgeSpeedKing,
+    badgeScholar,
+    badgeCometHunter,
+    badgeNeverGiveUp,
+    badgeChipBuddy,
+    badgeMathWhiz,
+    badgeLetterMaster,
+    badgePilot,
   ];
 }
