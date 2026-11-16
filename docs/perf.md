@@ -25,7 +25,7 @@ rm -rf test/_shot
 - `W`, `H` are logical points (default 390x844; iPad portrait 1024x1366, landscape 1366x1024); `SHOT_OUT` is the PNG path.
 - `flutter_tester` draws shadows without blur, so they look harsher than on a device.
 - Always delete `test/_shot/` before committing.
-- Rocket race scene: `tools/shot/race_shot_test.dart` (same steps; env `ROCKET`, `TRAIL`, `KID`, `CHIP`) writes `$SHOT_OUT-0.png`, `-0.5.png`, `-1.png` around a comet answer. Frame-cost bench (flutter_tester, debug JIT, not a device verdict): `tools/shot/race_bench_test.dart` with `W`/`H` of the scene box.
+- Rocket race scene: `tools/shot/race_shot_test.dart` (same steps; env `ROCKET`, `TRAIL`, `KID`, `CHIP`) writes `$SHOT_OUT-0.png`, `-0.5.png`, `-1.png` around a comet answer. Race screens (race, comet, Tiếng Việt, cut-scene, badge, offer, win, lose): `tools/shot/game_shot_test.dart` writes `$SHOT_OUT-<name>.png` (env `ONLY=name,...`). Frame-cost bench (flutter_tester, debug JIT, not a device verdict): `tools/shot/race_bench_test.dart` with `W`/`H` of the scene box.
 
 ## Race scene (2B-1)
 - One `Ticker` drives `SceneClock`; the two moving layers repaint from it (`CustomPainter(repaint:)`), no widget rebuild per frame. Static sky and track sit in their own `RepaintBoundary`.

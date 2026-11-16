@@ -192,7 +192,10 @@ class GameRepository {
 
       final reached = <GameBadge>{
         if (records >= 3) GameBadge.speedKing,
-        if (o.firstTryCorrect == raceLength) GameBadge.scholar,
+        // Comets end a perfect race after 8 questions: "all correct on the
+        // first try" = won with no question missed.
+        if (o.won && o.missed.isEmpty && o.firstTryCorrect > 0)
+          GameBadge.scholar,
         if (comets >= 10) GameBadge.cometHunter,
         if (retries >= 3) GameBadge.neverGiveUp,
         if (wins >= 5) GameBadge.chipBuddy,

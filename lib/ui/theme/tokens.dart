@@ -104,4 +104,48 @@ abstract final class GameColors {
   // Comet streak.
   static const cometHead = Color(0xFFFFFBE8);
   static const cometTail = Color(0xFFFFB547);
+
+  // Race screen, around the scene ("Bản 7"): warm cream question area.
+  static const panelTop = Color(0xFFFFF4E4);
+  static const panelBottom = Color(0xFFFFEBD2);
+  static const questionCardTint = Color(0xFFFFF8F0);
+  static const questionCardEdge = Color(0xFFEED8BD);
+  static const listenFill = Color(0xFFFFE3C8);
+  static const listenEdge = Color(0xFFF1BE92);
+  static const listenInk = Color(0xFF9A3412);
+  static const hudEdge = Color(0xFFD9CCEB);
+  static const hudShadow = Color(0x4D140A3C);
+  static const cometInk = Color(0xFF7A4A00);
+  static const ink = Color(0xFF24264D);
+  static const correctRing = Color(0xFF2F9E6B);
+
+  // Answer keys: light top, body, bottom edge, text (all text >= 4.5:1).
+  static const keyOrangeTop = Color(0xFFFFD2A6);
+  static const keyOrange = Color(0xFFFFB77A);
+  static const keyOrangeEdge = Color(0xFFD9803E);
+  static const keyOrangeInk = Color(0xFF5A2208);
+  static const keyBlueTop = Color(0xFFC9DDFF);
+  static const keyBlue = Color(0xFF9EC0FA);
+  static const keyBlueEdge = Color(0xFF5E86D1);
+  static const keyBlueInk = Color(0xFF16306E);
+  static const keyGreenTop = Color(0xFFC7F0DA);
+  static const keyGreen = Color(0xFF93DDB7);
+  static const keyGreenEdge = Color(0xFF4DAA7D);
+  static const keyGreenInk = Color(0xFF0C4A31);
+
+  // Big orange "Đua lại!" key.
+  static const goTop = Color(0xFFFFA45C);
+  static const go = Color(0xFFF97316);
+  static const goEdge = Color(0xFFB44A0A);
+  static const goInk = Color(0xFF3B1404);
+
+  // Fireworks sparks.
+  static const fireworks = [
+    Color(0xFFFFD24A),
+    Color(0xFFFF8FB1),
+    Color(0xFF7CC8FF),
+    Color(0xFF8EE59B),
+    Color(0xFFFFFFFF),
+    Color(0xFFFFA45C),
+  ];
 }

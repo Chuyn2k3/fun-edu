@@ -14,14 +14,17 @@ RaceOutcome outcome({
   int seconds = 40,
   int first = 8,
   int comets = 0,
+  List<RaceQuestion> missed = const [],
 }) =>
     RaceOutcome(
       won: won,
       kidTime: Duration(seconds: seconds),
       firstTryCorrect: first,
       cometsFirstTry: comets,
-      missed: const [],
+      missed: missed,
     );
+
+final _aMiss = ToneRaceQuestion('dau-sac', const ['dau-sac', 'dau-hoi', 'dau-nga']);
 
 void main() {
   late AppDatabase db;
@@ -180,12 +183,19 @@ void main() {
       expect(r4.newBadges, [GameBadge.speedKing]);
     });
 
-    test('scholar needs 10 of 10 first try in one race', () async {
-      final r9 = await race(repo, RaceSubject.toan, outcome(first: 9));
-      expect(r9.newBadges, isNot(contains(GameBadge.scholar)));
-      final r10 = await race(repo, RaceSubject.toan, outcome(first: 10));
-      expect(r10.newBadges, contains(GameBadge.scholar));
-      final again = await race(repo, RaceSubject.toan, outcome(first: 10));
+    // Comets (+2) end a perfect race after 8 questions, so "all correct
+    // on the first try" means a won race with no question missed.
+    test('scholar needs a won race with every question right first try',
+        () async {
+      final miss = await race(
+          repo, RaceSubject.toan, outcome(first: 7, missed: [_aMiss]));
+      expect(miss.newBadges, isNot(contains(GameBadge.scholar)));
+      final lost =
+          await race(repo, RaceSubject.toan, outcome(won: false, first: 7));
+      expect(lost.newBadges, isNot(contains(GameBadge.scholar)));
+      final perfect = await race(repo, RaceSubject.toan, outcome(first: 8));
+      expect(perfect.newBadges, contains(GameBadge.scholar));
+      final again = await race(repo, RaceSubject.toan, outcome(first: 8));
       expect(again.newBadges, isNot(contains(GameBadge.scholar)));
     });
 

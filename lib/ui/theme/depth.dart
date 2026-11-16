@@ -56,3 +56,33 @@ BoxDecoration raisedDecoration({
     ],
   );
 }
+
+/// A chunky game key ("Bản 7"): [top]→[body] gradient, a solid [edge] lip
+/// under it and a soft tinted shadow, all in one decoration (so no grey
+/// Material shadow shows through). [pressed] shortens the lip.
+BoxDecoration raisedKeyDecoration({
+  required Color top,
+  required Color body,
+  required Color edge,
+  double radius = 26,
+  double lip = 10,
+  bool pressed = false,
+}) {
+  final l = pressed ? lip - (AppDepth.lip - AppDepth.pressedLip) : lip;
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [top, body],
+    ),
+    borderRadius: BorderRadius.circular(radius),
+    boxShadow: [
+      BoxShadow(color: edge, offset: Offset(0, l)),
+      BoxShadow(
+        color: edge.withOpacity(0.35),
+        blurRadius: pressed ? 10 : 18,
+        offset: Offset(0, l + (pressed ? 3 : 6)),
+      ),
+    ],
+  );
+}

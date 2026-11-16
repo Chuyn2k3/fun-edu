@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 
 import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
+import 'features/game/race_controller.dart';
+import 'features/game/race_result_screen.dart';
+import 'features/game/race_screen.dart';
+import 'features/game/subject_picker.dart';
 import 'features/home/home_screen.dart';
 import 'features/lesson/lesson_done_screen.dart';
 import 'features/lesson/lesson_flow_screen.dart';
@@ -84,6 +88,38 @@ final GoRouter appRouter = GoRouter(
       path: '/practice/:glyphId',
       builder: (context, state) =>
           PracticeScreen(state.pathParameters['glyphId']!),
+    ),
+    // Rocket race (2B-1). /game shows the subject picker for now.
+    GoRoute(
+      path: '/game',
+      builder: (context, state) => const SubjectPickerScreen(),
+      routes: [
+        GoRoute(
+          path: 'race/:subject',
+          redirect: (context, state) =>
+              subjectFromSlug(state.pathParameters['subject']!) == null
+                  ? '/game'
+                  : null,
+          builder: (context, state) {
+            final args = state.extra is RaceArgs
+                ? state.extra! as RaceArgs
+                : const RaceArgs();
+            return RaceScreen(
+              // A new key per visit: "Đua lại!" always starts a fresh race.
+              key: ValueKey(state.pageKey),
+              subject: subjectFromSlug(state.pathParameters['subject']!)!,
+              retryAfterLoss: args.retryAfterLoss,
+            );
+          },
+        ),
+        GoRoute(
+          path: 'result',
+          redirect: (context, state) =>
+              state.extra is RaceResultArgs ? null : '/game',
+          builder: (context, state) =>
+              RaceResultScreen(args: state.extra! as RaceResultArgs),
+        ),
+      ],
     ),
     GoRoute(
       path: '/trace/:glyphId',

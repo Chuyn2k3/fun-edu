@@ -32,3 +32,19 @@ List<int> milestonesBetween(int before, int after) =>
 /// The first two pool items not yet owned (fewer when the pool runs out).
 List<String> nextOffer(Set<String> owned) =>
     rewardPool.where((i) => !owned.contains(i)).take(2).toList();
+
+/// Vietnamese names of every garage item (pool and starters).
+const itemTitles = {
+  'rocket_orange': 'Tên lửa cam',
+  'rocket_blue': 'Tên lửa xanh dương',
+  'rocket_green': 'Tên lửa xanh lá',
+  'rocket_purple': 'Tên lửa tím',
+  'trail_flame': 'Lửa thường',
+  'trail_rainbow': 'Khói cầu vồng',
+  'trail_sparkle': 'Sao lấp lánh',
+  'trail_blue_flame': 'Lửa xanh',
+  'sticker_clap': 'Sticker Chíp vỗ tay',
+  'sticker_laugh': 'Sticker Chíp cười',
+};
+
+String itemTitle(String id) => itemTitles[id] ?? id;
