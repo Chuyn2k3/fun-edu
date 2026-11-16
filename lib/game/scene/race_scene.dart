@@ -43,7 +43,8 @@ class RaceScene extends StatefulWidget {
   final String kidTrail;
 
   /// Turning true (a comet question answered right) sends a comet across
-  /// and boosts the kid's flame.
+  /// and boosts the kid's flame. Edge-triggered: pulse it (true for the
+  /// comet answer, false afterwards) so the next comet fires again.
   final bool boosting;
 
   /// The kid finished first: their flame stays the leader's.
@@ -86,6 +87,10 @@ class RaceSceneState extends State<RaceScene>
   bool get isTicking => _ticker.isActive;
   @visibleForTesting
   double get kidBoost => _kid.boost;
+  @visibleForTesting
+  double get kidFlameIntensity => _kid.intensity;
+  @visibleForTesting
+  double get chipFlameIntensity => _chip.intensity;
 
   /// 0..1 while a comet crosses, otherwise null.
   @visibleForTesting
@@ -110,6 +115,7 @@ class RaceSceneState extends State<RaceScene>
         _ticker.stop();
         _kid.snap();
         _chip.snap();
+        _snapLead();
         _cometAge = null;
         _settleSmoke();
         _clock.touch();
@@ -144,6 +150,7 @@ class RaceSceneState extends State<RaceScene>
     _kid.setTarget(widget.kidSteps, jump: _reduceMotion);
     _chip.setTarget(widget.chipSteps, jump: _reduceMotion);
     if (_reduceMotion) {
+      _snapLead();
       _settleSmoke();
       _clock.touch();
       return;
@@ -168,10 +175,8 @@ class RaceSceneState extends State<RaceScene>
     _last = elapsed;
     if (dt <= 0) return;
     final t = _clock.time + dt;
-    final kidLeads = widget.won || _kid.pos > _chip.pos + 0.02;
-    final chipLeads = !widget.won && _chip.pos > _kid.pos + 0.02;
-    _kid.step(dt, leading: kidLeads);
-    _chip.step(dt, leading: chipLeads);
+    _kid.step(dt, leading: _kidLeads);
+    _chip.step(dt, leading: _chipLeads);
     final g = _geometry;
     if (g != null) {
       _kid.emitSmoke(dt, g, t);
@@ -182,6 +187,15 @@ class RaceSceneState extends State<RaceScene>
       if (_cometAge! >= _cometDuration) _cometAge = null;
     }
     _clock.advance(dt);
+  }
+
+  bool get _kidLeads => widget.won || _kid.pos > _chip.pos + 0.02;
+  bool get _chipLeads => !widget.won && _chip.pos > _kid.pos + 0.02;
+
+  /// Reduce motion: no ticker eases the leader flame, so set it outright.
+  void _snapLead() {
+    _kid.lead = _kidLeads ? 1 : 0;
+    _chip.lead = _chipLeads ? 1 : 0;
   }
 
   /// Reduce motion: lay a still puff trail behind each rocket.

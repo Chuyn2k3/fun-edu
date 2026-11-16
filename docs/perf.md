@@ -30,5 +30,5 @@ rm -rf test/_shot
 ## Race scene (2B-1)
 - One `Ticker` drives `SceneClock`; the two moving layers repaint from it (`CustomPainter(repaint:)`), no widget rebuild per frame. Static sky and track sit in their own `RepaintBoundary`.
 - No Paint/Path/Shader/List allocation per frame: flame paths and shaders live in a unit box and are moved by canvas transforms; smoke, sparkles and stars are typed arrays drawn with one `drawRawAtlas` each.
-- Blur: only the outer flame edge and the comet streak use `MaskFilter.blur`; the nozzle glow is a radial gradient. If a device drops frames, remove those two blurs first.
+- Blur (`MaskFilter.blur`) per frame, exactly: the outer flame layer of each rocket (2 draws every frame, `FlameRenderer` `_FlamePaints.outer`) and the comet streak (1 draw, only during the 1.3 s fly-by, `_ForegroundPainter._streakPaint`). Nothing else blurs: nozzle glow, cloud highlights, smoke, sparkles and stars are radial gradients or atlas sprites. If a device drops frames, remove those two blurs first.
 - flutter_tester numbers (2026-11-16): UI frame avg 0.70 ms, p99 1.45 ms at 390×480; 0.45 / 1.07 ms at 683×1024. Device `--profile` numbers still to record.

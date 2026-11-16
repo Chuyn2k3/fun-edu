@@ -310,10 +310,15 @@ abstract final class Clouds {
     ..cubicTo(112, -18, 154, -16, 174, 2)
     ..lineTo(174, 24)
     ..close();
-  static final Path _bigShine = Path()
-    ..addOval(const Rect.fromLTWH(62, -62, 40, 14))
-    ..addOval(const Rect.fromLTWH(10, -38, 30, 10))
-    ..addOval(const Rect.fromLTWH(128, -42, 26, 9));
+  // Soft highlights on the lumps: centre and size (mockup points), each a
+  // radial-gradient oval (no blur filter: these clouds repaint every frame).
+  static const _shines = [
+    Rect.fromLTWH(58, -64, 48, 18),
+    Rect.fromLTWH(6, -40, 38, 14),
+    Rect.fromLTWH(124, -44, 34, 13),
+  ];
+  static final Path _unitCircle = Path()
+    ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
 
   static final Paint _bodyPaint = Paint()
     ..shader = ui.Gradient.linear(const Offset(0, -70), const Offset(0, 4), [
@@ -323,8 +328,11 @@ abstract final class Clouds {
     ], const [0, 0.55, 1]);
   static final Paint _bellyPaint = Paint()..color = GameColors.cloudShade;
   static final Paint _shinePaint = Paint()
-    ..color = GameColors.star.withOpacity(0.75)
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    ..shader = ui.Gradient.radial(Offset.zero, 1, [
+      GameColors.star.withOpacity(0.8),
+      GameColors.star.withOpacity(0.45),
+      GameColors.star.withOpacity(0),
+    ], const [0, 0.5, 1]);
 
   /// Big cloud with its bottom-left at [anchor]; [scale] in scene units
   /// (pass u × size); [mirror] flips it for the right corner.
@@ -335,7 +343,14 @@ abstract final class Clouds {
     canvas.scale(mirror ? -scale : scale, scale);
     canvas.drawPath(_bigBody, _bodyPaint);
     canvas.drawPath(_bigBelly, _bellyPaint);
-    canvas.drawPath(_bigShine, _shinePaint);
+    for (var i = 0; i < _shines.length; i++) {
+      final r = _shines[i];
+      canvas.save();
+      canvas.translate(r.center.dx, r.center.dy);
+      canvas.scale(r.width / 2, r.height / 2);
+      canvas.drawPath(_unitCircle, _shinePaint);
+      canvas.restore();
+    }
     canvas.restore();
   }
 

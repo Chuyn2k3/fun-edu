@@ -9,7 +9,14 @@ void main() {
       final pool = SmokeParticles(style: style, seed: 7);
       expect(pool.capacity, lessThanOrEqualTo(24));
       final reuseAlphas = <double>[];
-      pool.onReuse = (slot, alpha) => reuseAlphas.add(alpha);
+      // Alpha each slot showed on the last drawn frame: a recycled puff
+      // must already have faded out (no visible pop when it dies).
+      final shown = List<double>.filled(pool.capacity, 0);
+      final lastShownAtReuse = <double>[];
+      pool.onReuse = (slot, alpha) {
+        reuseAlphas.add(alpha);
+        lastShownAtReuse.add(shown[slot]);
+      };
       var maxLive = 0;
       // 10 s at 60 fps, boosted half the time so the emitter wants more.
       for (var i = 0; i < 600; i++) {
@@ -20,11 +27,15 @@ void main() {
         for (var s = 0; s < pool.capacity; s++) {
           final a = pool.alphaOf(s);
           expect(a, inInclusiveRange(0.0, 1.0));
+          shown[s] = a;
         }
       }
       expect(maxLive, greaterThan(8), reason: 'the emitter does emit');
       expect(reuseAlphas, isNotEmpty, reason: 'slots get recycled');
       expect(reuseAlphas.every((a) => a == 0), isTrue);
+      expect(lastShownAtReuse.every((a) => a < 0.05), isTrue,
+          reason: 'max shown before reuse: '
+              '${lastShownAtReuse.reduce((a, b) => a > b ? a : b)}');
     });
   }
 

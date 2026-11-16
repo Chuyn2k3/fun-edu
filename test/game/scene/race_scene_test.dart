@@ -36,6 +36,44 @@ void main() {
     expect(state.isTicking, isFalse);
   });
 
+  testWidgets('reduce motion: the winner still gets the leader flame',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene(kid: 9, chip: 9), reduce: true));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.kidFlameIntensity, closeTo(1.0, 1e-9));
+    await tester.pumpWidget(
+        _host(_scene(kid: 10, chip: 9, won: true), reduce: true));
+    expect(state.kidFlameIntensity, closeTo(1.15, 1e-9));
+    expect(state.chipFlameIntensity, closeTo(1.0, 1e-9));
+  });
+
+  testWidgets('a new target mid-surge keeps rising smoothly, no jump back',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene()));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    await tester.pumpWidget(_host(_scene(kid: 2)));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final atRetarget = state.kidProgress;
+    expect(atRetarget, inExclusiveRange(0.0, 0.2));
+    await tester.pumpWidget(_host(_scene(kid: 3)));
+    var prev = atRetarget;
+    var peak = atRetarget;
+    for (var i = 0; i < 70; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      final p = state.kidProgress;
+      // Only the small spring overshoot may pull it back, never a jump.
+      expect(p, greaterThan(prev - 0.005));
+      expect(p, greaterThanOrEqualTo(atRetarget));
+      if (p > peak) peak = p;
+      prev = p;
+    }
+    expect(peak, lessThan(0.3 * 1.05));
+    expect(state.kidProgress, closeTo(0.3, 0.005));
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('with motion the clock runs and rockets spring to targets',
       (tester) async {
     await tester.pumpWidget(_host(_scene()));
