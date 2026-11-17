@@ -11,6 +11,7 @@ import 'game_widgets.dart';
 /// Earned badges and when.
 final badgeDatesProvider =
     FutureProvider.autoDispose<Map<GameBadge, DateTime>>((ref) async {
+  ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   return repo.badgeDates();
 });

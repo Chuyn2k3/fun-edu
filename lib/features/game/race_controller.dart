@@ -344,7 +344,9 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       debugPrint('Saving the race failed: $e');
     }
     if (_disposed) return;
-    if (record != null) ref.invalidate(gameSummaryProvider);
+    // Stars, stats and badges changed: refresh every game screen (the hub
+    // stays mounted under the race).
+    if (record != null) ref.read(gameDataRevisionProvider.notifier).state++;
     state = state.copyWith(
       phase: RacePhase.done,
       result: RaceResultArgs(

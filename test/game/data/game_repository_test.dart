@@ -14,6 +14,7 @@ RaceOutcome outcome({
   int seconds = 40,
   int first = 8,
   int comets = 0,
+  int answered = 8,
   List<RaceQuestion> missed = const [],
 }) =>
     RaceOutcome(
@@ -21,6 +22,7 @@ RaceOutcome outcome({
       kidTime: Duration(seconds: seconds),
       firstTryCorrect: first,
       cometsFirstTry: comets,
+      answered: answered,
       missed: missed,
     );
 
@@ -258,17 +260,26 @@ void main() {
     test('mean answer defaults to 6 s and is a running average of race means',
         () async {
       expect(await repo.meanAnswer(), const Duration(seconds: 6));
-      await race(repo, RaceSubject.toan, outcome(seconds: 40)); // mean 4000
-      expect(await repo.meanAnswer(), const Duration(milliseconds: 4000));
-      await race(repo, RaceSubject.toan, outcome(seconds: 80)); // 8000
+      // 40 s over 8 answered questions (a perfect win with comets).
+      await race(repo, RaceSubject.toan, outcome(seconds: 40)); // mean 5000
+      expect(await repo.meanAnswer(), const Duration(milliseconds: 5000));
+      // A loss: 35 s over 5 answered questions.
+      await race(repo, RaceSubject.toan,
+          outcome(won: false, seconds: 35, answered: 5)); // 7000
       expect(await repo.meanAnswer(), const Duration(milliseconds: 6000));
     });
 
     test('race mean is clamped to [1500, 15000]', () async {
-      await race(repo, RaceSubject.toan, outcome(seconds: 2)); // 200 -> 1500
+      await race(repo, RaceSubject.toan, outcome(seconds: 2)); // 250 -> 1500
       expect(await repo.meanAnswer(), const Duration(milliseconds: 1500));
-      await race(repo, RaceSubject.toan, outcome(seconds: 500)); // 50000 -> 15000
+      await race(repo, RaceSubject.toan, outcome(seconds: 500)); // 62500 -> 15000
       expect(await repo.meanAnswer(), const Duration(milliseconds: 8250));
+    });
+
+    test('a race with no answered question does not divide by zero', () async {
+      await race(repo, RaceSubject.toan,
+          outcome(won: false, seconds: 0, answered: 0, first: 0));
+      expect(await repo.meanAnswer(), const Duration(milliseconds: 1500));
     });
 
     test('slowdown set by a loss, read purely, consumed once, cleared by win',

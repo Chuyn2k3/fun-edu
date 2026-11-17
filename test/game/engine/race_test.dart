@@ -56,6 +56,7 @@ void main() {
       expect(answered, 8); // 1+1+2+1+1+2+1+1 = 10, before question 9
       expect(r.outcome!.won, isTrue);
       expect(r.outcome!.kidTime, const Duration(seconds: 8));
+      expect(r.outcome!.answered, 8);
       expect(() => r.answer(0, _ms), throwsStateError);
     });
 
@@ -90,6 +91,7 @@ void main() {
       }
       expect(r.chipSteps, 10);
       expect(r.outcome!.won, isFalse);
+      expect(r.outcome!.answered, 6);
     });
   });
 
@@ -149,6 +151,7 @@ void main() {
         kidTime: Duration.zero,
         firstTryCorrect: 0,
         cometsFirstTry: comets,
+        answered: 0,
         missed: const []);
     test('values', () {
       expect(cosmicStarsFor(o(true, 0), beatRecord: false), 5);

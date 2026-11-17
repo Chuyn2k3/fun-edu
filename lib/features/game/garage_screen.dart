@@ -11,7 +11,6 @@ import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../voice/speaker.dart';
-import 'game_hub_screen.dart';
 import 'game_widgets.dart';
 import 'item_art.dart';
 import 'race_screen.dart' show BigGameButton;
@@ -56,6 +55,7 @@ class GarageData {
 }
 
 final garageProvider = FutureProvider.autoDispose<GarageData>((ref) async {
+  ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   final sel = await repo.selected();
   return GarageData(
@@ -98,8 +98,7 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
     final repo = await ref.read(gameRepositoryProvider.future);
     await repo.markSeen(visible);
     if (!mounted) return;
-    ref.invalidate(gameHubProvider);
-    ref.invalidate(garageProvider);
+    ref.read(gameDataRevisionProvider.notifier).state++;
   }
 
   Future<void> _tapItem(GarageData d, String id) async {
@@ -123,9 +122,7 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
         _busy = false;
       }
       if (!mounted) return;
-      ref.invalidate(garageProvider);
-      ref.invalidate(gameHubProvider);
-      ref.invalidate(gameSummaryProvider);
+      ref.read(gameDataRevisionProvider.notifier).state++;
       return;
     }
     if (d.offer.contains(id)) {
@@ -142,9 +139,7 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
         _busy = false;
       }
       if (!mounted) return;
-      ref.invalidate(garageProvider);
-      ref.invalidate(gameHubProvider);
-      ref.invalidate(gameSummaryProvider);
+      ref.read(gameDataRevisionProvider.notifier).state++;
       return;
     }
     final left = starsUntilOffered(id, owned: d.owned, stars: d.stars);

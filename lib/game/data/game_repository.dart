@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -159,9 +161,10 @@ class GameRepository {
             ),
           );
 
-      // Running mean of per-race mean answer time.
+      // Running mean of per-race mean answer time: kidTime sums only the
+      // correctly answered questions, so divide by how many there were.
       final racesBefore = await _counter(kid, _kRaces);
-      final raceMean = (o.kidTime.inMilliseconds / raceLength)
+      final raceMean = (o.kidTime.inMilliseconds / max(1, o.answered))
           .clamp(1500, 15000)
           .toDouble();
       final oldMean = (profile?.meanAnswerMs ?? _defaultMeanMs).toDouble();
@@ -419,12 +422,18 @@ class GameRepository {
   }
 }
 
+/// Bumped after every write to a kid's game data (a race recorded, a gift
+/// picked, a rocket or trail equipped). Every game read provider watches it,
+/// so screens that stay mounted under a race (the Góc Chơi hub) refresh.
+final gameDataRevisionProvider = StateProvider<int>((ref) => 0);
+
 final gameRepositoryProvider = FutureProvider<GameRepository>((ref) async {
   final kid = await ref.watch(currentKidIdProvider.future);
   return GameRepository(ref.watch(databaseProvider), kidId: kid);
 });
 
 final gameSummaryProvider = FutureProvider<GameSummary>((ref) async {
+  ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   final sel = await repo.selected();
   return GameSummary(

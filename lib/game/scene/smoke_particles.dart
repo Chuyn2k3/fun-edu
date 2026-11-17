@@ -230,11 +230,11 @@ abstract final class ParticleSprites {
         ..shader = ui.Gradient.radial(
           const Offset(r, r * 0.8),
           r,
-          const [
-            Color(0xFFFFFFFF),
-            Color(0xC0FFFFFF),
-            Color(0x4DFFFFFF),
-            Color(0x00FFFFFF),
+          [
+            GameColors.spriteMask,
+            GameColors.spriteMask.withAlpha(0xC0),
+            GameColors.spriteMask.withAlpha(0x4D),
+            GameColors.spriteMask.withAlpha(0),
           ],
           const [0, 0.35, 0.7, 1],
         ),
@@ -246,7 +246,10 @@ abstract final class ParticleSprites {
       r * 0.55,
       Paint()
         ..shader = ui.Gradient.radial(const Offset(cx, r), r * 0.55,
-            const [Color(0x99FFFFFF), Color(0x00FFFFFF)]),
+            [
+              GameColors.spriteMask.withAlpha(0x99),
+              GameColors.spriteMask.withAlpha(0),
+            ]),
     );
     final star = Path()..moveTo(cx, 2);
     const k = 0.16;
@@ -256,7 +259,7 @@ abstract final class ParticleSprites {
       ..quadraticBezierTo(cx - r * k, r + r * k, cell + 2, r)
       ..quadraticBezierTo(cx - r * k, r - r * k, cx, 2)
       ..close();
-    c.drawPath(star, Paint()..color = const Color(0xFFFFFFFF));
+    c.drawPath(star, Paint()..color = GameColors.spriteMask);
     final pic = rec.endRecording();
     final img = pic.toImageSync(cell.toInt() * 2, cell.toInt());
     pic.dispose();

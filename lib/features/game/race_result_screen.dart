@@ -49,6 +49,7 @@ class NextReward {
 }
 
 final nextRewardProvider = FutureProvider.autoDispose<NextReward>((ref) async {
+  ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   final total = await repo.totalStars();
   final owned = await repo.owned();
@@ -117,8 +118,9 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
     if (!mounted) return;
     if (a.saved) await _offerGifts();
     if (!mounted) return;
-    ref.invalidate(nextRewardProvider);
-    ref.invalidate(gameSummaryProvider);
+    // Gifts may have been picked: refresh every game screen (the hub stays
+    // mounted under the result).
+    ref.read(gameDataRevisionProvider.notifier).state++;
     if (!a.saved) {
       _speaker.speak(_unsavedLine);
     } else if (!a.won) {
@@ -820,18 +822,51 @@ class LandingCutScene extends ConsumerStatefulWidget {
 }
 
 class _LandingCutSceneState extends ConsumerState<LandingCutScene>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _c =
       AnimationController(vsync: this, duration: LandingCutScene.duration);
-  Timer? _end;
+
+  /// How long the cut-scene has been on screen. Ticker-bound (it stops under
+  /// the sleep screen) and held while the app is not in front, so the badge
+  /// popups and gift sheets never open in the background. Linear and not
+  /// shortened by reduce motion.
+  late final AnimationController _hold = AnimationController(
+    vsync: this,
+    duration: LandingCutScene.duration,
+    animationBehavior: AnimationBehavior.preserve,
+  )..addStatusListener((s) {
+      if (s == AnimationStatus.completed) _done();
+    });
   bool _decided = false;
+  bool _ended = false;
   late final Speaker _speaker = ref.read(speakerProvider);
 
   @override
   void initState() {
     super.initState();
     _speaker.speak('Về đích rồi! Bé thắng Chíp rồi!');
-    _end = Timer(LandingCutScene.duration, widget.onDone);
+    WidgetsBinding.instance.addObserver(this);
+    _syncHold();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _syncHold();
+
+  void _syncHold() {
+    if (_ended) return;
+    final life = WidgetsBinding.instance.lifecycleState;
+    if (life == null || life == AppLifecycleState.resumed) {
+      _hold.forward();
+    } else {
+      _hold.stop();
+    }
+  }
+
+  void _done() {
+    if (_ended) return;
+    _ended = true;
+    _hold.stop();
+    widget.onDone();
   }
 
   @override
@@ -849,7 +884,8 @@ class _LandingCutSceneState extends ConsumerState<LandingCutScene>
 
   @override
   void dispose() {
-    _end?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _hold.dispose();
     _c.dispose();
     super.dispose();
   }
@@ -864,10 +900,7 @@ class _LandingCutSceneState extends ConsumerState<LandingCutScene>
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        _end?.cancel();
-        widget.onDone();
-      },
+      onTap: _done,
       child: Semantics(
         button: true,
         label: '$_winTitle Chạm để xem kết quả',

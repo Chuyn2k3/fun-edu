@@ -86,6 +86,38 @@ void main() {
     expect(find.byKey(const ValueKey('landing-cutscene')), findsNothing);
   });
 
+  testWidgets('the landing cut-scene waits while the app is in the background',
+      (t) async {
+    final h = await bootGame(t);
+    await openRace(t, 'toan');
+    await winRace(t);
+    expect(find.byKey(const ValueKey('landing-cutscene')), findsOneWidget);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    final spoken = h.speaker.spoken.length;
+    for (var i = 0; i < 10; i++) {
+      await t.pump(const Duration(seconds: 1));
+    }
+    await pumpReal(t);
+    // Still on the cut-scene: no badge popup, no gift sheet, no speech.
+    expect(find.byKey(const ValueKey('landing-cutscene')), findsOneWidget);
+    expect(find.byType(BadgePopup), findsNothing);
+    expect(h.speaker.spoken.length, spoken);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    // Back in front: the cut-scene still has its time left to play.
+    await t.pump(const Duration(seconds: 1));
+    await pumpReal(t);
+    expect(find.byKey(const ValueKey('landing-cutscene')), findsOneWidget);
+    expect(find.byType(BadgePopup), findsNothing);
+    await t.pump(const Duration(seconds: 3));
+    await pumpReal(t);
+    expect(find.byKey(const ValueKey('landing-cutscene')), findsNothing);
+    expect(find.byType(BadgePopup), findsOneWidget);
+  });
+
   testWidgets(
       'losing shows Suýt nữa thôi, the missed question, and Đua lại '
       'starts a slowed retry', (t) async {
@@ -133,11 +165,32 @@ void main() {
     expect(s.kidSteps, 0);
   });
 
-  testWidgets('leaving mid-race with system back records nothing', (t) async {
+  testWidgets(
+      'system back mid-race opens the pause overlay; leaving from it '
+      'records nothing', (t) async {
     final h = await bootGame(t);
     await openRace(t, 'toan');
     await answerRight(t);
+    final steps = raceState(t).kidSteps;
+    // Android back / iOS edge swipe: pause, never a silent exit.
     await t.binding.handlePopRoute();
+    await pumpReal(t, times: 6);
+    expect(find.byType(RaceScreen), findsOneWidget);
+    expect(raceState(t).paused, isTrue);
+    expect(find.text('Tạm dừng'), findsOneWidget);
+    // A second back keeps the overlay; the race is still there.
+    await t.binding.handlePopRoute();
+    await pumpReal(t, times: 4);
+    expect(find.byType(RaceScreen), findsOneWidget);
+    expect(raceState(t).kidSteps, steps);
+    // "Đua tiếp" resumes.
+    await t.tap(find.text('Đua tiếp'));
+    await pumpReal(t);
+    expect(raceState(t).paused, isFalse);
+    // The overlay's "Về Góc Chơi" is the explicit exit.
+    await t.binding.handlePopRoute();
+    await pumpReal(t, times: 4);
+    await t.tap(find.text('Về Góc Chơi'));
     await pumpReal(t, times: 6);
     expect(find.byType(RaceScreen), findsNothing);
     await t.pump(const Duration(minutes: 2));

@@ -79,6 +79,7 @@ class StickerAlbumData {
 
 final stickerAlbumProvider =
     FutureProvider.autoDispose<StickerAlbumData>((ref) async {
+  ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   final items = await repo.owned();
   return StickerAlbumData(

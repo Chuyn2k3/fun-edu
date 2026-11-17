@@ -46,6 +46,9 @@ abstract final class GameColors {
   static const star = Color(0xFFFFFFFF);
   static const starWarm = Color(0xFFFFF6C7);
 
+  /// White sprite mask for the smoke/sparkle atlas; each particle tints it.
+  static const spriteMask = Color(0xFFFFFFFF);
+
   // 2.5D track slab.
   static const track = Color(0xFF7B66C9);
   static const trackFar = Color(0xFF6A56B8);

@@ -9,6 +9,7 @@ class RaceOutcome {
     required this.kidTime,
     required this.firstTryCorrect,
     required this.cometsFirstTry,
+    required this.answered,
     required this.missed,
   });
 
@@ -18,6 +19,9 @@ class RaceOutcome {
   final Duration kidTime;
   final int firstTryCorrect;
   final int cometsFirstTry;
+
+  /// Questions the kid answered correctly (the ones [kidTime] sums over).
+  final int answered;
 
   /// Questions the kid got wrong at least once, in order.
   final List<RaceQuestion> missed;
@@ -54,6 +58,7 @@ class Race {
   Duration _kidTime = Duration.zero;
   int _firstTryCorrect = 0;
   int _cometsFirstTry = 0;
+  int _answered = 0;
   final List<RaceQuestion> _missed = [];
 
   bool get finished => outcome != null;
@@ -74,6 +79,7 @@ class Race {
     final gained = q.comet ? 2 : 1;
     kidSteps = (kidSteps + gained).clamp(0, raceLength);
     _kidTime += elapsed;
+    _answered++;
     pacer.recordAnswer(elapsed);
     if (firstTry) {
       _firstTryCorrect++;
@@ -110,6 +116,7 @@ class Race {
       kidTime: _kidTime,
       firstTryCorrect: _firstTryCorrect,
       cometsFirstTry: _cometsFirstTry,
+      answered: _answered,
       missed: List.unmodifiable(_missed),
     );
   }

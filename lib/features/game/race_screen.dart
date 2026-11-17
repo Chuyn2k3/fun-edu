@@ -236,18 +236,29 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
           ],
         ),
     };
-    return Scaffold(
-      backgroundColor: GameColors.panelTop,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          body,
-          if (paused)
-            _PauseOverlay(
-              onResume: () => _controller.setPaused(false),
-              onLeave: () => context.go('/game'),
-            ),
-        ],
+    // Android back / iOS edge swipe opens the pause overlay instead of
+    // silently abandoning the race; its "Về Góc Chơi" is the explicit exit.
+    // Only a race still loading can be left this way.
+    final loading = ref.watch(
+        raceControllerProvider.select((s) => s.phase == RacePhase.loading));
+    return PopScope(
+      canPop: loading,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _controller.setPaused(true);
+      },
+      child: Scaffold(
+        backgroundColor: GameColors.panelTop,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            body,
+            if (paused)
+              _PauseOverlay(
+                onResume: () => _controller.setPaused(false),
+                onLeave: () => context.go('/game'),
+              ),
+          ],
+        ),
       ),
     );
   }

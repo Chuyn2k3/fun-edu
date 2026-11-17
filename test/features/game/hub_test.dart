@@ -275,4 +275,60 @@ void main() {
             matching: find.text('Còn 85 sao vũ trụ')),
         findsOneWidget);
   });
+
+  testWidgets(
+      'after a race the hub shows the new stars, Thành tích, badges, '
+      'stickers and "món mới"', (t) async {
+    await bootGame(t, seed: (db, kid) => _stars(db, kid, 24));
+    await _openHub(t);
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('hub-stars')),
+            matching: find.text('24')),
+        findsOneWidget);
+    expect(find.text('0/8 huy hiệu'), findsOneWidget);
+    expect(find.text('0/10 sticker'), findsOneWidget);
+    expect(find.byKey(const ValueKey('hub-garage-new')), findsNothing);
+
+    // The hub stays mounted under the picker, the race and the result.
+    await t.tap(find.text('Đua với Chíp'));
+    await pumpReal(t, times: 6);
+    await t.tap(find.text('Toán'));
+    await pumpReal(t, times: 8);
+    expect(find.byType(RaceScreen), findsOneWidget);
+    await winRace(t);
+    // Skip the landing cut-scene, close the scholar badge, take two gifts
+    // (24 + 7 stars crosses the 25 and 30 milestones).
+    await t.tap(find.byKey(const ValueKey('landing-cutscene')));
+    await pumpReal(t, times: 6);
+    await t.tap(find.text('Tuyệt quá!'));
+    await pumpReal(t, times: 6);
+    await t.tap(find.byKey(const ValueKey('offer-rocket_blue')));
+    await pumpReal(t, times: 8);
+    await t.tap(find.byKey(const ValueKey('offer-sticker_clap')));
+    await pumpReal(t, times: 8);
+    await t.ensureVisible(find.text('Về Góc Chơi'));
+    await pumpReal(t);
+    await t.tap(find.text('Về Góc Chơi'));
+    await pumpReal(t, times: 8);
+
+    expect(find.byType(GameHubScreen), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('hub-stars')),
+            matching: find.text('31')),
+        findsOneWidget);
+    expect(find.text('1/8 huy hiệu'), findsOneWidget);
+    // sticker_clap picked + the scholar badge's sticker.
+    expect(find.text('2/10 sticker'), findsOneWidget);
+    expect(_textOf(t, 'hub-garage-new'), '1');
+    expect(find.text('Có 1 món mới chờ lắp!'), findsOneWidget);
+    await t.scrollUntilVisible(
+        find.byKey(const ValueKey('ach-toan-first')), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(_textOf(t, 'ach-toan-races'), '1');
+    expect(_textOf(t, 'ach-toan-wins'), '1');
+    expect(_textOf(t, 'ach-toan-first'), '8');
+    expect(_textOf(t, 'ach-toan-best'), isNot('—'));
+  });
 }

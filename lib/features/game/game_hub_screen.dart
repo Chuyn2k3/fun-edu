@@ -43,6 +43,7 @@ class GameHubData {
 }
 
 final gameHubProvider = FutureProvider.autoDispose<GameHubData>((ref) async {
+  ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   final badges = await repo.badges();
   return GameHubData(

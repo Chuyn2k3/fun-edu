@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../ui/theme/tokens.dart';
 
 /// Height of a glyph's ink in ruling cells (at least [minCells]), used to
 /// draw the three letters of one question at one shared scale.
@@ -41,7 +42,7 @@ class GlyphView extends ConsumerWidget {
   const GlyphView(
     this.glyphId, {
     super.key,
-    this.color = const Color(0xFF24264D),
+    this.color = GameColors.ink,
     this.heightCells,
     this.fill = 0.62,
   });
