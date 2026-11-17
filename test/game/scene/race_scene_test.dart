@@ -359,6 +359,48 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('Overtake banner appears when kid passes Chíp', (tester) async {
+    // Start at kid: 0, chip: 0 -> expect(state.isOvertakeBannerVisible, isFalse)
+    await tester.pumpWidget(_host(_scene(kid: 0, chip: 0)));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.isOvertakeBannerVisible, isFalse);
+
+    // Kid surges ahead past Chíp (kid: 2, chip: 0) -> expect(state.isOvertakeBannerVisible, isTrue)
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 0)));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.isOvertakeBannerVisible, isTrue);
+
+    // After ~750ms -> expect(state.isOvertakeBannerVisible, isFalse)
+    for (var i = 0; i < 50; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.isOvertakeBannerVisible, isFalse);
+
+    // With reduceMotion: true -> expect(state.isOvertakeBannerVisible, isFalse)
+    await tester.pumpWidget(_host(_scene(kid: 0, chip: 0), reduce: true));
+    final reduceState = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(reduceState.isOvertakeBannerVisible, isFalse);
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 0), reduce: true));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(reduceState.isOvertakeBannerVisible, isFalse);
+
+    // When reduceMotion is enabled mid-overtake, banner disappears immediately
+    await tester.pumpWidget(_host(_scene(kid: 0, chip: 0)));
+    final state2 = tester.state<RaceSceneState>(find.byType(RaceScene));
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 0)));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state2.isOvertakeBannerVisible, isTrue);
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 0), reduce: true));
+    expect(state2.isOvertakeBannerVisible, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   test('Racer spin-out kinematics and lead offset', () {
     final chipRacer = Racer(
       lane: 1,

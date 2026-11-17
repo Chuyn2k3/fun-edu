@@ -86,8 +86,10 @@ class RaceSceneState extends State<RaceScene>
   double _speedLinesAge = double.infinity;
   double _shakeAge = double.infinity;
   bool _kidWasAhead = false;
+  double _overtakeAge = double.infinity;
 
   static const _cometDuration = 1.3;
+  static const _overtakeDuration = 0.75;
 
   // --- test hooks -----------------------------------------------------------
   @visibleForTesting
@@ -122,6 +124,10 @@ class RaceSceneState extends State<RaceScene>
 
   @visibleForTesting
   double get chipBaseY => _chip.baseY;
+
+  @visibleForTesting
+  bool get isOvertakeBannerVisible =>
+      !_reduceMotion && _overtakeAge < _overtakeDuration;
 
   @visibleForTesting
   bool get isChipSpinning => !_reduceMotion && _chip.isSpinning;
@@ -178,6 +184,7 @@ class RaceSceneState extends State<RaceScene>
         _cometAge = null;
         _speedLinesAge = double.infinity;
         _shakeAge = double.infinity;
+        _overtakeAge = double.infinity;
         _settleSmoke();
         _clock.touch();
       } else if (!_ticker.isActive) {
@@ -253,6 +260,7 @@ class RaceSceneState extends State<RaceScene>
     if (!_kidWasAhead && kidAhead) {
       if (!_reduceMotion) {
         _chip.spinOut();
+        _overtakeAge = 0.0;
       }
     }
     _kidWasAhead = kidAhead;
@@ -268,6 +276,7 @@ class RaceSceneState extends State<RaceScene>
     }
     _speedLinesAge += dt;
     _shakeAge += dt;
+    _overtakeAge += dt;
     _clock.advance(dt);
   }
 
@@ -633,6 +642,71 @@ class _RaceForegroundPainter extends CustomPainter {
     if (!still && s._speedLines.isActive(s._speedLinesAge)) {
       s._speedLines.paint(canvas, size, s._speedLinesAge, seed: 42);
     }
+
+    if (!still && s._overtakeAge < RaceSceneState._overtakeDuration) {
+      _paintOvertakeBanner(canvas, size, s._overtakeAge, g);
+    }
+  }
+
+  void _paintOvertakeBanner(
+      Canvas canvas, Size size, double age, TrackGeometry g) {
+    final progress = (age / 0.75).clamp(0.0, 1.0);
+    final alpha = (1.0 - math.pow(progress, 3)).clamp(0.0, 1.0).toDouble();
+    if (alpha <= 0.0) return;
+    final scale =
+        (0.85 + 0.25 * math.sin(progress * math.pi)).clamp(0.85, 1.1);
+
+    final cx = size.width / 2;
+    final cy = g.startY - 100 * g.u;
+
+    final tp = TextPainter(
+      text: TextSpan(
+        text: 'VƯỢT LÊN!',
+        style: TextStyle(
+          fontFamily: 'Nunito',
+          fontWeight: FontWeight.w900,
+          fontSize: 20 * g.u,
+          color: const Color(0xFFFFFFFF).withOpacity(alpha),
+          letterSpacing: 0.5,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final pillWidth = tp.width + 24 * g.u;
+    final pillHeight = tp.height + 10 * g.u;
+    final pillRect = Rect.fromCenter(
+      center: Offset.zero,
+      width: pillWidth,
+      height: pillHeight,
+    );
+    final rrect =
+        RRect.fromRectAndRadius(pillRect, Radius.circular(pillHeight / 2));
+
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.scale(scale);
+
+    final fillPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(0, pillRect.top),
+        Offset(0, pillRect.bottom),
+        [
+          const Color(0xFFFF8F00).withOpacity(alpha),
+          const Color(0xFFFF6D00).withOpacity(alpha),
+        ],
+      );
+    canvas.drawRRect(rrect, fillPaint);
+
+    final borderPaint = Paint()
+      ..color = const Color(0xFFFFFFFF).withOpacity(alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5 * g.u;
+    canvas.drawRRect(rrect, borderPaint);
+
+    tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+    canvas.restore();
+    tp.dispose();
   }
 
   void _paintRacer(Canvas canvas, _Racer r, double t, bool still) {
