@@ -108,6 +108,29 @@ class RaceSceneState extends State<RaceScene>
   @visibleForTesting
   Offset get shakeOffset => _shakeOffset;
 
+  @visibleForTesting
+  double get kidBaseY => _kid.baseY;
+
+  @visibleForTesting
+  double get kidAnticipationDip => _kid.anticipationDip;
+
+  @visibleForTesting
+  static const luckyStarMilestones = [4, 8];
+
+  @visibleForTesting
+  List<int> get visibleLuckyStars =>
+      luckyStarMilestones.where((m) => widget.kidSteps < m).toList();
+
+  @visibleForTesting
+  bool isStarVisible(int milestone) =>
+      luckyStarMilestones.contains(milestone) && widget.kidSteps < milestone;
+
+  @visibleForTesting
+  Offset luckyStarPosition(int milestone) {
+    final g = _geometry ?? TrackGeometry(const Size(390, 480), lanes: widget.lanes);
+    return g.basePoint(milestone / RaceScene.steps, 0);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -293,7 +316,7 @@ class RaceSceneState extends State<RaceScene>
             ),
             RepaintBoundary(
               child: CustomPaint(
-                painter: _ForegroundPainter(
+                painter: _RaceForegroundPainter(
                   state: this,
                   geometry: g,
                   repaint: Listenable.merge([
@@ -313,8 +336,9 @@ class RaceSceneState extends State<RaceScene>
 }
 
 /// One rocket: spring position, flame boost and its smoke pool.
-class _Racer {
-  _Racer({
+@visibleForTesting
+class Racer {
+  Racer({
     required this.lane,
     required this.sprite,
     required this.trail,
@@ -330,7 +354,17 @@ class _Racer {
 
   double pos = 0, vel = 0, target = 0;
   double _boostAge = double.infinity, _hold = 0.3;
+  double _anticipationAge = double.infinity;
   double lead = 0;
+
+  @visibleForTesting
+  double get anticipationAge => _anticipationAge;
+
+  @visibleForTesting
+  double get anticipationDip =>
+      (!_anticipationAge.isInfinite && _anticipationAge < 0.08)
+          ? math.sin((_anticipationAge / 0.08) * math.pi) * 6.0
+          : 0.0;
 
   // Slightly under-damped spring (ζ 0.75): settles in ~450 ms with a ~3 %
   // overshoot, so a rocket surges and settles like a real thrust.
@@ -345,10 +379,12 @@ class _Racer {
     pos = target;
     vel = 0;
     _boostAge = double.infinity;
+    _anticipationAge = double.infinity;
   }
 
   void startBoost({required double hold}) {
     _boostAge = 0;
+    _anticipationAge = 0;
     _hold = hold;
   }
 
@@ -375,6 +411,7 @@ class _Racer {
       vel = 0;
     }
     _boostAge += dt;
+    _anticipationAge += dt;
     final want = leading ? 1.0 : 0.0;
     lead += (want - lead) * math.min(1, dt * 3);
   }
@@ -401,6 +438,9 @@ class _Racer {
     baseY += 1.6 * u * math.sin(t * 2 * math.pi * 0.9 + seed);
     baseX += (0.35 + 1.1 * moving) * u * math.sin(t * 47 + seed);
     tilt += 0.035 * moving * math.sin(t * 23 + seed);
+    if (_anticipationAge < 0.08) {
+      baseY += math.sin((_anticipationAge / 0.08) * math.pi) * 6.0;
+    }
   }
 
   /// Nozzle in scene space for the current pose.
@@ -424,8 +464,10 @@ class _Racer {
   }
 }
 
-class _ForegroundPainter extends CustomPainter {
-  _ForegroundPainter({
+typedef _Racer = Racer;
+
+class _RaceForegroundPainter extends CustomPainter {
+  _RaceForegroundPainter({
     required this.state,
     required this.geometry,
     required Listenable repaint,
@@ -476,6 +518,9 @@ class _ForegroundPainter extends CustomPainter {
     Clouds.paintBig(
         canvas, Offset(w + 26 * u - 7 * u * midBob, h - 78 * u), 0.46 * u,
         mirror: true);
+
+    // Lucky stars at milestones 4 and 8 on kid lane (lane 0).
+    _paintLuckyStars(canvas, g, t, still);
 
     // Rockets, farther one first.
     final kid = s._kid, chip = s._chip;
@@ -538,6 +583,60 @@ class _ForegroundPainter extends CustomPainter {
     canvas.restore();
   }
 
+  void _paintLuckyStars(Canvas canvas, TrackGeometry g, double t, bool still) {
+    for (final milestone in RaceSceneState.luckyStarMilestones) {
+      if (state.widget.kidSteps < milestone) {
+        final pt = g.basePoint(milestone / RaceScene.steps, 0);
+        final bob = still ? 0.0 : math.sin(t * 3 + milestone) * 3;
+        final center = Offset(pt.dx, pt.dy + bob);
+
+        final scale = g.widthAt(pt.dy) / g.widthAt(g.startY);
+        final outerR = 12.0 * g.u * scale;
+        final innerR = outerR * 0.48;
+
+        // Outer soft glow
+        final glowPaint = Paint()
+          ..color = const Color(0xFFFFD700).withOpacity(0.45)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, outerR * 0.7);
+        canvas.drawCircle(center, outerR * 1.1, glowPaint);
+
+        // 5-point star path
+        final starPath = Path();
+        for (var i = 0; i < 10; i++) {
+          final angle = -math.pi / 2 + i * math.pi / 5;
+          final r = i.isEven ? outerR : innerR;
+          final x = center.dx + r * math.cos(angle);
+          final y = center.dy + r * math.sin(angle);
+          if (i == 0) {
+            starPath.moveTo(x, y);
+          } else {
+            starPath.lineTo(x, y);
+          }
+        }
+        starPath.close();
+
+        // Golden gradient fill
+        final starPaint = Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(center.dx, center.dy - outerR),
+            Offset(center.dx, center.dy + outerR),
+            const [
+              Color(0xFFFFD700),
+              Color(0xFFFFA000),
+            ],
+          );
+        canvas.drawPath(starPath, starPaint);
+
+        // Subtle outline highlight
+        final borderPaint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.0, 1.2 * g.u * scale)
+          ..color = const Color(0xFFFFF9C4).withOpacity(0.85);
+        canvas.drawPath(starPath, borderPaint);
+      }
+    }
+  }
+
   void _paintComet(Canvas canvas, Size size, double p) {
     final u = geometry.u;
     final cw = 92 * u;
@@ -577,6 +676,6 @@ class _ForegroundPainter extends CustomPainter {
   static const _cometArtTail = 24 * math.pi / 180;
 
   @override
-  bool shouldRepaint(_ForegroundPainter oldDelegate) =>
+  bool shouldRepaint(_RaceForegroundPainter oldDelegate) =>
       oldDelegate.state != state || oldDelegate.geometry != geometry;
 }

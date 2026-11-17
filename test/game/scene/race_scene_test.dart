@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/game/scene/race_scene.dart';
+import 'package:funedu/game/scene/rocket_sprite.dart';
+import 'package:funedu/game/scene/space_track.dart';
+import 'package:funedu/game/scene/trails.dart';
 
 Widget _host(Widget scene, {bool reduce = false}) => MediaQuery(
       data: MediaQueryData(
@@ -188,6 +191,117 @@ void main() {
       await tester.pump(const Duration(milliseconds: 16));
     }
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  test('anticipation dip in _Racer: baseY dips downward during first 80ms of boost when !still, not when still', () {
+    final racer = Racer(
+      lane: 0,
+      sprite: RocketSprite.forItem('rocket_orange'),
+      trail: TrailStyle.flame,
+      seed: 1,
+    );
+    final g = TrackGeometry(const Size(390, 480));
+
+    // Without boost, pose at t=0
+    racer.pose(g, 0, still: false);
+    final baseYNoBoost = racer.baseY;
+
+    // Start boost
+    racer.startBoost(hold: 0.3);
+
+    // During first 80ms (e.g. at 40ms) when !still: baseY dips downward (baseY offset > 0)
+    racer.step(0.04, leading: false);
+    racer.pose(g, 0, still: false);
+    expect(racer.baseY, greaterThan(baseYNoBoost));
+    expect(racer.anticipationDip, closeTo(6.0, 0.01));
+
+    // When still: true, does not dip
+    racer.pose(g, 0, still: true);
+    final basePtY = g.basePoint(racer.pos, racer.lane).dy;
+    expect(racer.baseY, equals(basePtY));
+
+    // After 80ms (step another 50ms -> 90ms total), dip ends
+    racer.step(0.05, leading: false);
+    racer.pose(g, 0, still: false);
+    expect(racer.anticipationDip, 0.0);
+
+    // snap() clears anticipation dip immediately
+    racer.startBoost(hold: 0.3);
+    racer.step(0.04, leading: false);
+    expect(racer.anticipationDip, greaterThan(0.0));
+    racer.snap();
+    expect(racer.anticipationDip, 0.0);
+    expect(racer.anticipationAge, double.infinity);
+  });
+
+  testWidgets('anticipation dip in RaceScene: dips during first 80ms of boost, not on reduceMotion', (tester) async {
+    await tester.pumpWidget(_host(_scene()));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    await tester.pump(const Duration(milliseconds: 16));
+
+    // Trigger boost
+    await tester.pumpWidget(_host(_scene(kid: 1)));
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(state.kidAnticipationDip, greaterThan(0));
+
+    // After 80ms, dip is finished
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(state.kidAnticipationDip, 0.0);
+
+    // In reduce motion, dip is never applied
+    await tester.pumpWidget(_host(_scene(kid: 2), reduce: true));
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(state.kidAnticipationDip, 0.0);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('lucky stars: milestones 4 and 8 are rendered and collected when kid reaches them', (tester) async {
+    await tester.pumpWidget(_host(_scene(kid: 0)));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+
+    // At start: milestones 4 and 8 are rendered
+    expect(state.visibleLuckyStars, [4, 8]);
+    expect(state.isStarVisible(4), isTrue);
+    expect(state.isStarVisible(8), isTrue);
+
+    // Milestones 4 and 8 are positioned on kid lane (lane 0)
+    final g = TrackGeometry(const Size(390, 480));
+    expect(state.luckyStarPosition(4), equals(g.basePoint(0.4, 0)));
+    expect(state.luckyStarPosition(8), equals(g.basePoint(0.8, 0)));
+
+    // At step 3: both still visible
+    await tester.pumpWidget(_host(_scene(kid: 3)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.visibleLuckyStars, [4, 8]);
+    expect(state.isStarVisible(4), isTrue);
+    expect(state.isStarVisible(8), isTrue);
+
+    // At step 4: star 4 is collected / disappears, star 8 remains
+    await tester.pumpWidget(_host(_scene(kid: 4)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.visibleLuckyStars, [8]);
+    expect(state.isStarVisible(4), isFalse);
+    expect(state.isStarVisible(8), isTrue);
+
+    // At step 7: star 8 still visible
+    await tester.pumpWidget(_host(_scene(kid: 7)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.visibleLuckyStars, [8]);
+    expect(state.isStarVisible(4), isFalse);
+    expect(state.isStarVisible(8), isTrue);
+
+    // At step 8: star 8 is collected / disappears
+    await tester.pumpWidget(_host(_scene(kid: 8)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.visibleLuckyStars, isEmpty);
+    expect(state.isStarVisible(4), isFalse);
+    expect(state.isStarVisible(8), isFalse);
+
+    // At step 10: remains collected
+    await tester.pumpWidget(_host(_scene(kid: 10)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.visibleLuckyStars, isEmpty);
     await tester.pumpWidget(const SizedBox());
   });
 }
