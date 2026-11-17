@@ -127,6 +127,47 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('speed lines and micro shake activate on boost then settle',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene()));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.isSpeedLinesActive, isFalse);
+    expect(state.shakeOffset, Offset.zero);
+
+    await tester.pumpWidget(_host(_scene(kid: 1)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.isSpeedLinesActive, isTrue);
+    expect(state.shakeOffset, isNot(Offset.zero));
+
+    // Shake ends after 0.25s
+    for (var i = 0; i < 18; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.shakeOffset, Offset.zero);
+    expect(state.isSpeedLinesActive, isTrue);
+
+    // Speed lines end after 0.45s
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.isSpeedLinesActive, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('reduce motion disables speed lines and micro shake',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene(), reduce: true));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.isSpeedLinesActive, isFalse);
+    expect(state.shakeOffset, Offset.zero);
+
+    await tester.pumpWidget(_host(_scene(kid: 2, boosting: true), reduce: true));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.isSpeedLinesActive, isFalse);
+    expect(state.shakeOffset, Offset.zero);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('scene has a Vietnamese semantics label with both positions',
       (tester) async {
     await tester.pumpWidget(_host(_scene(kid: 6, chip: 5), reduce: true));

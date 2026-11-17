@@ -10,6 +10,7 @@ import 'flame_painter.dart';
 import 'rocket_sprite.dart';
 import 'smoke_particles.dart';
 import 'space_track.dart';
+import 'speed_lines.dart';
 import 'trails.dart';
 
 /// The rocket race: a purple sky, a 2.5D track narrowing to the finish
@@ -73,6 +74,9 @@ class RaceSceneState extends State<RaceScene>
   bool _reduceMotion = false;
   Duration _last = Duration.zero;
   double? _cometAge;
+  final SpeedLines _speedLines = const SpeedLines();
+  double _speedLinesAge = double.infinity;
+  double _shakeAge = double.infinity;
 
   static const _cometDuration = 1.3;
 
@@ -97,6 +101,13 @@ class RaceSceneState extends State<RaceScene>
   double? get cometProgress =>
       _cometAge == null ? null : _cometAge! / _cometDuration;
 
+  @visibleForTesting
+  bool get isSpeedLinesActive =>
+      !_reduceMotion && _speedLines.isActive(_speedLinesAge);
+
+  @visibleForTesting
+  Offset get shakeOffset => _shakeOffset;
+
   @override
   void initState() {
     super.initState();
@@ -117,6 +128,8 @@ class RaceSceneState extends State<RaceScene>
         _chip.snap();
         _snapLead();
         _cometAge = null;
+        _speedLinesAge = double.infinity;
+        _shakeAge = double.infinity;
         _settleSmoke();
         _clock.touch();
       } else if (!_ticker.isActive) {
@@ -156,7 +169,11 @@ class RaceSceneState extends State<RaceScene>
       return;
     }
     final cometNow = widget.boosting && !old.boosting;
-    if (kidUp || cometNow) _kid.startBoost(hold: cometNow ? 0.6 : 0.3);
+    if (kidUp || cometNow) {
+      _kid.startBoost(hold: cometNow ? 0.6 : 0.3);
+      _speedLinesAge = 0;
+      _shakeAge = 0;
+    }
     if (chipUp) _chip.startBoost(hold: 0.3);
     if (cometNow) _cometAge = 0;
   }
@@ -186,7 +203,17 @@ class RaceSceneState extends State<RaceScene>
       _cometAge = _cometAge! + dt;
       if (_cometAge! >= _cometDuration) _cometAge = null;
     }
+    _speedLinesAge += dt;
+    _shakeAge += dt;
     _clock.advance(dt);
+  }
+
+  Offset get _shakeOffset {
+    if (_reduceMotion || _shakeAge > 0.25 || _shakeAge < 0) return Offset.zero;
+    final intensity = (1.0 - _shakeAge / 0.25) * 3.0;
+    final dx = math.sin(_shakeAge * 60) * intensity;
+    final dy = math.cos(_shakeAge * 45) * intensity;
+    return Offset(dx, dy);
   }
 
   bool get _kidLeads => widget.won || _kid.pos > _chip.pos + 0.02;
@@ -435,6 +462,13 @@ class _ForegroundPainter extends CustomPainter {
     final u = g.u;
     final w = size.width, h = size.height;
 
+    final shake = s._shakeOffset;
+    final hasShake = shake != Offset.zero;
+    if (hasShake) {
+      canvas.save();
+      canvas.translate(shake.dx, shake.dy);
+    }
+
     // Mid clouds (behind the rockets), drifting slowly.
     final midBob = still ? 0.0 : math.sin(t * 2 * math.pi / 13);
     Clouds.paintBig(canvas, Offset(-34 * u + 7 * u * midBob, h - 62 * u),
@@ -462,6 +496,14 @@ class _ForegroundPainter extends CustomPainter {
     Clouds.paintBig(
         canvas, Offset(w + 18 * u - 12 * u * frontBob, h + 4 * u), 0.92 * u,
         mirror: true);
+
+    if (hasShake) {
+      canvas.restore();
+    }
+
+    if (!still && s._speedLines.isActive(s._speedLinesAge)) {
+      s._speedLines.paint(canvas, size, s._speedLinesAge, seed: 42);
+    }
   }
 
   void _paintRacer(Canvas canvas, _Racer r, double t, bool still) {
