@@ -17,7 +17,11 @@ Widget _host(Widget scene, {bool reduce = false}) => MediaQuery(
     );
 
 RaceScene _scene(
-        {int kid = 0, int chip = 0, bool boosting = false, bool won = false}) =>
+        {int kid = 0,
+        int chip = 0,
+        bool boosting = false,
+        bool won = false,
+        bool stalled = false}) =>
     RaceScene(
       kidSteps: kid,
       chipSteps: chip,
@@ -25,6 +29,7 @@ RaceScene _scene(
       kidTrail: 'trail_flame',
       boosting: boosting,
       won: won,
+      stalled: stalled,
     );
 
 void main() {
@@ -434,5 +439,62 @@ void main() {
     chipRacer.snap();
     expect(chipRacer.isSpinning, isFalse);
     expect(chipRacer.spinAngle, 0.0);
+  });
+
+  testWidgets('wrong answer triggers kid sputter dip and smoke puff',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 2)));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.isKidStalled, isFalse);
+
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 2, stalled: true)));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(state.isKidStalled, isTrue);
+
+    // Advance time ~350ms
+    for (var i = 0; i < 25; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.isKidStalled, isFalse);
+
+    // In reduceMotion mode, isKidStalled is false
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 2), reduce: true));
+    final reduceState = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(reduceState.isKidStalled, isFalse);
+    await tester.pumpWidget(
+        _host(_scene(kid: 2, chip: 2, stalled: true), reduce: true));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(reduceState.isKidStalled, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  test('Racer stall and sputter dip kinematics', () {
+    final racer = Racer(
+      lane: 0,
+      sprite: RocketSprite.forItem('rocket_orange'),
+      trail: TrailStyle.flame,
+      seed: 1,
+    );
+    expect(racer.isStalled, isFalse);
+    expect(racer.sputterDip, 0.0);
+
+    racer.stall();
+    expect(racer.isStalled, isTrue);
+
+    // Halfway through 350ms (~0.175s), sputter dip is at peak ~8px
+    racer.advance(0.175);
+    expect(racer.isStalled, isTrue);
+    expect(racer.sputterDip, closeTo(8.0, 0.1));
+
+    // Past 350ms, stall ends
+    racer.advance(0.18);
+    expect(racer.isStalled, isFalse);
+    expect(racer.sputterDip, 0.0);
+
+    // snap clears stall
+    racer.stall();
+    expect(racer.isStalled, isTrue);
+    racer.snap();
+    expect(racer.isStalled, isFalse);
   });
 }

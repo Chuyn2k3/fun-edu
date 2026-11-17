@@ -32,6 +32,7 @@ class RaceScene extends StatefulWidget {
     required this.kidTrail,
     required this.boosting,
     required this.won,
+    this.stalled = false,
     this.lanes = 2,
     this.bottomInset = 0,
   }) : assert(lanes >= 2);
@@ -51,6 +52,10 @@ class RaceScene extends StatefulWidget {
 
   /// The kid finished first: their flame stays the leader's.
   final bool won;
+
+  /// Turning true (a wrong answer submitted) stalls the kid's engine momentarily
+  /// with a sputter dip and dark smoke puff.
+  final bool stalled;
   final int lanes;
 
   /// Inset from the bottom of the screen occupied by floating HUD controls.
@@ -137,6 +142,12 @@ class RaceSceneState extends State<RaceScene>
 
   @visibleForTesting
   double get kidAnticipationDip => _kid.anticipationDip;
+
+  @visibleForTesting
+  bool get isKidStalled => !_reduceMotion && _kid.isStalled;
+
+  @visibleForTesting
+  double get kidSputterDip => !_reduceMotion ? _kid.sputterDip : 0.0;
 
   @visibleForTesting
   static const luckyStarMilestones = [4, 8];
@@ -233,6 +244,9 @@ class RaceSceneState extends State<RaceScene>
     }
     if (chipUp) _chip.startBoost(hold: 0.3);
     if (cometNow) _cometAge = 0;
+    if (widget.stalled && !old.stalled && !_reduceMotion) {
+      _kid.stall();
+    }
   }
 
   @override
@@ -307,6 +321,7 @@ class RaceSceneState extends State<RaceScene>
     if (g == null) return;
     for (final r in [_kid, _chip]) {
       r.smoke.clear();
+      r.clearStallSmoke();
       for (var i = 0; i < 60; i++) {
         r.emitSmoke(1 / 60, g, 0);
       }
@@ -317,7 +332,9 @@ class RaceSceneState extends State<RaceScene>
     if (g == _geometry) return;
     _geometry = g;
     _kid.smoke.clear();
+    _kid.clearStallSmoke();
     _chip.smoke.clear();
+    _chip.clearStallSmoke();
     if (_reduceMotion) _settleSmoke();
   }
 
@@ -415,11 +432,13 @@ class Racer {
 
   static const chipLeadOffset = 0.04;
   static const _spinDuration = 0.48;
+  static const _stallDuration = 0.35;
 
   double pos = 0, vel = 0, target = 0;
   double _boostAge = double.infinity, _hold = 0.3;
   double _anticipationAge = double.infinity;
   double _spinAge = double.infinity;
+  double _stallAge = double.infinity;
   double lead = 0;
   double leadOffset = 0.0;
 
@@ -427,13 +446,28 @@ class Racer {
   double get spinAngle =>
       isSpinning ? (_spinAge / _spinDuration) * 2 * math.pi : 0.0;
 
+  bool get isStalled => _stallAge < _stallDuration;
+
   void spinOut() {
     _spinAge = 0.0;
+  }
+
+  void stall() {
+    _stallAge = 0.0;
   }
 
   void advance(double dt) {
     if (isSpinning) {
       _spinAge += dt;
+    }
+    if (isStalled) {
+      _stallAge += dt;
+    }
+    for (var i = _stallPuffs.length - 1; i >= 0; i--) {
+      _stallPuffs[i].advance(dt);
+      if (_stallPuffs[i].isDead) {
+        _stallPuffs.removeAt(i);
+      }
     }
   }
 
@@ -445,6 +479,16 @@ class Racer {
       (!_anticipationAge.isInfinite && _anticipationAge < 0.08)
           ? math.sin((_anticipationAge / 0.08) * math.pi) * 6.0
           : 0.0;
+
+  @visibleForTesting
+  double get sputterDip =>
+      isStalled ? math.sin((_stallAge / _stallDuration) * math.pi) * 8.0 : 0.0;
+
+  final List<_StallPuff> _stallPuffs = [];
+
+  void clearStallSmoke() {
+    _stallPuffs.clear();
+  }
 
   // Slightly under-damped spring (ζ 0.75): settles in ~450 ms with a ~3 %
   // overshoot, so a rocket surges and settles like a real thrust.
@@ -461,6 +505,8 @@ class Racer {
     _boostAge = double.infinity;
     _anticipationAge = double.infinity;
     _spinAge = double.infinity;
+    _stallAge = double.infinity;
+    _stallPuffs.clear();
   }
 
   void startBoost({required double hold}) {
@@ -528,6 +574,12 @@ class Racer {
     if (_anticipationAge < 0.08) {
       baseY += math.sin((_anticipationAge / 0.08) * math.pi) * 6.0;
     }
+    if (isStalled) {
+      baseY += sputterDip;
+      final wobblePhase = (_stallAge / _stallDuration);
+      baseX += math.sin(_stallAge * 60) * 4.0 * (1.0 - wobblePhase);
+      tilt += math.sin(_stallAge * 45) * 0.06 * (1.0 - wobblePhase);
+    }
   }
 
   /// Nozzle in scene space for the current pose.
@@ -548,6 +600,59 @@ class Racer {
         emitY: n.dy + reach * math.cos(tilt),
         unit: g.u * width / (60 * g.u),
         intensity: intensity);
+
+    if (isStalled) {
+      _emitStallPuffs(dt, n, g.u);
+    }
+  }
+
+  void _emitStallPuffs(double dt, Offset n, double u) {
+    final r = math.Random(((_stallAge + seed) * 1000).toInt());
+    final count = (dt * 30).clamp(1, 3).toInt();
+    for (var i = 0; i < count; i++) {
+      if (_stallPuffs.length > 20) break;
+      final life = 0.35 + r.nextDouble() * 0.2;
+      final angle = tilt + (r.nextDouble() - 0.5) * 0.8;
+      final speed = (20.0 + r.nextDouble() * 35.0) * u;
+      _stallPuffs.add(_StallPuff(
+        x: n.dx + (r.nextDouble() - 0.5) * 6 * u,
+        y: n.dy + (r.nextDouble() - 0.5) * 6 * u,
+        vx: math.sin(angle) * speed,
+        vy: math.cos(angle) * speed,
+        life: life,
+        startSize: (8.0 + r.nextDouble() * 4.0) * u,
+        endSize: (22.0 + r.nextDouble() * 10.0) * u,
+        color: const Color(0xFF383344),
+      ));
+    }
+  }
+}
+
+class _StallPuff {
+  _StallPuff({
+    required this.x,
+    required this.y,
+    required this.vx,
+    required this.vy,
+    required this.life,
+    required this.startSize,
+    required this.endSize,
+    required this.color,
+  });
+
+  double x, y;
+  final double vx, vy;
+  double age = 0;
+  final double life;
+  final double startSize, endSize;
+  final Color color;
+
+  bool get isDead => age >= life;
+
+  void advance(double dt) {
+    age += dt;
+    x += vx * dt;
+    y += vy * dt;
   }
 }
 
@@ -718,6 +823,9 @@ class _RaceForegroundPainter extends CustomPainter {
     canvas.restore();
 
     r.smoke.paint(canvas, t);
+    if (!still) {
+      _paintStallPuffs(canvas, r);
+    }
 
     canvas.save();
     canvas.translate(r.baseX, r.baseY);
@@ -760,6 +868,18 @@ class _RaceForegroundPainter extends CustomPainter {
       }
     }
     canvas.restore();
+  }
+
+  void _paintStallPuffs(Canvas canvas, _Racer r) {
+    for (final p in r._stallPuffs) {
+      final prog = (p.age / p.life).clamp(0.0, 1.0);
+      final alpha = ((1.0 - prog) * 0.7).clamp(0.0, 1.0);
+      final size = p.startSize + (p.endSize - p.startSize) * prog;
+      final paint = Paint()
+        ..color = p.color.withOpacity(alpha)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * 0.3);
+      canvas.drawCircle(Offset(p.x, p.y), size, paint);
+    }
   }
 
   void _paintLuckyStars(Canvas canvas, TrackGeometry g, double t, bool still) {
