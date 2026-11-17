@@ -9,7 +9,7 @@ import 'space_track.dart' show paintImageFitted;
 /// from the art itself so layout does not wait for the image to load.
 @immutable
 class RocketSprite {
-  const RocketSprite._(this.asset, this.aspect, this.nozzle);
+  const RocketSprite._(this.asset, this.aspect, this.nozzle, {this.pilotAsset});
 
   final String asset;
   final double aspect;
@@ -18,13 +18,21 @@ class RocketSprite {
   /// flame starts here, behind the fins.
   final double nozzle;
 
+  /// Optional pilot/mascot overlay drawn inside the rocket's cockpit window.
+  final String? pilotAsset;
+
   static const orange = RocketSprite._(AppImages.rocketOrange, 171 / 96, 0.80);
   static const blue = RocketSprite._(AppImages.rocketBlue, 147 / 96, 0.81);
   static const green = RocketSprite._(AppImages.rocketGreen, 136 / 96, 0.81);
   static const purple = RocketSprite._(AppImages.rocketPurple, 144 / 96, 0.81);
 
   /// Chíp's white rocket (never a garage item).
-  static const chip = RocketSprite._(AppImages.rocketChip, 148 / 96, 0.82);
+  static const chip = RocketSprite._(
+    AppImages.rocketChip,
+    148 / 96,
+    0.82,
+    pilotAsset: AppImages.stickerPilotGoggles,
+  );
 
   /// Garage item id → sprite; unknown ids fall back to the orange starter.
   static RocketSprite forItem(String id) => switch (id) {

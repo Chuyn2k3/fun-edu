@@ -137,6 +137,9 @@ class RaceSceneState extends State<RaceScene>
     return g.basePoint(milestone / RaceScene.steps, 0);
   }
 
+  @visibleForTesting
+  Iterable<String> get loadedAssets => _assets;
+
   @override
   void initState() {
     super.initState();
@@ -168,12 +171,15 @@ class RaceSceneState extends State<RaceScene>
     }
   }
 
-  Iterable<String> get _assets => [
+  Iterable<String> get _assets => {
         _kid.sprite.asset,
+        if (_kid.sprite.pilotAsset != null) _kid.sprite.pilotAsset!,
         _chip.sprite.asset,
+        if (_chip.sprite.pilotAsset != null) _chip.sprite.pilotAsset!,
+        AppImages.stickerPilotGoggles,
         AppImages.planet,
         AppImages.comet,
-      ];
+      };
 
   @override
   void didUpdateWidget(RaceScene oldWidget) {
@@ -329,7 +335,12 @@ class RaceSceneState extends State<RaceScene>
                   repaint: Listenable.merge([
                     _clock,
                     _images[_kid.sprite.asset],
+                    if (_kid.sprite.pilotAsset != null)
+                      _images[_kid.sprite.pilotAsset!],
                     _images[_chip.sprite.asset],
+                    if (_chip.sprite.pilotAsset != null)
+                      _images[_chip.sprite.pilotAsset!],
+                    _images[AppImages.stickerPilotGoggles],
                     _images[AppImages.comet],
                   ]),
                 ),
@@ -430,6 +441,10 @@ class Racer {
 
   // Per-frame pose (computed in [pose], read by the painter).
   double baseX = 0, baseY = 0, width = 0, height = 0, tilt = 0;
+
+  Rect get rect => Rect.fromLTWH(-width / 2, -height, width, height);
+  Offset get center => Offset(0, -height / 2);
+  double get top => -height;
 
   void pose(TrackGeometry g, double t, {required bool still}) {
     final b = g.basePoint(pos, lane);
@@ -587,9 +602,24 @@ class _RaceForegroundPainter extends CustomPainter {
     );
     final img = state._images[r.sprite.asset].value;
     if (img != null) {
+      canvas.save();
       canvas.translate(-r.width / 2, -r.height);
       canvas.scale(r.width / img.width, r.height / img.height);
       canvas.drawImage(img, Offset.zero, _imagePaint);
+      canvas.restore();
+    }
+    if (r.sprite.pilotAsset != null) {
+      final pilotImg = state._images[r.sprite.pilotAsset!].value;
+      if (pilotImg != null) {
+        final pilotSize = r.width * 0.44;
+        final pilotCenter = Offset(r.center.dx, r.top + r.height * 0.38);
+        final pilotRect = Rect.fromCenter(
+          center: pilotCenter,
+          width: pilotSize,
+          height: pilotSize,
+        );
+        paintImageFitted(canvas, pilotImg, pilotRect);
+      }
     }
     canvas.restore();
   }
