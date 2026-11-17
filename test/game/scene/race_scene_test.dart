@@ -343,6 +343,22 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('surge while remaining behind Chíp does not trigger spin-out',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene(kid: 0, chip: 4)));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.isChipSpinning, isFalse);
+
+    // Kid advances from 0 to 2, but Chíp is at 4 (Kid stays behind)
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 4)));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.isChipSpinning, isFalse);
+    expect(state.chipSpinAngle, 0.0);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   test('Racer spin-out kinematics and lead offset', () {
     final chipRacer = Racer(
       lane: 1,

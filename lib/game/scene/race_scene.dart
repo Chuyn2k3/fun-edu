@@ -160,6 +160,7 @@ class RaceSceneState extends State<RaceScene>
     _kid.setTarget(widget.kidSteps, jump: true);
     _chip.setTarget(widget.chipSteps, jump: true);
     _kidWasAhead = widget.kidSteps > widget.chipSteps;
+    _chip.leadOffset = _chipWantsLead ? _Racer.chipLeadOffset : 0.0;
   }
 
   @override
@@ -247,7 +248,8 @@ class RaceSceneState extends State<RaceScene>
     final wantOffset = _chipWantsLead ? _Racer.chipLeadOffset : 0.0;
     _chip.leadOffset += (wantOffset - _chip.leadOffset) * math.min(1.0, dt * 3);
 
-    final kidAhead = _kid.pos > _chip.pos;
+    final kidAhead =
+        (_kid.pos + _kid.leadOffset) > (_chip.pos + _chip.leadOffset);
     if (!_kidWasAhead && kidAhead) {
       if (!_reduceMotion) {
         _chip.spinOut();
@@ -647,9 +649,10 @@ class _RaceForegroundPainter extends CustomPainter {
     canvas.translate(r.baseX, r.baseY);
     canvas.rotate(r.tilt);
     if (r.spinAngle != 0 && !still) {
-      canvas.translate(r.center.dx, r.center.dy);
+      final cy = -r.height / 2;
+      canvas.translate(0, cy);
       canvas.rotate(r.spinAngle);
-      canvas.translate(-r.center.dx, -r.center.dy);
+      canvas.translate(0, -cy);
     }
     FlameRenderer.paint(
       canvas,
