@@ -650,7 +650,7 @@ class _RaceForegroundPainter extends CustomPainter {
 
   void _paintOvertakeBanner(
       Canvas canvas, Size size, double age, TrackGeometry g) {
-    final progress = (age / 0.75).clamp(0.0, 1.0);
+    final progress = (age / RaceSceneState._overtakeDuration).clamp(0.0, 1.0);
     final alpha = (1.0 - math.pow(progress, 3)).clamp(0.0, 1.0).toDouble();
     if (alpha <= 0.0) return;
     final scale =
@@ -692,8 +692,8 @@ class _RaceForegroundPainter extends CustomPainter {
         Offset(0, pillRect.top),
         Offset(0, pillRect.bottom),
         [
-          const Color(0xFFFF8F00).withOpacity(alpha),
-          const Color(0xFFFF6D00).withOpacity(alpha),
+          GameColors.overtakeBannerTop.withOpacity(alpha),
+          GameColors.overtakeBannerBottom.withOpacity(alpha),
         ],
       );
     canvas.drawRRect(rrect, fillPaint);

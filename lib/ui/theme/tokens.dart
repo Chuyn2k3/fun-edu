@@ -108,6 +108,10 @@ abstract final class GameColors {
   static const cometHead = Color(0xFFFFFBE8);
   static const cometTail = Color(0xFFFFB547);
 
+  // Overtake banner.
+  static const overtakeBannerTop = Color(0xFFFF8F00);
+  static const overtakeBannerBottom = Color(0xFFFF6D00);
+
   // Race screen, around the scene ("Bản 7"): warm cream question area.
   static const panelTop = Color(0xFFFFF4E4);
   static const panelBottom = Color(0xFFFFEBD2);
