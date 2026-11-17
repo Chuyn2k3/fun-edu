@@ -11,6 +11,8 @@ class RaceOutcome {
     required this.cometsFirstTry,
     required this.answered,
     required this.missed,
+    this.comboStreak = 0,
+    this.luckyStarsCollected = 0,
   });
 
   final bool won;
@@ -25,6 +27,9 @@ class RaceOutcome {
 
   /// Questions the kid got wrong at least once, in order.
   final List<RaceQuestion> missed;
+
+  final int comboStreak;
+  final int luckyStarsCollected;
 }
 
 class AnswerResult {
@@ -33,6 +38,8 @@ class AnswerResult {
     required this.gained,
     required this.firstTry,
     required this.finished,
+    this.comboStreak = 0,
+    this.luckyStarsCollected = 0,
   });
 
   final bool correct;
@@ -41,6 +48,8 @@ class AnswerResult {
   /// True when this was the kid's first attempt at the question.
   final bool firstTry;
   final bool finished;
+  final int comboStreak;
+  final int luckyStarsCollected;
 }
 
 class Race {
@@ -52,6 +61,10 @@ class Race {
   int kidSteps = 0;
   int chipSteps = 0;
   int questionIndex = 0;
+  int comboStreak = 0;
+  bool get isNitroActive => comboStreak >= 2;
+  int luckyStarsCollected = 0;
+  final Set<int> _starMilestones = {4, 8};
   RaceOutcome? outcome;
 
   bool _triedCurrent = false;
@@ -71,13 +84,29 @@ class Race {
     final q = current;
     final firstTry = !_triedCurrent;
     if (choiceIndex != q.correctIndex) {
+      comboStreak = 0;
       if (firstTry) _missed.add(q);
       _triedCurrent = true;
       return AnswerResult(
-          correct: false, gained: 0, firstTry: firstTry, finished: false);
+        correct: false,
+        gained: 0,
+        firstTry: firstTry,
+        finished: false,
+        comboStreak: comboStreak,
+        luckyStarsCollected: luckyStarsCollected,
+      );
+    }
+    if (firstTry) {
+      comboStreak++;
     }
     final gained = q.comet ? 2 : 1;
+    final prevSteps = kidSteps;
     kidSteps = (kidSteps + gained).clamp(0, raceLength);
+    for (final m in _starMilestones) {
+      if (prevSteps < m && kidSteps >= m) {
+        luckyStarsCollected++;
+      }
+    }
     _kidTime += elapsed;
     _answered++;
     pacer.recordAnswer(elapsed);
@@ -96,7 +125,13 @@ class Race {
       _finish(won: false);
     }
     return AnswerResult(
-        correct: true, gained: gained, firstTry: firstTry, finished: finished);
+      correct: true,
+      gained: gained,
+      firstTry: firstTry,
+      finished: finished,
+      comboStreak: comboStreak,
+      luckyStarsCollected: luckyStarsCollected,
+    );
   }
 
   /// Advances Chíp. [now] is the time since the race started.
@@ -118,6 +153,8 @@ class Race {
       cometsFirstTry: _cometsFirstTry,
       answered: _answered,
       missed: List.unmodifiable(_missed),
+      comboStreak: comboStreak,
+      luckyStarsCollected: luckyStarsCollected,
     );
   }
 }

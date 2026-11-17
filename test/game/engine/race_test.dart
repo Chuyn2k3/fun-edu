@@ -93,6 +93,75 @@ void main() {
       expect(r.outcome!.won, isFalse);
       expect(r.outcome!.answered, 6);
     });
+
+    test('consecutive first-try correct answers trigger comboStreak and Nitro', () {
+      final r = Race(questions: _qs(), pacer: ChipPacer());
+      expect(r.comboStreak, 0);
+      expect(r.isNitroActive, isFalse);
+
+      final r1 = r.answer(0, const Duration(seconds: 2));
+      expect(r.comboStreak, 1);
+      expect(r.isNitroActive, isFalse);
+      expect(r1.comboStreak, 1);
+
+      final r2 = r.answer(0, const Duration(seconds: 2));
+      expect(r.comboStreak, 2);
+      expect(r.isNitroActive, isTrue);
+      expect(r2.comboStreak, 2);
+
+      // Wrong answer resets comboStreak
+      final r3 = r.answer(1, const Duration(seconds: 2));
+      expect(r.comboStreak, 0);
+      expect(r.isNitroActive, isFalse);
+      expect(r3.comboStreak, 0);
+    });
+
+    test('luckyStarsCollected increments when kidSteps crosses 4 and 8', () {
+      final r = Race(questions: _qs(), pacer: ChipPacer());
+      expect(r.luckyStarsCollected, 0);
+
+      // q0: wrong try resets streak, then correct answer -> kidSteps = 1
+      r.answer(1, _ms);
+      r.answer(0, _ms);
+      expect(r.kidSteps, 1);
+      expect(r.luckyStarsCollected, 0);
+
+      // q1: wrong try then correct -> kidSteps = 2
+      r.answer(1, _ms);
+      r.answer(0, _ms);
+      expect(r.kidSteps, 2);
+      expect(r.luckyStarsCollected, 0);
+
+      // q2 (comet, +2): wrong try then correct -> kidSteps = 4 (crosses 4)
+      r.answer(1, _ms);
+      final rComet = r.answer(0, _ms);
+      expect(r.kidSteps, 4);
+      expect(r.luckyStarsCollected, 1);
+      expect(rComet.luckyStarsCollected, 1);
+
+      // q3: wrong then correct -> kidSteps = 5
+      r.answer(1, _ms);
+      r.answer(0, _ms);
+      // q4: wrong then correct -> kidSteps = 6
+      r.answer(1, _ms);
+      r.answer(0, _ms);
+      // q5 (comet, +2): wrong then correct -> kidSteps = 8 (crosses 8)
+      r.answer(1, _ms);
+      final rComet2 = r.answer(0, _ms);
+      expect(r.kidSteps, 8);
+      expect(r.luckyStarsCollected, 2);
+      expect(rComet2.luckyStarsCollected, 2);
+
+      // q6: wrong then correct -> kidSteps = 9
+      r.answer(1, _ms);
+      r.answer(0, _ms);
+      // q7: wrong then correct -> kidSteps = 10 (finish)
+      r.answer(1, _ms);
+      r.answer(0, _ms);
+      expect(r.finished, isTrue);
+      expect(r.outcome!.luckyStarsCollected, 2);
+      expect(r.outcome!.comboStreak, 0);
+    });
   });
 
   group('ChipPacer', () {
@@ -103,20 +172,20 @@ void main() {
       expect(p.interval, const Duration(milliseconds: 2500));
       expect(
           p.shouldStep(const Duration(milliseconds: 2499),
-              chipSteps: 0, kidSteps: 5),
+              chipSteps: 0, kidSteps: 1),
           isFalse);
       expect(
           p.shouldStep(const Duration(milliseconds: 2500),
-              chipSteps: 0, kidSteps: 5),
+              chipSteps: 0, kidSteps: 1),
           isTrue);
       p.markStep(const Duration(milliseconds: 2500));
       expect(
           p.shouldStep(const Duration(milliseconds: 4999),
-              chipSteps: 1, kidSteps: 5),
+              chipSteps: 1, kidSteps: 1),
           isFalse);
       expect(
           p.shouldStep(const Duration(milliseconds: 5000),
-              chipSteps: 1, kidSteps: 5),
+              chipSteps: 1, kidSteps: 1),
           isTrue);
     });
 
