@@ -48,3 +48,31 @@ const itemTitles = {
 };
 
 String itemTitle(String id) => itemTitles[id] ?? id;
+
+/// Cosmic stars still needed before [itemId] can be offered: 0 while it is
+/// on offer now, null when it is owned or not a pool item.
+///
+/// Rewards are never bought: milestone n (0-based) brings offer n, the first
+/// two unowned pool items. To keep the number simple and deterministic we
+/// assume every future pick follows pool order (the kid takes the first item
+/// of each offer). Then, with `picked` items taken so far, the unowned item at
+/// position i (pool order) first shows up in offer `picked + max(0, i - 1)`:
+/// positions 0 and 1 share the next offer, every later one comes one
+/// milestone after its predecessor.
+int? starsUntilOffered(
+  String itemId, {
+  required Set<String> owned,
+  required int stars,
+}) {
+  final unowned = rewardPool.where((i) => !owned.contains(i)).toList();
+  final i = unowned.indexOf(itemId);
+  if (i < 0) return null;
+  final picked = owned.difference(starterItems).length;
+  final offer = picked + (i > 0 ? i - 1 : 0);
+  var all = milestones(upTo: 200);
+  while (all.length <= offer) {
+    all = milestones(upTo: all.last + 50 * (offer - all.length + 1));
+  }
+  final m = all[offer];
+  return m > stars ? m - stars : 0;
+}

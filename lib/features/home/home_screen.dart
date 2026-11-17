@@ -25,6 +25,7 @@ import '../../ui/widgets/nav_rail.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/speech_bubble.dart';
 import 'home_tablet.dart';
+import 'kid_nav.dart';
 import 'kid_switcher.dart';
 import 'week_panel.dart';
 import '../../ui/widgets/subject_card.dart';
@@ -34,12 +35,6 @@ const _contentMaxWidth = 560.0;
 String _progressText(int doneToday, int total) =>
     doneToday == 0 ? '0/$total bài' : 'Xong $total/$total bài · $doneToday lần';
 
-const _navItems = [
-  NavItem(icon: Icons.home_rounded, label: 'Học'),
-  NavItem(icon: Icons.sports_esports_rounded, label: 'Chơi'),
-  NavItem(icon: Icons.collections_bookmark_rounded, label: 'Sưu tập'),
-  NavItem(icon: Icons.cottage_rounded, label: 'Nhà Chíp'),
-];
 
 /// Home screen: greeting, today's lesson, streak and the subject grid.
 class HomeScreen extends ConsumerWidget {
@@ -100,12 +95,6 @@ class _HomeBody extends StatelessWidget {
   final HomeSummary summary;
   final int lessonTotal;
   final String? firstLabel;
-
-  void _soon(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
 
   Future<void> _openParents(BuildContext context) async {
     final passed = await showParentGate(context);
@@ -233,11 +222,9 @@ class _HomeBody extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
                 child: FloatingNavBar(
-                  items: _navItems,
-                  selected: 0,
-                  onSelect: (i) {
-                    if (i != 0) _soon(context, 'Sắp có');
-                  },
+                  items: kidNavItems,
+                  selected: kidNavHome,
+                  onSelect: (i) => onKidNav(context, i, current: kidNavHome),
                 ),
               ),
             ),
@@ -257,11 +244,9 @@ class _HomeBody extends StatelessWidget {
       landscape: landscape,
       sky: sky,
       navRail: NavRail(
-        items: _navItems,
-        selected: 0,
-        onSelect: (i) {
-          if (i != 0) _soon(context, 'Sắp có');
-        },
+        items: kidNavItems,
+        selected: kidNavHome,
+        onSelect: (i) => onKidNav(context, i, current: kidNavHome),
       ),
       topBar: _TopRow(
         wide: true,

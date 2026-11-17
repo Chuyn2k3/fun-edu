@@ -34,6 +34,13 @@ Widget _app(
         },
       ),
       GoRoute(
+        path: '/game',
+        builder: (_, __) {
+          visited.add('/game');
+          return const Scaffold(body: Text('game stub'));
+        },
+      ),
+      GoRoute(
         path: '/subject/viet',
         builder: (_, __) {
           visited.add('/subject/viet');
@@ -225,19 +232,40 @@ void main() {
     expect(find.text('Góc ba mẹ sắp có'), findsNothing);
   });
 
-  testWidgets('mục điều hướng khác hiện Sắp có', (tester) async {
-    _setSize(tester, 375, 667);
-    await tester.pumpWidget(_app(_fakes(), []));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Chơi'));
-    await tester.pump();
-    expect(
-        find.descendant(
-          of: find.byType(SnackBar),
-          matching: find.text('Sắp có'),
-        ),
-        findsOneWidget);
-  });
+  for (final size in const [Size(375, 667), Size(1024, 1366), Size(1366, 1024)]) {
+    final name = '${size.width.toInt()}x${size.height.toInt()}';
+    testWidgets('$name: mục "Chơi" mở Góc Chơi /game', (tester) async {
+      _setSize(tester, size.width, size.height);
+      final visited = <String>[];
+      await tester.pumpWidget(_app(_fakes(), visited));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chơi'));
+      await tester.pumpAndSettle();
+      expect(visited, ['/game']);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('$name: mục "Sưu tập", "Nhà Chíp" vẫn hiện Sắp có',
+        (tester) async {
+      _setSize(tester, size.width, size.height);
+      final visited = <String>[];
+      await tester.pumpWidget(_app(_fakes(), visited));
+      await tester.pumpAndSettle();
+      for (final label in ['Sưu tập', 'Nhà Chíp']) {
+        await tester.tap(find.text(label));
+        await tester.pump();
+        expect(
+            find.descendant(
+              of: find.byType(SnackBar),
+              matching: find.text('Sắp có'),
+            ),
+            findsOneWidget);
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pumpAndSettle();
+      }
+      expect(visited, isEmpty);
+    });
+  }
 
   testWidgets('lỗi tải thì hiện số không, không văng', (tester) async {
     _setSize(tester, 375, 667);

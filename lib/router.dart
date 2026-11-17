@@ -5,9 +5,13 @@ import 'package:flutter/material.dart';
 
 import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
+import 'features/game/badge_cabinet_screen.dart';
+import 'features/game/game_hub_screen.dart';
+import 'features/game/garage_screen.dart';
 import 'features/game/race_controller.dart';
 import 'features/game/race_result_screen.dart';
 import 'features/game/race_screen.dart';
+import 'features/game/sticker_album_screen.dart';
 import 'features/game/subject_picker.dart';
 import 'features/home/home_screen.dart';
 import 'features/lesson/lesson_done_screen.dart';
@@ -89,11 +93,27 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) =>
           PracticeScreen(state.pathParameters['glyphId']!),
     ),
-    // Rocket race (2B-1). /game shows the subject picker for now.
+    // Rocket race (2B-1): /game is the Góc Chơi hub (nav "Chơi").
     GoRoute(
       path: '/game',
-      builder: (context, state) => const SubjectPickerScreen(),
+      builder: (context, state) => const GameHubScreen(),
       routes: [
+        GoRoute(
+          path: 'pick',
+          builder: (context, state) => const SubjectPickerScreen(),
+        ),
+        GoRoute(
+          path: 'garage',
+          builder: (context, state) => const GarageScreen(),
+        ),
+        GoRoute(
+          path: 'badges',
+          builder: (context, state) => const BadgeCabinetScreen(),
+        ),
+        GoRoute(
+          path: 'stickers',
+          builder: (context, state) => const StickerAlbumScreen(),
+        ),
         GoRoute(
           path: 'race/:subject',
           redirect: (context, state) =>

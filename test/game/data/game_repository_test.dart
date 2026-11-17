@@ -330,4 +330,31 @@ void main() {
       expect(() => race(none, RaceSubject.toan, outcome()), throwsStateError);
     });
   });
+  group('garage and cabinet reads', () {
+    test('badgeDates gives when each badge was earned', () async {
+      await race(repo, RaceSubject.toan, outcome(first: 8));
+      final dates = await repo.badgeDates();
+      expect(dates.keys, [GameBadge.scholar]);
+      // The clock ticks a minute per read: finishedAt, then earnedAt.
+      expect(dates[GameBadge.scholar], DateTime(2026, 11, 16, 0, 1));
+    });
+
+    test('new garage items: owned rockets and trails not yet seen', () async {
+      expect(await repo.newGarageItems(), isEmpty);
+      for (final id in ['rocket_blue', 'trail_rainbow', 'sticker_clap']) {
+        await db
+            .into(db.gameItems)
+            .insert(GameItemsCompanion.insert(kidId: 1, itemId: id));
+      }
+      // Stickers are not garage items; starters are never "new".
+      expect(await repo.newGarageItems(), {'rocket_blue', 'trail_rainbow'});
+      await repo.markSeen(['rocket_blue']);
+      expect(await repo.newGarageItems(), {'trail_rainbow'});
+      await repo.select(trail: 'trail_rainbow');
+      expect(await repo.newGarageItems(), isEmpty);
+      // Kept per kid.
+      final other = GameRepository(db, kidId: 2);
+      expect(await other.newGarageItems(), isEmpty);
+    });
+  });
 }

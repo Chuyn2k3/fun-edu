@@ -139,6 +139,20 @@ abstract final class GameColors {
   static const goEdge = Color(0xFFB44A0A);
   static const goInk = Color(0xFF3B1404);
 
+  // Góc Chơi hub, garage, cabinet and album ("Bản 7").
+  /// Soft violet highlight in the space hero and the garage stage.
+  static const skyGlow = Color(0xFF6B56C2);
+  /// Thick bottom edge under the space hero and the garage stage.
+  static const stageEdge = Color(0xFF2E2670);
+  /// Subtitle on the space hero (>= 4.5:1 on [skyUpper]).
+  static const heroSubtitle = Color(0xFFFFE2C4);
+  /// Locked garage tile, badge or sticker: lilac fill, edge and label ink.
+  static const lockedFill = Color(0xFFECE7FA);
+  static const lockedEdge = Color(0xFFCFC6EE);
+  static const lockedInk = Color(0xFF4A4F75);
+  /// Silhouette of a sticker not owned yet.
+  static const silhouette = Color(0xFFB9AEDB);
+
   // Fireworks sparks.
   static const fireworks = [
     Color(0xFFFFD24A),

@@ -29,4 +29,40 @@ void main() {
     expect(GameBadge.byId('pilot'), GameBadge.pilot);
     expect(GameBadge.byId('nope'), isNull);
   });
+  group('starsUntilOffered (rewards are offers, picks assumed in pool order)',
+      () {
+    test('from the start: first offer at 10, then one milestone per item', () {
+      int? left(String id, {int stars = 0, Set<String> owned = starterItems}) =>
+          starsUntilOffered(id, owned: owned, stars: stars);
+      expect(left('rocket_blue'), 10);
+      expect(left('trail_rainbow'), 10);
+      expect(left('sticker_clap'), 25);
+      expect(left('rocket_green'), 40);
+      expect(left('trail_sparkle'), 60);
+      expect(left('sticker_laugh'), 85);
+      expect(left('rocket_purple'), 115);
+      expect(left('trail_blue_flame'), 150);
+      expect(left('rocket_blue', stars: 3), 7);
+    });
+
+    test('counts from the picks already made', () {
+      final owned = {...starterItems, 'rocket_blue'};
+      expect(starsUntilOffered('trail_rainbow', owned: owned, stars: 12), 13);
+      expect(starsUntilOffered('sticker_clap', owned: owned, stars: 12), 13);
+      expect(starsUntilOffered('rocket_green', owned: owned, stars: 12), 28);
+      expect(starsUntilOffered('rocket_purple', owned: owned, stars: 12), 103);
+    });
+
+    test('0 while on offer now; null when owned or not a pool item', () {
+      expect(starsUntilOffered('trail_rainbow', owned: starterItems, stars: 11),
+          0);
+      expect(starsUntilOffered('rocket_orange', owned: starterItems, stars: 0),
+          isNull);
+      expect(
+          starsUntilOffered('rocket_blue',
+              owned: {...starterItems, 'rocket_blue'}, stars: 0),
+          isNull);
+      expect(starsUntilOffered('nope', owned: starterItems, stars: 0), isNull);
+    });
+  });
 }

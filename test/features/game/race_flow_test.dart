@@ -264,7 +264,7 @@ void main() {
 
   testWidgets('subject picker opens a race for each subject', (t) async {
     await bootGame(t);
-    appRouter.go('/game');
+    appRouter.go('/game/pick');
     await settle(t);
     expect(find.text('Toán'), findsOneWidget);
     expect(find.text('Tiếng Việt'), findsOneWidget);

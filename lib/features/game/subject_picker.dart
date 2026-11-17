@@ -7,6 +7,7 @@ import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/pressable.dart';
+import 'game_widgets.dart';
 import 'race_controller.dart';
 
 /// "Đua với Chíp": pick Toán or Tiếng Việt, then race. Two big raised
@@ -49,7 +50,7 @@ class SubjectPickerScreen extends StatelessWidget {
               children: [
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: _BackButton(onTap: () => context.go('/')),
+                  child: GameBackButton(onTap: () => context.go('/game')),
                 ),
                 SizedBox(height: tablet ? 12 : 4),
                 Image.asset(AppImages.rocketChip, height: tablet ? 180 : 130),
@@ -164,33 +165,4 @@ class _SubjectCard extends StatelessWidget {
           color: GameColors.ink,
         ),
       );
-}
-
-class _BackButton extends StatelessWidget {
-  const _BackButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = context.isTablet ? 80.0 : 64.0;
-    return Pressable(
-      onTap: onTap,
-      semanticsLabel: 'Về nhà',
-      builder: (pressed) => Container(
-        width: size,
-        height: size,
-        decoration: raisedKeyDecoration(
-          top: AppColors.card,
-          body: AppColors.card,
-          edge: GameColors.questionCardEdge,
-          radius: 20,
-          lip: 6,
-          pressed: pressed,
-        ),
-        child: Icon(Icons.arrow_back_rounded,
-            size: size * 0.5, color: GameColors.ink),
-      ),
-    );
-  }
 }

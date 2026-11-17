@@ -19,6 +19,13 @@ const _kMath = 'math_correct';
 const _kViet = 'tv_correct';
 const _kRaces = 'races';
 
+/// Counter key marking a garage item as seen (value 1). Reuses the per-kid
+/// key/value counters table so "new item" needs no schema change.
+String _seenKey(String itemId) => 'seen:$itemId';
+
+bool _isGarageItem(String id) =>
+    id.startsWith('rocket_') || id.startsWith('trail_');
+
 const double _slowdownFactor = 1.15;
 const int _defaultMeanMs = 6000;
 
@@ -267,6 +274,7 @@ class GameRepository {
   }
 
   /// Equips owned items; throws [StateError] for an item the kid lacks.
+  /// Equipped items count as seen.
   Future<void> select({String? rocket, String? trail}) async {
     final kid = _requireKid();
     final have = await _ownedOf(kid);
@@ -275,6 +283,7 @@ class GameRepository {
         throw StateError('$id is not owned');
       }
     }
+    await markSeen([if (rocket != null) rocket, if (trail != null) trail]);
     final p = await _profile(kid);
     await _db.into(_db.gameProfile).insertOnConflictUpdate(
           GameProfileCompanion(
@@ -335,6 +344,53 @@ class GameRepository {
       for (final r in rows)
         if (GameBadge.byId(r.badgeId) case final b?) b,
     };
+  }
+
+  /// When each earned badge was earned.
+  Future<Map<GameBadge, DateTime>> badgeDates() async {
+    final kid = kidId;
+    if (kid == null) return {};
+    final rows = await (_db.select(_db.gameBadges)
+          ..where((t) => t.kidId.equals(kid)))
+        .get();
+    return {
+      for (final r in rows)
+        if (GameBadge.byId(r.badgeId) case final b?) b: r.earnedAt,
+    };
+  }
+
+  /// Owned rockets and trails (not starters, not stickers) the kid has not
+  /// seen in the garage nor equipped yet: the "Xưởng độ" badge count.
+  Future<Set<String>> newGarageItems() async {
+    final kid = kidId;
+    if (kid == null) return {};
+    final picked = (await _ownedOf(kid))
+        .difference(starterItems)
+        .where(_isGarageItem)
+        .toList();
+    if (picked.isEmpty) return {};
+    final seen = await (_db.select(_db.gameCounters)
+          ..where((t) =>
+              t.kidId.equals(kid) &
+              t.key.isIn([for (final id in picked) _seenKey(id)])))
+        .get();
+    final seenKeys = {
+      for (final r in seen)
+        if (r.value > 0) r.key
+    };
+    return {
+      for (final id in picked)
+        if (!seenKeys.contains(_seenKey(id))) id,
+    };
+  }
+
+  /// Marks garage items as seen (the garage showed them).
+  Future<void> markSeen(Iterable<String> itemIds) async {
+    final kid = kidId;
+    if (kid == null) return;
+    for (final id in itemIds) {
+      await _setCounter(kid, _seenKey(id), 1);
+    }
   }
 
   Future<Duration> meanAnswer() async {
