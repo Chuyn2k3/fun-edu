@@ -18,3 +18,5 @@ Quy tắc ngắn (chi tiết trong `docs/PROJECT_STATE.md` mục 3):
 - Làm việc trên nhánh `chipchip`. Không gộp vào `new-web` khi chưa khôi phục `CNAME`.
 - Không đưa khóa API/bí mật vào code hay commit.
 - Xong một phần việc thì cập nhật mục 6–8 trong `docs/PROJECT_STATE.md`.
+- Dữ liệu trò chơi (`lib/game/`, bảng `race_results`, `game_*`) tách khỏi dữ liệu học; không gọi mạng.
+- Ảnh trò chơi mới: nền xanh lá, tách bằng `tools/assets/chroma_key.py`.
