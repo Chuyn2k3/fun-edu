@@ -73,7 +73,11 @@ class RaceSceneState extends State<RaceScene>
       trail: TrailStyle.fromId(widget.kidTrail),
       seed: 1);
   late final _Racer _chip = _Racer(
-      lane: 1, sprite: RocketSprite.chip, trail: TrailStyle.flame, seed: 2);
+      lane: 1,
+      sprite: RocketSprite.chip,
+      trail: TrailStyle.flame,
+      seed: 2,
+      isChip: true);
   TrackGeometry? _geometry;
   bool _reduceMotion = false;
   Duration _last = Duration.zero;
@@ -81,6 +85,7 @@ class RaceSceneState extends State<RaceScene>
   final SpeedLines _speedLines = const SpeedLines();
   double _speedLinesAge = double.infinity;
   double _shakeAge = double.infinity;
+  bool _kidWasAhead = false;
 
   static const _cometDuration = 1.3;
 
@@ -116,6 +121,15 @@ class RaceSceneState extends State<RaceScene>
   double get kidBaseY => _kid.baseY;
 
   @visibleForTesting
+  double get chipBaseY => _chip.baseY;
+
+  @visibleForTesting
+  bool get isChipSpinning => !_reduceMotion && _chip.isSpinning;
+
+  @visibleForTesting
+  double get chipSpinAngle => _reduceMotion ? 0.0 : _chip.spinAngle;
+
+  @visibleForTesting
   double get kidAnticipationDip => _kid.anticipationDip;
 
   @visibleForTesting
@@ -145,6 +159,7 @@ class RaceSceneState extends State<RaceScene>
     super.initState();
     _kid.setTarget(widget.kidSteps, jump: true);
     _chip.setTarget(widget.chipSteps, jump: true);
+    _kidWasAhead = widget.kidSteps > widget.chipSteps;
   }
 
   @override
@@ -228,6 +243,18 @@ class RaceSceneState extends State<RaceScene>
     final t = _clock.time + dt;
     _kid.step(dt, leading: _kidLeads);
     _chip.step(dt, leading: _chipLeads);
+
+    final wantOffset = _chipWantsLead ? _Racer.chipLeadOffset : 0.0;
+    _chip.leadOffset += (wantOffset - _chip.leadOffset) * math.min(1.0, dt * 3);
+
+    final kidAhead = _kid.pos > _chip.pos;
+    if (!_kidWasAhead && kidAhead) {
+      if (!_reduceMotion) {
+        _chip.spinOut();
+      }
+    }
+    _kidWasAhead = kidAhead;
+
     final g = _geometry;
     if (g != null) {
       _kid.emitSmoke(dt, g, t);
@@ -252,11 +279,15 @@ class RaceSceneState extends State<RaceScene>
 
   bool get _kidLeads => widget.won || _kid.pos > _chip.pos + 0.02;
   bool get _chipLeads => !widget.won && _chip.pos > _kid.pos + 0.02;
+  bool get _chipWantsLead =>
+      !widget.won &&
+      (_chipLeads || (widget.kidSteps == 0 && widget.chipSteps == 0));
 
   /// Reduce motion: no ticker eases the leader flame, so set it outright.
   void _snapLead() {
     _kid.lead = _kidLeads ? 1 : 0;
     _chip.lead = _chipLeads ? 1 : 0;
+    _chip.leadOffset = _chipWantsLead ? _Racer.chipLeadOffset : 0.0;
   }
 
   /// Reduce motion: lay a still puff trail behind each rocket.
@@ -359,19 +390,41 @@ class Racer {
     required this.sprite,
     required this.trail,
     required int seed,
+    this.isChip = false,
   })  : smoke = SmokeParticles(style: trail, seed: seed),
-        seed = seed * 1.7;
+        seed = seed * 1.7,
+        leadOffset = isChip ? chipLeadOffset : 0.0;
 
   final int lane;
   RocketSprite sprite;
   TrailStyle trail;
   final SmokeParticles smoke;
   final double seed;
+  final bool isChip;
+
+  static const chipLeadOffset = 0.04;
+  static const _spinDuration = 0.48;
 
   double pos = 0, vel = 0, target = 0;
   double _boostAge = double.infinity, _hold = 0.3;
   double _anticipationAge = double.infinity;
+  double _spinAge = double.infinity;
   double lead = 0;
+  double leadOffset = 0.0;
+
+  bool get isSpinning => _spinAge < _spinDuration;
+  double get spinAngle =>
+      isSpinning ? (_spinAge / _spinDuration) * 2 * math.pi : 0.0;
+
+  void spinOut() {
+    _spinAge = 0.0;
+  }
+
+  void advance(double dt) {
+    if (isSpinning) {
+      _spinAge += dt;
+    }
+  }
 
   @visibleForTesting
   double get anticipationAge => _anticipationAge;
@@ -396,6 +449,7 @@ class Racer {
     vel = 0;
     _boostAge = double.infinity;
     _anticipationAge = double.infinity;
+    _spinAge = double.infinity;
   }
 
   void startBoost({required double hold}) {
@@ -428,6 +482,7 @@ class Racer {
     }
     _boostAge += dt;
     _anticipationAge += dt;
+    advance(dt);
     final want = leading ? 1.0 : 0.0;
     lead += (want - lead) * math.min(1, dt * 3);
   }
@@ -445,8 +500,9 @@ class Racer {
   double get top => -height;
 
   void pose(TrackGeometry g, double t, {required bool still}) {
-    final b = g.basePoint(pos, lane);
-    width = g.rocketWidth(pos);
+    final effectivePos = (pos + leadOffset).clamp(0.0, 1.0);
+    final b = g.basePoint(effectivePos, lane);
+    width = g.rocketWidth(effectivePos);
     height = width * sprite.aspect;
     tilt = g.laneTilt(lane);
     baseX = b.dx;
@@ -548,7 +604,9 @@ class _RaceForegroundPainter extends CustomPainter {
     final kid = s._kid, chip = s._chip;
     kid.pose(g, t, still: still);
     chip.pose(g, t, still: still);
-    final first = kid.pos > chip.pos ? kid : chip;
+    final first = (kid.pos + kid.leadOffset) > (chip.pos + chip.leadOffset)
+        ? kid
+        : chip;
     final second = identical(first, kid) ? chip : kid;
     _paintRacer(canvas, first, t, still);
     _paintRacer(canvas, second, t, still);
@@ -588,6 +646,11 @@ class _RaceForegroundPainter extends CustomPainter {
     canvas.save();
     canvas.translate(r.baseX, r.baseY);
     canvas.rotate(r.tilt);
+    if (r.spinAngle != 0 && !still) {
+      canvas.translate(r.center.dx, r.center.dy);
+      canvas.rotate(r.spinAngle);
+      canvas.translate(-r.center.dx, -r.center.dy);
+    }
     FlameRenderer.paint(
       canvas,
       nozzle: Offset(0, -r.height * (1 - r.sprite.nozzle)),

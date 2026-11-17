@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/game/scene/race_scene.dart';
@@ -303,5 +305,76 @@ void main() {
     await tester.pump(const Duration(milliseconds: 16));
     expect(state.visibleLuckyStars, isEmpty);
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Chíp starts with leading offset, spins out when overtaken',
+      (tester) async {
+    // When race starts (kid: 0, chip: 0), Chíp is placed ahead of Kid along the track (lead offset)
+    await tester.pumpWidget(_host(_scene(kid: 0, chip: 0)));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(state.chipBaseY, lessThan(state.kidBaseY));
+
+    // When kid advances past Chíp (pump kid: 2, chip: 0): triggers spin-out during overtake
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 0)));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    // Verify state.isChipSpinning is true, state.chipSpinAngle is greaterThan(0.0)
+    expect(state.isChipSpinning, isTrue);
+    expect(state.chipSpinAngle, greaterThan(0.0));
+
+    // After spin-out duration (~500ms), state.isChipSpinning is false and state.chipSpinAngle is 0.0
+    for (var i = 0; i < 35; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.isChipSpinning, isFalse);
+    expect(state.chipSpinAngle, 0.0);
+
+    // In reduceMotion mode, spin-out angle is always 0.0
+    await tester.pumpWidget(_host(_scene(kid: 0, chip: 0), reduce: true));
+    final reduceState = tester.state<RaceSceneState>(find.byType(RaceScene));
+    expect(reduceState.chipBaseY, lessThan(reduceState.kidBaseY));
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 0), reduce: true));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(reduceState.chipSpinAngle, 0.0);
+    expect(reduceState.isChipSpinning, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  test('Racer spin-out kinematics and lead offset', () {
+    final chipRacer = Racer(
+      lane: 1,
+      sprite: RocketSprite.chip,
+      trail: TrailStyle.flame,
+      seed: 2,
+      isChip: true,
+    );
+    expect(chipRacer.leadOffset, Racer.chipLeadOffset);
+    expect(chipRacer.isSpinning, isFalse);
+    expect(chipRacer.spinAngle, 0.0);
+
+    // Trigger spin-out
+    chipRacer.spinOut();
+    expect(chipRacer.isSpinning, isTrue);
+    expect(chipRacer.spinAngle, 0.0);
+
+    // Advance halfway (0.24s)
+    chipRacer.advance(0.24);
+    expect(chipRacer.isSpinning, isTrue);
+    expect(chipRacer.spinAngle, closeTo(math.pi, 0.01));
+
+    // Advance past duration (0.24s -> total 0.48s)
+    chipRacer.advance(0.24);
+    expect(chipRacer.isSpinning, isFalse);
+    expect(chipRacer.spinAngle, 0.0);
+
+    // Snap resets spin-out
+    chipRacer.spinOut();
+    expect(chipRacer.isSpinning, isTrue);
+    chipRacer.snap();
+    expect(chipRacer.isSpinning, isFalse);
+    expect(chipRacer.spinAngle, 0.0);
   });
 }
