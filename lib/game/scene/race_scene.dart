@@ -176,7 +176,6 @@ class RaceSceneState extends State<RaceScene>
         if (_kid.sprite.pilotAsset != null) _kid.sprite.pilotAsset!,
         _chip.sprite.asset,
         if (_chip.sprite.pilotAsset != null) _chip.sprite.pilotAsset!,
-        AppImages.stickerPilotGoggles,
         AppImages.planet,
         AppImages.comet,
       };
@@ -340,7 +339,6 @@ class RaceSceneState extends State<RaceScene>
                     _images[_chip.sprite.asset],
                     if (_chip.sprite.pilotAsset != null)
                       _images[_chip.sprite.pilotAsset!],
-                    _images[AppImages.stickerPilotGoggles],
                     _images[AppImages.comet],
                   ]),
                 ),
@@ -612,7 +610,7 @@ class _RaceForegroundPainter extends CustomPainter {
       final pilotImg = state._images[r.sprite.pilotAsset!].value;
       if (pilotImg != null) {
         final pilotSize = r.width * 0.44;
-        final pilotCenter = Offset(r.center.dx, r.top + r.height * 0.38);
+        final pilotCenter = Offset(0, r.top + r.height * 0.38);
         final pilotRect = Rect.fromCenter(
           center: pilotCenter,
           width: pilotSize,
