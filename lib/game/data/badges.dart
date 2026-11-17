@@ -11,7 +11,7 @@ enum GameBadge {
   scholar(
     id: 'scholar',
     title: 'Nhà Thông Thái',
-    howTo: 'Một trận đúng cả 10 câu ngay lần đầu',
+    howTo: 'Về đích mà không sai câu nào',
     stickerId: 'sticker_grad_cap',
     image: AppImages.badgeScholar,
   ),

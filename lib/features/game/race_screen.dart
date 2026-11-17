@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,6 +24,11 @@ import 'glyph_view.dart';
 import 'race_controller.dart';
 
 const _tryAgain = 'Thử lại nhé!';
+
+/// How many times the question card was built (tests check that Chíp's
+/// steps do not rebuild it).
+@visibleForTesting
+int debugQuestionCardBuilds = 0;
 const _cometLine = 'Câu sao chổi! Đúng là bay vọt 2 nấc';
 
 /// What Chíp reads when [q] appears.
@@ -49,15 +55,21 @@ class RaceScreen extends ConsumerStatefulWidget {
   ConsumerState<RaceScreen> createState() => _RaceScreenState();
 }
 
-class _RaceScreenState extends ConsumerState<RaceScreen> {
-  /// Race time moves in these steps, only while the race is visible.
-  static const _clockStep = Duration(milliseconds: 100);
+class _RaceScreenState extends ConsumerState<RaceScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  /// Longest step race time takes in one frame, so a stall never jumps.
+  static const _maxStep = Duration(milliseconds: 250);
   static const _rightAnswerPause = Duration(milliseconds: 380);
 
   late final Speaker _speaker;
   late final RaceController _controller;
   final _sceneKey = GlobalKey();
-  Timer? _clock;
+  late final Ticker _clock = createTicker(_onTick);
+  Duration _lastTick = Duration.zero;
+
+  /// Set when the race becomes visible again: the next frame only resyncs,
+  /// so hidden time (sleep screen, background) never counts.
+  bool _resync = true;
   Timer? _next;
   Timer? _bubble;
   Timer? _leave;
@@ -76,7 +88,8 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
             retryAfterLoss: widget.retryAfterLoss);
       }
     });
-    _clock = Timer.periodic(_clockStep, (_) => _onClock());
+    WidgetsBinding.instance.addObserver(this);
+    _clock.start();
   }
 
   @override
@@ -84,8 +97,17 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
     super.didChangeDependencies();
     // The screen-time guard turns tickers off while its sleep screen
     // covers the app: the race clock stops with them.
-    _tickerMode = TickerMode.getNotifier(context);
+    final mode = TickerMode.getNotifier(context);
+    if (mode != _tickerMode) {
+      _tickerMode?.removeListener(_onTickerMode);
+      _tickerMode = mode..addListener(_onTickerMode);
+    }
   }
+
+  void _onTickerMode() => _resync = true;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _resync = true;
 
   bool get _visible {
     final life = WidgetsBinding.instance.lifecycleState;
@@ -93,14 +115,24 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
     return resumed && (_tickerMode?.value ?? true);
   }
 
-  void _onClock() {
-    if (!mounted || !_visible) return;
-    _controller.advance(_clockStep);
+  /// Race time is the frame clock's elapsed time, counted only while the
+  /// race is visible and not paused, at most [_maxStep] per frame.
+  void _onTick(Duration elapsed) {
+    final dt = elapsed - _lastTick;
+    _lastTick = elapsed;
+    if (_resync || !mounted || !_visible) {
+      _resync = !_visible;
+      return;
+    }
+    if (dt <= Duration.zero) return;
+    _controller.advance(dt > _maxStep ? _maxStep : dt);
   }
 
   @override
   void dispose() {
-    _clock?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _tickerMode?.removeListener(_onTickerMode);
+    _clock.dispose();
     _next?.cancel();
     _bubble?.cancel();
     _leave?.cancel();
@@ -131,6 +163,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
     }
     if (next.phase == RacePhase.finishing && prev?.phase == RacePhase.racing) {
       _finishingSince = DateTime.now();
+      _clock.stop();
       _speaker.stop();
       if (_showTryAgain) setState(() => _showTryAgain = false);
     }
@@ -159,11 +192,22 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen<RaceState>(raceControllerProvider, _onState);
-    final s = ref.watch(raceControllerProvider);
+    final paused = ref.watch(raceControllerProvider.select((s) => s.paused));
     final form = context.formFactor;
-    final scene = _sceneArea(s);
+    final scene = Consumer(
+      builder: (context, ref, _) =>
+          _sceneArea(ref.watch(raceControllerProvider.select((s) => (
+                kidSteps: s.kidSteps,
+                chipSteps: s.chipSteps,
+                boosting: s.boosting,
+                phase: s.phase,
+                rocket: s.rocket,
+                trail: s.trail,
+                questionIndex: s.questionIndex,
+                count: s.questions.length,
+              )))),
+    );
     final panel = _QuestionPanel(
-      state: s,
       onKey: (i) => _controller.answer(i),
       onListen: _speakAgain,
     );
@@ -198,7 +242,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
         fit: StackFit.expand,
         children: [
           body,
-          if (s.paused)
+          if (paused)
             _PauseOverlay(
               onResume: () => _controller.setPaused(false),
               onLeave: () => context.go('/game'),
@@ -208,7 +252,17 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
     );
   }
 
-  Widget _sceneArea(RaceState s) {
+  Widget _sceneArea(
+      ({
+        int kidSteps,
+        int chipSteps,
+        bool boosting,
+        RacePhase phase,
+        String rocket,
+        String trail,
+        int questionIndex,
+        int count,
+      }) s) {
     final tablet = context.isTablet;
     return Stack(
       fit: StackFit.expand,
@@ -243,7 +297,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
                   child: _HudPill(
                     text: s.phase == RacePhase.loading
                         ? 'Chuẩn bị…'
-                        : 'Câu ${s.questionIndex + 1}/${s.questions.length}',
+                        : 'Câu ${s.questionIndex + 1}/${s.count}',
                     fontSize: tablet ? 24 : 18,
                   ),
                 ),
@@ -372,22 +426,28 @@ class _TryAgainBubble extends StatelessWidget {
 }
 
 /// The warm lower (or right) half: comet banner, question card, keys.
-class _QuestionPanel extends StatelessWidget {
-  const _QuestionPanel({
-    required this.state,
-    required this.onKey,
-    required this.onListen,
-  });
+class _QuestionPanel extends ConsumerWidget {
+  const _QuestionPanel({required this.onKey, required this.onListen});
 
-  final RaceState state;
   final ValueChanged<int> onKey;
   final VoidCallback onListen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Only what the panel shows: Chíp's steps never rebuild it.
+    final state = ref.watch(raceControllerProvider.select((s) => (
+          phase: s.phase,
+          questions: s.questions,
+          questionIndex: s.questionIndex,
+          wrongKey: s.wrongKey,
+          wrongSeq: s.wrongSeq,
+          correctKey: s.correctKey,
+          paused: s.paused,
+        )));
     final tablet = context.isTablet;
     final landscape = context.formFactor == FormFactor.tabletLandscape;
-    final q = state.current;
+    final q =
+        state.questions.isEmpty ? null : state.questions[state.questionIndex];
     final enabled = state.phase == RacePhase.racing &&
         !state.paused &&
         state.correctKey == null;
@@ -547,6 +607,7 @@ class _QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugQuestionCardBuilds++;
     final tablet = context.isTablet;
     final q = question;
     final Widget child = switch (q) {

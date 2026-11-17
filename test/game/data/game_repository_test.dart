@@ -197,6 +197,7 @@ void main() {
       expect(perfect.newBadges, contains(GameBadge.scholar));
       final again = await race(repo, RaceSubject.toan, outcome(first: 8));
       expect(again.newBadges, isNot(contains(GameBadge.scholar)));
+      expect(GameBadge.scholar.howTo, 'Về đích mà không sai câu nào');
     });
 
     test('comet_hunter at 10 cumulative comets', () async {

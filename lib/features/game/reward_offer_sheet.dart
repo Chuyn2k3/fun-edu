@@ -36,10 +36,20 @@ class _RewardOfferSheetState extends ConsumerState<RewardOfferSheet> {
   static const _line = 'Quà mới! Bé chọn một món nhé!';
   late final Speaker _speaker = ref.read(speakerProvider);
 
+  bool _picked = false;
+
   @override
   void initState() {
     super.initState();
     _speaker.speak(_line);
+  }
+
+  /// The first tap wins; a second (double tap) is ignored, so it can never
+  /// pop the page under the sheet.
+  void _pick(String id) {
+    if (_picked) return;
+    _picked = true;
+    Navigator.of(context).pop(id);
   }
 
   @override
@@ -91,8 +101,7 @@ class _RewardOfferSheetState extends ConsumerState<RewardOfferSheet> {
                           child: _OfferCard(
                             id: widget.offer[i],
                             height: card * 1.2,
-                            onTap: () =>
-                                Navigator.of(context).pop(widget.offer[i]),
+                            onTap: () => _pick(widget.offer[i]),
                           ),
                         ),
                       ),

@@ -73,7 +73,7 @@ Máy chủ cho phòng đua: chủ dự án chọn **Java Spring Boot tự chạy
    | Huy hiệu | Cách đạt | Sticker kèm |
    |---|---|---|
    | Vua Thần Tốc | Phá kỷ lục về đích của mình 3 lần | Chíp đeo kính phi công |
-   | Nhà Thông Thái | Một trận đúng cả 10 câu ngay lần đầu | Chíp đội mũ tốt nghiệp |
+   | Nhà Thông Thái | Về đích mà không sai câu nào (thắng một trận, câu nào cũng đúng ngay lần đầu; câu sao chổi +2 nấc nên trận hoàn hảo xong ở câu 8) | Chíp đội mũ tốt nghiệp |
    | Thợ Săn Sao Chổi | Trả lời đúng 10 câu sao chổi | Chíp ôm ngôi sao |
    | Không Bỏ Cuộc | Đua lại ngay sau khi thua, 3 lần | Chíp giơ nắm tay "cố lên" |
    | Bạn Thân Chíp Chíp | Thắng Chíp 5 lần | Chíp ôm tim |

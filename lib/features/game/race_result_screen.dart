@@ -65,6 +65,7 @@ final nextRewardProvider = FutureProvider.autoDispose<NextReward>((ref) async {
 });
 
 const _winTitle = 'Về đích rồi!';
+const _unsavedLine = 'Chíp chưa ghi được sao lần này. Bé đua lại nhé!';
 
 /// The race result: a landing cut-scene for a win, then the stars, the
 /// record or Chíp's tip, new badges and milestone gifts, and "Đua lại!".
@@ -114,21 +115,33 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
       await showBadgePopup(context, b);
     }
     if (!mounted) return;
-    final repo = await ref.read(gameRepositoryProvider.future);
-    for (var guard = 0; guard < 20 && mounted; guard++) {
-      final offer = await repo.pendingOffer();
-      if (offer.isEmpty || !mounted) break;
-      final picked = await showRewardOfferSheet(context, offer);
-      if (picked == null) break;
-      await repo.pick(picked);
-    }
+    if (a.saved) await _offerGifts();
     if (!mounted) return;
     ref.invalidate(nextRewardProvider);
     ref.invalidate(gameSummaryProvider);
-    if (!a.won) {
+    if (!a.saved) {
+      _speaker.speak(_unsavedLine);
+    } else if (!a.won) {
       _speaker.speak('$_loseTitle ${_tipSpoken()}');
     } else {
-      _speaker.speak('Bé được ${a.record.starsEarned} sao vũ trụ!');
+      _speaker.speak('Bé được ${a.record!.starsEarned} sao vũ trụ!');
+    }
+  }
+
+  /// One sheet per milestone waiting. A failed read or pick ends the
+  /// sheets quietly (the offer stays pending for next time).
+  Future<void> _offerGifts() async {
+    try {
+      final repo = await ref.read(gameRepositoryProvider.future);
+      for (var guard = 0; guard < 20 && mounted; guard++) {
+        final offer = await repo.pendingOffer();
+        if (offer.isEmpty || !mounted) break;
+        final picked = await showRewardOfferSheet(context, offer);
+        if (picked == null) break;
+        await repo.pick(picked);
+      }
+    } catch (e) {
+      debugPrint('Gift offer failed: $e');
     }
   }
 
@@ -220,7 +233,6 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
                 child: Builder(
                   builder: (context) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -240,20 +252,38 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
                             _RecordBadge(seconds: faster),
                           ],
                           SizedBox(height: tablet ? 16 : 12),
-                          _StarsPill(stars: a.record.starsEarned, won: a.won),
+                          if (a.saved)
+                            _StarsPill(stars: a.record!.starsEarned, won: a.won)
+                          else
+                            _UnsavedNote(text: _unsavedLine, tablet: tablet),
                           if (!a.won) ...[
                             SizedBox(height: tablet ? 16 : 12),
                             _TipCard(args: a),
                           ],
-                          SizedBox(height: tablet ? 16 : 12),
-                          const _NextRewardBar(),
-                          if (a.won) ...[
-                            SizedBox(height: tablet ? 20 : 12),
-                            Image.asset(AppImages.chipJoy,
-                                height: tablet ? 180 : 96),
+                          if (a.saved) ...[
+                            SizedBox(height: tablet ? 16 : 12),
+                            const _NextRewardBar(),
                           ],
                         ],
                       ),
+                      // Chíp cheers in the room left above the buttons.
+                      if (a.won)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: tablet ? 20 : 12),
+                            child: Stack(
+                              children: [
+                                SizedBox(height: tablet ? 140 : 96),
+                                Positioned.fill(
+                                  child: Image.asset(AppImages.chipJoy,
+                                      fit: BoxFit.contain),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        const Spacer(),
                       Padding(
                         padding: EdgeInsets.only(top: tablet ? 24 : 16),
                         child: Column(
@@ -316,6 +346,9 @@ class _Hero extends StatelessWidget {
               math.min(h - planet * 0.92, h * 0.55 - planet * 0.3);
           final cx = w / 2;
           final kid = RocketSprite.forItem(args.rocket);
+          final chipW = rocketH / RocketSprite.chip.aspect;
+          final kidH = rocketH * 0.9;
+          final kidW = kidH / kid.aspect;
           return Stack(
             clipBehavior: Clip.none,
             children: [
@@ -342,16 +375,22 @@ class _Hero extends StatelessWidget {
                   child: Image.asset(kid.asset, fit: BoxFit.contain),
                 ),
               ] else ...[
+                // Chíp landed on top; the kid's rocket waits beside the
+                // planet. Both are kept fully inside the hero.
                 Positioned(
-                  left: cx - rocketH * 0.3,
-                  top: planetTop - rocketH * 0.82,
+                  left:
+                      (cx - chipW / 2).clamp(4.0, math.max(4.0, w - chipW - 4)),
+                  top: math.max(4.0, planetTop - rocketH * 0.82),
+                  width: chipW,
                   height: rocketH,
                   child: Image.asset(AppImages.rocketChip, fit: BoxFit.contain),
                 ),
                 Positioned(
-                  left: math.max(8, cx - planet * 0.5 - rocketH * 0.62),
-                  top: planetTop + planet * 0.28,
-                  height: rocketH * 0.9,
+                  left: (cx - planet * 0.5 - kidW * 0.8)
+                      .clamp(8.0, math.max(8.0, w - kidW - 8)),
+                  top: math.min(planetTop + planet * 0.28, h - kidH - 4),
+                  width: kidW,
+                  height: kidH,
                   child: Image.asset(kid.asset, fit: BoxFit.contain),
                 ),
               ],
@@ -431,6 +470,37 @@ class _FlagPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FlagPainter old) => false;
+}
+
+class _UnsavedNote extends StatelessWidget {
+  const _UnsavedNote({required this.text, required this.tablet});
+
+  final String text;
+  final bool tablet;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+      decoration: raisedDecoration(),
+      child: Row(
+        children: [
+          Image.asset(AppImages.chipEncourage, height: tablet ? 80 : 60),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: tablet ? 22 : 18,
+                fontWeight: FontWeight.w900,
+                color: GameColors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RecordBadge extends StatelessWidget {

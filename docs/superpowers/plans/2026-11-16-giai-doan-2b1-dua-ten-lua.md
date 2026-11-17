@@ -23,7 +23,7 @@
 - Milestones: 10, 25, 40, 60, 85, 115, 150, 190, then every +50. Reward pool order: `rocket_blue, trail_rainbow, sticker_clap, rocket_green, trail_sparkle, sticker_laugh, rocket_purple, trail_blue_flame`. At a milestone the child is offered the first two unowned pool items and picks one; the other stays first in line. Owned from the start: `rocket_orange`, `trail_flame`. Pool empty ⇒ milestone gives no offer.
 - Badges (spec §6.4b) — id, name, rule, sticker id:
   `speed_king` "Vua Thần Tốc" — beat own best time 3 times (any subject) — `sticker_pilot_goggles`;
-  `scholar` "Nhà Thông Thái" — a race with all 10 questions correct on first try — `sticker_grad_cap`;
+  `scholar` "Nhà Thông Thái" — a won race with no question missed (every answer right on the first try; a perfect race ends at question 8 because comets give +2) — `sticker_grad_cap`;
   `comet_hunter` "Thợ Săn Sao Chổi" — 10 comet questions correct (first try, cumulative) — `sticker_hug_star`;
   `never_give_up` "Không Bỏ Cuộc" — 3 times: pressed "Đua lại!" on a lost result and finished that next race — `sticker_fist`;
   `chip_buddy` "Bạn Thân Chíp Chíp" — 5 wins — `sticker_hug_heart`;
@@ -111,7 +111,7 @@
   - Migration v6 → v7 keeps all existing data and creates empty game tables (extend `migration_test.dart` with a v6 fixture).
   - `recordRace` win ⇒ 5 stars (+comets, +2 on record after the first race of the subject); never touches `lesson_completions` (row count unchanged) — **assert this**.
   - Crossing 25 and 40 in one race ⇒ `milestonesCrossed == [25, 40]`; offers come one after another: first offer = first two unowned; after `pick`, the second offer is the next two unowned; the not-picked item appears again first.
-  - Each badge earned exactly once at its threshold; `scholar` needs 10/10 first-try in one race; `never_give_up` only counts races recorded with `wasRetryAfterLoss: true`.
+  - Each badge earned exactly once at its threshold; `scholar` needs a won race with no question missed; `never_give_up` only counts races recorded with `wasRetryAfterLoss: true`.
   - Kid A's data invisible to kid B; deleting kid A removes its game rows.
 - [ ] **Step 2: Run** `flutter test test/game/data/ test/data/migration_test.dart` — expected FAIL.
 - [ ] **Step 3: Implement** tables, migration, repository; run build_runner.

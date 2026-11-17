@@ -10,6 +10,9 @@ import 'package:funedu/features/game/race_screen.dart';
 import 'package:funedu/features/game/reward_offer_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:funedu/game/data/game_repository.dart';
+import 'package:funedu/game/engine/race.dart';
+import 'package:funedu/game/engine/race_question.dart';
+import 'package:funedu/stroke/glyph_repository.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/screen_time/screen_time_service.dart';
 import 'package:funedu/progress/progress_repository.dart';
@@ -26,6 +29,27 @@ Future<void> skipCutScene(WidgetTester t) async {
   await t.tap(find.byKey(const ValueKey('landing-cutscene')));
   await pumpReal(t, times: 6);
   expect(find.byKey(const ValueKey('landing-cutscene')), findsNothing);
+}
+
+/// A repository whose writes can fail.
+class _FlakyRepo extends GameRepository {
+  _FlakyRepo(super.db, {required super.kidId, this.failRecord = false, this.failPick = false});
+
+  final bool failRecord;
+  final bool failPick;
+
+  @override
+  Future<RaceRecordResult> recordRace(RaceSubject subject, RaceOutcome o,
+      {required bool wasRetryAfterLoss}) {
+    if (failRecord) throw StateError('disk full');
+    return super.recordRace(subject, o, wasRetryAfterLoss: wasRetryAfterLoss);
+  }
+
+  @override
+  Future<void> pick(String itemId) async {
+    if (failPick) throw StateError('disk full');
+    return super.pick(itemId);
+  }
 }
 
 void main() {
@@ -248,6 +272,119 @@ void main() {
     await pumpReal(t, times: 8);
     expect(find.byType(RaceScreen), findsOneWidget);
     expect(raceState(t).subjectName, 'toan');
+  });
+
+  testWidgets('a failed save still leaves the race, gently', (t) async {
+    late AppDatabase db;
+    final h = await bootGame(t, seed: (d, _) async => db = d,
+        extra: [gameRepositoryProvider.overrideWith((ref) async => _FlakyRepo(
+            db,
+            kidId: await ref.watch(currentKidIdProvider.future),
+            failRecord: true))]);
+    await openRace(t, 'toan');
+    await winRace(t);
+    expect(find.byType(RaceScreen), findsNothing);
+    expect(find.byType(RaceResultScreen), findsOneWidget);
+    if (find.byKey(const ValueKey('landing-cutscene')).evaluate().isNotEmpty) {
+      await skipCutScene(t);
+    }
+    expect(find.textContaining('Chíp chưa ghi được'), findsOneWidget);
+    expect(find.textContaining('sao vũ trụ'), findsNothing);
+    expect(find.text('Đua lại!'), findsOneWidget);
+    expect(await results(t, h.db), isEmpty);
+  });
+
+  testWidgets('a double tap on an offer picks once and keeps the result',
+      (t) async {
+    final h = await bootGame(t, seed: (db, kid) async {
+      await db.into(db.gameProfile).insert(GameProfileCompanion.insert(
+          kidId: Value(kid), cosmicStars: const Value(24)));
+    });
+    await openRace(t, 'toan');
+    await winRace(t);
+    await skipCutScene(t);
+    await t.tap(find.text('Tuyệt quá!'));
+    await pumpReal(t, times: 6);
+    final card = find.byKey(const ValueKey('offer-rocket_blue'));
+    await t.tap(card);
+    await t.tap(card, warnIfMissed: false);
+    await pumpReal(t, times: 8);
+    expect(find.byType(RaceResultScreen), findsOneWidget);
+    // The second milestone's sheet is up; the first pick happened once.
+    expect(find.byType(RewardOfferSheet), findsOneWidget);
+    final owned =
+        await t.runAsync(() => GameRepository(h.db, kidId: h.kid).owned());
+    expect(owned, contains('rocket_blue'));
+  });
+
+  testWidgets('a failed pick closes the sheet and the result carries on',
+      (t) async {
+    late AppDatabase db;
+    final h = await bootGame(t, seed: (d, kid) async {
+      db = d;
+      await d.into(d.gameProfile).insert(GameProfileCompanion.insert(
+          kidId: Value(kid), cosmicStars: const Value(24)));
+    }, extra: [gameRepositoryProvider.overrideWith((ref) async => _FlakyRepo(
+        db,
+        kidId: await ref.watch(currentKidIdProvider.future),
+        failPick: true))]);
+    await openRace(t, 'toan');
+    await winRace(t);
+    await skipCutScene(t);
+    await t.tap(find.text('Tuyệt quá!'));
+    await pumpReal(t, times: 6);
+    await t.tap(find.byKey(const ValueKey('offer-rocket_blue')));
+    await pumpReal(t, times: 8);
+    expect(t.takeException(), isNull);
+    expect(find.byType(RewardOfferSheet), findsNothing);
+    expect(find.byType(RaceResultScreen), findsOneWidget);
+    expect(h.speaker.spoken.any((s) => s.startsWith('Bé được')), isTrue);
+  });
+
+  testWidgets('a letter that fails to load is still spoken by its name',
+      (t) async {
+    final h = await bootGame(t, extra: [
+      glyphProvider.overrideWith((ref, id) async => throw StateError('gone')),
+    ]);
+    await openRace(t, 'tieng-viet');
+    final q = raceState(t).current!;
+    expect(q.spoken, isNotEmpty);
+    expect(h.speaker.spoken.last, isNotEmpty);
+    if (q is LetterRaceQuestion) expect(q.speech, startsWith('chữ '));
+  });
+
+  testWidgets('a Chíp step does not rebuild the question card', (t) async {
+    await bootGame(t);
+    await openRace(t, 'toan');
+    final before = debugQuestionCardBuilds;
+    final chip0 = raceState(t).chipSteps;
+    for (var i = 0; i < 100 && raceState(t).chipSteps == chip0; i++) {
+      await t.pump(const Duration(milliseconds: 200));
+    }
+    expect(raceState(t).chipSteps, greaterThan(chip0));
+    expect(debugQuestionCardBuilds, before);
+  });
+
+  testWidgets('race time follows the clock, not the number of ticks',
+      (t) async {
+    await bootGame(t);
+    await openRace(t, 'toan');
+    final c = ProviderScope.containerOf(t.element(find.byType(RaceScreen)))
+        .read(raceControllerProvider.notifier);
+    final start = c.now;
+    // Two long frames (jank): race time still moves by the real elapsed
+    // time, capped per step so a resume never jumps.
+    await t.pump(const Duration(milliseconds: 200));
+    await t.pump(const Duration(milliseconds: 200));
+    expect(c.now - start, const Duration(milliseconds: 400));
+    c.setPaused(true);
+    await t.pump(const Duration(seconds: 5));
+    expect(c.now - start, const Duration(milliseconds: 400));
+    c.setPaused(false);
+    await t.pump(const Duration(milliseconds: 16));
+    // The paused 5 s never count, not even as one big step.
+    expect(c.now - start,
+        lessThanOrEqualTo(const Duration(milliseconds: 400 + 16)));
   });
 }
 

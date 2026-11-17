@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../game/data/badges.dart';
@@ -48,7 +49,9 @@ class RaceResultArgs {
 
   final RaceSubject subject;
   final RaceOutcome outcome;
-  final RaceRecordResult record;
+
+  /// Null when saving the race failed: nothing was stored, no stars.
+  final RaceRecordResult? record;
 
   /// Kid's steps when the race ended (Chíp's finish, for a loss).
   final int kidSteps;
@@ -62,13 +65,32 @@ class RaceResultArgs {
 
   /// Seconds faster than the previous best, at least 1, when a record.
   int? get secondsFaster {
-    final prev = record.previousBest;
-    if (!record.beatRecord || prev == null) return null;
+    final r = record;
+    final prev = r?.previousBest;
+    if (r == null || !r.beatRecord || prev == null) return null;
     final ms = (prev - outcome.kidTime).inMilliseconds;
     return max(1, (ms / 1000).round());
   }
 
-  List<GameBadge> get newBadges => record.newBadges;
+  List<GameBadge> get newBadges => record?.newBadges ?? const [];
+
+  bool get saved => record != null;
+}
+
+const _letterNames = {
+  'a': 'a', 'aw': 'á', 'aa': 'ớ', 'b': 'bờ', 'c': 'cờ', 'd': 'dờ', 'dd': 'đờ',
+  'e': 'e', 'ee': 'ê', 'g': 'gờ', 'h': 'hờ', 'i': 'i', 'k': 'ca', 'l': 'lờ',
+  'm': 'mờ', 'n': 'nờ', 'o': 'o', 'oo': 'ô', 'ow': 'ơ', 'p': 'pờ', 'q': 'quờ',
+  'r': 'rờ', 's': 'sờ', 't': 'tờ', 'u': 'u', 'uw': 'ư', 'v': 'vờ', 'x': 'xờ',
+  'y': 'i dài', //
+};
+
+/// What Chíp says for a glyph id when its file could not be read: the same
+/// names as the glyphs' `speech` ("chữ bờ", "dấu hỏi").
+String spokenNameFromId(String id) {
+  if (id.startsWith('dau-')) return toneLabels[id] ?? id;
+  final key = id.startsWith('chu-') ? id.substring(4) : id;
+  return 'chữ ${_letterNames[key] ?? key}';
 }
 
 enum RacePhase { loading, racing, finishing, done }
@@ -202,7 +224,8 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
           final g = await ref.read(glyphProvider(id).future);
           speech[id] = g.spokenName;
         } catch (_) {
-          // A missing glyph only loses its speech line.
+          // The glyph did not load: Chíp still says the letter's name.
+          speech[id] = spokenNameFromId(id);
         }
       }
     }
@@ -307,14 +330,21 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       kidSteps: race.kidSteps,
       chipSteps: race.chipSteps,
     );
-    final repo = await ref.read(gameRepositoryProvider.future);
-    final record = await repo.recordRace(
-      state.subject!,
-      o,
-      wasRetryAfterLoss: state.wasRetryAfterLoss,
-    );
+    RaceRecordResult? record;
+    try {
+      final repo = await ref.read(gameRepositoryProvider.future);
+      record = await repo.recordRace(
+        state.subject!,
+        o,
+        wasRetryAfterLoss: state.wasRetryAfterLoss,
+      );
+    } catch (e) {
+      // Never strand the kid on a finished race: show the result without
+      // stars (nothing was stored).
+      debugPrint('Saving the race failed: $e');
+    }
     if (_disposed) return;
-    ref.invalidate(gameSummaryProvider);
+    if (record != null) ref.invalidate(gameSummaryProvider);
     state = state.copyWith(
       phase: RacePhase.done,
       result: RaceResultArgs(

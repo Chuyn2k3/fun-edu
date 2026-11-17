@@ -42,6 +42,7 @@ Future<GameHarness> bootGame(
   Future<void> Function(AppDatabase db, int kid)? seed,
   int randomSeed = 7,
   bool reduceMotion = true,
+  List<Override> extra = const [],
 }) async {
   setSize(t, size.width, size.height);
   t.platformDispatcher.accessibilityFeaturesTestValue =
@@ -64,6 +65,7 @@ Future<GameHarness> bootGame(
         databaseProvider.overrideWithValue(db),
         speakerProvider.overrideWithValue(speaker),
         raceRandomProvider.overrideWith((ref) => Random(randomSeed)),
+        ...extra,
       ],
       child: const App(),
     ),
