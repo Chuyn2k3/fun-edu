@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -76,6 +77,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   ValueListenable<bool>? _tickerMode;
   bool _showTryAgain = false;
   DateTime? _finishingSince;
+  int _comboStreak = 0;
+  bool _triedCurrent = false;
+  bool get _isNitroActive => _comboStreak >= 2;
 
   @override
   void initState() {
@@ -145,9 +149,16 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     final shown = prev?.phase != RacePhase.racing ||
         prev?.questionIndex != next.questionIndex;
     if (next.phase == RacePhase.racing && q != null && shown) {
+      _triedCurrent = false;
       _speaker.speak(spokenRaceQuestion(q));
     }
+    if (prev?.phase != RacePhase.racing && next.phase == RacePhase.racing) {
+      _comboStreak = 0;
+      _triedCurrent = false;
+    }
     if (prev != null && next.wrongSeq > prev.wrongSeq) {
+      _triedCurrent = true;
+      if (_comboStreak != 0) setState(() => _comboStreak = 0);
       _speaker.speak(_tryAgain);
       setState(() => _showTryAgain = true);
       _bubble?.cancel();
@@ -158,6 +169,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     if (next.correctKey != null &&
         prev?.correctKey == null &&
         next.phase == RacePhase.racing) {
+      if (!_triedCurrent) {
+        setState(() => _comboStreak++);
+      }
       _next?.cancel();
       _next = Timer(_rightAnswerPause, _controller.showNext);
     }
@@ -196,43 +210,105 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     final form = context.formFactor;
     final scene = Consumer(
       builder: (context, ref, _) =>
-          _sceneArea(ref.watch(raceControllerProvider.select((s) => (
+          _sceneOnly(ref.watch(raceControllerProvider.select((s) => (
                 kidSteps: s.kidSteps,
                 chipSteps: s.chipSteps,
                 boosting: s.boosting,
                 phase: s.phase,
                 rocket: s.rocket,
                 trail: s.trail,
+              )))),
+    );
+    final topBar = Consumer(
+      builder: (context, ref, _) =>
+          _topBar(ref.watch(raceControllerProvider.select((s) => (
+                phase: s.phase,
                 questionIndex: s.questionIndex,
                 count: s.questions.length,
               )))),
     );
-    final panel = _QuestionPanel(
+    final hud = FloatingCockpitHUD(
+      comboStreak: _comboStreak,
+      nitroActive: _isNitroActive,
       onKey: (i) => _controller.answer(i),
       onListen: _speakAgain,
     );
-    final size = MediaQuery.sizeOf(context);
+    final tablet = context.isTablet;
     final Widget body = switch (form) {
       FormFactor.tabletLandscape => Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: scene),
-            Expanded(flex: 2, child: panel),
-          ],
-        ),
-      FormFactor.tabletPortrait => Column(
-          children: [
-            SizedBox(height: size.height * 0.55, child: scene),
-            Expanded(child: panel),
-          ],
-        ),
-      FormFactor.phone => Column(
-          children: [
-            SizedBox(
-              height: (size.height * 0.54).clamp(300.0, 520.0),
-              child: scene,
+            Expanded(
+              flex: 3,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Positioned.fill(child: scene),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      bottom: false,
+                      right: false,
+                      child: topBar,
+                    ),
+                  ),
+                  if (_showTryAgain)
+                    Positioned(
+                      right: 12,
+                      top: MediaQuery.paddingOf(context).top + 120,
+                      child: const _TryAgainBubble(),
+                    ),
+                ],
+              ),
             ),
-            Expanded(child: panel),
+            Expanded(
+              flex: 2,
+              child: SafeArea(
+                left: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 16, 20, 20),
+                  child: hud,
+                ),
+              ),
+            ),
+          ],
+        ),
+      FormFactor.tabletPortrait || FormFactor.phone => Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(child: scene),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                bottom: false,
+                child: topBar,
+              ),
+            ),
+            if (_showTryAgain)
+              Positioned(
+                right: 12,
+                top: MediaQuery.paddingOf(context).top + (tablet ? 120 : 92),
+                child: const _TryAgainBubble(),
+              ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    tablet ? 24 : 12,
+                    0,
+                    tablet ? 24 : 12,
+                    tablet ? 16 : 8,
+                  ),
+                  child: hud,
+                ),
+              ),
+            ),
           ],
         ),
     };
@@ -247,7 +323,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         if (!didPop) _controller.setPaused(true);
       },
       child: Scaffold(
-        backgroundColor: GameColors.panelTop,
+        backgroundColor: const Color(0xFF0F0826),
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -263,7 +339,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     );
   }
 
-  Widget _sceneArea(
+  Widget _sceneOnly(
       ({
         int kidSteps,
         int chipSteps,
@@ -271,60 +347,52 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         RacePhase phase,
         String rocket,
         String trail,
+      }) s) {
+    return RaceScene(
+      key: _sceneKey,
+      kidSteps: s.kidSteps,
+      chipSteps: s.chipSteps,
+      kidRocket: s.rocket,
+      kidTrail: s.trail,
+      boosting: s.boosting,
+      won: s.phase != RacePhase.racing &&
+          s.phase != RacePhase.loading &&
+          s.kidSteps >= raceLength,
+    );
+  }
+
+  Widget _topBar(
+      ({
+        RacePhase phase,
         int questionIndex,
         int count,
       }) s) {
     final tablet = context.isTablet;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        RaceScene(
-          key: _sceneKey,
-          kidSteps: s.kidSteps,
-          chipSteps: s.chipSteps,
-          kidRocket: s.rocket,
-          kidTrail: s.trail,
-          boosting: s.boosting,
-          won: s.phase != RacePhase.racing &&
-              s.phase != RacePhase.loading &&
-              s.kidSteps >= raceLength,
-        ),
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _HudButton(
-                  size: tablet ? 80 : 64,
-                  onTap: s.phase == RacePhase.racing
-                      ? () => _controller.setPaused(true)
-                      : null,
-                ),
-                const Spacer(),
-                Padding(
-                  padding: EdgeInsets.only(top: tablet ? 14 : 8),
-                  child: _HudPill(
-                    text: s.phase == RacePhase.loading
-                        ? 'Chuẩn bị…'
-                        : 'Câu ${s.questionIndex + 1}/${s.count}',
-                    fontSize: tablet ? 24 : 18,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(width: tablet ? 80 : 64),
-              ],
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _HudButton(
+            size: tablet ? 80 : 64,
+            onTap: s.phase == RacePhase.racing
+                ? () => _controller.setPaused(true)
+                : null,
+          ),
+          const Spacer(),
+          Padding(
+            padding: EdgeInsets.only(top: tablet ? 14 : 8),
+            child: _HudPill(
+              text: s.phase == RacePhase.loading
+                  ? 'Chuẩn bị…'
+                  : 'Câu ${s.questionIndex + 1}/${s.count}',
+              fontSize: tablet ? 24 : 18,
             ),
           ),
-        ),
-        if (_showTryAgain)
-          Positioned(
-            right: 12,
-            top: MediaQuery.paddingOf(context).top + (tablet ? 120 : 92),
-            child: const _TryAgainBubble(),
-          ),
-      ],
+          const Spacer(),
+          SizedBox(width: tablet ? 80 : 64),
+        ],
+      ),
     );
   }
 }
@@ -436,12 +504,21 @@ class _TryAgainBubble extends StatelessWidget {
   }
 }
 
-/// The warm lower (or right) half: comet banner, question card, keys.
-class _QuestionPanel extends ConsumerWidget {
-  const _QuestionPanel({required this.onKey, required this.onListen});
+/// Floating cockpit HUD with dark translucent space glass styling,
+/// Nitro streak indicator, question card, and chunky answer keys.
+class FloatingCockpitHUD extends ConsumerWidget {
+  const FloatingCockpitHUD({
+    super.key,
+    required this.onKey,
+    required this.onListen,
+    this.comboStreak = 0,
+    this.nitroActive = false,
+  });
 
   final ValueChanged<int> onKey;
   final VoidCallback onListen;
+  final int comboStreak;
+  final bool nitroActive;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -462,55 +539,83 @@ class _QuestionPanel extends ConsumerWidget {
     final enabled = state.phase == RacePhase.racing &&
         !state.paused &&
         state.correctKey == null;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [GameColors.panelTop, GameColors.panelBottom],
-        ),
-      ),
-      child: SafeArea(
-        top: landscape,
-        left: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(tablet ? 28 : 16, tablet ? 20 : 12,
-              tablet ? 28 : 16, tablet ? 28 : 14),
+
+    final isNitro = nitroActive || comboStreak >= 2;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tablet ? 28 : 24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xDD1A103C),
+                Color(0xEE2A1B60),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(tablet ? 28 : 24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.24),
+              width: 1.5,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x66000000),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.fromLTRB(
+            tablet ? 24 : 14,
+            tablet ? 16 : 10,
+            tablet ? 24 : 14,
+            tablet ? 18 : 12,
+          ),
           child: q == null
-              ? const SizedBox.expand()
+              ? const SizedBox.shrink()
               : Column(
+                  mainAxisSize: landscape ? MainAxisSize.max : MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (landscape) const Spacer(),
-                    SizedBox(
-                      height: tablet ? 48 : 34,
-                      child: q.comet ? const _CometBanner() : null,
-                    ),
-                    SizedBox(height: tablet ? 12 : 8),
+                    if (isNitro || q.comet) ...[
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isNitro) _NitroBadge(comboStreak: comboStreak),
+                            if (isNitro && q.comet) const SizedBox(height: 6),
+                            if (q.comet) const _CometBanner(),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: tablet ? 10 : 6),
+                    ],
                     _QuestionCard(
                       key: ValueKey('q-${state.questionIndex}'),
                       question: q,
                       onListen: onListen,
                     ),
-                    SizedBox(height: tablet ? 22 : 14),
-                    Flexible(
-                      flex: landscape ? 0 : 1,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: (tablet ? 80.0 : 64.0) + 10,
-                          maxHeight: tablet ? 300 : 190,
-                        ),
-                        child: SizedBox(
-                          height: landscape ? 300 : null,
-                          child: AnswerKeys(
-                            labelOf: (i, ink) => _keyLabel(q, i, ink, tablet),
-                            semanticsOf: (i) => _keySemantics(q, i),
-                            onPressed: enabled ? onKey : null,
-                            wrongKey: state.wrongKey,
-                            wrongSeq: state.wrongSeq,
-                            correctKey: state.correctKey,
-                            gap: tablet ? 18 : 12,
-                          ),
+                    SizedBox(height: tablet ? 16 : 10),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: (tablet ? 80.0 : 64.0) + 10,
+                        maxHeight: tablet ? 280 : 160,
+                      ),
+                      child: SizedBox(
+                        height: landscape ? 260 : (tablet ? 100 : 78),
+                        child: AnswerKeys(
+                          labelOf: (i, ink) => _keyLabel(q, i, ink, tablet),
+                          semanticsOf: (i) => _keySemantics(q, i),
+                          onPressed: enabled ? onKey : null,
+                          wrongKey: state.wrongKey,
+                          wrongSeq: state.wrongSeq,
+                          correctKey: state.correctKey,
+                          gap: tablet ? 18 : 12,
                         ),
                       ),
                     ),
@@ -553,6 +658,68 @@ class _QuestionPanel extends ConsumerWidget {
       };
 }
 
+class _NitroBadge extends StatelessWidget {
+  const _NitroBadge({required this.comboStreak});
+
+  final int comboStreak;
+
+  @override
+  Widget build(BuildContext context) {
+    final tablet = context.isTablet;
+    final fontSize = tablet ? 18.0 : 14.0;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: tablet ? 14 : 10,
+        vertical: tablet ? 5 : 4,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFFF5722),
+            Color(0xFFFFB300),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x88FF6D00),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+        border: Border.all(color: Colors.white70, width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.bolt_rounded,
+            color: const Color(0xFFFFF6C7),
+            size: fontSize * 1.3,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '⚡ NITRO x$comboStreak!',
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: 0.5,
+              shadows: const [
+                Shadow(
+                  color: Color(0x99000000),
+                  offset: Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// One glyph key: drawn at the scale shared by the question's three glyphs.
 class _GlyphKey extends ConsumerWidget {
   const _GlyphKey({required this.ids, required this.index, required this.ink});
@@ -585,24 +752,35 @@ class _CometBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tablet = context.isTablet;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(AppImages.comet, height: tablet ? 44 : 32),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            _cometLine,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: tablet ? 22 : 15,
-              fontWeight: FontWeight.w900,
-              color: GameColors.cometInk,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: tablet ? 12 : 8,
+        vertical: tablet ? 4 : 3,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0x33FFA000),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(color: const Color(0x88FFD54F)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(AppImages.comet, height: tablet ? 28 : 20),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              _cometLine,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: tablet ? 18 : 13,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFFFFE082),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
