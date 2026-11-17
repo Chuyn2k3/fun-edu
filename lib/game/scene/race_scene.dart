@@ -32,7 +32,7 @@ class RaceScene extends StatefulWidget {
     required this.kidTrail,
     required this.boosting,
     required this.won,
-    this.stalled = false,
+    this.stallSeq = 0,
     this.lanes = 2,
     this.bottomInset = 0,
   }) : assert(lanes >= 2);
@@ -53,9 +53,8 @@ class RaceScene extends StatefulWidget {
   /// The kid finished first: their flame stays the leader's.
   final bool won;
 
-  /// Turning true (a wrong answer submitted) stalls the kid's engine momentarily
-  /// with a sputter dip and dark smoke puff.
-  final bool stalled;
+  /// Sequence number incremented on wrong answers to trigger sputter dip.
+  final int stallSeq;
   final int lanes;
 
   /// Inset from the bottom of the screen occupied by floating HUD controls.
@@ -244,7 +243,7 @@ class RaceSceneState extends State<RaceScene>
     }
     if (chipUp) _chip.startBoost(hold: 0.3);
     if (cometNow) _cometAge = 0;
-    if (widget.stalled && !old.stalled && !_reduceMotion) {
+    if (widget.stallSeq > old.stallSeq && !_reduceMotion) {
       _kid.stall();
     }
   }
@@ -429,6 +428,7 @@ class Racer {
   final SmokeParticles smoke;
   final double seed;
   final bool isChip;
+  late final math.Random _random = math.Random((seed * 1000).toInt());
 
   static const chipLeadOffset = 0.04;
   static const _spinDuration = 0.48;
@@ -607,21 +607,20 @@ class Racer {
   }
 
   void _emitStallPuffs(double dt, Offset n, double u) {
-    final r = math.Random(((_stallAge + seed) * 1000).toInt());
     final count = (dt * 30).clamp(1, 3).toInt();
     for (var i = 0; i < count; i++) {
       if (_stallPuffs.length > 20) break;
-      final life = 0.35 + r.nextDouble() * 0.2;
-      final angle = tilt + (r.nextDouble() - 0.5) * 0.8;
-      final speed = (20.0 + r.nextDouble() * 35.0) * u;
+      final life = 0.35 + _random.nextDouble() * 0.2;
+      final angle = tilt + (_random.nextDouble() - 0.5) * 0.8;
+      final speed = (20.0 + _random.nextDouble() * 35.0) * u;
       _stallPuffs.add(_StallPuff(
-        x: n.dx + (r.nextDouble() - 0.5) * 6 * u,
-        y: n.dy + (r.nextDouble() - 0.5) * 6 * u,
+        x: n.dx + (_random.nextDouble() - 0.5) * 6 * u,
+        y: n.dy + (_random.nextDouble() - 0.5) * 6 * u,
         vx: math.sin(angle) * speed,
         vy: math.cos(angle) * speed,
         life: life,
-        startSize: (8.0 + r.nextDouble() * 4.0) * u,
-        endSize: (22.0 + r.nextDouble() * 10.0) * u,
+        startSize: (8.0 + _random.nextDouble() * 4.0) * u,
+        endSize: (22.0 + _random.nextDouble() * 10.0) * u,
         color: const Color(0xFF383344),
       ));
     }
@@ -686,6 +685,7 @@ class _RaceForegroundPainter extends CustomPainter {
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.04);
   static final Paint _imagePaint = Paint()
     ..filterQuality = FilterQuality.medium;
+  static final Paint _stallPaint = Paint();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -875,10 +875,8 @@ class _RaceForegroundPainter extends CustomPainter {
       final prog = (p.age / p.life).clamp(0.0, 1.0);
       final alpha = ((1.0 - prog) * 0.7).clamp(0.0, 1.0);
       final size = p.startSize + (p.endSize - p.startSize) * prog;
-      final paint = Paint()
-        ..color = p.color.withOpacity(alpha)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * 0.3);
-      canvas.drawCircle(Offset(p.x, p.y), size, paint);
+      _stallPaint.color = p.color.withOpacity(alpha);
+      canvas.drawCircle(Offset(p.x, p.y), size, _stallPaint);
     }
   }
 

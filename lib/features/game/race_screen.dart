@@ -74,10 +74,8 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   Timer? _next;
   Timer? _bubble;
   Timer? _leave;
-  Timer? _stallTimer;
   ValueListenable<bool>? _tickerMode;
   bool _showTryAgain = false;
-  bool _stalled = false;
   DateTime? _finishingSince;
   int _comboStreak = 0;
   bool _triedCurrent = false;
@@ -142,7 +140,6 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     _next?.cancel();
     _bubble?.cancel();
     _leave?.cancel();
-    _stallTimer?.cancel();
     _speaker.stop();
     super.dispose();
   }
@@ -167,11 +164,6 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       _bubble?.cancel();
       _bubble = Timer(const Duration(milliseconds: 1800), () {
         if (mounted) setState(() => _showTryAgain = false);
-      });
-      _stallTimer?.cancel();
-      setState(() => _stalled = true);
-      _stallTimer = Timer(const Duration(milliseconds: 350), () {
-        if (mounted) setState(() => _stalled = false);
       });
     }
     if (next.correctKey != null &&
@@ -233,9 +225,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
                   phase: s.phase,
                   rocket: s.rocket,
                   trail: s.trail,
+                  wrongSeq: s.wrongSeq,
                 ))),
             bottomInset: bottomInset,
-            stalled: _stalled,
           ),
     );
     final topBar = Consumer(
@@ -365,9 +357,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         RacePhase phase,
         String rocket,
         String trail,
+        int wrongSeq,
       }) s, {
       required double bottomInset,
-      bool stalled = false,
   }) {
     return RaceScene(
       key: _sceneKey,
@@ -379,7 +371,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       won: s.phase != RacePhase.racing &&
           s.phase != RacePhase.loading &&
           s.kidSteps >= raceLength,
-      stalled: stalled,
+      stallSeq: s.wrongSeq,
       bottomInset: bottomInset,
     );
   }

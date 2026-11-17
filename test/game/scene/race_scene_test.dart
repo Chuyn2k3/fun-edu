@@ -21,7 +21,7 @@ RaceScene _scene(
         int chip = 0,
         bool boosting = false,
         bool won = false,
-        bool stalled = false}) =>
+        int stallSeq = 0}) =>
     RaceScene(
       kidSteps: kid,
       chipSteps: chip,
@@ -29,7 +29,7 @@ RaceScene _scene(
       kidTrail: 'trail_flame',
       boosting: boosting,
       won: won,
-      stalled: stalled,
+      stallSeq: stallSeq,
     );
 
 void main() {
@@ -447,7 +447,7 @@ void main() {
     final state = tester.state<RaceSceneState>(find.byType(RaceScene));
     expect(state.isKidStalled, isFalse);
 
-    await tester.pumpWidget(_host(_scene(kid: 2, chip: 2, stalled: true)));
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 2, stallSeq: 1)));
     await tester.pump(const Duration(milliseconds: 16));
     expect(state.isKidStalled, isTrue);
 
@@ -462,7 +462,7 @@ void main() {
     final reduceState = tester.state<RaceSceneState>(find.byType(RaceScene));
     expect(reduceState.isKidStalled, isFalse);
     await tester.pumpWidget(
-        _host(_scene(kid: 2, chip: 2, stalled: true), reduce: true));
+        _host(_scene(kid: 2, chip: 2, stallSeq: 1), reduce: true));
     await tester.pump(const Duration(milliseconds: 16));
     expect(reduceState.isKidStalled, isFalse);
     await tester.pumpWidget(const SizedBox());
