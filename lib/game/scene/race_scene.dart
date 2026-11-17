@@ -33,6 +33,7 @@ class RaceScene extends StatefulWidget {
     required this.boosting,
     required this.won,
     this.lanes = 2,
+    this.bottomInset = 0,
   }) : assert(lanes >= 2);
 
   /// Steps climbed, 0..10 (10 = at the planet).
@@ -51,6 +52,9 @@ class RaceScene extends StatefulWidget {
   /// The kid finished first: their flame stays the leader's.
   final bool won;
   final int lanes;
+
+  /// Inset from the bottom of the screen occupied by floating HUD controls.
+  final double bottomInset;
 
   static const steps = 10;
 
@@ -127,7 +131,9 @@ class RaceSceneState extends State<RaceScene>
 
   @visibleForTesting
   Offset luckyStarPosition(int milestone) {
-    final g = _geometry ?? TrackGeometry(const Size(390, 480), lanes: widget.lanes);
+    final g = _geometry ??
+        TrackGeometry(const Size(390, 480),
+            lanes: widget.lanes, bottomInset: widget.bottomInset);
     return g.basePoint(milestone / RaceScene.steps, 0);
   }
 
@@ -278,7 +284,8 @@ class RaceSceneState extends State<RaceScene>
           'Chíp Chíp: $chip trên ${RaceScene.steps} nấc.',
       child: LayoutBuilder(builder: (context, c) {
         final size = c.biggest;
-        final g = TrackGeometry(size, lanes: widget.lanes);
+        final g = TrackGeometry(size,
+            lanes: widget.lanes, bottomInset: widget.bottomInset);
         _setGeometry(g);
         return ClipRect(
           child: Stack(fit: StackFit.expand, children: [
@@ -292,9 +299,9 @@ class RaceSceneState extends State<RaceScene>
                       GameColors.skyTop,
                       GameColors.skyUpper,
                       GameColors.skyLower,
-                      GameColors.skyHorizon,
+                      Color(0xFF1B113E),
                     ],
-                    stops: [0, 0.38, 0.72, 1],
+                    stops: [0, 0.35, 0.70, 1],
                   ),
                 ),
               ),
@@ -310,7 +317,7 @@ class RaceSceneState extends State<RaceScene>
                 painter: TrackPainter(
                   geometry: g,
                   planet: _images[AppImages.planet],
-                  label: 'ĐÍCH',
+                  label: null,
                 ),
               ),
             ),
@@ -511,13 +518,15 @@ class _RaceForegroundPainter extends CustomPainter {
       canvas.translate(shake.dx, shake.dy);
     }
 
-    // Mid clouds (behind the rockets), drifting slowly.
-    final midBob = still ? 0.0 : math.sin(t * 2 * math.pi / 13);
-    Clouds.paintBig(canvas, Offset(-34 * u + 7 * u * midBob, h - 62 * u),
-        0.5 * u);
-    Clouds.paintBig(
-        canvas, Offset(w + 26 * u - 7 * u * midBob, h - 78 * u), 0.46 * u,
-        mirror: true);
+    // Mid clouds (behind the rockets), drifting slowly (when no bottom HUD).
+    if (g.bottomInset == 0) {
+      final midBob = still ? 0.0 : math.sin(t * 2 * math.pi / 13);
+      Clouds.paintBig(canvas, Offset(-34 * u + 7 * u * midBob, h - 62 * u),
+          0.5 * u);
+      Clouds.paintBig(
+          canvas, Offset(w + 26 * u - 7 * u * midBob, h - 78 * u), 0.46 * u,
+          mirror: true);
+    }
 
     // Lucky stars at milestones 4 and 8 on kid lane (lane 0).
     _paintLuckyStars(canvas, g, t, still);
@@ -535,12 +544,14 @@ class _RaceForegroundPainter extends CustomPainter {
     final cp = s.cometProgress;
     if (cp != null) _paintComet(canvas, size, cp);
 
-    // Front clouds at the bottom corners.
-    final frontBob = still ? 0.0 : math.sin(t * 2 * math.pi / 9 + 1);
-    Clouds.paintBig(canvas, Offset(-6 * u + 12 * u * frontBob, h + 2 * u), u);
-    Clouds.paintBig(
-        canvas, Offset(w + 18 * u - 12 * u * frontBob, h + 4 * u), 0.92 * u,
-        mirror: true);
+    // Front clouds at the bottom corners (when no bottom HUD).
+    if (g.bottomInset == 0) {
+      final frontBob = still ? 0.0 : math.sin(t * 2 * math.pi / 9 + 1);
+      Clouds.paintBig(canvas, Offset(-6 * u + 12 * u * frontBob, h + 2 * u), u);
+      Clouds.paintBig(
+          canvas, Offset(w + 18 * u - 12 * u * frontBob, h + 4 * u), 0.92 * u,
+          mirror: true);
+    }
 
     if (hasShake) {
       canvas.restore();

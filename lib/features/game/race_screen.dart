@@ -208,16 +208,26 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     ref.listen<RaceState>(raceControllerProvider, _onState);
     final paused = ref.watch(raceControllerProvider.select((s) => s.paused));
     final form = context.formFactor;
+    final tablet = context.isTablet;
+    final landscape = form == FormFactor.tabletLandscape;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    final double bottomInset = landscape
+        ? 0.0
+        : (tablet ? 310.0 : 216.0 + safeBottom);
+
     final scene = Consumer(
       builder: (context, ref, _) =>
-          _sceneOnly(ref.watch(raceControllerProvider.select((s) => (
-                kidSteps: s.kidSteps,
-                chipSteps: s.chipSteps,
-                boosting: s.boosting,
-                phase: s.phase,
-                rocket: s.rocket,
-                trail: s.trail,
-              )))),
+          _sceneOnly(
+            ref.watch(raceControllerProvider.select((s) => (
+                  kidSteps: s.kidSteps,
+                  chipSteps: s.chipSteps,
+                  boosting: s.boosting,
+                  phase: s.phase,
+                  rocket: s.rocket,
+                  trail: s.trail,
+                ))),
+            bottomInset: bottomInset,
+          ),
     );
     final topBar = Consumer(
       builder: (context, ref, _) =>
@@ -233,7 +243,6 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       onKey: (i) => _controller.answer(i),
       onListen: _speakAgain,
     );
-    final tablet = context.isTablet;
     final Widget body = switch (form) {
       FormFactor.tabletLandscape => Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -347,7 +356,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         RacePhase phase,
         String rocket,
         String trail,
-      }) s) {
+      }) s, {
+      required double bottomInset,
+  }) {
     return RaceScene(
       key: _sceneKey,
       kidSteps: s.kidSteps,
@@ -358,6 +369,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       won: s.phase != RacePhase.racing &&
           s.phase != RacePhase.loading &&
           s.kidSteps >= raceLength,
+      bottomInset: bottomInset,
     );
   }
 
@@ -543,7 +555,7 @@ class FloatingCockpitHUD extends ConsumerWidget {
     final isNitro = nitroActive || comboStreak >= 2;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(tablet ? 28 : 24),
+      borderRadius: BorderRadius.circular(tablet ? 28 : 22),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
@@ -552,20 +564,20 @@ class FloatingCockpitHUD extends ConsumerWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xDD1A103C),
-                Color(0xEE2A1B60),
+                Color(0xEE160D35),
+                Color(0xF5261858),
               ],
             ),
-            borderRadius: BorderRadius.circular(tablet ? 28 : 24),
+            borderRadius: BorderRadius.circular(tablet ? 28 : 22),
             border: Border.all(
-              color: Colors.white.withOpacity(0.24),
+              color: const Color(0x559C7DFF),
               width: 1.5,
             ),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x66000000),
-                blurRadius: 20,
-                offset: Offset(0, 8),
+                color: Color(0x6608031C),
+                blurRadius: 18,
+                offset: Offset(0, 6),
               ),
             ],
           ),
@@ -699,7 +711,7 @@ class _NitroBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            '⚡ NITRO x$comboStreak!',
+            'NITRO x$comboStreak!',
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.w900,
@@ -831,7 +843,7 @@ class _QuestionCard extends StatelessWidget {
     };
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: tablet ? 18 : 12, vertical: tablet ? 14 : 8),
+          horizontal: tablet ? 18 : 12, vertical: tablet ? 12 : 7),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
@@ -841,11 +853,11 @@ class _QuestionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: [
           const BoxShadow(
-              color: GameColors.questionCardEdge, offset: Offset(0, 9)),
+              color: GameColors.questionCardEdge, offset: Offset(0, 5)),
           BoxShadow(
-            color: GameColors.keyOrangeEdge.withOpacity(0.16),
-            blurRadius: 22,
-            offset: const Offset(0, 16),
+            color: GameColors.keyOrangeEdge.withOpacity(0.14),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),

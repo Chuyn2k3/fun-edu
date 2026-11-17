@@ -27,17 +27,24 @@ class SceneClock extends ChangeNotifier {
 /// iPads (portrait or landscape) keep the same composition.
 @immutable
 class TrackGeometry {
-  factory TrackGeometry(Size size, {int lanes = 2}) {
-    final w = size.width, h = size.height;
-    final bottomW = math.min(0.65 * w, 0.53 * h);
-    return TrackGeometry._(size, lanes, bottomW);
+  factory TrackGeometry(
+    Size size, {
+    int lanes = 2,
+    double bottomInset = 0,
+  }) {
+    final w = size.width;
+    final availableH = math.max(120.0, size.height - bottomInset);
+    final bottomW = math.min(0.68 * w, 0.54 * availableH);
+    return TrackGeometry._(size, lanes, bottomW, bottomInset);
   }
 
-  TrackGeometry._(this.size, this.lanes, this.bottomW)
+  TrackGeometry._(this.size, this.lanes, this.bottomW, this.bottomInset)
       : assert(lanes >= 2),
         u = bottomW / 254,
-        topW = bottomW * 0.323,
-        topY = size.height * 0.40,
+        topW = bottomW * 0.30,
+        topY = bottomInset > 0
+            ? math.max(220.0 * (bottomW / 254), (size.height - bottomInset) * 0.35)
+            : math.max(150.0 * (bottomW / 254), size.height * 0.30),
         cx = size.width / 2;
 
   final Size size;
@@ -46,14 +53,21 @@ class TrackGeometry {
   /// Width of the track surface at the bottom edge and at the far (top) end.
   final double bottomW, topW;
 
+  /// Inset from the bottom of the screen occupied by floating HUD controls.
+  final double bottomInset;
+
   /// Scale unit: 1.0 on the phone mockup (390 × 480 scene).
   final double u;
   final double topY, cx;
 
-  double get bottomY => size.height;
+  double get bottomY =>
+      bottomInset > 0 ? (size.height - bottomInset + 36 * u) : size.height;
 
   /// Base (fins) of a rocket at progress 0 and 1.
-  double get startY => size.height * 0.86;
+  /// When [bottomInset] > 0, the start line is elevated safely above the HUD
+  /// so rockets (including nozzles, flames, and smoke) are 100% visible.
+  double get startY =>
+      bottomInset > 0 ? (size.height - bottomInset - 26 * u) : size.height * 0.88;
   double get finishY => topY + 6 * u;
 
   double get _dwdy => (bottomW - topW) / (bottomY - topY);
@@ -71,7 +85,7 @@ class TrackGeometry {
     final lin = y0 + (y1 - y0) * p;
     final k = (y0 - yv) / (y1 - yv);
     final persp = yv + (y0 - yv) / (1 + p * (k - 1));
-    return lin + (persp - lin) * 0.2;
+    return lin + (persp - lin) * 0.25;
   }
 
   double _laneFrac(int lane) => (lane + 0.5) / lanes - 0.5;
@@ -98,17 +112,20 @@ class TrackGeometry {
 
   /// The finish planet, sitting on the far end of the track.
   Rect get planetRect {
-    final pw = 160 * u, ph = 120 * u;
-    final bottom = topY - 10 * u;
+    final pw = 140 * u, ph = 105 * u;
+    final bottom = topY - 6 * u;
     return Rect.fromLTWH(cx - pw / 2, bottom - ph, pw, ph);
   }
 
   @override
   bool operator ==(Object other) =>
-      other is TrackGeometry && other.size == size && other.lanes == lanes;
+      other is TrackGeometry &&
+      other.size == size &&
+      other.lanes == lanes &&
+      other.bottomInset == bottomInset;
 
   @override
-  int get hashCode => Object.hash(size, lanes);
+  int get hashCode => Object.hash(size, lanes, bottomInset);
 }
 
 /// Static layer: the raised track slab, lane lines, step ties, finish strip
