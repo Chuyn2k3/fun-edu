@@ -75,3 +75,4 @@ Tổng hợp bộ 8 huy hiệu / huy chương 3D phong cách đồ chơi đất 
 - **Mô tả**: Huy chương đất sét màu xanh ngọc (teal) với hình tên lửa mini mập mạp hướng thẳng lên trời, ruy-băng ngắn dễ thương.
 
 ![Phi Công Chăm Chỉ](generated/medals/badge_rocket_teal_1794815213547.jpg)
+
