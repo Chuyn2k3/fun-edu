@@ -38,3 +38,14 @@ python3 tools/assets/chroma_key.py "$G/medals/friendship_medal_badge_v2_17948152
 python3 tools/assets/chroma_key.py "$G/medals/sieu_toan_hoc_badge_1794815196337.jpg" "$C/game/badge-math-whiz.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/medals/clay_medal_badge_crayon_1794815200501.jpg" "$C/game/badge-letter-master.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/medals/badge_rocket_teal_1794815213547.jpg" "$C/game/badge-pilot.json" assets/images/game
+# Album stickers (Chíp poses) on green #00C853.
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_clap.jpg" "$C/game/sticker-clap.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_laugh.jpg" "$C/game/sticker-laugh.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_pilot_goggles.jpg" "$C/game/sticker-pilot-goggles.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_grad_cap.jpg" "$C/game/sticker-grad-cap.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_hug_star.jpg" "$C/game/sticker-hug-star.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_fist.jpg" "$C/game/sticker-fist.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_hug_heart.jpg" "$C/game/sticker-hug-heart.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_abacus.jpg" "$C/game/sticker-abacus.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_crayon.jpg" "$C/game/sticker-crayon.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_wave_rocket.jpg" "$C/game/sticker-wave-rocket.json" assets/images/game

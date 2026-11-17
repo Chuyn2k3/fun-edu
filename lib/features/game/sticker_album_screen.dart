@@ -40,23 +40,6 @@ const _badgeStickerTitles = {
   GameBadge.pilot: 'Chíp vẫy tay trên tên lửa',
 };
 
-/// PLACEHOLDER ART. The sticker set does not exist yet (the owner will make
-/// it on a green background, spec §6.4b). Until then each sticker shows the
-/// existing 3D Chíp pose closest in mood. Replace these with the sticker
-/// images (via AppImages) once they exist; nothing else needs to change.
-const stickerPlaceholderArt = <String, String>{
-  'sticker_clap': AppImages.chipJoy, // claps: joyful
-  'sticker_laugh': AppImages.chipSurprise, // laughs: big open face
-  'sticker_pilot_goggles': AppImages.chipMain, // pilot goggles
-  'sticker_grad_cap': AppImages.chipWrite, // graduation cap: studious
-  'sticker_hug_star': AppImages.chipJoy, // hugs a star
-  'sticker_fist': AppImages.chipEncourage, // "cố lên" fist
-  'sticker_hug_heart': AppImages.chipThumb, // hugs a heart: warm
-  'sticker_abacus': AppImages.chipThumb, // holds an abacus
-  'sticker_crayon': AppImages.chipWrite, // holds a crayon
-  'sticker_wave_rocket': AppImages.chipMain, // waves from a rocket
-};
-
 /// Sticker ids the kid has: gift stickers owned, plus one per badge earned.
 Set<String> ownedStickers(Set<String> owned, Set<GameBadge> badges) => {
       for (final s in stickerCatalogue)
@@ -198,7 +181,7 @@ class _StickerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tablet = context.isTablet;
     final art = Image.asset(
-      stickerPlaceholderArt[sticker.id] ?? AppImages.chipMain,
+      AppImages.stickers[sticker.id] ?? AppImages.chipMain,
       fit: BoxFit.contain,
     );
     return Semantics(

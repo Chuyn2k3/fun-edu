@@ -36,6 +36,30 @@ abstract final class AppImages {
   static const badgeMathWhiz = 'assets/images/game/badge-math-whiz.png';
   static const badgeLetterMaster = 'assets/images/game/badge-letter-master.png';
   static const badgePilot = 'assets/images/game/badge-pilot.png';
+  static const stickerClap = 'assets/images/game/sticker-clap.png';
+  static const stickerLaugh = 'assets/images/game/sticker-laugh.png';
+  static const stickerPilotGoggles = 'assets/images/game/sticker-pilot-goggles.png';
+  static const stickerGradCap = 'assets/images/game/sticker-grad-cap.png';
+  static const stickerHugStar = 'assets/images/game/sticker-hug-star.png';
+  static const stickerFist = 'assets/images/game/sticker-fist.png';
+  static const stickerHugHeart = 'assets/images/game/sticker-hug-heart.png';
+  static const stickerAbacus = 'assets/images/game/sticker-abacus.png';
+  static const stickerCrayon = 'assets/images/game/sticker-crayon.png';
+  static const stickerWaveRocket = 'assets/images/game/sticker-wave-rocket.png';
+
+  /// Album sticker art by sticker id (Chíp poses, cut from green).
+  static const stickers = <String, String>{
+    'sticker_clap': stickerClap,
+    'sticker_laugh': stickerLaugh,
+    'sticker_pilot_goggles': stickerPilotGoggles,
+    'sticker_grad_cap': stickerGradCap,
+    'sticker_hug_star': stickerHugStar,
+    'sticker_fist': stickerFist,
+    'sticker_hug_heart': stickerHugHeart,
+    'sticker_abacus': stickerAbacus,
+    'sticker_crayon': stickerCrayon,
+    'sticker_wave_rocket': stickerWaveRocket,
+  };
 
   static const all = [
     chipMain,
@@ -71,5 +95,15 @@ abstract final class AppImages {
     badgeMathWhiz,
     badgeLetterMaster,
     badgePilot,
+    stickerClap,
+    stickerLaugh,
+    stickerPilotGoggles,
+    stickerGradCap,
+    stickerHugStar,
+    stickerFist,
+    stickerHugHeart,
+    stickerAbacus,
+    stickerCrayon,
+    stickerWaveRocket,
   ];
 }
