@@ -64,13 +64,15 @@ void main() {
     final rows = await results(t, h.db);
     expect(rows, hasLength(1));
     expect(rows.single.won, isTrue);
-    // 5 for the win + 2 comets (questions 3 and 6) right on the first try;
+    // 5 for the win + 2 comets (questions 3 and 6) right on the first try
+    // + 2 lucky stars collected on track = 9 stars;
     // the perfect race ends at question 8, before the third comet.
     await skipCutScene(t);
     // First race ever, all first try: the scholar badge pops up first.
     await t.tap(find.text('Tuyệt quá!'));
     await pumpReal(t, times: 6);
-    expect(find.text('+7 sao vũ trụ'), findsOneWidget);
+    expect(find.text('+9 sao vũ trụ'), findsOneWidget);
+    expect(find.text('+2 Sao May Mắn!'), findsOneWidget);
     expect(find.text('Đua lại!'), findsOneWidget);
     expect(find.text('Về Góc Chơi'), findsOneWidget);
   });

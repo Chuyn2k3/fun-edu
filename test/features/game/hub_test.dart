@@ -316,7 +316,7 @@ void main() {
     expect(
         find.descendant(
             of: find.byKey(const ValueKey('hub-stars')),
-            matching: find.text('31')),
+            matching: find.text('33')),
         findsOneWidget);
     expect(find.text('1/8 huy hiệu'), findsOneWidget);
     // sticker_clap picked + the scholar badge's sticker.

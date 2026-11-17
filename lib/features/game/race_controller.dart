@@ -45,6 +45,7 @@ class RaceResultArgs {
     required this.kidSteps,
     required this.rocket,
     required this.trail,
+    this.luckyStarsCollected = 0,
   });
 
   final RaceSubject subject;
@@ -57,6 +58,7 @@ class RaceResultArgs {
   final int kidSteps;
   final String rocket;
   final String trail;
+  final int luckyStarsCollected;
 
   bool get won => outcome.won;
 
@@ -356,6 +358,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
         kidSteps: race.kidSteps,
         rocket: state.rocket,
         trail: state.trail,
+        luckyStarsCollected: o.luckyStarsCollected,
       ),
     );
   }

@@ -255,7 +255,11 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
                           ],
                           SizedBox(height: tablet ? 16 : 12),
                           if (a.saved)
-                            _StarsPill(stars: a.record!.starsEarned, won: a.won)
+                            _StarsPill(
+                              stars: a.record!.starsEarned,
+                              won: a.won,
+                              luckyStars: a.luckyStarsCollected,
+                            )
                           else
                             _UnsavedNote(text: _unsavedLine, tablet: tablet),
                           if (!a.won) ...[
@@ -554,10 +558,15 @@ class _RecordBadge extends StatelessWidget {
 }
 
 class _StarsPill extends StatelessWidget {
-  const _StarsPill({required this.stars, required this.won});
+  const _StarsPill({
+    required this.stars,
+    required this.won,
+    this.luckyStars = 0,
+  });
 
   final int stars;
   final bool won;
+  final int luckyStars;
 
   @override
   Widget build(BuildContext context) {
@@ -592,6 +601,42 @@ class _StarsPill extends StatelessWidget {
             ],
           ),
         ),
+        if (luckyStars > 0) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: tablet ? 16 : 12,
+              vertical: tablet ? 8 : 6,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              boxShadow: const [
+                BoxShadow(
+                  color: GameColors.questionCardEdge,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('⭐', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    '+$luckyStars Sao May Mắn!',
+                    style: TextStyle(
+                      fontSize: tablet ? 20 : 16,
+                      fontWeight: FontWeight.w800,
+                      color: GameColors.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (!won) ...[
           const SizedBox(height: 8),
           Text(

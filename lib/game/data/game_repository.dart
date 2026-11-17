@@ -145,7 +145,8 @@ class GameRepository {
       }
       final beatRecord =
           o.won && previousBest != null && o.kidTime < previousBest;
-      final stars = cosmicStarsFor(o, beatRecord: beatRecord);
+      final baseStars = cosmicStarsFor(o, beatRecord: beatRecord);
+      final stars = baseStars + o.luckyStarsCollected;
       final total = before + stars;
 
       await _db.into(_db.raceResults).insert(
