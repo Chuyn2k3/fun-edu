@@ -53,7 +53,7 @@ BoxDecoration _primaryButtonDecoration({
     );
 
 /// "Nhà Chíp" tab (/house): nurture Chíp with learning stars and decorate
-/// Chíp's cozy room, 100% offline.
+/// Chíp's cozy room with 120fps custom animations, 100% offline.
 class HouseScreen extends ConsumerStatefulWidget {
   const HouseScreen({super.key});
 
@@ -64,36 +64,31 @@ class HouseScreen extends ConsumerStatefulWidget {
 class _HouseScreenState extends ConsumerState<HouseScreen> {
   _HouseTab _tab = _HouseTab.feed;
   HouseSlot _slot = HouseSlot.wall;
-  bool _happyBounce = false;
   String? _reactionText;
-  String? _floatingBadge;
+  HouseFxEvent? _fxEvent;
+  int _fxSeq = 0;
   int _petIndex = 0;
-  Timer? _bounceTimer;
 
-  @override
-  void dispose() {
-    _bounceTimer?.cancel();
-    super.dispose();
-  }
-
-  void _triggerReaction({required String speech, String? badge}) {
-    _bounceTimer?.cancel();
+  void _triggerFx({required String speech, required HouseFxEvent event}) {
     setState(() {
-      _happyBounce = true;
       _reactionText = speech;
-      _floatingBadge = badge;
+      _fxEvent = event;
     });
     unawaited(ref.read(speakerProvider).speak(speech));
-    _bounceTimer = Timer(const Duration(milliseconds: 900), () {
-      if (mounted) setState(() => _happyBounce = false);
-    });
   }
 
   void _onPetChip(ChipHouseData data) {
     final line = _petLines[_petIndex % _petLines.length]
         .replaceAll('bé', data.displayKidName);
     _petIndex++;
-    _triggerReaction(speech: line, badge: 'Vui quá!');
+    _triggerFx(
+      speech: line,
+      event: HouseFxEvent(
+        seq: ++_fxSeq,
+        kind: HouseFxKind.pet,
+        badge: 'Vui quá!',
+      ),
+    );
   }
 
   Future<void> _onFeed(ChipHouseData data, HouseTreat treat) async {
@@ -111,18 +106,31 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
     }
     await ref.read(chipHouseRepositoryProvider).save(data.kidId, res.state);
     ref.read(houseRevisionProvider.notifier).state++;
-    _triggerReaction(
+    _triggerFx(
       speech: res.message,
-      badge: res.leveledUp
-          ? 'Lên cấp ${res.state.stage.level}!'
-          : '+${treat.xpGain} XP',
+      event: HouseFxEvent(
+        seq: ++_fxSeq,
+        kind: res.leveledUp ? HouseFxKind.levelUp : HouseFxKind.feed,
+        treatColor: treat.color,
+        treatIcon: treat.icon,
+        badge: res.leveledUp
+            ? 'Lên cấp ${res.state.stage.level}!'
+            : '+${treat.xpGain} XP',
+      ),
     );
   }
 
   Future<void> _onDecorTap(ChipHouseData data, HouseItem item) async {
     if (data.state.equippedId(item.slot) == item.id) {
-      _triggerReaction(
+      _triggerFx(
         speech: '${item.title} đang trang trí trong phòng rồi nè!',
+        event: HouseFxEvent(
+          seq: ++_fxSeq,
+          kind: HouseFxKind.decor,
+          decorSlot: item.slot,
+          decorColor: item.swatch,
+          badge: 'Đang dùng!',
+        ),
       );
       return;
     }
@@ -138,9 +146,15 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
     }
     await ref.read(chipHouseRepositoryProvider).save(data.kidId, res.state);
     ref.read(houseRevisionProvider.notifier).state++;
-    _triggerReaction(
+    _triggerFx(
       speech: res.message,
-      badge: res.purchased ? 'Mở mới!' : 'Đã lắp!',
+      event: HouseFxEvent(
+        seq: ++_fxSeq,
+        kind: HouseFxKind.decor,
+        decorSlot: item.slot,
+        decorColor: item.swatch,
+        badge: res.purchased ? 'Mở mới!' : 'Đã lắp!',
+      ),
     );
   }
 
@@ -198,8 +212,7 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
         children: [
           RoomStage(
             state: data.state,
-            happyBounce: _happyBounce,
-            floatingBadge: _floatingBadge,
+            fxEvent: _fxEvent,
             onPetChip: () => _onPetChip(data),
             tablet: tablet,
           ),
@@ -411,7 +424,8 @@ class _HouseHeader extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Semantics(
-          label: 'Còn $availableStars ngôi sao để chăm Chíp, tổng đã học $totalStars sao',
+          label:
+              'Còn $availableStars ngôi sao để chăm Chíp, tổng đã học $totalStars sao',
           excludeSemantics: true,
           child: Container(
             key: const ValueKey('house-available-stars'),
@@ -487,18 +501,13 @@ class _GrowthAndBubbleCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    xpLabel,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+              const SizedBox(width: 10),
+              Text(
+                xpLabel,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textMuted,
                 ),
               ),
             ],
@@ -506,12 +515,17 @@ class _GrowthAndBubbleCard extends StatelessWidget {
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.pill),
-            child: LinearProgressIndicator(
-              value: state.stageProgress,
-              minHeight: 11,
-              backgroundColor: HouseColors.xpBarTrack,
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(HouseColors.xpBarFill),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: state.stageProgress),
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              builder: (_, value, __) => LinearProgressIndicator(
+                value: value,
+                minHeight: 11,
+                backgroundColor: HouseColors.xpBarTrack,
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(HouseColors.xpBarFill),
+              ),
             ),
           ),
         ],
@@ -614,6 +628,48 @@ class _ModeTabButton extends StatelessWidget {
   }
 }
 
+/// Single-pass 2-column grid (avoids shrinkWrap double layout at 120fps).
+class _TwoColumnGrid extends StatelessWidget {
+  const _TwoColumnGrid({
+    required this.children,
+    required this.spacing,
+    required this.itemHeight,
+  });
+
+  final List<Widget> children;
+  final double spacing;
+  final double itemHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i += 2) {
+      if (i > 0) rows.add(SizedBox(height: spacing));
+      rows.add(
+        SizedBox(
+          height: itemHeight,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: children[i]),
+              SizedBox(width: spacing),
+              Expanded(
+                child: i + 1 < children.length
+                    ? children[i + 1]
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: rows,
+    );
+  }
+}
+
 class _TreatGrid extends StatelessWidget {
   const _TreatGrid({
     required this.data,
@@ -629,129 +685,121 @@ class _TreatGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: houseTreats.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: tablet ? 16 : 12,
-        crossAxisSpacing: tablet ? 16 : 12,
-        mainAxisExtent: tablet ? 196 : 180,
-      ),
-      itemBuilder: (_, i) {
-        final treat = houseTreats[i];
-        final freeClaimed =
-            treat.isDailyFree && !data.state.canClaimFreeTreat(now);
-        final canAfford =
-            !freeClaimed && data.availableStars >= treat.costStars;
+    return _TwoColumnGrid(
+      spacing: tablet ? 16 : 12,
+      itemHeight: tablet ? 196 : 180,
+      children: [
+        for (final treat in houseTreats) _buildTile(treat),
+      ],
+    );
+  }
 
-        final badgeLabel = freeClaimed
-            ? 'Đã ăn hôm nay'
-            : (treat.isDailyFree ? 'Miễn phí' : '${treat.costStars} sao');
+  Widget _buildTile(HouseTreat treat) {
+    final freeClaimed = treat.isDailyFree && !data.state.canClaimFreeTreat(now);
+    final canAfford = !freeClaimed && data.availableStars >= treat.costStars;
+    final badgeLabel = freeClaimed
+        ? 'Đã ăn hôm nay'
+        : (treat.isDailyFree ? 'Miễn phí' : '${treat.costStars} sao');
 
-        return Semantics(
-          button: true,
-          label: '${treat.title}, cộng ${treat.xpGain} điểm, $badgeLabel',
-          excludeSemantics: true,
-          child: Pressable(
-            onTap: () => onFeed(treat),
-            builder: (pressed) => Container(
-              key: ValueKey('house-treat-${treat.id}'),
-              padding: const EdgeInsets.all(14),
-              decoration: freeClaimed
-                  ? BoxDecoration(
-                      color: CollectionColors.lockedSurface,
-                      borderRadius: BorderRadius.circular(AppRadii.card),
-                      border: Border.all(
-                        color: CollectionColors.lockedBorder,
-                        width: 1.5,
-                      ),
-                    )
-                  : raisedDecoration(
-                      accent: treat.color,
-                      pressed: pressed,
-                    ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Semantics(
+      button: true,
+      label: '${treat.title}, cộng ${treat.xpGain} điểm, $badgeLabel',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: () => onFeed(treat),
+        builder: (pressed) => Container(
+          key: ValueKey('house-treat-${treat.id}'),
+          padding: const EdgeInsets.all(14),
+          decoration: freeClaimed
+              ? BoxDecoration(
+                  color: CollectionColors.lockedSurface,
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(
+                    color: CollectionColors.lockedBorder,
+                    width: 1.5,
+                  ),
+                )
+              : raisedDecoration(
+                  accent: treat.color,
+                  pressed: pressed,
+                ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: tablet ? 56 : 48,
+                height: tablet ? 56 : 48,
+                decoration: BoxDecoration(
+                  color: treat.color.withOpacity(freeClaimed ? 0.12 : 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  treat.icon,
+                  size: tablet ? 32 : 28,
+                  color:
+                      freeClaimed ? CollectionColors.lockedInk : treat.color,
+                ),
+              ),
+              Column(
                 children: [
-                  Container(
-                    width: tablet ? 56 : 48,
-                    height: tablet ? 56 : 48,
-                    decoration: BoxDecoration(
-                      color: treat.color.withOpacity(freeClaimed ? 0.12 : 0.16),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      treat.icon,
-                      size: tablet ? 32 : 28,
+                  Text(
+                    treat.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: tablet ? 18 : 16,
+                      fontWeight: FontWeight.w900,
                       color: freeClaimed
                           ? CollectionColors.lockedInk
-                          : treat.color,
+                          : AppColors.text,
                     ),
                   ),
-                  Column(
-                    children: [
-                      Text(
-                        treat.title,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: tablet ? 18 : 16,
-                          fontWeight: FontWeight.w900,
-                          color: freeClaimed
-                              ? CollectionColors.lockedInk
-                              : AppColors.text,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '+${treat.xpGain} XP',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: freeClaimed
-                              ? CollectionColors.lockedInk
-                              : HouseColors.xpBarFill,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
+                  const SizedBox(height: 2),
+                  Text(
+                    '+${treat.xpGain} XP',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
                       color: freeClaimed
-                          ? CollectionColors.progressTrack
-                          : (canAfford
-                              ? CollectionColors.goldFill
-                              : CollectionColors.lockedSurface),
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        badgeLabel,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: freeClaimed
-                              ? CollectionColors.lockedInk
-                              : (canAfford
-                                  ? CollectionColors.goldInk
-                                  : AppColors.textMuted),
-                        ),
-                      ),
+                          ? CollectionColors.lockedInk
+                          : HouseColors.xpBarFill,
                     ),
                   ),
                 ],
               ),
-            ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: freeClaimed
+                      ? CollectionColors.progressTrack
+                      : (canAfford
+                          ? CollectionColors.goldFill
+                          : CollectionColors.lockedSurface),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    badgeLabel,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: freeClaimed
+                          ? CollectionColors.lockedInk
+                          : (canAfford
+                              ? CollectionColors.goldInk
+                              : AppColors.textMuted),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -848,118 +896,112 @@ class _DecorGrid extends StatelessWidget {
     final items = houseItemsForSlot(slot);
     final equippedId = data.state.equippedId(slot);
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: tablet ? 16 : 12,
-        crossAxisSpacing: tablet ? 16 : 12,
-        mainAxisExtent: tablet ? 186 : 172,
-      ),
-      itemBuilder: (_, i) {
-        final item = items[i];
-        final owned = data.state.isOwned(item.id);
-        final equipped = equippedId == item.id;
+    return _TwoColumnGrid(
+      spacing: tablet ? 16 : 12,
+      itemHeight: tablet ? 186 : 172,
+      children: [
+        for (final item in items) _buildTile(item, equippedId == item.id),
+      ],
+    );
+  }
 
-        final statusLabel = equipped
-            ? 'Đang dùng'
-            : (owned ? 'Chọn dùng' : 'Mở · ${item.costStars} sao');
+  Widget _buildTile(HouseItem item, bool equipped) {
+    final owned = data.state.isOwned(item.id);
+    final statusLabel = equipped
+        ? 'Đang dùng'
+        : (owned ? 'Chọn dùng' : 'Mở · ${item.costStars} sao');
 
-        return Semantics(
-          button: true,
-          label: '${item.title}, $statusLabel',
-          excludeSemantics: true,
-          child: Pressable(
-            onTap: () => onTap(item),
-            builder: (pressed) => Container(
-              key: ValueKey('house-item-${item.id}'),
-              padding: const EdgeInsets.all(14),
-              decoration: equipped
-                  ? BoxDecoration(
-                      color: HouseColors.equippedFill,
+    return Semantics(
+      button: true,
+      label: '${item.title}, $statusLabel',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: () => onTap(item),
+        builder: (pressed) => Container(
+          key: ValueKey('house-item-${item.id}'),
+          padding: const EdgeInsets.all(14),
+          decoration: equipped
+              ? BoxDecoration(
+                  color: HouseColors.equippedFill,
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(
+                    color: HouseColors.equippedInk,
+                    width: 2.5,
+                  ),
+                )
+              : (owned
+                  ? raisedDecoration(accent: item.swatch, pressed: pressed)
+                  : BoxDecoration(
+                      color: CollectionColors.lockedSurface,
                       borderRadius: BorderRadius.circular(AppRadii.card),
                       border: Border.all(
-                        color: HouseColors.equippedInk,
-                        width: 2.5,
+                        color: CollectionColors.lockedBorder,
+                        width: 1.5,
                       ),
-                    )
-                  : (owned
-                      ? raisedDecoration(accent: item.swatch, pressed: pressed)
-                      : BoxDecoration(
-                          color: CollectionColors.lockedSurface,
-                          borderRadius: BorderRadius.circular(AppRadii.card),
-                          border: Border.all(
-                            color: CollectionColors.lockedBorder,
-                            width: 1.5,
-                          ),
-                        )),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: tablet ? 54 : 46,
-                    height: tablet ? 54 : 46,
-                    decoration: BoxDecoration(
-                      color: item.swatch.withOpacity(owned ? 0.35 : 0.22),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: item.swatch.withOpacity(0.7),
-                        width: 2,
-                      ),
-                    ),
-                    child: Icon(
-                      item.icon,
-                      size: tablet ? 30 : 26,
-                      color: owned ? AppColors.text : CollectionColors.lockedInk,
-                    ),
+                    )),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: tablet ? 54 : 46,
+                height: tablet ? 54 : 46,
+                decoration: BoxDecoration(
+                  color: item.swatch.withOpacity(owned ? 0.35 : 0.22),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: item.swatch.withOpacity(0.7),
+                    width: 2,
                   ),
-                  Text(
-                    item.title,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: tablet ? 17 : 15,
-                      fontWeight: FontWeight.w900,
-                      color: owned ? AppColors.text : CollectionColors.lockedInk,
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: equipped
-                          ? HouseColors.equippedInk
-                          : (owned
-                              ? AppColors.background
-                              : CollectionColors.goldFill),
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        statusLabel,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: equipped
-                              ? Colors.white
-                              : (owned
-                                  ? AppColors.text
-                                  : CollectionColors.goldInk),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+                child: Icon(
+                  item.icon,
+                  size: tablet ? 30 : 26,
+                  color: owned ? AppColors.text : CollectionColors.lockedInk,
+                ),
               ),
-            ),
+              Text(
+                item.title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: tablet ? 17 : 15,
+                  fontWeight: FontWeight.w900,
+                  color: owned ? AppColors.text : CollectionColors.lockedInk,
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: equipped
+                      ? HouseColors.equippedInk
+                      : (owned
+                          ? AppColors.background
+                          : CollectionColors.goldFill),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    statusLabel,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: equipped
+                          ? Colors.white
+                          : (owned
+                              ? AppColors.text
+                              : CollectionColors.goldInk),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

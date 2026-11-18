@@ -189,22 +189,29 @@ class _LevelTile extends StatelessWidget {
     final locked = index > current;
     final accent = locked ? AppColors.textMuted : Subject.tiengAnh.color;
 
-    return Opacity(
-      opacity: locked ? 0.55 : 1.0,
-      child: Pressable(
-        onTap: onTap,
-        semanticsLabel: 'Cấp ${index + 1}: ${level.title}',
-        builder: (pressed) {
-          final deco = raisedDecoration(
-            accent: active ? AppColors.primary : accent,
-            tint: active
-                ? Subject.viet.tint
-                : done
-                    ? Subject.tiengAnh.tint
-                    : AppColors.card,
-            radius: AppRadii.tile,
-            pressed: pressed,
-          );
+    return Pressable(
+      onTap: onTap,
+      semanticsLabel: 'Cấp ${index + 1}: ${level.title}',
+      builder: (pressed) {
+        final deco = locked
+            ? BoxDecoration(
+                color: CollectionColors.lockedSurface,
+                borderRadius: BorderRadius.circular(AppRadii.tile),
+                border: Border.all(
+                  color: CollectionColors.lockedBorder,
+                  width: 1.5,
+                ),
+              )
+            : raisedDecoration(
+                accent: active ? AppColors.primary : accent,
+                tint: active
+                    ? Subject.viet.tint
+                    : done
+                        ? Subject.tiengAnh.tint
+                        : AppColors.card,
+                radius: AppRadii.tile,
+                pressed: pressed,
+              );
 
           if (tablet) {
             return Container(
@@ -341,14 +348,13 @@ class _LevelTile extends StatelessWidget {
                     Icons.lock_rounded,
                     key: ValueKey('en-locked-$index'),
                     size: 26,
-                    color: AppColors.textMuted,
+                    color: CollectionColors.lockedInk,
                   ),
               ],
             ),
           );
         },
-      ),
-    );
+      );
   }
 }
 

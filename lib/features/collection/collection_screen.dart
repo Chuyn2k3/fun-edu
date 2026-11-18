@@ -47,11 +47,13 @@ BoxDecoration _primaryButtonDecoration({
       ],
     );
 
-const _greyscaleMatrix = <double>[
+/// Single-pass greyscale + 0.38 alpha matrix (avoids nested Opacity +
+/// ColorFiltered double saveLayer during 120fps scrolling).
+const _lockedGreyscaleMatrix = <double>[
   0.2126, 0.7152, 0.0722, 0, 0,
   0.2126, 0.7152, 0.0722, 0, 0,
   0.2126, 0.7152, 0.0722, 0, 0,
-  0, 0, 0, 1, 0,
+  0, 0, 0, 0.38, 0,
 ];
 
 enum CollectionTab { stickers, calendar, certificates }
@@ -896,13 +898,10 @@ class _StickerCard extends StatelessWidget {
                       )
                     : Padding(
                         padding: const EdgeInsets.all(8),
-                        child: Opacity(
-                          opacity: 0.35,
-                          child: ColorFiltered(
-                            colorFilter:
-                                const ColorFilter.matrix(_greyscaleMatrix),
-                            child: image,
-                          ),
+                        child: ColorFiltered(
+                          colorFilter:
+                              const ColorFilter.matrix(_lockedGreyscaleMatrix),
+                          child: image,
                         ),
                       ),
               ),
@@ -1329,13 +1328,10 @@ class _CertificateCard extends StatelessWidget {
                 children: [
                   unlocked
                       ? badgeImage
-                      : Opacity(
-                          opacity: 0.38,
-                          child: ColorFiltered(
-                            colorFilter:
-                                const ColorFilter.matrix(_greyscaleMatrix),
-                            child: badgeImage,
-                          ),
+                      : ColorFiltered(
+                          colorFilter:
+                              const ColorFilter.matrix(_lockedGreyscaleMatrix),
+                          child: badgeImage,
                         ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1477,13 +1473,10 @@ class _StickerDetailDialog extends StatelessWidget {
                 height: 130,
                 child: unlocked
                     ? Image.asset(sticker.image, fit: BoxFit.contain)
-                    : Opacity(
-                        opacity: 0.4,
-                        child: ColorFiltered(
-                          colorFilter:
-                              const ColorFilter.matrix(_greyscaleMatrix),
-                          child: Image.asset(sticker.image, fit: BoxFit.contain),
-                        ),
+                    : ColorFiltered(
+                        colorFilter:
+                            const ColorFilter.matrix(_lockedGreyscaleMatrix),
+                        child: Image.asset(sticker.image, fit: BoxFit.contain),
                       ),
               ),
               const SizedBox(height: 14),

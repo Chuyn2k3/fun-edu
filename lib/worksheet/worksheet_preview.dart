@@ -52,9 +52,10 @@ class WorksheetPreview extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppRadii.tile),
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox(
+          child: RepaintBoundary(
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: SizedBox(
               width: 595.28,
               height: 841.89,
               child: Padding(
@@ -96,6 +97,7 @@ class WorksheetPreview extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
             ),
           ),
         ),

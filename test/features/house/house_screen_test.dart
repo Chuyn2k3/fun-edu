@@ -161,4 +161,57 @@ void main() {
     // Cleanly finish bounce timer.
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets('120fps custom feed, decor, and pet FX step cleanly without errors',
+      (tester) async {
+    _setSize(tester, const Size(390, 844));
+    final seeded = await _seedDb(stars: 30);
+    addTearDown(seeded.db.close);
+    final speaker = _SpySpeaker();
+
+    await tester.pumpWidget(_app([
+      databaseProvider.overrideWithValue(seeded.db),
+      speakerProvider.overrideWithValue(speaker),
+      houseClockProvider.overrideWithValue(() => DateTime(2026, 11, 18)),
+    ]));
+    await tester.pumpAndSettle();
+
+    // 1. Feed star cake (triggers level-up + flying treat + confetti burst)
+    final starCake = find.byKey(const ValueKey('house-treat-star_cake'));
+    await tester.ensureVisible(starCake);
+    await tester.pumpAndSettle();
+    await tester.tap(starCake);
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 70));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text('Lên cấp 2!'), findsOneWidget);
+
+    // 2. Decorate wall with sparkle shimmer
+    final decorTab = find.byKey(const ValueKey('house-tab-decor'));
+    await tester.ensureVisible(decorTab);
+    await tester.pumpAndSettle();
+    await tester.tap(decorTab);
+    await tester.pumpAndSettle();
+    final wallForest = find.byKey(const ValueKey('house-item-wall_forest'));
+    await tester.ensureVisible(wallForest);
+    await tester.pumpAndSettle();
+    await tester.tap(wallForest);
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 80));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text('Mở mới!'), findsOneWidget);
+
+    // 3. Pet Chíp with floating hearts
+    final petTarget = find.byKey(const ValueKey('house-pet-chip'));
+    await tester.ensureVisible(petTarget);
+    await tester.pumpAndSettle();
+    await tester.tap(petTarget);
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 80));
+    }
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
 }
