@@ -7,13 +7,25 @@ import 'package:flutter/rendering.dart';
 import '../../ui/theme/tokens.dart';
 import 'smoke_particles.dart';
 
-/// The scene's single time source. One ticker advances it; every moving
-/// layer repaints from it, so no widget rebuilds per frame.
+/// The scene's single time & scroll source. One ticker advances it; every
+/// moving layer repaints from it, so no widget rebuilds per frame.
 class SceneClock extends ChangeNotifier {
   double _time = 0;
+  double _scroll = 0;
+  double _warp = 0;
+
   double get time => _time;
 
-  void advance(double dt) {
+  /// Accumulated vertical downward scroll distance (in logical units).
+  double get scroll => _scroll;
+
+  /// Current smoothed warp factor 0..1 (spikes during kid boost / Nitro).
+  double get warp => _warp;
+
+  void advance(double dt, {double targetWarp = 0}) {
+    _warp += (targetWarp.clamp(0.0, 1.0) - _warp) * math.min(1.0, dt * 7.5);
+    final speed = 78.0 * (1.0 + 2.4 * _warp);
+    _scroll += dt * speed;
     _time += dt;
     notifyListeners();
   }
@@ -22,9 +34,13 @@ class SceneClock extends ChangeNotifier {
   void touch() => notifyListeners();
 }
 
-/// Layout of the 2.5D track for a scene of [size]. Everything scales with
-/// [u], the track's bottom width over the mockup's 254 pt, so phones and
-/// iPads (portrait or landscape) keep the same composition.
+/// Free-flight space chase layout for a scene of [size].
+///
+/// Both rockets fly at a large, consistent foreground scale in open space:
+/// the child's rocket anchors in the lower-middle flight zone while Chíp and
+/// upcoming lucky stars are positioned relative to the child's progress.
+/// The destination planet approaches and grows as the race nears completion,
+/// and a compact vertical progress bar sits along the right edge.
 @immutable
 class TrackGeometry {
   factory TrackGeometry(
@@ -32,89 +48,157 @@ class TrackGeometry {
     int lanes = 2,
     double bottomInset = 0,
   }) {
-    final w = size.width;
-    final availableH = math.max(120.0, size.height - bottomInset);
-    final bottomW = math.min(0.68 * w, 0.54 * availableH);
-    return TrackGeometry._(size, lanes, bottomW, bottomInset);
+    return TrackGeometry._(size, lanes, bottomInset);
   }
 
-  TrackGeometry._(this.size, this.lanes, this.bottomW, this.bottomInset)
+  TrackGeometry._(this.size, this.lanes, this.bottomInset)
       : assert(lanes >= 2),
-        u = bottomW / 254,
-        topW = bottomW * 0.30,
-        topY = bottomInset > 0
-            ? math.max(220.0 * (bottomW / 254), (size.height - bottomInset) * 0.35)
-            : math.max(150.0 * (bottomW / 254), size.height * 0.30),
+        u = math
+            .min(
+              size.width / 390.0,
+              math.max(180.0, size.height - bottomInset) / 520.0,
+            )
+            .clamp(0.72, 1.85),
         cx = size.width / 2;
 
   final Size size;
   final int lanes;
 
-  /// Width of the track surface at the bottom edge and at the far (top) end.
-  final double bottomW, topW;
-
   /// Inset from the bottom of the screen occupied by floating HUD controls.
   final double bottomInset;
 
-  /// Scale unit: 1.0 on the phone mockup (390 × 480 scene).
+  /// Scale unit: ~1.0 on phone (390 pt wide), scaling cleanly up on iPads.
   final double u;
-  final double topY, cx;
+  final double cx;
 
-  double get bottomY =>
-      bottomInset > 0 ? (size.height - bottomInset + 36 * u) : size.height;
+  double get _availableH => math.max(180.0, size.height - bottomInset);
 
-  /// Base (fins) of a rocket at progress 0 and 1.
-  /// When [bottomInset] > 0, the start line is elevated safely above the HUD
-  /// so rockets (including nozzles, flames, and smoke) are 100% visible.
-  double get startY =>
-      bottomInset > 0 ? (size.height - bottomInset - 26 * u) : size.height * 0.88;
-  double get finishY => topY + 6 * u;
+  /// Horizontal center of the flight corridor (nudged slightly left to leave
+  /// clean breathing room for the right-edge mini progress bar).
+  double get flightCx => cx - 8 * u;
 
-  double get _dwdy => (bottomW - topW) / (bottomY - topY);
+  /// Top safe edge of the flight zone (below top pause & counter pills).
+  double get topSafeY => bottomInset > 0
+      ? math.max(96.0, _availableH * 0.17)
+      : math.max(48.0, size.height * 0.11);
 
-  /// Track surface width at screen height [y].
-  double widthAt(double y) => topW + (y - topY) * _dwdy;
+  /// Bottom safe edge of the flight zone (above floating cockpit HUD, leaving
+  /// full clearance for rocket exhaust flames even when a racer trails behind).
+  double get bottomSafeY => bottomInset > 0
+      ? (size.height - bottomInset - 78 * u)
+      : (size.height - 62 * u);
 
-  double get _vanishY => topY - topW / _dwdy;
+  double get flightHeight => math.max(120.0, bottomSafeY - topSafeY);
 
-  /// Screen y of a rocket base at progress [p] (0 start, 1 finish): a blend
-  /// of linear and true perspective, so far steps look shorter but still
-  /// move enough to see.
+  /// Foreground rocket width — large and consistent so both rockets and Chíp's
+  /// sculpted face inside the cockpit stay crisp and readable.
+  double get rocketW =>
+      (84 * u).clamp(62.0, math.min(size.width * 0.25, flightHeight * 0.34));
+
+  /// Consistent rocket width across progress (no trapezoid shrinking).
+  double rocketWidth(double p) => rocketW;
+
+  /// Horizontal offset between the flight center and each rocket lane.
+  double get laneSpread =>
+      math.min(rocketW * 1.15, (size.width - 44 * u) * 0.26);
+
+  double laneX(int lane) {
+    if (lanes == 2) {
+      return lane == 0 ? flightCx - laneSpread : flightCx + laneSpread;
+    }
+    final frac = (lane + 0.5) / lanes - 0.5;
+    return flightCx + frac * laneSpread * 2.2;
+  }
+
+  /// Rockets fly straight upward in free space (tilt comes only from dynamic
+  /// surge, hover, sputter, or overtake turbulence).
+  double laneTilt(int lane) => 0.0;
+
+  /// Vertical anchor for the kid's rocket base (fins) in chase-camera mode.
+  double get kidAnchorY => topSafeY + flightHeight * 0.72;
+
+  /// Vertical distance in pixels per race step (0.1 progress) in relative view.
+  double get stepPixels =>
+      (flightHeight * 0.24).clamp(64.0 * u, 128.0 * u);
+
+  /// Screen Y for an object at progress [pos] relative to [anchorPos] (the
+  /// kid's rocket). Higher progress appears higher on screen.
+  double relativeY(
+    double pos,
+    double anchorPos, {
+    bool clampToFlight = true,
+  }) {
+    final deltaSteps = (pos - anchorPos) * 10.0;
+    final raw = kidAnchorY - deltaSteps * stepPixels;
+    if (!clampToFlight) return raw;
+    final minY = topSafeY + rocketW * 1.35;
+    final maxY = bottomSafeY;
+    if (minY >= maxY) return kidAnchorY;
+    return raw.clamp(minY, maxY);
+  }
+
+  /// Relative base point for a racer in [lane] at [pos] relative to [anchorPos].
+  Offset relativeBasePoint(
+    double pos,
+    double anchorPos,
+    int lane, {
+    bool clampToFlight = true,
+  }) =>
+      Offset(
+        laneX(lane),
+        relativeY(pos, anchorPos, clampToFlight: clampToFlight),
+      );
+
+  /// Monotonic Y mapping 0..1 across the flight zone (used for reference/tests).
   double yAt(double p) {
-    final y0 = startY, y1 = finishY, yv = _vanishY;
-    final lin = y0 + (y1 - y0) * p;
-    final k = (y0 - yv) / (y1 - yv);
-    final persp = yv + (y0 - yv) / (1 + p * (k - 1));
-    return lin + (persp - lin) * 0.25;
+    final top = topSafeY + rocketW * 1.2;
+    return bottomSafeY + (top - bottomSafeY) * p;
   }
 
-  double _laneFrac(int lane) => (lane + 0.5) / lanes - 0.5;
+  /// Base point along the monotonic 0..1 corridor.
+  Offset basePoint(double p, int lane) => Offset(laneX(lane), yAt(p));
 
-  /// Point on the track under a rocket in [lane] at progress [p].
-  Offset basePoint(double p, int lane) {
-    final y = yAt(p);
-    return Offset(cx + _laneFrac(lane) * widthAt(y) * 0.94, y);
-  }
-
-  /// Rocket width at progress [p]: shrinks with distance (softened).
-  double rocketWidth(double p) =>
-      60 * u * math.sqrt(widthAt(yAt(p)) / widthAt(startY));
-
-  /// Rocket image rect ([aspect] = height / width) standing on its base point.
+  /// Rocket rect standing on [basePoint].
   Rect rocketRect(double p, int lane, double aspect) {
     final b = basePoint(p, lane);
     final w = rocketWidth(p);
     return Rect.fromLTWH(b.dx - w / 2, b.dy - w * aspect, w, w * aspect);
   }
 
-  /// Lean of a rocket so its axis follows its lane toward the vanishing point.
-  double laneTilt(int lane) => -math.atan(_laneFrac(lane) * 0.94 * _dwdy);
+  /// Destination planet rect that starts small & distant and smoothly grows and
+  /// approaches as [progress] (0..1) climbs toward the finish.
+  Rect planetRectFor(double progress) {
+    final p = progress.clamp(0.0, 1.0);
+    final ease = p * 0.35 + p * p * 0.65;
+    final pw = (66.0 + 88.0 * ease) * u;
+    final ph = pw * 0.75;
+    final centerY = topSafeY + 26 * u + 28 * u * ease;
+    return Rect.fromCenter(
+      center: Offset(flightCx, centerY),
+      width: pw,
+      height: ph,
+    );
+  }
 
-  /// The finish planet, sitting on the far end of the track.
-  Rect get planetRect {
-    final pw = 140 * u, ph = 105 * u;
-    final bottom = topY - 6 * u;
-    return Rect.fromLTWH(cx - pw / 2, bottom - ph, pw, ph);
+  /// Default destination planet rect at finish (`progress = 1.0`).
+  Rect get planetRect => planetRectFor(1.0);
+
+  /// Clear upper center position for the "VƯỢT LÊN!" overtake banner, safely
+  /// below the distant destination planet and well above both rockets.
+  Offset get bannerCenter => Offset(flightCx, topSafeY + 92 * u);
+
+  /// Compact vertical mini space progress bar anchored along the right edge.
+  Rect get progressBarRect {
+    final barW = (8 * u).clamp(6.0, 12.0);
+    final rightEdge = size.width - (14 * u).clamp(10.0, 24.0);
+    final availH = math.max(80.0, bottomSafeY - topSafeY - 36 * u);
+    final barH = math.min(availH, 240 * u);
+    final centerY = topSafeY + 18 * u + availH * 0.5;
+    return Rect.fromCenter(
+      center: Offset(rightEdge - barW / 2, centerY),
+      width: barW,
+      height: barH,
+    );
   }
 
   @override
@@ -126,172 +210,6 @@ class TrackGeometry {
 
   @override
   int get hashCode => Object.hash(size, lanes, bottomInset);
-}
-
-/// Static layer: the raised track slab, lane lines, step ties, finish strip
-/// and the planet. Repaints only on resize or when the planet image arrives.
-class TrackPainter extends CustomPainter {
-  TrackPainter({required this.geometry, required this.planet, this.label})
-      : super(repaint: planet);
-
-  final TrackGeometry geometry;
-  final ValueListenable<ui.Image?> planet;
-
-  /// Text in a pill under the planet ("ĐÍCH").
-  final String? label;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final g = geometry;
-    final u = g.u;
-    final cx = g.cx, top = g.topY, bot = g.bottomY;
-    final ht = g.topW / 2, hb = g.bottomW / 2;
-    final side = 10 * u, sideTop = 4 * u;
-
-    // Slab: rim (far edge + sides) behind the surface.
-    final rim = Path()
-      ..moveTo(cx - ht - sideTop, top - sideTop)
-      ..lineTo(cx + ht + sideTop, top - sideTop)
-      ..lineTo(cx + hb + side, bot)
-      ..lineTo(cx - hb - side, bot)
-      ..close();
-    canvas.drawPath(rim, Paint()..color = GameColors.trackRim);
-    // Darker side faces give the slab its thickness.
-    final leftSide = Path()
-      ..moveTo(cx - ht - sideTop, top)
-      ..lineTo(cx - ht, top)
-      ..lineTo(cx - hb, bot)
-      ..lineTo(cx - hb - side, bot)
-      ..close();
-    final rightSide = Path()
-      ..moveTo(cx + ht + sideTop, top)
-      ..lineTo(cx + ht, top)
-      ..lineTo(cx + hb, bot)
-      ..lineTo(cx + hb + side, bot)
-      ..close();
-    final sidePaint = Paint()..color = GameColors.trackSide;
-    canvas.drawPath(leftSide, sidePaint);
-    canvas.drawPath(rightSide, sidePaint);
-
-    final surface = Path()
-      ..moveTo(cx - ht, top)
-      ..lineTo(cx + ht, top)
-      ..lineTo(cx + hb, bot)
-      ..lineTo(cx - hb, bot)
-      ..close();
-    canvas.drawPath(
-      surface,
-      Paint()
-        ..shader = ui.Gradient.linear(Offset(0, top), Offset(0, bot), const [
-          GameColors.trackFar,
-          GameColors.track,
-        ]),
-    );
-
-    // Step ties every two steps (perspective-thin toward the planet).
-    final tie = Paint()..color = GameColors.trackTie;
-    for (var s = 2; s <= 8; s += 2) {
-      final y = g.yAt(s / 10);
-      final w = g.widthAt(y);
-      final t = 2.2 * u * w / g.bottomW + 0.6;
-      canvas.drawRect(
-          Rect.fromLTRB(cx - w / 2 + 2 * u, y - t / 2, cx + w / 2 - 2 * u, y + t / 2),
-          tie);
-    }
-
-    // Finish strip: two rows of checks across the far end.
-    final fy = g.finishY;
-    final fw = g.widthAt(fy);
-    final rows = 2, cols = 8;
-    final ch = 3.2 * u;
-    final light = Paint()..color = GameColors.laneLine;
-    final dark = Paint()..color = GameColors.trackSide;
-    for (var r = 0; r < rows; r++) {
-      for (var c = 0; c < cols; c++) {
-        final y0 = fy - ch * (r + 1) + ch * 0.6;
-        final wRow = g.widthAt(y0);
-        final x0 = cx - wRow / 2 + wRow * c / cols;
-        canvas.drawRect(Rect.fromLTWH(x0, y0, wRow / cols + 0.5, ch),
-            (r + c).isEven ? light : dark);
-      }
-    }
-    assert(fw > 0);
-
-    // Lane dividers: dashes shrink and thin toward the top.
-    final dash = Paint()..color = GameColors.laneLine;
-    for (var i = 1; i < g.lanes; i++) {
-      final f = i / g.lanes - 0.5;
-      var y = bot;
-      while (y > fy + 2 * u) {
-        final k = g.widthAt(y) / g.bottomW;
-        final len = 11 * u * k;
-        final gap = 12 * u * k;
-        final y2 = math.max(y - len, fy + 2 * u);
-        final w1 = 1.6 * u * k + 0.4, w2 = 1.6 * u * (g.widthAt(y2) / g.bottomW) + 0.4;
-        final x1 = cx + f * g.widthAt(y) * 0.94;
-        final x2 = cx + f * g.widthAt(y2) * 0.94;
-        canvas.drawPath(
-          Path()
-            ..moveTo(x1 - w1, y)
-            ..lineTo(x1 + w1, y)
-            ..lineTo(x2 + w2, y2)
-            ..lineTo(x2 - w2, y2)
-            ..close(),
-          dash,
-        );
-        y = y2 - gap;
-      }
-    }
-
-    // Planet: warm halo, image, label pill.
-    final pr = g.planetRect;
-    final hc = pr.center.translate(0, 6 * u);
-    canvas.drawCircle(
-      hc,
-      pr.width * 0.75,
-      Paint()
-        ..shader = ui.Gradient.radial(hc, pr.width * 0.75, [
-          GameColors.planetHalo.withOpacity(0.38),
-          GameColors.planetHalo.withOpacity(0.12),
-          GameColors.planetHalo.withOpacity(0),
-        ], const [0, 0.5, 1]),
-    );
-    final img = planet.value;
-    if (img != null) {
-      paintImageFitted(canvas, img, pr);
-    }
-    final text = label;
-    if (text != null) {
-      final tp = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontWeight: FontWeight.w900,
-            fontSize: (12 * u).clamp(12.0, 22.0),
-            color: GameColors.star,
-            letterSpacing: 0.5,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final pill = Rect.fromCenter(
-        center: Offset(cx, pr.top - 4 * u),
-        width: tp.width + 18 * u,
-        height: tp.height + 4 * u,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(pill, Radius.circular(pill.height / 2)),
-        Paint()..color = GameColors.skyTop.withOpacity(0.92),
-      );
-      tp.paint(canvas, pill.center - Offset(tp.width / 2, tp.height / 2));
-      tp.dispose();
-    }
-  }
-
-  @override
-  bool shouldRepaint(TrackPainter oldDelegate) =>
-      oldDelegate.geometry != geometry || oldDelegate.planet != planet || oldDelegate.label != label;
 }
 
 /// Draws [img] contained (aspect kept) and centred in [rect].
@@ -307,181 +225,164 @@ void paintImageFitted(Canvas canvas, ui.Image img, Rect rect, [Paint? paint]) {
 
 final Paint _imagePaint = Paint()..filterQuality = FilterQuality.medium;
 
-/// Clouds drawn in code, 2.5D: a light top fading to a lilac-pink belly.
-/// Paths are in mockup points around an anchor and built once; drawing is a
-/// translate + scale, so the same paths serve every size.
-abstract final class Clouds {
-  /// Big corner cloud, anchor at its bottom-left corner. Mirror for right.
-  static final Path _bigBody = Path()
-    ..moveTo(-24, 24)
-    ..lineTo(-24, 0)
-    ..cubicTo(-26, -34, 14, -50, 48, -40)
-    ..cubicTo(60, -70, 104, -72, 120, -42)
-    ..cubicTo(146, -54, 178, -36, 174, 0)
-    ..lineTo(174, 24)
-    ..close();
-  static final Path _bigBelly = Path()
-    ..moveTo(-24, 24)
-    ..lineTo(-24, 2)
-    ..cubicTo(8, -16, 58, -16, 84, -6)
-    ..cubicTo(112, -18, 154, -16, 174, 2)
-    ..lineTo(174, 24)
-    ..close();
-  // Soft highlights on the lumps: centre and size (mockup points), each a
-  // radial-gradient oval (no blur filter: these clouds repaint every frame).
-  static const _shines = [
-    Rect.fromLTWH(58, -64, 48, 18),
-    Rect.fromLTWH(6, -40, 38, 14),
-    Rect.fromLTWH(124, -44, 34, 13),
-  ];
-  static final Path _unitCircle = Path()
-    ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
-
-  static final Paint _bodyPaint = Paint()
-    ..shader = ui.Gradient.linear(const Offset(0, -70), const Offset(0, 4), [
-      GameColors.cloudTop,
-      GameColors.cloudLight,
-      Color.lerp(GameColors.cloudLight, GameColors.cloudShade, 0.45)!,
-    ], const [0, 0.55, 1]);
-  static final Paint _bellyPaint = Paint()..color = GameColors.cloudShade;
-  static final Paint _shinePaint = Paint()
-    ..shader = ui.Gradient.radial(Offset.zero, 1, [
-      GameColors.star.withOpacity(0.8),
-      GameColors.star.withOpacity(0.45),
-      GameColors.star.withOpacity(0),
-    ], const [0, 0.5, 1]);
-
-  /// Big cloud with its bottom-left at [anchor]; [scale] in scene units
-  /// (pass u × size); [mirror] flips it for the right corner.
-  static void paintBig(Canvas canvas, Offset anchor, double scale,
-      {bool mirror = false}) {
-    canvas.save();
-    canvas.translate(anchor.dx, anchor.dy);
-    canvas.scale(mirror ? -scale : scale, scale);
-    canvas.drawPath(_bigBody, _bodyPaint);
-    canvas.drawPath(_bigBelly, _bellyPaint);
-    for (var i = 0; i < _shines.length; i++) {
-      final r = _shines[i];
-      canvas.save();
-      canvas.translate(r.center.dx, r.center.dy);
-      canvas.scale(r.width / 2, r.height / 2);
-      canvas.drawPath(_unitCircle, _shinePaint);
-      canvas.restore();
-    }
-    canvas.restore();
-  }
-
-  /// Small flat-bottomed far cloud, faint lilac, anchor at its base centre.
-  static final Path _farBody = Path()
-    ..moveTo(-34, 8)
-    ..cubicTo(-42, -6, -26, -16, -14, -10)
-    ..cubicTo(-10, -28, 18, -30, 22, -10)
-    ..cubicTo(34, -16, 46, -4, 38, 8)
-    ..close();
-  static final Path _farBelly = Path()
-    ..moveTo(-34, 8)
-    ..cubicTo(-20, 1, 20, 0, 38, 8)
-    ..close();
-  static final Paint _farPaint = Paint()
-    ..color = GameColors.cloudFar.withOpacity(0.55);
-  static final Paint _farBellyPaint = Paint()
-    ..color = GameColors.cloudFarShade.withOpacity(0.55);
-
-  static const farWidth = 84.0;
-
-  static void paintFar(Canvas canvas, Offset anchor, double scale) {
-    canvas.save();
-    canvas.translate(anchor.dx, anchor.dy);
-    canvas.scale(scale);
-    canvas.drawPath(_farBody, _farPaint);
-    canvas.drawPath(_farBelly, _farBellyPaint);
-    canvas.restore();
-  }
-}
-
-/// Moving sky behind the track: twinkling stars and far clouds drifting.
-/// Stars are one atlas draw from arrays filled once per size.
+/// Multi-layer scrolling deep space background:
+/// 1. Slow soft parallax nebulae (0.15× scroll)
+/// 2. Twinkling stars & 4-point sparkles in a single drawRawAtlas (0.42× scroll)
+/// 3. Near fast star streaks elongating smoothly with [SceneClock.warp] (1.0× scroll)
+///
+/// Zero per-frame Paint/Path/Shader allocations.
 class SkyMotionPainter extends CustomPainter {
   SkyMotionPainter({required this.clock, required this.geometry})
       : super(repaint: clock) {
-    _layoutStars();
+    _layoutField();
   }
 
   final SceneClock clock;
   final TrackGeometry geometry;
 
-  late final int _count;
+  late final int _starCount;
   late final Float32List _sx, _sy, _ss, _sp, _transforms, _rects;
   late final Int32List _rgb, _colors;
 
-  void _layoutStars() {
+  late final int _streakCount;
+  late final Float32List _stX, _stY, _stSpeed, _stBaseLen, _stAlpha;
+
+  static final Path _unitCircle = Path()
+    ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
+
+  static final List<Paint> _nebulaPaints = [
+    _makeNebulaPaint(GameColors.nebulaViolet, 0.20),
+    _makeNebulaPaint(GameColors.nebulaMagenta, 0.16),
+    _makeNebulaPaint(GameColors.nebulaCyan, 0.15),
+  ];
+
+  static Paint _makeNebulaPaint(Color c, double peak) => Paint()
+    ..shader = ui.Gradient.radial(
+      Offset.zero,
+      1,
+      [c.withOpacity(peak), c.withOpacity(peak * 0.45), c.withOpacity(0)],
+      const [0.0, 0.55, 1.0],
+    );
+
+  static final Paint _atlasPaint = Paint()..filterQuality = FilterQuality.low;
+  static final Paint _streakPaint = Paint()..strokeCap = StrokeCap.round;
+
+  static const _nebulaX = [0.20, 0.82, 0.48];
+  static const _nebulaY = [0.22, 0.56, 0.88];
+  static const _nebulaRx = [0.46, 0.40, 0.52];
+  static const _nebulaRy = [0.24, 0.22, 0.20];
+
+  void _layoutField() {
     final s = geometry.size;
+    final u = geometry.u;
     final rng = math.Random(42);
-    _count = (s.width * s.height / 12000).round().clamp(10, 40);
-    _sx = Float32List(_count);
-    _sy = Float32List(_count);
-    _ss = Float32List(_count);
-    _sp = Float32List(_count);
-    _rgb = Int32List(_count);
-    _transforms = Float32List(_count * 4);
-    _rects = Float32List(_count * 4);
-    _colors = Int32List(_count);
-    final skyBottom = geometry.topY + s.height * 0.12;
-    for (var i = 0; i < _count; i++) {
-      final big = i % 6 == 0;
+
+    _starCount = (s.width * s.height / 7500).round().clamp(28, 64);
+    _sx = Float32List(_starCount);
+    _sy = Float32List(_starCount);
+    _ss = Float32List(_starCount);
+    _sp = Float32List(_starCount);
+    _rgb = Int32List(_starCount);
+    _transforms = Float32List(_starCount * 4);
+    _rects = Float32List(_starCount * 4);
+    _colors = Int32List(_starCount);
+
+    for (var i = 0; i < _starCount; i++) {
+      final big = i % 7 == 0;
       _sx[i] = rng.nextDouble() * s.width;
-      _sy[i] = rng.nextDouble() * skyBottom;
-      _ss[i] = (big ? 12 + rng.nextDouble() * 5 : 3 + rng.nextDouble() * 2.5) *
-          geometry.u.clamp(1.0, 1.8);
+      _sy[i] = rng.nextDouble() * s.height;
+      _ss[i] = (big ? 11 + rng.nextDouble() * 5 : 2.8 + rng.nextDouble() * 2.4) *
+          u.clamp(0.9, 1.6);
       _sp[i] = rng.nextDouble() * math.pi * 2;
-      _rgb[i] = (i.isEven ? GameColors.starWarm : GameColors.star).value &
-          0xFFFFFF;
+      _rgb[i] =
+          (i.isEven ? GameColors.starWarm : GameColors.star).value & 0xFFFFFF;
       final cell = big ? 1 : 0;
       _rects[i * 4] = cell * ParticleSprites.cell;
       _rects[i * 4 + 1] = 0;
       _rects[i * 4 + 2] = (cell + 1) * ParticleSprites.cell;
       _rects[i * 4 + 3] = ParticleSprites.cell;
     }
+
+    _streakCount = (s.width / 18).round().clamp(16, 28);
+    _stX = Float32List(_streakCount);
+    _stY = Float32List(_streakCount);
+    _stSpeed = Float32List(_streakCount);
+    _stBaseLen = Float32List(_streakCount);
+    _stAlpha = Float32List(_streakCount);
+    for (var i = 0; i < _streakCount; i++) {
+      _stX[i] = rng.nextDouble() * s.width;
+      _stY[i] = rng.nextDouble() * s.height;
+      _stSpeed[i] = 0.85 + rng.nextDouble() * 0.55;
+      _stBaseLen[i] = (6.0 + rng.nextDouble() * 7.0) * u;
+      _stAlpha[i] = 0.16 + rng.nextDouble() * 0.24;
+    }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
     final t = clock.time;
-    final g = geometry;
-    // Far clouds: three lanes at different speeds (parallax), wrapping.
-    final span = size.width + Clouds.farWidth * 2 * g.u;
+    final scroll = clock.scroll * geometry.u;
+    final warp = clock.warp;
+    final h = math.max(1.0, size.height);
+
+    // 1. Slow parallax nebula clouds (0.15x scroll).
+    final nebulaSpan = h * 1.4;
     for (var i = 0; i < 3; i++) {
-      final speed = _farSpeed[i] * g.u;
-      final scale = _farScale[i] * g.u;
-      final y = _farY[i] * size.height;
-      final x0 = _farX[i] * span;
-      final x = (x0 + speed * t) % span - Clouds.farWidth * g.u;
-      Clouds.paintFar(canvas, Offset(x, y), scale);
+      final rx = size.width * _nebulaRx[i];
+      final ry = h * _nebulaRy[i];
+      final nx = size.width * _nebulaX[i];
+      final ny = ((_nebulaY[i] * nebulaSpan + scroll * 0.15) % nebulaSpan) -
+          h * 0.2;
+      canvas.save();
+      canvas.translate(nx, ny);
+      canvas.scale(rx, ry);
+      canvas.drawPath(_unitCircle, _nebulaPaints[i]);
+      canvas.restore();
     }
 
+    // 2. Twinkling scrolling stars via single drawRawAtlas (0.42x scroll).
     final atlas = ParticleSprites.image;
-    if (atlas == null) return;
-    const half = ParticleSprites.cell / 2;
-    for (var i = 0; i < _count; i++) {
-      final tw = 0.5 + 0.5 * math.sin(t * (1.3 + (i % 5) * 0.35) + _sp[i]);
-      final a = 0.45 + 0.55 * tw;
-      final sc = _ss[i] / ParticleSprites.cell * (0.85 + 0.15 * tw);
-      final o = i * 4;
-      _transforms[o] = sc;
-      _transforms[o + 1] = 0;
-      _transforms[o + 2] = _sx[i] - sc * half;
-      _transforms[o + 3] = _sy[i] - sc * half;
-      _colors[i] = ((a * 255).round() << 24) | _rgb[i];
+    if (atlas != null) {
+      const half = ParticleSprites.cell / 2;
+      final starScroll = scroll * 0.42;
+      for (var i = 0; i < _starCount; i++) {
+        final tw = 0.5 + 0.5 * math.sin(t * (1.4 + (i % 5) * 0.35) + _sp[i]);
+        final a = 0.40 + 0.60 * tw;
+        final sc = _ss[i] / ParticleSprites.cell * (0.85 + 0.15 * tw);
+        final y = (_sy[i] + starScroll) % h;
+        final o = i * 4;
+        _transforms[o] = sc;
+        _transforms[o + 1] = 0;
+        _transforms[o + 2] = _sx[i] - sc * half;
+        _transforms[o + 3] = y - sc * half;
+        _colors[i] = ((a * 255).round() << 24) | _rgb[i];
+      }
+      canvas.drawRawAtlas(atlas, _transforms, _rects, _colors,
+          BlendMode.modulate, null, _atlasPaint);
     }
-    canvas.drawRawAtlas(
-        atlas, _transforms, _rects, _colors, BlendMode.modulate, null, _paint);
-  }
 
-  static final Paint _paint = Paint()..filterQuality = FilterQuality.low;
-  static const _farSpeed = [5.0, 3.2, 7.0];
-  static const _farScale = [1.1, 0.8, 1.4];
-  static const _farY = [0.30, 0.20, 0.47];
-  static const _farX = [0.15, 0.62, 0.85];
+    // 3. Fast near star streaks (1.0x scroll, elongating with warp).
+    final streakWrap = h + 60 * geometry.u;
+    final hudTop = geometry.bottomInset > 0 ? h - geometry.bottomInset : h;
+    _streakPaint.strokeWidth = (1.4 * geometry.u).clamp(1.0, 2.4);
+    for (var i = 0; i < _streakCount; i++) {
+      final len = _stBaseLen[i] * (1.0 + 2.8 * warp);
+      final y = ((_stY[i] + scroll * _stSpeed[i]) % streakWrap) - 30 * geometry.u;
+      if (y - len > hudTop) continue;
+      final edgeFade = geometry.bottomInset > 0 && y > hudTop - 40 * geometry.u
+          ? ((hudTop - (y - len)) / (40 * geometry.u + len)).clamp(0.0, 1.0)
+          : 1.0;
+      final alpha =
+          ((_stAlpha[i] + 0.22 * warp) * edgeFade).clamp(0.0, 0.72);
+      if (alpha <= 0.01) continue;
+      _streakPaint.color = GameColors.streakLight.withOpacity(alpha);
+      canvas.drawLine(
+        Offset(_stX[i], y - len),
+        Offset(_stX[i], math.min(y, hudTop)),
+        _streakPaint,
+      );
+    }
+  }
 
   @override
   bool shouldRepaint(SkyMotionPainter oldDelegate) =>

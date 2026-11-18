@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/game/scene/race_scene.dart';
@@ -272,10 +270,12 @@ void main() {
     expect(state.isStarVisible(4), isTrue);
     expect(state.isStarVisible(8), isTrue);
 
-    // Milestones 4 and 8 are positioned on kid lane (lane 0)
+    // Milestones 4 and 8 are positioned relative to kid on kid lane (lane 0)
     final g = TrackGeometry(const Size(390, 480));
-    expect(state.luckyStarPosition(4), equals(g.basePoint(0.4, 0)));
-    expect(state.luckyStarPosition(8), equals(g.basePoint(0.8, 0)));
+    expect(state.luckyStarPosition(4),
+        equals(g.relativeBasePoint(0.4, 0.0, 0, clampToFlight: false)));
+    expect(state.luckyStarPosition(8),
+        equals(g.relativeBasePoint(0.8, 0.0, 0, clampToFlight: false)));
 
     // At step 3: both still visible
     await tester.pumpWidget(_host(_scene(kid: 3)));
@@ -312,30 +312,29 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('Chíp starts with leading offset, spins out when overtaken',
+  testWidgets('Chíp starts with leading offset, wobbles gently when overtaken',
       (tester) async {
-    // When race starts (kid: 0, chip: 0), Chíp is placed ahead of Kid along the track (lead offset)
+    // When race starts (kid: 0, chip: 0), Chíp is placed ahead of Kid (lead offset)
     await tester.pumpWidget(_host(_scene(kid: 0, chip: 0)));
     final state = tester.state<RaceSceneState>(find.byType(RaceScene));
     expect(state.chipBaseY, lessThan(state.kidBaseY));
 
-    // When kid advances past Chíp (pump kid: 2, chip: 0): triggers spin-out during overtake
+    // When kid advances past Chíp (pump kid: 2, chip: 0): triggers turbulence wobble
     await tester.pumpWidget(_host(_scene(kid: 2, chip: 0)));
     for (var i = 0; i < 8; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    // Verify state.isChipSpinning is true, state.chipSpinAngle is greaterThan(0.0)
-    expect(state.isChipSpinning, isTrue);
-    expect(state.chipSpinAngle, greaterThan(0.0));
+    expect(state.isChipWobbling, isTrue);
+    expect(state.chipWobbleAngle.abs(), lessThanOrEqualTo(0.32));
 
-    // After spin-out duration (~500ms), state.isChipSpinning is false and state.chipSpinAngle is 0.0
-    for (var i = 0; i < 35; i++) {
+    // After wobble duration (~550ms), wobble settles back to 0.0
+    for (var i = 0; i < 40; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    expect(state.isChipSpinning, isFalse);
-    expect(state.chipSpinAngle, 0.0);
+    expect(state.isChipWobbling, isFalse);
+    expect(state.chipWobbleAngle, 0.0);
 
-    // In reduceMotion mode, spin-out angle is always 0.0
+    // In reduceMotion mode, wobble angle is always 0.0
     await tester.pumpWidget(_host(_scene(kid: 0, chip: 0), reduce: true));
     final reduceState = tester.state<RaceSceneState>(find.byType(RaceScene));
     expect(reduceState.chipBaseY, lessThan(reduceState.kidBaseY));
@@ -343,24 +342,44 @@ void main() {
     for (var i = 0; i < 8; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    expect(reduceState.chipSpinAngle, 0.0);
-    expect(reduceState.isChipSpinning, isFalse);
+    expect(reduceState.chipWobbleAngle, 0.0);
+    expect(reduceState.isChipWobbling, isFalse);
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('surge while remaining behind Chíp does not trigger spin-out',
+  testWidgets('surge while remaining behind Chíp does not trigger wobble',
       (tester) async {
     await tester.pumpWidget(_host(_scene(kid: 0, chip: 4)));
     final state = tester.state<RaceSceneState>(find.byType(RaceScene));
-    expect(state.isChipSpinning, isFalse);
+    expect(state.isChipWobbling, isFalse);
 
     // Kid advances from 0 to 2, but Chíp is at 4 (Kid stays behind)
     await tester.pumpWidget(_host(_scene(kid: 2, chip: 4)));
     for (var i = 0; i < 8; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    expect(state.isChipSpinning, isFalse);
-    expect(state.chipSpinAngle, 0.0);
+    expect(state.isChipWobbling, isFalse);
+    expect(state.chipWobbleAngle, 0.0);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('space scrolls continuously and surges warp on boost',
+      (tester) async {
+    await tester.pumpWidget(_host(_scene(kid: 1, chip: 1)));
+    final state = tester.state<RaceSceneState>(find.byType(RaceScene));
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pump(const Duration(milliseconds: 50));
+    final scrollAfterCruise = state.spaceScroll;
+    expect(scrollAfterCruise, greaterThan(0));
+    expect(state.spaceWarp, closeTo(0.0, 0.05));
+
+    // Kid answers right -> warp spikes and scroll advances faster
+    await tester.pumpWidget(_host(_scene(kid: 2, chip: 1)));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(state.spaceWarp, greaterThan(0.4));
+    expect(state.spaceScroll, greaterThan(scrollAfterCruise));
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -406,7 +425,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  test('Racer spin-out kinematics and lead offset', () {
+  test('Racer overtake wobble kinematics and lead offset', () {
     final chipRacer = Racer(
       lane: 1,
       sprite: RocketSprite.chip,
@@ -415,30 +434,30 @@ void main() {
       isChip: true,
     );
     expect(chipRacer.leadOffset, Racer.chipLeadOffset);
-    expect(chipRacer.isSpinning, isFalse);
-    expect(chipRacer.spinAngle, 0.0);
+    expect(chipRacer.isWobbling, isFalse);
+    expect(chipRacer.wobbleAngle, 0.0);
 
-    // Trigger spin-out
-    chipRacer.spinOut();
-    expect(chipRacer.isSpinning, isTrue);
-    expect(chipRacer.spinAngle, 0.0);
+    // Trigger turbulence wobble
+    chipRacer.wobble();
+    expect(chipRacer.isWobbling, isTrue);
 
-    // Advance halfway (0.24s)
-    chipRacer.advance(0.24);
-    expect(chipRacer.isSpinning, isTrue);
-    expect(chipRacer.spinAngle, closeTo(math.pi, 0.01));
+    // Advance early in wobble: angle stays gently bounded within ±0.31 rad
+    chipRacer.advance(0.06);
+    expect(chipRacer.isWobbling, isTrue);
+    expect(chipRacer.wobbleAngle.abs(), greaterThan(0.05));
+    expect(chipRacer.wobbleAngle.abs(), lessThanOrEqualTo(0.31));
 
-    // Advance past duration (0.24s -> total 0.48s)
-    chipRacer.advance(0.24);
-    expect(chipRacer.isSpinning, isFalse);
-    expect(chipRacer.spinAngle, 0.0);
+    // Advance past 0.55s duration
+    chipRacer.advance(0.55);
+    expect(chipRacer.isWobbling, isFalse);
+    expect(chipRacer.wobbleAngle, 0.0);
 
-    // Snap resets spin-out
-    chipRacer.spinOut();
-    expect(chipRacer.isSpinning, isTrue);
+    // Snap resets wobble
+    chipRacer.wobble();
+    expect(chipRacer.isWobbling, isTrue);
     chipRacer.snap();
-    expect(chipRacer.isSpinning, isFalse);
-    expect(chipRacer.spinAngle, 0.0);
+    expect(chipRacer.isWobbling, isFalse);
+    expect(chipRacer.wobbleAngle, 0.0);
   });
 
   testWidgets('wrong answer triggers kid sputter dip and smoke puff',

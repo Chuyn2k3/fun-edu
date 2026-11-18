@@ -13,16 +13,19 @@ import 'space_track.dart';
 import 'speed_lines.dart';
 import 'trails.dart';
 
-/// The rocket race: a purple sky, a 2.5D track narrowing to the finish
-/// planet, the kid's rocket (lane 0) and Chíp's white rocket (lane 1) with
-/// flickering flames and smoke, parallax clouds and a comet fly-by.
+/// Free-flight space chase race scene:
+/// Both rockets fly side-by-side in deep scrolling space at a large foreground
+/// scale. The camera follows the child's rocket while Chíp and upcoming lucky
+/// stars move relative to the child's progress, the destination planet grows as
+/// the finish approaches, and a compact vertical progress bar sits on the right.
 ///
 /// Layers, back to front, each in its own [RepaintBoundary]:
-/// 1. sky gradient (static), 2. stars + far clouds (moving),
-/// 3. track + planet (static), 4. rockets, flames, smoke, comet and the
-/// near clouds (moving). One [Ticker] drives a [SceneClock]; moving layers
-/// repaint from it without rebuilding widgets. With reduce motion the
-/// ticker never runs: flames are still, rockets jump to their steps.
+/// 1. Deep space gradient (static),
+/// 2. Multi-layer scrolling universe: nebulae, stars, warp streaks (moving),
+/// 3. Approaching planet, lucky stars, rockets, flames, smoke, comet, speed
+///    lines, mini progress bar and upper overtake banner (moving).
+/// One [Ticker] drives a [SceneClock]; moving layers repaint without rebuilding
+/// widgets. With reduce motion the ticker never runs.
 class RaceScene extends StatefulWidget {
   const RaceScene({
     super.key,
@@ -99,6 +102,10 @@ class RaceSceneState extends State<RaceScene>
   @visibleForTesting
   double get flameTime => _clock.time;
   @visibleForTesting
+  double get spaceScroll => _clock.scroll;
+  @visibleForTesting
+  double get spaceWarp => _clock.warp;
+  @visibleForTesting
   double get kidProgress => _kid.pos;
   @visibleForTesting
   double get chipProgress => _chip.pos;
@@ -134,10 +141,10 @@ class RaceSceneState extends State<RaceScene>
       !_reduceMotion && _overtakeAge < _overtakeDuration;
 
   @visibleForTesting
-  bool get isChipSpinning => !_reduceMotion && _chip.isSpinning;
+  bool get isChipWobbling => !_reduceMotion && _chip.isWobbling;
 
   @visibleForTesting
-  double get chipSpinAngle => _reduceMotion ? 0.0 : _chip.spinAngle;
+  double get chipWobbleAngle => _reduceMotion ? 0.0 : _chip.wobbleAngle;
 
   @visibleForTesting
   double get kidAnticipationDip => _kid.anticipationDip;
@@ -164,7 +171,12 @@ class RaceSceneState extends State<RaceScene>
     final g = _geometry ??
         TrackGeometry(const Size(390, 480),
             lanes: widget.lanes, bottomInset: widget.bottomInset);
-    return g.basePoint(milestone / RaceScene.steps, 0);
+    return g.relativeBasePoint(
+      milestone / RaceScene.steps,
+      _kid.pos,
+      0,
+      clampToFlight: false,
+    );
   }
 
   @visibleForTesting
@@ -206,9 +218,7 @@ class RaceSceneState extends State<RaceScene>
 
   Iterable<String> get _assets => {
         _kid.sprite.asset,
-        if (_kid.sprite.pilotAsset != null) _kid.sprite.pilotAsset!,
         _chip.sprite.asset,
-        if (_chip.sprite.pilotAsset != null) _chip.sprite.pilotAsset!,
         AppImages.planet,
         AppImages.comet,
       };
@@ -272,7 +282,7 @@ class RaceSceneState extends State<RaceScene>
         (_kid.pos + _kid.leadOffset) > (_chip.pos + _chip.leadOffset);
     if (!_kidWasAhead && kidAhead) {
       if (!_reduceMotion) {
-        _chip.spinOut();
+        _chip.wobble();
         _overtakeAge = 0.0;
       }
     }
@@ -280,8 +290,8 @@ class RaceSceneState extends State<RaceScene>
 
     final g = _geometry;
     if (g != null) {
-      _kid.emitSmoke(dt, g, t);
-      _chip.emitSmoke(dt, g, t);
+      _kid.emitSmoke(dt, g, t, anchorPos: _kid.pos);
+      _chip.emitSmoke(dt, g, t, anchorPos: _kid.pos);
     }
     if (_cometAge != null) {
       _cometAge = _cometAge! + dt;
@@ -290,12 +300,15 @@ class RaceSceneState extends State<RaceScene>
     _speedLinesAge += dt;
     _shakeAge += dt;
     _overtakeAge += dt;
-    _clock.advance(dt);
+
+    final targetWarp =
+        math.max(_kid.boost, _speedLines.isActive(_speedLinesAge) ? 0.85 : 0.0);
+    _clock.advance(dt, targetWarp: targetWarp);
   }
 
   Offset get _shakeOffset {
     if (_reduceMotion || _shakeAge > 0.25 || _shakeAge < 0) return Offset.zero;
-    final intensity = (1.0 - _shakeAge / 0.25) * 3.0;
+    final intensity = (1.0 - _shakeAge / 0.25) * 2.8;
     final dx = math.sin(_shakeAge * 60) * intensity;
     final dy = math.cos(_shakeAge * 45) * intensity;
     return Offset(dx, dy);
@@ -322,7 +335,7 @@ class RaceSceneState extends State<RaceScene>
       r.smoke.clear();
       r.clearStallSmoke();
       for (var i = 0; i < 60; i++) {
-        r.emitSmoke(1 / 60, g, 0);
+        r.emitSmoke(1 / 60, g, 0, anchorPos: _kid.pos);
       }
     }
   }
@@ -359,12 +372,11 @@ class RaceSceneState extends State<RaceScene>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      GameColors.skyTop,
-                      GameColors.skyUpper,
-                      GameColors.skyLower,
-                      Color(0xFF1B113E),
+                      GameColors.spaceTop,
+                      GameColors.spaceMid,
+                      GameColors.spaceBottom,
                     ],
-                    stops: [0, 0.35, 0.70, 1],
+                    stops: [0.0, 0.52, 1.0],
                   ),
                 ),
               ),
@@ -376,27 +388,14 @@ class RaceSceneState extends State<RaceScene>
             ),
             RepaintBoundary(
               child: CustomPaint(
-                isComplex: true,
-                painter: TrackPainter(
-                  geometry: g,
-                  planet: _images[AppImages.planet],
-                  label: null,
-                ),
-              ),
-            ),
-            RepaintBoundary(
-              child: CustomPaint(
                 painter: _RaceForegroundPainter(
                   state: this,
                   geometry: g,
                   repaint: Listenable.merge([
                     _clock,
                     _images[_kid.sprite.asset],
-                    if (_kid.sprite.pilotAsset != null)
-                      _images[_kid.sprite.pilotAsset!],
                     _images[_chip.sprite.asset],
-                    if (_chip.sprite.pilotAsset != null)
-                      _images[_chip.sprite.pilotAsset!],
+                    _images[AppImages.planet],
                     _images[AppImages.comet],
                   ]),
                 ),
@@ -409,7 +408,8 @@ class RaceSceneState extends State<RaceScene>
   }
 }
 
-/// One rocket: spring position, flame boost and its smoke pool.
+/// One rocket: spring position, flame boost, turbulence wobble, stall sputter,
+/// and its smoke pool.
 @visibleForTesting
 class Racer {
   Racer({
@@ -431,25 +431,38 @@ class Racer {
   late final math.Random _random = math.Random((seed * 1000).toInt());
 
   static const chipLeadOffset = 0.04;
-  static const _spinDuration = 0.48;
+  static const _wobbleDuration = 0.55;
   static const _stallDuration = 0.35;
 
   double pos = 0, vel = 0, target = 0;
   double _boostAge = double.infinity, _hold = 0.3;
   double _anticipationAge = double.infinity;
-  double _spinAge = double.infinity;
+  double _wobbleAge = double.infinity;
   double _stallAge = double.infinity;
   double lead = 0;
   double leadOffset = 0.0;
 
-  bool get isSpinning => _spinAge < _spinDuration;
-  double get spinAngle =>
-      isSpinning ? (_spinAge / _spinDuration) * 2 * math.pi : 0.0;
+  /// True while Chíp rocks from the child's overtake wake.
+  bool get isWobbling => _wobbleAge < _wobbleDuration;
+
+  /// Natural damped side-to-side turbulence tilt (max ±17°) when overtaken.
+  double get wobbleAngle {
+    if (!isWobbling) return 0.0;
+    final prog = (_wobbleAge / _wobbleDuration).clamp(0.0, 1.0);
+    return math.sin(_wobbleAge * 26.0) * 0.30 * (1.0 - prog);
+  }
+
+  /// Slight horizontal slip during turbulence wobble (in scene units).
+  double get wobbleSlip {
+    if (!isWobbling) return 0.0;
+    final prog = (_wobbleAge / _wobbleDuration).clamp(0.0, 1.0);
+    return math.sin(_wobbleAge * 16.0) * 7.0 * (1.0 - prog);
+  }
 
   bool get isStalled => _stallAge < _stallDuration;
 
-  void spinOut() {
-    _spinAge = 0.0;
+  void wobble() {
+    _wobbleAge = 0.0;
   }
 
   void stall() {
@@ -457,8 +470,8 @@ class Racer {
   }
 
   void advance(double dt) {
-    if (isSpinning) {
-      _spinAge += dt;
+    if (isWobbling) {
+      _wobbleAge += dt;
     }
     if (isStalled) {
       _stallAge += dt;
@@ -491,7 +504,7 @@ class Racer {
   }
 
   // Slightly under-damped spring (ζ 0.75): settles in ~450 ms with a ~3 %
-  // overshoot, so a rocket surges and settles like a real thrust.
+  // overshoot, so a rocket surges and settles like real thrust.
   static const _omega = 11.85, _zeta = 0.75;
 
   void setTarget(int steps, {required bool jump}) {
@@ -504,7 +517,7 @@ class Racer {
     vel = 0;
     _boostAge = double.infinity;
     _anticipationAge = double.infinity;
-    _spinAge = double.infinity;
+    _wobbleAge = double.infinity;
     _stallAge = double.infinity;
     _stallPuffs.clear();
   }
@@ -544,10 +557,19 @@ class Racer {
     lead += (want - lead) * math.min(1, dt * 3);
   }
 
-  /// Flame intensity: 1 cruising, up to ~1.8 on a boost, longer while
-  /// surging, a little longer for the leader.
-  double get intensity =>
-      math.min(2.0, 1 + 0.8 * boost + math.min(0.5, vel.abs() * 0.8) + 0.15 * lead);
+  /// Balanced flame intensity: 1.0 cruising, up to ~1.55 on boost, briefly
+  /// dipped to ~0.55 while stalled or rocked by overtake turbulence.
+  double get intensity {
+    if (isStalled) return 0.55;
+    if (isWobbling) {
+      final prog = (_wobbleAge / _wobbleDuration).clamp(0.0, 1.0);
+      return 0.58 + 0.42 * prog;
+    }
+    return math.min(
+      1.65,
+      1.0 + 0.48 * boost + math.min(0.24, vel.abs() * 0.4) + 0.15 * lead,
+    );
+  }
 
   // Per-frame pose (computed in [pose], read by the painter).
   double baseX = 0, baseY = 0, width = 0, height = 0, tilt = 0;
@@ -556,29 +578,47 @@ class Racer {
   Offset get center => Offset(0, -height / 2);
   double get top => -height;
 
-  void pose(TrackGeometry g, double t, {required bool still}) {
+  void pose(
+    TrackGeometry g,
+    double t, {
+    required bool still,
+    double? anchorPos,
+  }) {
     final effectivePos = (pos + leadOffset).clamp(0.0, 1.0);
-    final b = g.basePoint(effectivePos, lane);
+    final b = anchorPos != null
+        ? g.relativeBasePoint(effectivePos, anchorPos, lane)
+        : g.basePoint(effectivePos, lane);
     width = g.rocketWidth(effectivePos);
     height = width * sprite.aspect;
     tilt = g.laneTilt(lane);
     baseX = b.dx;
     baseY = b.dy;
     if (still) return;
+
     final u = g.u;
     final moving = math.min(1.0, vel.abs() * 2.5);
-    // Hover bob, engine rumble, and a shake while surging.
-    baseY += 1.6 * u * math.sin(t * 2 * math.pi * 0.9 + seed);
-    baseX += (0.35 + 1.1 * moving) * u * math.sin(t * 47 + seed);
-    tilt += 0.035 * moving * math.sin(t * 23 + seed);
+    // Gentle space hover bob, subtle boost punch forward (after 80ms
+    // anticipation dip), and engine rumble.
+    baseY += 2.6 * u * math.sin(t * 2 * math.pi * 0.85 + seed);
+    if (!isChip && boost > 0 && _anticipationAge >= 0.08) {
+      baseY -= 20.0 * u * boost;
+    }
+    baseX += (0.45 + 1.0 * moving) * u * math.sin(t * 36 + seed);
+    tilt += 0.025 * math.sin(t * 2.1 + seed) +
+        0.032 * moving * math.sin(t * 20 + seed);
+
     if (_anticipationAge < 0.08) {
-      baseY += math.sin((_anticipationAge / 0.08) * math.pi) * 6.0;
+      baseY += anticipationDip;
+    }
+    if (isWobbling) {
+      tilt += wobbleAngle;
+      baseX += wobbleSlip * u;
     }
     if (isStalled) {
       baseY += sputterDip;
       final wobblePhase = (_stallAge / _stallDuration);
-      baseX += math.sin(_stallAge * 60) * 4.0 * (1.0 - wobblePhase);
-      tilt += math.sin(_stallAge * 45) * 0.06 * (1.0 - wobblePhase);
+      baseX += math.sin(_stallAge * 54) * 3.5 * (1.0 - wobblePhase);
+      tilt += math.sin(_stallAge * 42) * 0.08 * (1.0 - wobblePhase);
     }
   }
 
@@ -588,18 +628,26 @@ class Racer {
     return Offset(baseX - d * math.sin(tilt), baseY + d * math.cos(tilt));
   }
 
-  double get flameWidth => width * 0.62;
-  double get flameLength => width * 1.75;
+  /// Compact, natural flame proportions balanced against the rocket body.
+  double get flameWidth => width * 0.44;
+  double get flameLength => width * 0.96;
 
-  void emitSmoke(double dt, TrackGeometry g, double t) {
-    pose(g, t, still: false);
+  void emitSmoke(
+    double dt,
+    TrackGeometry g,
+    double t, {
+    double? anchorPos,
+  }) {
+    pose(g, t, still: false, anchorPos: anchorPos);
     final n = nozzle();
-    final reach = flameLength * intensity * 0.88;
-    smoke.update(dt,
-        emitX: n.dx - reach * math.sin(tilt),
-        emitY: n.dy + reach * math.cos(tilt),
-        unit: g.u * width / (60 * g.u),
-        intensity: intensity);
+    final reach = flameLength * intensity * 0.78;
+    smoke.update(
+      dt,
+      emitX: n.dx - reach * math.sin(tilt),
+      emitY: n.dy + reach * math.cos(tilt),
+      unit: g.u * width / (84 * g.u),
+      intensity: intensity,
+    );
 
     if (isStalled) {
       _emitStallPuffs(dt, n, g.u);
@@ -607,21 +655,21 @@ class Racer {
   }
 
   void _emitStallPuffs(double dt, Offset n, double u) {
-    final count = (dt * 30).clamp(1, 3).toInt();
+    final count = (dt * 28).clamp(1, 3).toInt();
     for (var i = 0; i < count; i++) {
       if (_stallPuffs.length > 20) break;
       final life = 0.35 + _random.nextDouble() * 0.2;
-      final angle = tilt + (_random.nextDouble() - 0.5) * 0.8;
-      final speed = (20.0 + _random.nextDouble() * 35.0) * u;
+      final angle = tilt + (_random.nextDouble() - 0.5) * 0.7;
+      final speed = (36.0 + _random.nextDouble() * 44.0) * u;
       _stallPuffs.add(_StallPuff(
         x: n.dx + (_random.nextDouble() - 0.5) * 6 * u,
         y: n.dy + (_random.nextDouble() - 0.5) * 6 * u,
         vx: math.sin(angle) * speed,
         vy: math.cos(angle) * speed,
         life: life,
-        startSize: (8.0 + _random.nextDouble() * 4.0) * u,
-        endSize: (22.0 + _random.nextDouble() * 10.0) * u,
-        color: const Color(0xFF383344),
+        startSize: (7.0 + _random.nextDouble() * 4.0) * u,
+        endSize: (19.0 + _random.nextDouble() * 8.0) * u,
+        color: GameColors.stallSmoke,
       ));
     }
   }
@@ -667,10 +715,6 @@ class _RaceForegroundPainter extends CustomPainter {
   final RaceSceneState state;
   final TrackGeometry geometry;
 
-  static final Paint _shadow = Paint()
-    ..color = GameColors.rocketShadow.withOpacity(0.45);
-  static final Path _unitOval = Path()
-    ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
   static final Path _streak = Path()
     ..moveTo(0, -0.5)
     ..cubicTo(0.3, -0.42, 0.7, -0.14, 1, 0)
@@ -687,14 +731,63 @@ class _RaceForegroundPainter extends CustomPainter {
     ..filterQuality = FilterQuality.medium;
   static final Paint _stallPaint = Paint();
 
+  // Cached unit halo for the approaching planet (0 per-frame allocation).
+  static final Path _unitCircle = Path()
+    ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
+  static final Paint _planetHaloPaint = Paint()
+    ..shader = ui.Gradient.radial(
+      Offset.zero,
+      1,
+      [
+        GameColors.planetHalo.withOpacity(0.34),
+        GameColors.planetHalo.withOpacity(0.11),
+        GameColors.planetHalo.withOpacity(0),
+      ],
+      const [0.0, 0.55, 1.0],
+    );
+
+  // Cached paints for mini vertical progress bar.
+  static final Paint _barFillPaint = Paint()
+    ..color = GameColors.progressTrack.withOpacity(0.68);
+  static final Paint _barBorderPaint = Paint()
+    ..color = GameColors.progressBorder.withOpacity(0.45)
+    ..style = PaintingStyle.stroke;
+  static final Paint _barProgressFill = Paint()
+    ..color = GameColors.progressKid.withOpacity(0.45);
+  static final Paint _kidDotFill = Paint()..color = GameColors.progressKid;
+  static final Paint _kidDotRing = Paint()
+    ..color = GameColors.star
+    ..style = PaintingStyle.stroke;
+  static final Paint _chipDotFill = Paint()..color = GameColors.progressChip;
+  static final Paint _chipDotRing = Paint()
+    ..color = GameColors.progressChipRing
+    ..style = PaintingStyle.stroke;
+  static final Paint _miniPlanetBody = Paint()..color = GameColors.planetHalo;
+  static final Paint _miniPlanetRing = Paint()
+    ..color = GameColors.laneLine
+    ..style = PaintingStyle.stroke;
+
+  // Cached paints for lucky stars.
+  static final Paint _starGlowPaint = Paint()
+    ..shader = ui.Gradient.radial(
+      Offset.zero,
+      1,
+      [
+        GameColors.planetHalo.withOpacity(0.55),
+        GameColors.planetHalo.withOpacity(0.15),
+        GameColors.planetHalo.withOpacity(0),
+      ],
+      const [0.0, 0.55, 1.0],
+    );
+  static final Paint _starFillPaint = Paint()..color = GameColors.flameOuter;
+  static final Paint _starCorePaint = Paint()..color = GameColors.starWarm;
+
   @override
   void paint(Canvas canvas, Size size) {
     final s = state;
     final g = geometry;
     final still = s._reduceMotion;
     final t = s._clock.time;
-    final u = g.u;
-    final w = size.width, h = size.height;
 
     final shake = s._shakeOffset;
     final hasShake = shake != Offset.zero;
@@ -703,76 +796,79 @@ class _RaceForegroundPainter extends CustomPainter {
       canvas.translate(shake.dx, shake.dy);
     }
 
-    // Mid clouds (behind the rockets), drifting slowly (when no bottom HUD).
-    if (g.bottomInset == 0) {
-      final midBob = still ? 0.0 : math.sin(t * 2 * math.pi / 13);
-      Clouds.paintBig(canvas, Offset(-34 * u + 7 * u * midBob, h - 62 * u),
-          0.5 * u);
-      Clouds.paintBig(
-          canvas, Offset(w + 26 * u - 7 * u * midBob, h - 78 * u), 0.46 * u,
-          mirror: true);
-    }
-
-    // Lucky stars at milestones 4 and 8 on kid lane (lane 0).
-    _paintLuckyStars(canvas, g, t, still);
-
-    // Rockets, farther one first.
     final kid = s._kid, chip = s._chip;
-    kid.pose(g, t, still: still);
-    chip.pose(g, t, still: still);
+    kid.pose(g, t, still: still, anchorPos: kid.pos);
+    chip.pose(g, t, still: still, anchorPos: kid.pos);
+
+    // 1. Approaching destination planet (Saturn) growing as the race progresses.
+    _paintApproachingPlanet(canvas, g, math.max(kid.pos, chip.pos));
+
+    // 2. Approaching lucky stars at milestones 4 and 8 on kid's flight line.
+    _paintLuckyStars(canvas, g, kid.pos, t, still);
+
+    // 3. Free-flight rockets (behind racer first, front racer second).
     final first = (kid.pos + kid.leadOffset) > (chip.pos + chip.leadOffset)
-        ? kid
-        : chip;
+        ? chip
+        : kid;
     final second = identical(first, kid) ? chip : kid;
     _paintRacer(canvas, first, t, still);
     _paintRacer(canvas, second, t, still);
 
-    // Comet fly-by.
+    // 4. Comet fly-by.
     final cp = s.cometProgress;
     if (cp != null) _paintComet(canvas, size, cp);
-
-    // Front clouds at the bottom corners (when no bottom HUD).
-    if (g.bottomInset == 0) {
-      final frontBob = still ? 0.0 : math.sin(t * 2 * math.pi / 9 + 1);
-      Clouds.paintBig(canvas, Offset(-6 * u + 12 * u * frontBob, h + 2 * u), u);
-      Clouds.paintBig(
-          canvas, Offset(w + 18 * u - 12 * u * frontBob, h + 4 * u), 0.92 * u,
-          mirror: true);
-    }
 
     if (hasShake) {
       canvas.restore();
     }
 
+    // 5. Edge speed lines during boost / Nitro warp.
     if (!still && s._speedLines.isActive(s._speedLinesAge)) {
       s._speedLines.paint(canvas, size, s._speedLinesAge, seed: 42);
     }
 
+    // 6. Compact right-edge mini space progress bar.
+    _paintMiniProgressBar(canvas, g, kid.pos, chip.pos);
+
+    // 7. Upper clear-space "VƯỢT LÊN!" banner (never overlaps rockets).
     if (!still && s._overtakeAge < RaceSceneState._overtakeDuration) {
-      _paintOvertakeBanner(canvas, size, s._overtakeAge, g);
+      _paintOvertakeBanner(canvas, s._overtakeAge, g);
     }
   }
 
-  void _paintOvertakeBanner(
-      Canvas canvas, Size size, double age, TrackGeometry g) {
+  void _paintApproachingPlanet(
+      Canvas canvas, TrackGeometry g, double progress) {
+    final pr = g.planetRectFor(progress);
+    final haloR = pr.width * 0.72;
+    canvas.save();
+    canvas.translate(pr.center.dx, pr.center.dy);
+    canvas.scale(haloR, haloR);
+    canvas.drawPath(_unitCircle, _planetHaloPaint);
+    canvas.restore();
+
+    final img = state._images[AppImages.planet].value;
+    if (img != null) {
+      paintImageFitted(canvas, img, pr);
+    }
+  }
+
+  void _paintOvertakeBanner(Canvas canvas, double age, TrackGeometry g) {
     final progress = (age / RaceSceneState._overtakeDuration).clamp(0.0, 1.0);
     final alpha = (1.0 - math.pow(progress, 3)).clamp(0.0, 1.0).toDouble();
     if (alpha <= 0.0) return;
     final scale =
-        (0.85 + 0.25 * math.sin(progress * math.pi)).clamp(0.85, 1.1);
+        (0.88 + 0.18 * math.sin(progress * math.pi)).clamp(0.88, 1.06);
 
-    final cx = size.width / 2;
-    final cy = g.startY - 100 * g.u;
-
+    final pos = g.bannerCenter;
     final tp = TextPainter(
       text: TextSpan(
         text: 'VƯỢT LÊN!',
         style: TextStyle(
           fontFamily: 'Nunito',
           fontWeight: FontWeight.w900,
-          fontSize: 20 * g.u,
-          color: const Color(0xFFFFFFFF).withOpacity(alpha),
-          letterSpacing: 0.5,
+          fontSize: (17 * g.u).clamp(15.0, 26.0),
+          color: GameColors.star.withOpacity(alpha),
+          letterSpacing: 0.6,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -789,7 +885,7 @@ class _RaceForegroundPainter extends CustomPainter {
         RRect.fromRectAndRadius(pillRect, Radius.circular(pillHeight / 2));
 
     canvas.save();
-    canvas.translate(cx, cy);
+    canvas.translate(pos.dx, pos.dy);
     canvas.scale(scale);
 
     final fillPaint = Paint()
@@ -804,9 +900,9 @@ class _RaceForegroundPainter extends CustomPainter {
     canvas.drawRRect(rrect, fillPaint);
 
     final borderPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withOpacity(alpha)
+      ..color = GameColors.star.withOpacity(alpha)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5 * g.u;
+      ..strokeWidth = 2.0 * g.u;
     canvas.drawRRect(rrect, borderPaint);
 
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
@@ -815,13 +911,6 @@ class _RaceForegroundPainter extends CustomPainter {
   }
 
   void _paintRacer(Canvas canvas, _Racer r, double t, bool still) {
-    // Soft shadow on the track under the fins.
-    canvas.save();
-    canvas.translate(r.baseX, r.baseY + 1.5 * geometry.u);
-    canvas.scale(r.width * 0.5, r.width * 0.12);
-    canvas.drawPath(_unitOval, _shadow);
-    canvas.restore();
-
     r.smoke.paint(canvas, t);
     if (!still) {
       _paintStallPuffs(canvas, r);
@@ -830,12 +919,6 @@ class _RaceForegroundPainter extends CustomPainter {
     canvas.save();
     canvas.translate(r.baseX, r.baseY);
     canvas.rotate(r.tilt);
-    if (r.spinAngle != 0 && !still) {
-      final cy = -r.height / 2;
-      canvas.translate(0, cy);
-      canvas.rotate(r.spinAngle);
-      canvas.translate(0, -cy);
-    }
     FlameRenderer.paint(
       canvas,
       nozzle: Offset(0, -r.height * (1 - r.sprite.nozzle)),
@@ -854,125 +937,160 @@ class _RaceForegroundPainter extends CustomPainter {
       canvas.drawImage(img, Offset.zero, _imagePaint);
       canvas.restore();
     }
-    if (r.sprite.pilotAsset != null) {
-      final pilotImg = state._images[r.sprite.pilotAsset!].value;
-      if (pilotImg != null) {
-        final pilotSize = r.width * 0.44;
-        final pilotCenter = Offset(0, r.top + r.height * 0.38);
-        final pilotRect = Rect.fromCenter(
-          center: pilotCenter,
-          width: pilotSize,
-          height: pilotSize,
-        );
-        paintImageFitted(canvas, pilotImg, pilotRect);
-      }
-    }
     canvas.restore();
   }
 
   void _paintStallPuffs(Canvas canvas, _Racer r) {
     for (final p in r._stallPuffs) {
       final prog = (p.age / p.life).clamp(0.0, 1.0);
-      final alpha = ((1.0 - prog) * 0.7).clamp(0.0, 1.0);
+      final alpha = ((1.0 - prog) * 0.65).clamp(0.0, 1.0);
       final size = p.startSize + (p.endSize - p.startSize) * prog;
       _stallPaint.color = p.color.withOpacity(alpha);
       canvas.drawCircle(Offset(p.x, p.y), size, _stallPaint);
     }
   }
 
-  void _paintLuckyStars(Canvas canvas, TrackGeometry g, double t, bool still) {
+  void _paintLuckyStars(
+    Canvas canvas,
+    TrackGeometry g,
+    double kidPos,
+    double t,
+    bool still,
+  ) {
+    final u = g.u;
     for (final milestone in RaceSceneState.luckyStarMilestones) {
-      if (state.widget.kidSteps < milestone) {
-        final pt = g.basePoint(milestone / RaceScene.steps, 0);
-        final bob = still ? 0.0 : math.sin(t * 3 + milestone) * 3;
-        final center = Offset(pt.dx, pt.dy + bob);
-
-        final scale = g.widthAt(pt.dy) / g.widthAt(g.startY);
-        final outerR = 12.0 * g.u * scale;
-        final innerR = outerR * 0.48;
-
-        // Outer soft glow
-        final glowPaint = Paint()
-          ..color = const Color(0xFFFFD700).withOpacity(0.45)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, outerR * 0.7);
-        canvas.drawCircle(center, outerR * 1.1, glowPaint);
-
-        // 5-point star path
-        final starPath = Path();
-        for (var i = 0; i < 10; i++) {
-          final angle = -math.pi / 2 + i * math.pi / 5;
-          final r = i.isEven ? outerR : innerR;
-          final x = center.dx + r * math.cos(angle);
-          final y = center.dy + r * math.sin(angle);
-          if (i == 0) {
-            starPath.moveTo(x, y);
-          } else {
-            starPath.lineTo(x, y);
-          }
-        }
-        starPath.close();
-
-        // Golden gradient fill
-        final starPaint = Paint()
-          ..shader = ui.Gradient.linear(
-            Offset(center.dx, center.dy - outerR),
-            Offset(center.dx, center.dy + outerR),
-            const [
-              Color(0xFFFFD700),
-              Color(0xFFFFA000),
-            ],
-          );
-        canvas.drawPath(starPath, starPaint);
-
-        // Subtle outline highlight
-        final borderPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = math.max(1.0, 1.2 * g.u * scale)
-          ..color = const Color(0xFFFFF9C4).withOpacity(0.85);
-        canvas.drawPath(starPath, borderPaint);
+      if (state.widget.kidSteps >= milestone) continue;
+      final pt = g.relativeBasePoint(
+        milestone / RaceScene.steps,
+        kidPos,
+        0,
+        clampToFlight: false,
+      );
+      final bob = still ? 0.0 : math.sin(t * 3.2 + milestone) * 3.5 * u;
+      final pulse = still ? 1.0 : (0.94 + 0.08 * math.sin(t * 5.0 + milestone));
+      final center = Offset(pt.dx, pt.dy - g.rocketW * 0.55 + bob);
+      if (center.dy < g.topSafeY + 14 * u || center.dy > g.bottomSafeY) {
+        continue;
       }
+      final outerR = 13.5 * u * pulse;
+      final innerR = outerR * 0.46;
+
+      // Radial golden glow (zero blur allocation).
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.scale(outerR * 1.9, outerR * 1.9);
+      canvas.drawPath(_unitCircle, _starGlowPaint);
+      canvas.restore();
+
+      final starPath = Path();
+      for (var i = 0; i < 10; i++) {
+        final angle = -math.pi / 2 + i * math.pi / 5;
+        final r = i.isEven ? outerR : innerR;
+        final x = center.dx + r * math.cos(angle);
+        final y = center.dy + r * math.sin(angle);
+        if (i == 0) {
+          starPath.moveTo(x, y);
+        } else {
+          starPath.lineTo(x, y);
+        }
+      }
+      starPath.close();
+      canvas.drawPath(starPath, _starFillPaint);
+      canvas.drawCircle(center, innerR * 0.55, _starCorePaint);
     }
+  }
+
+  void _paintMiniProgressBar(
+    Canvas canvas,
+    TrackGeometry g,
+    double kidPos,
+    double chipPos,
+  ) {
+    final bar = g.progressBarRect;
+    final u = g.u;
+    final radius = Radius.circular(bar.width / 2);
+    final rrect = RRect.fromRectAndRadius(bar, radius);
+
+    // Track capsule background & subtle border.
+    canvas.drawRRect(rrect, _barFillPaint);
+    _barBorderPaint.strokeWidth = (1.2 * u).clamp(1.0, 2.0);
+    canvas.drawRRect(rrect, _barBorderPaint);
+
+    // Filled progress trail up to kid's position.
+    final kFrac = kidPos.clamp(0.0, 1.0);
+    final cFrac = chipPos.clamp(0.0, 1.0);
+    final kidY = bar.bottom - bar.height * kFrac;
+    final chipY = bar.bottom - bar.height * cFrac;
+    if (kFrac > 0.01) {
+      final fillRect = Rect.fromLTRB(bar.left, kidY, bar.right, bar.bottom);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(fillRect, radius), _barProgressFill);
+    }
+
+    // Mini Saturn goal emblem at top of bar.
+    final capCenter = Offset(bar.center.dx, bar.top - 9 * u);
+    final capR = (5.2 * u).clamp(4.0, 7.5);
+    canvas.drawCircle(capCenter, capR, _miniPlanetBody);
+    _miniPlanetRing.strokeWidth = (1.6 * u).clamp(1.2, 2.2);
+    canvas.save();
+    canvas.translate(capCenter.dx, capCenter.dy);
+    canvas.rotate(-0.28);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: capR * 3.0, height: capR * 0.9),
+      _miniPlanetRing,
+    );
+    canvas.restore();
+
+    // Chíp marker (white dot with coral ring).
+    final dotR = (5.2 * u).clamp(4.2, 7.5);
+    _chipDotRing.strokeWidth = (2.0 * u).clamp(1.5, 2.8);
+    canvas.drawCircle(Offset(bar.center.dx, chipY), dotR, _chipDotFill);
+    canvas.drawCircle(Offset(bar.center.dx, chipY), dotR, _chipDotRing);
+
+    // Kid marker (bright orange dot with crisp white ring, drawn on top).
+    final kidDotR = dotR * 1.12;
+    _kidDotRing.strokeWidth = (2.2 * u).clamp(1.6, 3.0);
+    canvas.drawCircle(Offset(bar.center.dx, kidY), kidDotR, _kidDotFill);
+    canvas.drawCircle(Offset(bar.center.dx, kidY), kidDotR, _kidDotRing);
   }
 
   void _paintComet(Canvas canvas, Size size, double p) {
-    final u = geometry.u;
-    final cw = 92 * u;
-    final w = size.width, h = size.height;
-    // Quadratic arc from beyond the right edge, down-left across the sky.
-    final x0 = w + cw * 0.6, y0 = 0.05 * h;
-    final x1 = w * 0.55, y1 = 0.10 * h;
-    final x2 = -cw * 1.2, y2 = 0.34 * h;
-    final e = p; // linear: comets do not ease
-    final a = (1 - e) * (1 - e), b = 2 * (1 - e) * e, c = e * e;
-    final x = a * x0 + b * x1 + c * x2;
-    final y = a * y0 + b * y1 + c * y2;
-    final dx = 2 * (1 - e) * (x1 - x0) + 2 * e * (x2 - x1);
-    final dy = 2 * (1 - e) * (y1 - y0) + 2 * e * (y2 - y1);
-    final tail = math.atan2(-dy, -dx); // tail points back along the path
+    final g = geometry;
+    final u = g.u;
+    final x = size.width * (1.12 - 1.24 * p);
+    final y = g.topSafeY + 28 * u + 36 * u * math.sin(p * math.pi * 0.65);
+    final angle = -0.26;
+    final fade = p < 0.1
+        ? p / 0.1
+        : p > 0.85
+            ? (1 - p) / 0.15
+            : 1.0;
 
     canvas.save();
     canvas.translate(x, y);
-    canvas.rotate(tail);
+    canvas.rotate(angle);
+    if (fade < 1) {
+      canvas.saveLayer(
+        Rect.fromLTRB(-90 * u, -45 * u, 210 * u, 45 * u),
+        Paint()..color = GameColors.star.withOpacity(fade),
+      );
+    }
     canvas.save();
-    canvas.scale(cw * 2.6, cw * 0.42);
+    canvas.scale(155 * u, 22 * u);
     canvas.drawPath(_streak, _streakPaint);
     canvas.restore();
+
     final img = state._images[AppImages.comet].value;
     if (img != null) {
-      // The art's tail points up-right (≈ −24°); turn it onto the path and
-      // centre the star (≈ 27 %, 60 % of the image) on the head.
-      canvas.rotate(_cometArtTail);
-      final iw = cw, ih = cw * img.height / img.width;
-      canvas.translate(-0.27 * iw, -0.60 * ih);
-      canvas.scale(iw / img.width, ih / img.height);
-      canvas.drawImage(img, Offset.zero, _imagePaint);
+      final head = 82 * u;
+      paintImageFitted(
+          canvas, img, Rect.fromLTWH(-head * 0.28, -head * 0.55, head, head));
     }
+    if (fade < 1) canvas.restore();
     canvas.restore();
   }
 
-  static const _cometArtTail = 24 * math.pi / 180;
-
   @override
   bool shouldRepaint(_RaceForegroundPainter oldDelegate) =>
-      oldDelegate.state != state || oldDelegate.geometry != geometry;
+      oldDelegate.geometry != geometry || oldDelegate.state != state;
 }

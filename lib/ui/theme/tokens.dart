@@ -46,6 +46,23 @@ abstract final class GameColors {
   static const star = Color(0xFFFFFFFF);
   static const starWarm = Color(0xFFFFF6C7);
 
+  // Free-flight deep space backdrop, nebulae and warp streaks.
+  static const spaceTop = Color(0xFF130D36);
+  static const spaceMid = Color(0xFF24185E);
+  static const spaceBottom = Color(0xFF1A1044);
+  static const nebulaViolet = Color(0xFF6C4CE0);
+  static const nebulaMagenta = Color(0xFFB854D6);
+  static const nebulaCyan = Color(0xFF3E92CC);
+  static const streakLight = Color(0xFFD8E6FF);
+
+  // Mini vertical progress bar along right edge.
+  static const progressTrack = Color(0xFF2E2268);
+  static const progressBorder = Color(0xFF8A78D6);
+  static const progressKid = Color(0xFFFF8A34);
+  static const progressChip = Color(0xFFFFFFFF);
+  static const progressChipRing = Color(0xFFFF7043);
+  static const stallSmoke = Color(0xFF48425E);
+
   /// White sprite mask for the smoke/sparkle atlas; each particle tints it.
   static const spriteMask = Color(0xFFFFFFFF);
 
