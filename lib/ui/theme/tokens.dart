@@ -204,3 +204,17 @@ abstract final class WorksheetColors {
   static const headerSubtitle = Color(0xFF5D617D);
   static const rewardStarStroke = Color(0xFFD1A43B);
 }
+
+/// Swatch colors shown in English Colors lessons (high visibility on cream/white).
+abstract final class EnglishSwatchColors {
+  static const red = Color(0xFFE53935);
+  static const blue = Color(0xFF1E88E5);
+  static const yellow = Color(0xFFFBC02D);
+  static const green = Color(0xFF2E9E5B);
+  static const orange = Color(0xFFFB8C00);
+  static const purple = Color(0xFF8E24AA);
+  static const pink = Color(0xFFEC407A);
+  static const black = Color(0xFF212121);
+  static const white = Color(0xFFFFFFFF);
+  static const brown = Color(0xFF795548);
+}
