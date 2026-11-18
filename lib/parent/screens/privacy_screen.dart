@@ -51,7 +51,7 @@ const _sections = <(String, List<String>)>[
   (
     'Liên hệ',
     [
-      'Mọi thắc mắc hoặc yêu cầu về dữ liệu, xin liên hệ: [EMAIL LIÊN HỆ]',
+      'Mọi thắc mắc hoặc yêu cầu về dữ liệu, xin liên hệ: phamdoan060801@gmail.com',
     ],
   ),
 ];

@@ -382,8 +382,7 @@ void main() {
     }
   });
 
-  testWidgets('privacy policy has its sections and contact placeholder',
-      (t) async {
+  testWidgets('privacy policy has its sections and contact email', (t) async {
     setSize(t, 375, 667);
     await t.pumpWidget(const MaterialApp(home: PrivacyScreen()));
     for (final s in [
@@ -397,8 +396,9 @@ void main() {
       await t.scrollUntilVisible(find.text(s), 200);
       expect(find.text(s), findsOneWidget);
     }
-    await t.scrollUntilVisible(find.textContaining('[EMAIL LIÊN HỆ]'), 200);
-    expect(find.textContaining('[EMAIL LIÊN HỆ]'), findsOneWidget);
+    await t.scrollUntilVisible(
+        find.textContaining('phamdoan060801@gmail.com'), 200);
+    expect(find.textContaining('phamdoan060801@gmail.com'), findsOneWidget);
     expect(find.textContaining('Nghị định 13/2023/NĐ-CP'), findsOneWidget);
   });
 

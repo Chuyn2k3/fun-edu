@@ -1,1 +1,1 @@
-{"items": [{"name": "ic-flame", "box": [341, 682, 682, 1024]}], "export_widths": [64, 128, 192]}
+{"items": [{"name": "ic-flame", "box": [0, 0, 1024, 1024], "mode": "chroma", "key_dist": 145}], "export_widths": [64, 128, 192]}
