@@ -88,12 +88,13 @@ class KidRepository {
     await (_db.delete(_db.gameItems)..where((t) => t.kidId.equals(id))).go();
     await (_db.delete(_db.gameBadges)..where((t) => t.kidId.equals(id))).go();
     await (_db.delete(_db.gameCounters)..where((t) => t.kidId.equals(id))).go();
-    // Screen-time settings (limit, bedtime, extra minutes) of this kid.
+    // Screen-time & Nhà Chíp settings of this kid.
     await (_db.delete(_db.appSettings)
           ..where((t) =>
               t.key.equals('dailyLimitMinutes.$id') |
               t.key.equals('bedtimeStart.$id') |
               t.key.equals('bedtimeEnd.$id') |
+              t.key.equals('chipHouse.$id') |
               t.key.like('extraMinutes.$id.%')))
         .go();
   }

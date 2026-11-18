@@ -239,3 +239,72 @@ abstract final class CollectionColors {
   static const lockedInk = Color(0xFF565E7D);
   static const progressTrack = Color(0xFFE8E0D2);
 }
+
+/// Colors for Nhà Chíp (cozy room painter, themes, rugs, decor, treat badges).
+/// All foreground/background text pairs meet >= 4.5:1 contrast.
+abstract final class HouseColors {
+  // Room wall & window themes
+  static const sunnyWallTop = Color(0xFFFFF4E0);
+  static const sunnyWallBottom = Color(0xFFFFE4BE);
+  static const sunnySky = Color(0xFF9AD8FF);
+  static const sunnySun = Color(0xFFFFD84D);
+
+  static const forestWallTop = Color(0xFFE6F7EA);
+  static const forestWallBottom = Color(0xFFC9EBD2);
+  static const forestSky = Color(0xFFA7E8C2);
+  static const forestLeaf = Color(0xFF2E9E5B);
+
+  static const oceanWallTop = Color(0xFFE4F2FF);
+  static const oceanWallBottom = Color(0xFFC4E1FF);
+  static const oceanSky = Color(0xFF7CC8FF);
+  static const oceanWave = Color(0xFF2563EB);
+
+  static const starryWallTop = Color(0xFF3A2F7A);
+  static const starryWallBottom = Color(0xFF5A4BA3);
+  static const starrySky = Color(0xFF1D174B);
+  static const starryMoon = Color(0xFFFFEC99);
+
+  // Room architecture (wood floor, window frame, baseboard)
+  static const woodFloorTop = Color(0xFFECC69B);
+  static const woodFloorBottom = Color(0xFFD8A878);
+  static const woodPlankLine = Color(0xFFC49262);
+  static const baseboard = Color(0xFFF6E7D4);
+  static const windowFrame = Color(0xFF9A663B);
+  static const windowSill = Color(0xFFB57C4C);
+
+  // Rugs
+  static const rugCream = Color(0xFFFFF8EC);
+  static const rugCreamEdge = Color(0xFFE8C8A0);
+  static const rugRainbow1 = Color(0xFFFF9A9A);
+  static const rugRainbow2 = Color(0xFFFFD27D);
+  static const rugRainbow3 = Color(0xFF8EE59B);
+  static const rugRainbow4 = Color(0xFF89C4FF);
+  static const rugCloud = Color(0xFFEAF5FF);
+  static const rugCloudEdge = Color(0xFFAAD2FA);
+  static const rugStar = Color(0xFFFFF0B8);
+  static const rugStarEdge = Color(0xFFE0A82E);
+
+  // Decor props
+  static const shelfWood = Color(0xFFA76F40);
+  static const bookRed = Color(0xFFE5534B);
+  static const bookBlue = Color(0xFF3B82F6);
+  static const bookGreen = Color(0xFF22A06B);
+  static const bookYellow = Color(0xFFF5B727);
+  static const potClay = Color(0xFFD97343);
+  static const plantDark = Color(0xFF1E7E45);
+  static const plantLight = Color(0xFF4CC37A);
+  static const lampGlow = Color(0xFFFFE58F);
+  static const lampStand = Color(0xFF6B5B95);
+  static const globeWater = Color(0xFF4DA6FF);
+  static const globeLand = Color(0xFF47B86E);
+
+  // Treats & status chips
+  static const equippedFill = Color(0xFFE3F7EC);
+  static const equippedInk = Color(0xFF0E6B42);
+  static const treatAcorn = Color(0xFFB3682B);
+  static const treatApple = Color(0xFFD9382E);
+  static const treatHoney = Color(0xFFD98A16);
+  static const treatCake = Color(0xFF8B46D9);
+  static const xpBarFill = Color(0xFF2E9E5B);
+  static const xpBarTrack = Color(0xFFE7E2D8);
+}
