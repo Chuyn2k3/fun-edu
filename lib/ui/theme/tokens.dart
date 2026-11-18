@@ -187,3 +187,20 @@ abstract final class GameColors {
     Color(0xFFFFA45C),
   ];
 }
+
+/// Colors for printable A4 Vietnamese ô li worksheets (both live preview and
+/// PDF export). Designed to print cleanly on both color and monochrome ink.
+abstract final class WorksheetColors {
+  static const paper = Color(0xFFFFFFFF);
+  static const gridLight = Color(0xFFC7DDF5);
+  static const gridHeavy = Color(0xFF7DA8D6);
+  static const cellBorder = Color(0xFFA7C6E8);
+  static const contextLetter = Color(0xFFD6DBE6);
+  static const modelInk = Color(0xFF24264D);
+  static const traceInk = Color(0xFFAEB6C8);
+  static const accent = Color(0xFFE05E14);
+  static const startDot = Color(0xFFE05E14);
+  static const startDotMuted = Color(0xFF9AA3B8);
+  static const headerSubtitle = Color(0xFF5D617D);
+  static const rewardStarStroke = Color(0xFFD1A43B);
+}

@@ -19,7 +19,6 @@ class RuledPaper extends StatelessWidget {
   final GlyphRuling? ruling;
 
   /// Window-relative y (0 = top, 1 = bottom) of every horizontal ô li line.
-  @visibleForTesting
   static List<double> horizontalLines(GlyphRuling r) =>
       _gridLines(r.baseline, r.cell, r.windowY, r.windowSide);
 
@@ -27,7 +26,6 @@ class RuledPaper extends StatelessWidget {
   /// window's left edge). A window that is not a whole number of ô li wide
   /// (a zoomed tone mark) has its columns centred instead, so the part cells
   /// at both sides match.
-  @visibleForTesting
   static List<double> verticalLines(GlyphRuling r) {
     if (r.cell <= 0) return const [];
     final n = r.windowSide / r.cell;
@@ -37,7 +35,6 @@ class RuledPaper extends StatelessWidget {
   }
 
   /// Window-relative y of the x-height line and the baseline, in that order.
-  @visibleForTesting
   static List<double> heavyLines(GlyphRuling r) => [
         (r.baseline - 2 * r.cell - r.windowY) / r.windowSide,
         (r.baseline - r.windowY) / r.windowSide,
