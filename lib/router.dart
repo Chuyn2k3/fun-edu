@@ -15,6 +15,7 @@ import 'features/game/race_screen.dart';
 import 'features/game/sticker_album_screen.dart';
 import 'features/game/subject_picker.dart';
 import 'features/home/home_screen.dart';
+import 'features/house/house_screen.dart';
 import 'features/lesson/lesson_done_screen.dart';
 import 'features/lesson/lesson_flow_screen.dart';
 import 'features/placement/placement_screen.dart';
@@ -96,6 +97,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/collection',
       builder: (context, state) => const CollectionScreen(),
+    ),
+    GoRoute(
+      path: '/house',
+      builder: (context, state) => const HouseScreen(),
     ),
     GoRoute(
       path: '/practice-math/:levelIndex',

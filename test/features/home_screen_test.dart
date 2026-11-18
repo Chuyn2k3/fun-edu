@@ -48,6 +48,13 @@ Widget _app(
         },
       ),
       GoRoute(
+        path: '/house',
+        builder: (_, __) {
+          visited.add('/house');
+          return const Scaffold(body: Text('house stub'));
+        },
+      ),
+      GoRoute(
         path: '/subject/viet',
         builder: (_, __) {
           visited.add('/subject/viet');
@@ -263,22 +270,15 @@ void main() {
       expect(find.byType(SnackBar), findsNothing);
     });
 
-    testWidgets('$name: mục "Nhà Chíp" vẫn hiện Sắp có', (tester) async {
+    testWidgets('$name: mục "Nhà Chíp" mở /house', (tester) async {
       _setSize(tester, size.width, size.height);
       final visited = <String>[];
       await tester.pumpWidget(_app(_fakes(), visited));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Nhà Chíp'));
-      await tester.pump();
-      expect(
-          find.descendant(
-            of: find.byType(SnackBar),
-            matching: find.text('Sắp có'),
-          ),
-          findsOneWidget);
-      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
-      expect(visited, isEmpty);
+      expect(visited, ['/house']);
+      expect(find.byType(SnackBar), findsNothing);
     });
   }
 

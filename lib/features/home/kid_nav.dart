@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../ui/widgets/floating_nav_bar.dart';
 
 /// The kid's main navigation (bottom bar on phones, rail on tablets):
-/// "Học" is home, "Chơi" the Góc Chơi hub, "Sưu tập" the learning collection;
-/// "Nhà Chíp" is not built yet.
+/// "Học" is home, "Chơi" Góc Chơi, "Sưu tập" learning collection, and
+/// "Nhà Chíp" Chíp's cozy room.
 const kidNavItems = [
   NavItem(icon: Icons.home_rounded, label: 'Học'),
   NavItem(icon: Icons.sports_esports_rounded, label: 'Chơi'),
@@ -16,6 +16,7 @@ const kidNavItems = [
 const kidNavHome = 0;
 const kidNavPlay = 1;
 const kidNavCollection = 2;
+const kidNavHouse = 3;
 
 /// Handles a tap on item [i] of [kidNavItems] from the tab [current].
 void onKidNav(BuildContext context, int i, {required int current}) {
@@ -27,9 +28,7 @@ void onKidNav(BuildContext context, int i, {required int current}) {
       context.go('/game');
     case kidNavCollection:
       context.go('/collection');
-    default:
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Sắp có')));
+    case kidNavHouse:
+      context.go('/house');
   }
 }
