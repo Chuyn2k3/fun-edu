@@ -571,10 +571,13 @@ pw.Widget _buildFooter(WorksheetPdfFonts fonts) {
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Text(
-          'Chíp Chíp — Học vui mỗi ngày · Ba mẹ tô sao thưởng cho bé nhé!',
-          style: pw.TextStyle(font: fonts.regular, fontSize: 9, color: _cSub),
+        pw.Expanded(
+          child: pw.Text(
+            'Chíp Chíp — Học vui mỗi ngày · Ba mẹ tô sao thưởng cho bé nhé!',
+            style: pw.TextStyle(font: fonts.regular, fontSize: 9, color: _cSub),
+          ),
         ),
+        pw.SizedBox(width: 8),
         pw.CustomPaint(
           size: const PdfPoint(56, 16),
           painter: (canvas, size) {

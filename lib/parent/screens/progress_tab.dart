@@ -5,6 +5,7 @@ import '../../data/app_database.dart';
 import '../../learning/writing_ladder.dart';
 import '../../learning/writing_sections.dart';
 import '../../math/math_level.dart';
+import '../../profile/kid_repository.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../screen_time/screen_time_service.dart';
@@ -12,6 +13,7 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
+import 'worksheet_screen.dart';
 
 enum GlyphState { mastered, practicing, notStarted }
 
@@ -92,6 +94,12 @@ class ProgressTab extends ConsumerWidget {
           in ref.watch(glyphListProvider).valueOrNull ?? const <Glyph>[])
         g.id: g.label,
     };
+    final kids = ref.watch(kidsProvider).valueOrNull ?? const <KidProfile>[];
+    final kidName = kids
+            .where((k) => k.id == kidId)
+            .map((k) => k.nickname)
+            .firstOrNull ??
+        'Bé';
     final hardest = hardestGlyphId(d.stats);
     // A handful of cards: no need for a lazy list.
     return SingleChildScrollView(
@@ -107,6 +115,14 @@ class ProgressTab extends ConsumerWidget {
             stats: d.stats,
             labels: labels,
             hardestLabel: hardest == null ? null : (labels[hardest] ?? hardest),
+            onPrintWorksheet: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => WorksheetScreen(
+                  kidName: kidName,
+                  stats: d.stats,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _MathCard(d.mathLevel),
@@ -212,11 +228,13 @@ class _WritingCard extends StatelessWidget {
     required this.stats,
     required this.labels,
     required this.hardestLabel,
+    required this.onPrintWorksheet,
   });
 
   final Map<String, GlyphStat> stats;
   final Map<String, String> labels;
   final String? hardestLabel;
+  final VoidCallback onPrintWorksheet;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +285,26 @@ class _WritingCard extends StatelessWidget {
               style: _bodyStyle,
             ),
           ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(48, 50),
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
+                ),
+              ),
+              onPressed: onPrintWorksheet,
+              icon: const Icon(Icons.print_rounded),
+              label: const Text(
+                'In phiếu tập tô (PDF)',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
         ],
       ),
     );

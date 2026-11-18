@@ -224,6 +224,17 @@ void main() {
     expect(find.text('Tổng 0 sao'), findsOneWidget);
   });
 
+  testWidgets('tapping In phiếu tập tô opens WorksheetScreen for selected kid',
+      (tester) async {
+    await unlockedParent(tester);
+    final btn = find.text('In phiếu tập tô (PDF)');
+    await tester.ensureVisible(btn);
+    await tester.tap(btn);
+    await settle(tester);
+    expect(find.textContaining('Phiếu tập tô — Na'), findsOneWidget);
+    expect(find.text('In phiếu'), findsOneWidget);
+  });
+
   for (final size in [const Size(320, 568), const Size(430, 932)]) {
     testWidgets('no overflow at $size', (tester) async {
       await _pumpParent(tester, size: size, unlocked: true);
