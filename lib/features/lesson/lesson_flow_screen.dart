@@ -10,7 +10,9 @@ import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/primary_button.dart';
+import '../../vietnamese/vietnamese_level.dart';
 import '../math/math_session_screen.dart';
+import '../vietnamese/vietnamese_session_screen.dart';
 import '../writing/writing_screen.dart';
 
 /// Runs today's lesson: a [WritingScreen] or [MathSessionScreen] per item,
@@ -111,6 +113,16 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
         ref.invalidate(mathLevelIndexProvider);
       });
 
+  Future<void> _onVietnameseCompleted(int firstTryCorrect, int total) =>
+      _completeItem(() async {
+        final levels = await ref.read(levelRepositoryProvider.future);
+        await levels.recordVietnameseSession(
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+        );
+        ref.invalidate(vietnameseLevelIndexProvider);
+      });
+
   @override
   Widget build(BuildContext context) {
     final items = _items;
@@ -146,6 +158,14 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
       },
       child: switch (item) {
         WritingItem(:final glyphId) => _writing(glyphId, items.length),
+        VietnameseItem(:final levelIndex) => VietnameseSessionScreen(
+            key: ValueKey('vn-$_index'),
+            level: vietnameseLevels[
+                levelIndex.clamp(0, vietnameseLevels.length - 1)],
+            step: _index + 1,
+            totalSteps: items.length,
+            onCompleted: _onVietnameseCompleted,
+          ),
         MathItem(:final levelIndex) => MathSessionScreen(
             key: ValueKey('math-$_index'),
             level: mathLevels[levelIndex.clamp(0, mathLevels.length - 1)],

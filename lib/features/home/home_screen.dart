@@ -9,6 +9,7 @@ import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
 import '../../data/app_database.dart';
 import '../../math/math_level.dart';
+import '../../vietnamese/vietnamese_level.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/progress_repository.dart';
@@ -205,6 +206,7 @@ class _HomeBody extends StatelessWidget {
                   _SubjectGrid(
                     masteredWriting: summary.masteredWriting,
                     mathLevelIndex: summary.mathLevelIndex,
+                    vietnameseLevelIndex: summary.vietnameseLevelIndex,
                   ),
                 ],
               ),
@@ -273,6 +275,7 @@ class _HomeBody extends StatelessWidget {
         cardHeight: cardHeight,
         masteredWriting: summary.masteredWriting,
         mathLevelIndex: summary.mathLevelIndex,
+        vietnameseLevelIndex: summary.vietnameseLevelIndex,
         columns: columns,
         gap: 16,
       ),
@@ -572,6 +575,7 @@ class _SubjectGrid extends StatelessWidget {
   const _SubjectGrid({
     required this.masteredWriting,
     required this.mathLevelIndex,
+    required this.vietnameseLevelIndex,
     this.columns = 2,
     this.gap = 12,
     this.cardHeight,
@@ -579,6 +583,7 @@ class _SubjectGrid extends StatelessWidget {
 
   final int masteredWriting;
   final int mathLevelIndex;
+  final int vietnameseLevelIndex;
   final int columns;
   final double gap;
 
@@ -604,6 +609,9 @@ class _SubjectGrid extends StatelessWidget {
         imagePath: AppImages.icTiengViet,
         title: 'Tiếng Việt',
         subtitle: 'Chữ, âm, vần',
+        done: vietnameseLevelIndex + 1,
+        total: vietnameseLevels.length,
+        onTap: () => context.push('/subject/tieng-viet'),
       ),
       SubjectCard(
         subject: Subject.toan,

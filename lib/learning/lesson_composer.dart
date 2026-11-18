@@ -57,6 +57,7 @@ List<LessonItem> composeTodayLessonItems({
   required Set<String> available,
   required int writingStartIndex,
   required int mathLevelIndex,
+  int? vietnameseLevelIndex,
 }) {
   final effective = Map<String, GlyphStat>.of(stats);
   for (final id in ladder.take(writingStartIndex)) {
@@ -73,6 +74,7 @@ List<LessonItem> composeTodayLessonItems({
   );
   return [
     if (glyphs.isNotEmpty) WritingItem(glyphs[0]),
+    if (vietnameseLevelIndex != null) VietnameseItem(vietnameseLevelIndex),
     MathItem(mathLevelIndex),
     if (glyphs.length > 1) WritingItem(glyphs[1]),
   ];

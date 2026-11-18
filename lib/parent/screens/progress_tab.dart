@@ -13,6 +13,7 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
+import '../../vietnamese/vietnamese_level.dart';
 import 'worksheet_screen.dart';
 
 enum GlyphState { mastered, practicing, notStarted }
@@ -47,6 +48,7 @@ class ProgressData {
     required this.stars,
     required this.stats,
     required this.mathLevel,
+    required this.vietnameseLevel,
   });
 
   final int usedMinutes;
@@ -55,6 +57,7 @@ class ProgressData {
   final int stars;
   final Map<String, GlyphStat> stats;
   final int? mathLevel;
+  final int vietnameseLevel;
 }
 
 /// Progress of any kid, built straight from the database so it never
@@ -63,6 +66,7 @@ final progressDataProvider =
     FutureProvider.autoDispose.family<ProgressData, int>((ref, kidId) async {
   final db = ref.watch(databaseProvider);
   final progress = ProgressRepository(db, kidId: kidId);
+  final levels = LevelRepository(db, kidId: kidId);
   final screenTime = ref.watch(screenTimeServiceProvider);
   return ProgressData(
     usedMinutes: (await screenTime.usedToday(kidId)).inMinutes,
@@ -70,7 +74,8 @@ final progressDataProvider =
     learnedDays: (await progress.learnedWeekdaysThisWeek()).length,
     stars: await progress.totalStars(),
     stats: await progress.glyphStats(),
-    mathLevel: await LevelRepository(db, kidId: kidId).levelOf('toan'),
+    mathLevel: await levels.levelOf('toan'),
+    vietnameseLevel: await levels.levelOf('tieng-viet') ?? 0,
   );
 });
 
@@ -126,6 +131,8 @@ class ProgressTab extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _MathCard(d.mathLevel),
+          const SizedBox(height: 12),
+          _VietnameseCard(d.vietnameseLevel),
         ],
       ),
     );
@@ -401,6 +408,31 @@ class _MathCard extends StatelessWidget {
                 Text('${l + 1}/${mathLevels.length}', style: _bodyStyle),
               ],
             ),
+    );
+  }
+}
+
+class _VietnameseCard extends StatelessWidget {
+  const _VietnameseCard(this.level);
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = level.clamp(0, vietnameseLevels.length - 1);
+    return _Card(
+      title: 'Tiếng Việt',
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Đang học: ${vietnameseLevels[l].title}',
+              style: _bodyStyle,
+            ),
+          ),
+          Text('${l + 1}/${vietnameseLevels.length}', style: _bodyStyle),
+        ],
+      ),
     );
   }
 }

@@ -16,11 +16,13 @@ final todayLessonProvider = FutureProvider<List<LessonItem>>((ref) async {
   final levels = await ref.watch(levelRepositoryProvider.future);
   final writingStart = await levels.levelOf('viet') ?? 0;
   final mathLevel = await levels.levelOf('toan') ?? 0;
+  final vietnameseLevel = await levels.levelOf('tieng-viet') ?? 0;
   return composeTodayLessonItems(
     ladder: writingLadder,
     stats: stats,
     available: available.toSet(),
     writingStartIndex: writingStart,
     mathLevelIndex: mathLevel,
+    vietnameseLevelIndex: vietnameseLevel,
   );
 });

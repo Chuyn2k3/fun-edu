@@ -187,7 +187,7 @@ void main() {
       find.text('Hôm nay mình viết Nét xiên và làm Toán nhé!'),
       findsOneWidget,
     );
-    expect(find.text('Sắp có'), findsNWidgets(2));
+    expect(find.text('Sắp có'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

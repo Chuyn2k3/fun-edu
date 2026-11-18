@@ -5,6 +5,7 @@ import '../data/app_database.dart';
 import '../math/level_rule.dart';
 import '../profile/kid_repository.dart';
 import '../math/math_level.dart';
+import '../vietnamese/vietnamese_level.dart';
 import 'progress_repository.dart';
 
 /// Placed levels of one kid. With a null [kidId] reads return null/false and
@@ -64,6 +65,22 @@ class LevelRepository {
         await setLevel('toan', next);
         return next;
       });
+
+  /// Applies the level rule to the Vietnamese level and returns the new level.
+  Future<int> recordVietnameseSession({
+    required int firstTryCorrect,
+    required int total,
+  }) =>
+      _db.transaction(() async {
+        final next = nextLevelIndex(
+          current: await levelOf('tieng-viet') ?? 0,
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+          levelCount: vietnameseLevels.length,
+        );
+        await setLevel('tieng-viet', next);
+        return next;
+      });
 }
 
 /// Async so callers never see a repository built before the current kid is
@@ -76,6 +93,11 @@ final levelRepositoryProvider = FutureProvider<LevelRepository>((ref) async {
 final mathLevelIndexProvider = FutureProvider<int>((ref) async {
   final repo = await ref.watch(levelRepositoryProvider.future);
   return await repo.levelOf('toan') ?? 0;
+});
+
+final vietnameseLevelIndexProvider = FutureProvider<int>((ref) async {
+  final repo = await ref.watch(levelRepositoryProvider.future);
+  return await repo.levelOf('tieng-viet') ?? 0;
 });
 
 final isPlacedProvider = FutureProvider<bool>((ref) async {

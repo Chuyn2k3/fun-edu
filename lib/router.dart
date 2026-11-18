@@ -19,6 +19,7 @@ import 'features/lesson/lesson_flow_screen.dart';
 import 'features/placement/placement_screen.dart';
 import 'features/setup/first_run_screen.dart';
 import 'features/subject/math_map_screen.dart';
+import 'features/subject/vietnamese_map_screen.dart';
 import 'features/subject/writing_map_screen.dart';
 import 'features/trace/trace_screen.dart';
 import 'parent/screens/parent_home.dart';
@@ -83,8 +84,18 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const MathMapScreen(),
     ),
     GoRoute(
+      path: '/subject/tieng-viet',
+      builder: (context, state) => const VietnameseMapScreen(),
+    ),
+    GoRoute(
       path: '/practice-math/:levelIndex',
       builder: (context, state) => PracticeMathScreen(
+        int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+      ),
+    ),
+    GoRoute(
+      path: '/practice-vietnamese/:levelIndex',
+      builder: (context, state) => PracticeVietnameseScreen(
         int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
       ),
     ),

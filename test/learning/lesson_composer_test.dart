@@ -157,6 +157,7 @@ void main() {
     addTearDown(container.dispose);
     expect(await container.read(todayLessonProvider.future), const [
       WritingItem('net-ngang'),
+      VietnameseItem(0),
       MathItem(0),
       WritingItem('net-thang-dung'),
     ]);
@@ -173,9 +174,11 @@ void main() {
     addTearDown(container.dispose);
     final levels = await container.read(levelRepositoryProvider.future);
     await levels.setLevel('viet', 5);
+    await levels.setLevel('tieng-viet', 2);
     await levels.setLevel('toan', 1);
     expect(await container.read(todayLessonProvider.future), const [
       WritingItem('so-0'),
+      VietnameseItem(2),
       MathItem(1),
       WritingItem('net-ngang'),
     ]);

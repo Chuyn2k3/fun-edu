@@ -34,3 +34,19 @@ class MathItem extends LessonItem {
   @override
   String toString() => 'MathItem($levelIndex)';
 }
+
+class VietnameseItem extends LessonItem {
+  const VietnameseItem(this.levelIndex);
+
+  final int levelIndex;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VietnameseItem && other.levelIndex == levelIndex;
+
+  @override
+  int get hashCode => Object.hash('vietnamese', levelIndex);
+
+  @override
+  String toString() => 'VietnameseItem($levelIndex)';
+}
