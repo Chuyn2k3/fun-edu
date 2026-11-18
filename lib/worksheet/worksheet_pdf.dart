@@ -266,6 +266,9 @@ pw.Widget _buildCell({
 }) {
   final showNumbers =
       kind == WorksheetCellKind.model && glyph.strokes.length >= 2;
+  final badgeCoords = showNumbers
+      ? badgePositionsForStrokes(glyph.strokes, cellSize: size)
+      : const <(double, double)>[];
 
   return pw.SizedBox(
     width: size,
@@ -295,8 +298,8 @@ pw.Widget _buildCell({
             if (glyph.strokes[i].points.isNotEmpty)
               _strokeNumberBadge(
                 index: i + 1,
-                point: glyph.strokes[i].points.first,
-                cellSize: size,
+                left: badgeCoords[i].$1,
+                top: badgeCoords[i].$2,
                 fonts: fonts,
               ),
       ],
@@ -306,15 +309,11 @@ pw.Widget _buildCell({
 
 pw.Widget _strokeNumberBadge({
   required int index,
-  required Point2 point,
-  required double cellSize,
+  required double left,
+  required double top,
   required WorksheetPdfFonts fonts,
 }) {
   const badgeSize = 10.0;
-  final left = (point.x * cellSize - badgeSize * 0.95)
-      .clamp(1.0, cellSize - badgeSize - 1.0);
-  final top = (point.y * cellSize - badgeSize * 0.95)
-      .clamp(1.0, cellSize - badgeSize - 1.0);
   return pw.Positioned(
     left: left,
     top: top,

@@ -258,6 +258,9 @@ class _PreviewCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final showNumbers =
         kind == WorksheetCellKind.model && glyph.strokes.length >= 2;
+    final badgeCoords = showNumbers
+        ? badgePositionsForStrokes(glyph.strokes, cellSize: size)
+        : const <(double, double)>[];
     return SizedBox(
       width: size,
       height: size,
@@ -276,18 +279,14 @@ class _PreviewCell extends StatelessWidget {
           if (showNumbers)
             for (var i = 0; i < glyph.strokes.length; i++)
               if (glyph.strokes[i].points.isNotEmpty)
-                _numberBadge(i + 1, glyph.strokes[i].points.first, size),
+                _numberBadge(i + 1, badgeCoords[i].$1, badgeCoords[i].$2),
         ],
       ),
     );
   }
 
-  Widget _numberBadge(int index, Point2 p, double cellSize) {
+  Widget _numberBadge(int index, double left, double top) {
     const badgeSize = 10.0;
-    final left = (p.x * cellSize - badgeSize * 0.95)
-        .clamp(1.0, cellSize - badgeSize - 1.0);
-    final top = (p.y * cellSize - badgeSize * 0.95)
-        .clamp(1.0, cellSize - badgeSize - 1.0);
     return Positioned(
       left: left,
       top: top,

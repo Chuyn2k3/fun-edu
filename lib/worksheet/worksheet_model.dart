@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import '../learning/writing_ladder.dart';
 import '../progress/progress_repository.dart';
+import '../stroke/glyph.dart';
 
 /// How glyphs on a printable worksheet are chosen.
 enum WorksheetSelectionMode {
@@ -208,4 +211,41 @@ String _asciiSlug(String input) {
   }
   final s = buf.toString();
   return s.endsWith('-') ? s.substring(0, s.length - 1) : s;
+}
+
+/// Computes non-overlapping top-left `(left, top)` badge coordinates inside a
+/// square cell of [cellSize] for each stroke's starting point. When two strokes
+/// start very close together (e.g. `a`, `d`, `g`), their badges nudge apart
+/// horizontally so both numbers stay clearly legible.
+List<(double left, double top)> badgePositionsForStrokes(
+  List<Stroke> strokes, {
+  required double cellSize,
+  double badgeSize = 10.0,
+}) {
+  final out = <(double, double)>[];
+  final maxPos = math.max(1.0, cellSize - badgeSize - 1.0);
+  for (final s in strokes) {
+    if (s.points.isEmpty) {
+      out.add((1.0, 1.0));
+      continue;
+    }
+    final p = s.points.first;
+    var left = (p.x * cellSize - badgeSize * 0.9).clamp(1.0, maxPos);
+    var top = (p.y * cellSize - badgeSize * 0.95).clamp(1.0, maxPos);
+
+    for (var prev = 0; prev < out.length; prev++) {
+      final (pl, pt) = out[prev];
+      final dx = left - pl;
+      final dy = top - pt;
+      if (dx.abs() < badgeSize * 0.95 && dy.abs() < badgeSize * 0.95) {
+        // Nudge previous badge slightly left and current badge slightly right.
+        final midX = (pl + left) / 2;
+        final newPrevL = (midX - badgeSize * 0.65).clamp(1.0, maxPos);
+        out[prev] = (newPrevL, pt);
+        left = (newPrevL + badgeSize * 1.05).clamp(1.0, maxPos);
+      }
+    }
+    out.add((left, top));
+  }
+  return out;
 }
