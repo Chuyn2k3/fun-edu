@@ -8,6 +8,7 @@ import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
 import '../../data/app_database.dart';
+import '../../english/english_level.dart';
 import '../../math/math_level.dart';
 import '../../vietnamese/vietnamese_level.dart';
 import '../../parent/parent_gate_route.dart';
@@ -207,6 +208,7 @@ class _HomeBody extends StatelessWidget {
                     masteredWriting: summary.masteredWriting,
                     mathLevelIndex: summary.mathLevelIndex,
                     vietnameseLevelIndex: summary.vietnameseLevelIndex,
+                    englishLevelIndex: summary.englishLevelIndex,
                   ),
                 ],
               ),
@@ -276,6 +278,7 @@ class _HomeBody extends StatelessWidget {
         masteredWriting: summary.masteredWriting,
         mathLevelIndex: summary.mathLevelIndex,
         vietnameseLevelIndex: summary.vietnameseLevelIndex,
+        englishLevelIndex: summary.englishLevelIndex,
         columns: columns,
         gap: 16,
       ),
@@ -576,6 +579,7 @@ class _SubjectGrid extends StatelessWidget {
     required this.masteredWriting,
     required this.mathLevelIndex,
     required this.vietnameseLevelIndex,
+    required this.englishLevelIndex,
     this.columns = 2,
     this.gap = 12,
     this.cardHeight,
@@ -584,6 +588,7 @@ class _SubjectGrid extends StatelessWidget {
   final int masteredWriting;
   final int mathLevelIndex;
   final int vietnameseLevelIndex;
+  final int englishLevelIndex;
   final int columns;
   final double gap;
 
@@ -629,6 +634,9 @@ class _SubjectGrid extends StatelessWidget {
         imagePath: AppImages.icTiengAnh,
         title: 'Tiếng Anh',
         subtitle: 'Chữ cái, từ',
+        done: englishLevelIndex + 1,
+        total: englishLevels.length,
+        onTap: () => context.push('/subject/tieng-anh'),
       ),
     ];
     return Column(

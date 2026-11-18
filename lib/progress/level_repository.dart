@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
+import '../english/english_level.dart';
 import '../math/level_rule.dart';
 import '../profile/kid_repository.dart';
 import '../math/math_level.dart';
@@ -81,6 +82,22 @@ class LevelRepository {
         await setLevel('tieng-viet', next);
         return next;
       });
+
+  /// Applies the level rule to the English level and returns the new level.
+  Future<int> recordEnglishSession({
+    required int firstTryCorrect,
+    required int total,
+  }) =>
+      _db.transaction(() async {
+        final next = nextLevelIndex(
+          current: await levelOf('tieng-anh') ?? 0,
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+          levelCount: englishLevels.length,
+        );
+        await setLevel('tieng-anh', next);
+        return next;
+      });
 }
 
 /// Async so callers never see a repository built before the current kid is
@@ -98,6 +115,11 @@ final mathLevelIndexProvider = FutureProvider<int>((ref) async {
 final vietnameseLevelIndexProvider = FutureProvider<int>((ref) async {
   final repo = await ref.watch(levelRepositoryProvider.future);
   return await repo.levelOf('tieng-viet') ?? 0;
+});
+
+final englishLevelIndexProvider = FutureProvider<int>((ref) async {
+  final repo = await ref.watch(levelRepositoryProvider.future);
+  return await repo.levelOf('tieng-anh') ?? 0;
 });
 
 final isPlacedProvider = FutureProvider<bool>((ref) async {

@@ -145,6 +145,7 @@ class HomeSummary {
     required this.masteredWriting,
     this.mathLevelIndex = 0,
     this.vietnameseLevelIndex = 0,
+    this.englishLevelIndex = 0,
     this.lessonsToday = 0,
     this.learnedWeekdays = const {},
   });
@@ -154,6 +155,7 @@ class HomeSummary {
   final int masteredWriting;
   final int mathLevelIndex;
   final int vietnameseLevelIndex;
+  final int englishLevelIndex;
 
   /// Lessons finished today; the home card shows the lesson as done when > 0.
   final int lessonsToday;
@@ -185,6 +187,7 @@ final homeSummaryProvider = FutureProvider<HomeSummary>((ref) async {
     masteredWriting: mastered,
     mathLevelIndex: await ref.watch(mathLevelIndexProvider.future),
     vietnameseLevelIndex: await ref.watch(vietnameseLevelIndexProvider.future),
+    englishLevelIndex: await ref.watch(englishLevelIndexProvider.future),
     lessonsToday: await repo.lessonsCompletedToday(),
   );
 });

@@ -11,6 +11,7 @@ import '../../progress/progress_repository.dart';
 import '../../screen_time/screen_time_service.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../english/english_level.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../vietnamese/vietnamese_level.dart';
@@ -49,6 +50,7 @@ class ProgressData {
     required this.stats,
     required this.mathLevel,
     required this.vietnameseLevel,
+    required this.englishLevel,
   });
 
   final int usedMinutes;
@@ -58,6 +60,7 @@ class ProgressData {
   final Map<String, GlyphStat> stats;
   final int? mathLevel;
   final int vietnameseLevel;
+  final int englishLevel;
 }
 
 /// Progress of any kid, built straight from the database so it never
@@ -76,6 +79,7 @@ final progressDataProvider =
     stats: await progress.glyphStats(),
     mathLevel: await levels.levelOf('toan'),
     vietnameseLevel: await levels.levelOf('tieng-viet') ?? 0,
+    englishLevel: await levels.levelOf('tieng-anh') ?? 0,
   );
 });
 
@@ -133,6 +137,8 @@ class ProgressTab extends ConsumerWidget {
           _MathCard(d.mathLevel),
           const SizedBox(height: 12),
           _VietnameseCard(d.vietnameseLevel),
+          const SizedBox(height: 12),
+          _EnglishCard(d.englishLevel),
         ],
       ),
     );
@@ -431,6 +437,31 @@ class _VietnameseCard extends StatelessWidget {
             ),
           ),
           Text('${l + 1}/${vietnameseLevels.length}', style: _bodyStyle),
+        ],
+      ),
+    );
+  }
+}
+
+class _EnglishCard extends StatelessWidget {
+  const _EnglishCard(this.level);
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = level.clamp(0, englishLevels.length - 1);
+    return _Card(
+      title: 'Tiếng Anh',
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Đang học: ${englishLevels[l].title}',
+              style: _bodyStyle,
+            ),
+          ),
+          Text('${l + 1}/${englishLevels.length}', style: _bodyStyle),
         ],
       ),
     );
