@@ -218,3 +218,24 @@ abstract final class EnglishSwatchColors {
   static const white = Color(0xFFFFFFFF);
   static const brown = Color(0xFF795548);
 }
+
+/// Colors for the learning Collection tab (Sưu tập): stickers, attendance
+/// calendar, and kid certificates. All text/ink pairs meet >= 4.5:1 contrast.
+abstract final class CollectionColors {
+  static const goldFill = Color(0xFFFFF4CC);
+  static const goldHalo = Color(0xFFFFDF73);
+  static const goldBorder = Color(0xFFE0A82E);
+  static const goldInk = Color(0xFF7A4B00);
+
+  static const certPaper = Color(0xFFFFFBF0);
+  static const certFrameOuter = Color(0xFFD69A24);
+  static const certFrameInner = Color(0xFFF0C75E);
+
+  static const calendarStampFill = Color(0xFFFFF1C7);
+  static const calendarTodayFill = Color(0xFFFFEEE2);
+
+  static const lockedSurface = Color(0xFFF3EFE8);
+  static const lockedBorder = Color(0xFFE0D7C8);
+  static const lockedInk = Color(0xFF565E7D);
+  static const progressTrack = Color(0xFFE8E0D2);
+}

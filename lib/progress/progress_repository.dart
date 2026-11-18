@@ -136,6 +136,54 @@ class ProgressRepository {
         .get();
     return {for (final r in rows) r.completedAt.toLocal().weekday};
   }
+
+  /// Total number of completed lessons for this kid across all time.
+  Future<int> totalLessons() async {
+    final kid = kidId;
+    if (kid == null) return 0;
+    final count = _db.lessonCompletions.id.count();
+    final row = await (_db.selectOnly(_db.lessonCompletions)
+          ..addColumns([count])
+          ..where(_db.lessonCompletions.kidId.equals(kid)))
+        .getSingle();
+    return row.read(count) ?? 0;
+  }
+
+  /// Total number of distinct local calendar days on which this kid finished
+  /// at least one lesson.
+  Future<int> totalLearnedDays() async {
+    final kid = kidId;
+    if (kid == null) return 0;
+    final rows = await (_db.select(_db.lessonCompletions)
+          ..where((t) => t.kidId.equals(kid)))
+        .get();
+    final days = <(int, int, int)>{
+      for (final r in rows)
+        () {
+          final d = r.completedAt.toLocal();
+          return (d.year, d.month, d.day);
+        }(),
+    };
+    return days.length;
+  }
+
+  /// Day-of-month numbers (1..31) in [year]/[month] (local time) that have at
+  /// least one completed lesson.
+  Future<Set<int>> learnedDaysInMonth(int year, int month) async {
+    final kid = kidId;
+    if (kid == null) return {};
+    final start = DateTime(year, month, 1);
+    final nextMonth = DateTime(year, month + 1, 1);
+    final rows = await (_db.select(_db.lessonCompletions)
+          ..where(
+            (t) =>
+                t.kidId.equals(kid) &
+                t.completedAt.isBiggerOrEqualValue(start) &
+                t.completedAt.isSmallerThanValue(nextMonth),
+          ))
+        .get();
+    return {for (final r in rows) r.completedAt.toLocal().day};
+  }
 }
 
 class HomeSummary {
