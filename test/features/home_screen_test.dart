@@ -41,6 +41,13 @@ Widget _app(
         },
       ),
       GoRoute(
+        path: '/collection',
+        builder: (_, __) {
+          visited.add('/collection');
+          return const Scaffold(body: Text('collection stub'));
+        },
+      ),
+      GoRoute(
         path: '/subject/viet',
         builder: (_, __) {
           visited.add('/subject/viet');
@@ -245,24 +252,32 @@ void main() {
       expect(find.byType(SnackBar), findsNothing);
     });
 
-    testWidgets('$name: mục "Sưu tập", "Nhà Chíp" vẫn hiện Sắp có',
-        (tester) async {
+    testWidgets('$name: mục "Sưu tập" mở /collection', (tester) async {
       _setSize(tester, size.width, size.height);
       final visited = <String>[];
       await tester.pumpWidget(_app(_fakes(), visited));
       await tester.pumpAndSettle();
-      for (final label in ['Sưu tập', 'Nhà Chíp']) {
-        await tester.tap(find.text(label));
-        await tester.pump();
-        expect(
-            find.descendant(
-              of: find.byType(SnackBar),
-              matching: find.text('Sắp có'),
-            ),
-            findsOneWidget);
-        await tester.pump(const Duration(seconds: 5));
-        await tester.pumpAndSettle();
-      }
+      await tester.tap(find.text('Sưu tập'));
+      await tester.pumpAndSettle();
+      expect(visited, ['/collection']);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('$name: mục "Nhà Chíp" vẫn hiện Sắp có', (tester) async {
+      _setSize(tester, size.width, size.height);
+      final visited = <String>[];
+      await tester.pumpWidget(_app(_fakes(), visited));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nhà Chíp'));
+      await tester.pump();
+      expect(
+          find.descendant(
+            of: find.byType(SnackBar),
+            matching: find.text('Sắp có'),
+          ),
+          findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
       expect(visited, isEmpty);
     });
   }

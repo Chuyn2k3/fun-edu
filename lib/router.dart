@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
+import 'features/collection/collection_screen.dart';
 import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
 import 'features/game/badge_cabinet_screen.dart';
@@ -91,6 +92,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/subject/tieng-anh',
       builder: (context, state) => const EnglishMapScreen(),
+    ),
+    GoRoute(
+      path: '/collection',
+      builder: (context, state) => const CollectionScreen(),
     ),
     GoRoute(
       path: '/practice-math/:levelIndex',
