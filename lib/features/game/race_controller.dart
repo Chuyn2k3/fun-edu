@@ -220,7 +220,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
         ...firstLetterGroup,
         ...toneIds,
       };
-      for (final id in ids) {
+      await Future.wait(ids.map((id) async {
         try {
           // Also warms the cache so the keys draw at once.
           final g = await ref.read(glyphProvider(id).future);
@@ -229,7 +229,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
           // The glyph did not load: Chíp still says the letter's name.
           speech[id] = spokenNameFromId(id);
         }
-      }
+      }));
     }
     // Not consumed here: recordRace clears it, so a race left early keeps
     // the slower Chíp for the next try.

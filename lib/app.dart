@@ -60,8 +60,7 @@ class App extends ConsumerWidget {
     final placed = ref.watch(isPlacedProvider);
     // Load the voice setting before any screen can speak.
     final voice = ref.watch(voiceEnabledProvider);
-    // Pre-warm static glyphs and subject levels while in splash or placed kid.
-    ref.watch(glyphListProvider);
+    // Pre-warm subject levels while in splash or placed kid.
     if (kid.valueOrNull != null) {
       ref.watch(mathLevelIndexProvider);
       ref.watch(vietnameseLevelIndexProvider);

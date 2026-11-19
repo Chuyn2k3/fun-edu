@@ -600,7 +600,7 @@ class AnswerDesk extends ConsumerWidget {
               vertical: tablet ? 18 : 14,
             ),
             child: q == null
-                ? const SizedBox.shrink()
+                ? _CockpitPlaceholder(tablet: tablet, landscape: landscape)
                 : Column(
                     mainAxisSize:
                         landscape ? MainAxisSize.max : MainAxisSize.min,
@@ -780,6 +780,192 @@ class AnswerDesk extends ConsumerWidget {
         LetterRaceQuestion() => q.choiceGlyphIds[i],
         ToneRaceQuestion() => toneLabels[q.choiceMarkIds[i]] ?? '',
       };
+}
+
+class _CockpitPlaceholder extends StatelessWidget {
+  const _CockpitPlaceholder({required this.tablet, required this.landscape});
+
+  final bool tablet;
+  final bool landscape;
+
+  @override
+  Widget build(BuildContext context) {
+    final keyHeight = tablet ? 88.0 : 66.0;
+    return Column(
+      mainAxisSize: landscape ? MainAxisSize.max : MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (landscape) const Spacer(),
+        // Top instrument row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: tablet ? 12 : 8,
+                vertical: tablet ? 5 : 4,
+              ),
+              decoration: BoxDecoration(
+                color: GameColors.gaugeBg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: GameColors.gaugeBorder,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.bolt_rounded,
+                    size: tablet ? 20 : 16,
+                    color: GameColors.gaugeIcon,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'NĂNG LƯỢNG',
+                    style: TextStyle(
+                      fontSize: tablet ? 14 : 11,
+                      fontWeight: FontWeight.w900,
+                      color: GameColors.gaugeText,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: tablet ? 10 : 8,
+                    vertical: tablet ? 5 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.accent,
+                      width: 1.5,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: GameColors.hudShadow,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    'Cố lên!',
+                    style: TextStyle(
+                      fontSize: tablet ? 14 : 11,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  width: tablet ? 42 : 32,
+                  height: tablet ? 42 : 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: GameColors.coPilotBg,
+                    border: Border.all(
+                      color: AppColors.accent,
+                      width: 2,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      AppImages.chipJoy,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: tablet ? 12 : 8),
+
+        // Placeholder question card
+        Container(
+          width: double.infinity,
+          height: tablet ? 104 : 80,
+          padding: EdgeInsets.symmetric(
+            horizontal: tablet ? 20 : 14,
+            vertical: tablet ? 14 : 10,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(
+              color: GameColors.questionCardEdge,
+              width: 1.5,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: GameColors.questionCardEdge,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  AppImages.rocketOrange,
+                  width: tablet ? 32 : 24,
+                  height: tablet ? 32 : 24,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'Sẵn sàng xuất phát!',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: tablet ? 20 : 15,
+                      fontWeight: FontWeight.w900,
+                      color: GameColors.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: tablet ? 14 : 10),
+
+        // 3 inactive placeholder keys
+        Row(
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) SizedBox(width: tablet ? 14 : 10),
+              Expanded(
+                child: Container(
+                  height: keyHeight,
+                  decoration: raisedKeyDecoration(
+                    top: GameColors.keyOrangeTop.withOpacity(0.5),
+                    body: GameColors.keyOrange.withOpacity(0.5),
+                    edge: GameColors.keyOrangeEdge.withOpacity(0.5),
+                    radius: tablet ? 26 : 20,
+                    lip: tablet ? 9 : 7,
+                    pressed: false,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 typedef FloatingCockpitHUD = AnswerDesk;
