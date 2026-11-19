@@ -92,6 +92,7 @@ abstract final class GameColors {
   static const coPilotBg = Color(0xFFFFEDD5);
   static const chipReactionBehind = Color(0xFFFF7043);
   static const chipReactionLead = Color(0xFFFFB300);
+  static const lockedSilhouette = Color(0xFF6B5E8C);
 
   // Mini vertical progress bar along right edge.
   static const progressTrack = Color(0xFF2E2268);

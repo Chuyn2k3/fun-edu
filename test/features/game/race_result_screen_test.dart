@@ -81,7 +81,7 @@ void main() {
       await pumpReal(t, times: 6);
     }
 
-    expect(find.text('+2 Sao May Mắn!'), findsOneWidget);
+    expect(find.text('+2'), findsOneWidget);
   });
 
   testWidgets(
@@ -132,6 +132,6 @@ void main() {
       await pumpReal(t, times: 6);
     }
 
-    expect(find.textContaining('Sao May Mắn'), findsNothing);
+    expect(find.byKey(const ValueKey('lucky-stars-reward')), findsNothing);
   });
 }

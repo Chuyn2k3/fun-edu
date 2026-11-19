@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,7 +84,7 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
 
   RaceResultArgs get a => widget.args;
 
-  String get _loseTitle => 'Suýt nữa thôi! Chỉ còn ${a.stepsShort} nấc!';
+  String get _loseTitle => 'Suýt nữa thôi! Chỉ còn ${a.stepsShort} bước!';
 
   @override
   void initState() {
@@ -239,16 +238,39 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            a.won ? _winTitle : _loseTitle,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: tablet ? 38 : 28,
-                              fontWeight: FontWeight.w900,
-                              color: GameColors.ink,
-                              height: 1.15,
+                          if (a.won)
+                            Text(
+                              _winTitle,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: tablet ? 38 : 28,
+                                fontWeight: FontWeight.w900,
+                                color: GameColors.ink,
+                                height: 1.15,
+                              ),
+                            )
+                          else ...[
+                            Text(
+                              'Suýt nữa thôi!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: tablet ? 38 : 28,
+                                fontWeight: FontWeight.w900,
+                                color: GameColors.ink,
+                                height: 1.15,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Chỉ còn ${a.stepsShort} bước!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: tablet ? 24 : 18,
+                                fontWeight: FontWeight.w800,
+                                color: GameColors.ink.withOpacity(0.85),
+                              ),
+                            ),
+                          ],
                           if (faster != null) ...[
                             SizedBox(height: tablet ? 12 : 8),
                             _RecordBadge(seconds: faster),
@@ -335,9 +357,9 @@ class _Hero extends StatelessWidget {
             GameColors.skyTop,
             GameColors.skyUpper,
             GameColors.skyLower,
-            GameColors.skyHorizon,
+            GameColors.panelTop,
           ],
-          stops: [0, 0.4, 0.78, 1],
+          stops: [0.0, 0.30, 0.55, 1.0],
         ),
       ),
       child: SafeArea(
@@ -574,74 +596,65 @@ class _StarsPill extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.fromLTRB(12, 8, tablet ? 24 : 20, 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: tablet ? 24 : 18,
+            vertical: tablet ? 12 : 10,
+          ),
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: BorderRadius.circular(AppRadii.pill),
             boxShadow: const [
               BoxShadow(
-                  color: GameColors.questionCardEdge, offset: Offset(0, 6)),
+                color: GameColors.questionCardEdge,
+                offset: Offset(0, 5),
+              ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(AppImages.icStar, height: tablet ? 48 : 38),
+              Image.asset(AppImages.icStar, height: tablet ? 42 : 32),
               const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  '+$stars sao vũ trụ',
-                  style: TextStyle(
-                    fontSize: tablet ? 32 : 26,
-                    fontWeight: FontWeight.w900,
-                    color: GameColors.ink,
-                  ),
+              Text(
+                '+$stars',
+                style: TextStyle(
+                  fontSize: tablet ? 32 : 26,
+                  fontWeight: FontWeight.w900,
+                  color: GameColors.ink,
                 ),
               ),
+              if (luckyStars > 0) ...[
+                const SizedBox(width: 14),
+                Container(
+                  width: 2,
+                  height: tablet ? 24 : 18,
+                  color: GameColors.questionCardEdge,
+                ),
+                const SizedBox(width: 14),
+                Row(
+                  key: const ValueKey('lucky-stars-reward'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      AppImages.icStar,
+                      height: tablet ? 32 : 24,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '+$luckyStars',
+                      style: TextStyle(
+                        fontSize: tablet ? 28 : 22,
+                        fontWeight: FontWeight.w900,
+                        color: GameColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
-        if (luckyStars > 0) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: tablet ? 16 : 12,
-              vertical: tablet ? 8 : 6,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-              boxShadow: const [
-                BoxShadow(
-                  color: GameColors.questionCardEdge,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  AppImages.icStar,
-                  width: tablet ? 24 : 20,
-                  height: tablet ? 24 : 20,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    '+$luckyStars Sao May Mắn!',
-                    style: TextStyle(
-                      fontSize: tablet ? 20 : 16,
-                      fontWeight: FontWeight.w800,
-                      color: GameColors.ink,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
         if (!won) ...[
           const SizedBox(height: 8),
           Text(
@@ -785,12 +798,32 @@ class _NextRewardBar extends ConsumerWidget {
             height: art,
             child: item == null
                 ? Image.asset(AppImages.icCrown)
-                : RepaintBoundary(
-                    // Built once; a still, soft preview of the next gift.
-                    child: ImageFiltered(
-                      imageFilter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                      child: Opacity(opacity: 0.6, child: ItemArt(item)),
-                    ),
+                : Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ColorFiltered(
+                        colorFilter: const ColorFilter.mode(
+                          GameColors.lockedSilhouette,
+                          BlendMode.srcIn,
+                        ),
+                        child: ItemArt(item),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: GameColors.star.withOpacity(0.85),
+                        ),
+                        child: Text(
+                          '?',
+                          style: TextStyle(
+                            fontSize: tablet ? 24 : 18,
+                            fontWeight: FontWeight.w900,
+                            color: GameColors.lockedSilhouette,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
           ),
           const SizedBox(width: 12),

@@ -71,8 +71,8 @@ void main() {
     // First race ever, all first try: the scholar badge pops up first.
     await t.tap(find.text('Tuyệt quá!'));
     await pumpReal(t, times: 6);
-    expect(find.text('+9 sao vũ trụ'), findsOneWidget);
-    expect(find.text('+2 Sao May Mắn!'), findsOneWidget);
+    expect(find.text('+9'), findsOneWidget);
+    expect(find.text('+2'), findsOneWidget);
     expect(find.text('Đua lại!'), findsOneWidget);
     expect(find.text('Về Góc Chơi'), findsOneWidget);
   });
@@ -142,7 +142,8 @@ void main() {
     await pumpReal(t, times: 10, step: const Duration(milliseconds: 300));
 
     expect(find.byType(RaceResultScreen), findsOneWidget);
-    expect(find.text('Suýt nữa thôi! Chỉ còn 2 nấc!'), findsOneWidget);
+    expect(find.text('Suýt nữa thôi!'), findsOneWidget);
+    expect(find.text('Chỉ còn 2 bước!'), findsOneWidget);
     expect(find.text('Bí kíp của Chíp'), findsOneWidget);
     expect(find.byKey(const ValueKey('tip-question')), findsOneWidget);
     final answerText =
