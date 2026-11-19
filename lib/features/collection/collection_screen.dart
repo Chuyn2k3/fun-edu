@@ -304,6 +304,23 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       );
     }
 
+    final snapshot = snapAsync.valueOrNull ??
+        LearningSnapshot(
+          kidName: 'Bé',
+          totalStars: 0,
+          totalLessons: 0,
+          totalLearnedDays: 0,
+          learnedDaysThisWeek: 0,
+          masteredWriting: 0,
+          mathLevelIndex: 0,
+          vietnameseLevelIndex: 0,
+          englishLevelIndex: 0,
+          viewedYear: viewedMonth.year,
+          viewedMonth: viewedMonth.month,
+          learnedDaysInMonth: const {},
+          learnedToday: false,
+        );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -311,27 +328,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       },
       child: Scaffold(
         body: DottedBackground(
-          child: snapAsync.when(
-            data: buildBody,
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => buildBody(
-              LearningSnapshot(
-                kidName: 'Bé',
-                totalStars: 0,
-                totalLessons: 0,
-                totalLearnedDays: 0,
-                learnedDaysThisWeek: 0,
-                masteredWriting: 0,
-                mathLevelIndex: 0,
-                vietnameseLevelIndex: 0,
-                englishLevelIndex: 0,
-                viewedYear: viewedMonth.year,
-                viewedMonth: viewedMonth.month,
-                learnedDaysInMonth: const {},
-                learnedToday: false,
-              ),
-            ),
-          ),
+          child: buildBody(snapshot),
         ),
       ),
     );

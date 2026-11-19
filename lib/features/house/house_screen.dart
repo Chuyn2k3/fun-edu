@@ -370,6 +370,14 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
       );
     }
 
+    final data = dataAsync.valueOrNull ??
+        const ChipHouseData(
+          kidId: null,
+          kidName: 'Bé',
+          totalLearningStars: 0,
+          state: ChipHouseState(),
+        );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -377,18 +385,7 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
       },
       child: Scaffold(
         body: DottedBackground(
-          child: dataAsync.when(
-            data: buildBody,
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => buildBody(
-              const ChipHouseData(
-                kidId: null,
-                kidName: 'Bé',
-                totalLearningStars: 0,
-                state: ChipHouseState(),
-              ),
-            ),
-          ),
+          child: buildBody(data),
         ),
       ),
     );

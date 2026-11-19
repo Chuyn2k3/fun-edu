@@ -46,11 +46,6 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(homeSummaryProvider);
     final lessonAsync = ref.watch(todayLessonProvider);
-    // Spinner only before the first value; reloads keep showing the old one.
-    final loading = !summaryAsync.hasValue && summaryAsync.isLoading ||
-        !lessonAsync.hasValue && lessonAsync.isLoading;
-
-    // On error fall back to zeros rather than crashing.
     final summary = summaryAsync.valueOrNull ??
         const HomeSummary(
           totalStars: 0,
@@ -69,15 +64,13 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       body: DottedBackground(
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : _HomeBody(
-                kid: kid,
-                summary: summary,
-                lessonTotal: lesson.length,
-                firstLabel: firstLabel,
-                reward: ref.watch(pendingRewardProvider).valueOrNull,
-              ),
+        child: _HomeBody(
+          kid: kid,
+          summary: summary,
+          lessonTotal: lesson.length,
+          firstLabel: firstLabel,
+          reward: ref.watch(pendingRewardProvider).valueOrNull,
+        ),
       ),
     );
   }
