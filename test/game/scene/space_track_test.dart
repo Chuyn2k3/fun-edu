@@ -84,4 +84,84 @@ void main() {
     expect(c.warp, greaterThan(0.5));
     expect(warpDelta, greaterThan(cruiseDelta * 1.5));
   });
+
+  group('StarPath invariants', () {
+    const testSizes = [
+      Size(320, 480),
+      Size(375, 667),
+      Size(390, 844),
+      Size(683, 1024),
+      Size(1024, 700),
+      Size(1366, 1024),
+    ];
+
+    for (final size in testSizes) {
+      final isLandscape = size.width >= 600 && size.width > size.height;
+      final bottomInset = size.height > 600 ? 220.0 : 0.0;
+      final sp = StarPath(
+        size,
+        bottomInset: bottomInset,
+        isLandscapeTablet: isLandscape,
+      );
+
+      group('$size (isLandscape: $isLandscape)', () {
+        test('point(10) coincides exactly with planet center', () {
+          expect(sp.point(10), equals(sp.planetCenter));
+          expect(
+              (sp.planetRect.center - sp.planetCenter).distance, lessThan(1e-4));
+        });
+
+        test('step distance decreases monotonically due to 3D perspective', () {
+          for (var s = 0; s < 9; s++) {
+            final d0 = (sp.point(s) - sp.point(s + 1)).distance;
+            final d1 = (sp.point(s + 1) - sp.point(s + 2)).distance;
+            expect(d0, greaterThan(d1),
+                reason: 'step $s->$s+1 ($d0) should be > step $s+1->$s+2 ($d1)');
+          }
+        });
+
+        test('step dy decreases monotonically from launch pad to horizon', () {
+          for (var s = 0; s < 9; s++) {
+            final dy0 = sp.point(s).dy - sp.point(s + 1).dy;
+            final dy1 = sp.point(s + 1).dy - sp.point(s + 2).dy;
+            expect(dy0, greaterThan(dy1),
+                reason: 'dy step $s->$s+1 ($dy0) should be > dy step $s+1->$s+2 ($dy1)');
+          }
+        });
+
+        test('kid lane and Chip lane never overlap across all steps 0..10', () {
+          for (var s = 0; s <= 10; s++) {
+            final kidPt = sp.point(s, isKid: true);
+            final chipPt = sp.point(s, isKid: false);
+            final separation = chipPt.dx - kidPt.dx;
+            expect(kidPt.dx, lessThan(chipPt.dx));
+            expect(separation, greaterThanOrEqualTo(40.0),
+                reason: 'step $s separation ($separation) should be >= 40');
+          }
+        });
+
+        test('banking angle is clamped smoothly with no 180-degree flip', () {
+          for (var s = 0; s <= 10; s++) {
+            final kidAngle = sp.angleAtT(s / 10.0, isKid: true);
+            final chipAngle = sp.angleAtT(s / 10.0, isKid: false);
+            expect(kidAngle.abs(), lessThanOrEqualTo(0.265));
+            expect(chipAngle.abs(), lessThanOrEqualTo(0.265));
+          }
+        });
+
+        test('perspective scale shrinks racers and stones towards horizon', () {
+          expect(sp.scaleAtT(0.0), greaterThan(sp.scaleAtT(1.0)));
+          expect(sp.stoneScaleAt(1), greaterThan(sp.stoneScaleAt(10)));
+        });
+
+        test('destination planet grows smoothly as progress increases', () {
+          final p0 = sp.planetRectFor(0.0);
+          final p5 = sp.planetRectFor(0.5);
+          final p10 = sp.planetRectFor(1.0);
+          expect(p5.width, greaterThan(p0.width));
+          expect(p10.width, greaterThan(p5.width));
+        });
+      });
+    }
+  });
 }

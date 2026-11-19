@@ -55,6 +55,31 @@ abstract final class GameColors {
   static const nebulaCyan = Color(0xFF3E92CC);
   static const streakLight = Color(0xFFD8E6FF);
 
+  // Redesigned rocket race scene tokens (StarPath, atmosphere, stone checkpoints)
+  static const coronaInner = Color(0xFFFFA000);
+  static const coronaMid = Color(0xFFFF7043);
+  static const coronaOuter = Color(0xFFAB47BC);
+  static const ringGlow = Color(0xFFFFD54F);
+
+  static const stoneLit = Color(0xFFFFEE58);
+  static const stoneLitGlow = Color(0xFFFFD54F);
+  static const stoneLucky = Color(0xFFFFB300);
+  static const stoneLuckyGlow = Color(0xFFFF9100);
+  static const stoneLuckyBorder = Color(0xFFFF6F00);
+  static const stoneUnlit = Color(0xFFFFFFFF);
+  static const stoneShadow = Color(0x33000000);
+
+  static const windowBezel = Color(0xFFD4E6F1);
+  static const windowBezelDark = Color(0xFF1B2631);
+
+  static const roadSurface = Color(0xFFFFFFFF);
+  static const roadRail = Color(0xFFFFFFFF);
+  static const warpRay = Color(0xFFFFFFFF);
+
+  static const nitroStreakCyan = Color(0xAA00E5FF);
+  static const nitroStreakWhite = Color(0x99FFFFFF);
+  static const cometRim = Color(0xFFFFB300);
+
   // Mini vertical progress bar along right edge.
   static const progressTrack = Color(0xFF2E2268);
   static const progressBorder = Color(0xFF8A78D6);

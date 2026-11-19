@@ -34,6 +34,154 @@ class SceneClock extends ChangeNotifier {
   void touch() => notifyListeners();
 }
 
+/// Curved perspective stardust highway leading to destination planet Saturn.
+///
+/// Features:
+/// 1. Bézier-curved central highway with 11 discrete positions (0..10).
+/// 2. Point 10 strictly matches Saturn destination planet's center.
+/// 3. Step distance decreases monotonically (dy_{s} < dy_{s-1}) due to 3D perspective.
+/// 4. Kid lane and Chip lane maintain strict non-overlapping separation across all screen sizes (320 to 1366).
+/// 5. Continuous banking angle tilt (angleAtT) clamped safely without 180° flips.
+/// 6. Perspective scaling for rockets (scaleAtT) and checkpoint stones (stoneScaleAt).
+@immutable
+class StarPath {
+  factory StarPath(
+    Size size, {
+    double bottomInset = 0,
+    bool isLandscapeTablet = false,
+  }) {
+    return StarPath._(size, bottomInset, isLandscapeTablet);
+  }
+
+  StarPath._(this.size, this.bottomInset, this.isLandscapeTablet)
+      : u = math
+            .min(
+              size.width / 390.0,
+              math.max(180.0, size.height - bottomInset) / 520.0,
+            )
+            .clamp(0.72, 1.85),
+        cx = size.width / 2;
+
+  final Size size;
+  final double bottomInset;
+  final bool isLandscapeTablet;
+  final double u;
+  final double cx;
+
+  double get w => size.width;
+  double get h => size.height;
+
+  // Saturn destination planet vanishing point
+  double get saturnX => w * 0.50;
+  double get saturnY => isLandscapeTablet ? h * 0.14 : h * 0.12;
+  Offset get planetCenter => Offset(saturnX, saturnY);
+
+  // Flight zone bottom launch point
+  double get startX => w * 0.50;
+  double get startY => isLandscapeTablet
+      ? h * 0.64
+      : math.max(h * 0.54, h - bottomInset - 16.0);
+  double get fh => startY - saturnY;
+
+  /// Centerline position along the track at progress [t] in 0..1.
+  /// At t = 1.0, this exactly coincides with [planetCenter].
+  Offset centerPointAt(double t) {
+    final ct = t.clamp(0.0, 1.0);
+    if (ct >= 1.0) return planetCenter;
+    if (ct <= 0.0) return Offset(startX, startY);
+    final py = startY - fh * math.pow(ct, 0.78);
+    final waveAmp = math.min(w * 0.08, fh * 0.15);
+    final wave = math.sin(ct * math.pi) * waveAmp * (1.0 - ct * 0.80);
+    final px = startX + wave + (saturnX - startX) * ct;
+    return Offset(px, py);
+  }
+
+  /// Lane position at progress [t] in 0..1.
+  /// [isKid] = true puts racer in kid lane (left), false in Chip lane (right).
+  Offset pointAtT(double t, {bool isKid = true}) {
+    final c = centerPointAt(t);
+    final ct = t.clamp(0.0, 1.0);
+    final spread = math.max(
+      24.0 * u,
+      math.min(w * 0.14, fh * 0.22) * (1.0 - ct * 0.45),
+    );
+    final sign = isKid ? -1.0 : 1.0;
+    return Offset(c.dx + sign * spread, c.dy);
+  }
+
+  /// Point at discrete step 0..10.
+  /// If [isKid] is omitted (null), returns centerline point.
+  /// Note: point(10) strictly equals [planetCenter].
+  Offset point(int step, {bool? isKid}) {
+    if (isKid == null) return centerPointAt(step / 10.0);
+    return pointAtT(step / 10.0, isKid: isKid);
+  }
+
+  /// Trajectory banking tilt angle along the curve in radians.
+  /// Gently banks into the curve (clamped within ±0.26 rad ≈ ±15°).
+  double angleAtT(double t, {bool isKid = true}) {
+    final ct = t.clamp(0.0, 1.0);
+    const dt = 0.03;
+    final t0 = math.max(0.0, ct - dt);
+    final t1 = math.min(1.0, ct + dt);
+    final p0 = pointAtT(t0, isKid: isKid);
+    final p1 = pointAtT(t1, isKid: isKid);
+    final dx = p1.dx - p0.dx;
+    final dy = p1.dy - p0.dy;
+    if (dx.abs() < 1e-4 && dy.abs() < 1e-4) return 0.0;
+    final rawAngle = math.atan2(dx, -dy);
+    return (rawAngle * 0.35).clamp(-0.26, 0.26);
+  }
+
+  /// Perspective scale for racers (larger in foreground, smaller near horizon).
+  double scaleAtT(double t) {
+    final ct = t.clamp(0.0, 1.0);
+    return (0.88 + 0.18 * (1.0 - ct)).clamp(0.82, 1.06);
+  }
+
+  /// Perspective scale for stepping stone checkpoints.
+  double stoneScaleAt(int step) {
+    final ct = (step / 10.0).clamp(0.0, 1.0);
+    return 0.55 + 0.60 * (1.0 - ct);
+  }
+
+  /// Base rocket width.
+  double get rocketW =>
+      (72 * u).clamp(56.0, math.min(w * 0.25, fh * 0.30));
+
+  /// Rocket width at progress [t].
+  double rocketWidth(double t) => rocketW * scaleAtT(t);
+
+  /// Banking tilt for [lane] (0 = kid, 1 = Chip) at progress [t].
+  double laneTilt(int lane, double t) => angleAtT(t, isKid: lane == 0);
+
+  /// Destination planet rect that smoothly grows as [progress] (0..1) climbs.
+  Rect planetRectFor(double progress) {
+    final p = progress.clamp(0.0, 1.0);
+    final saturnW = ((isLandscapeTablet ? 90.0 : 76.0) +
+            60.0 * math.pow(p, 0.85)) *
+        (u.clamp(0.85, 1.3));
+    final saturnH = saturnW * 0.75;
+    return Rect.fromCenter(
+      center: planetCenter,
+      width: saturnW,
+      height: saturnH,
+    );
+  }
+
+  Rect get planetRect => planetRectFor(1.0);
+
+  @override
+  bool operator ==(Object other) =>
+      other is StarPath &&
+      other.size == size &&
+      other.bottomInset == bottomInset &&
+      other.isLandscapeTablet == isLandscapeTablet;
+
+  @override
+  int get hashCode => Object.hash(size, bottomInset, isLandscapeTablet);
+}
+
 /// Free-flight space chase layout for a scene of [size].
 ///
 /// Both rockets fly at a large, consistent foreground scale in open space:
@@ -361,26 +509,28 @@ class SkyMotionPainter extends CustomPainter {
           BlendMode.modulate, null, _atlasPaint);
     }
 
-    // 3. Fast near star streaks (1.0x scroll, elongating with warp).
-    final streakWrap = h + 60 * geometry.u;
-    final hudTop = geometry.bottomInset > 0 ? h - geometry.bottomInset : h;
-    _streakPaint.strokeWidth = (1.4 * geometry.u).clamp(1.0, 2.4);
-    for (var i = 0; i < _streakCount; i++) {
-      final len = _stBaseLen[i] * (1.0 + 2.8 * warp);
-      final y = ((_stY[i] + scroll * _stSpeed[i]) % streakWrap) - 30 * geometry.u;
-      if (y - len > hudTop) continue;
-      final edgeFade = geometry.bottomInset > 0 && y > hudTop - 40 * geometry.u
-          ? ((hudTop - (y - len)) / (40 * geometry.u + len)).clamp(0.0, 1.0)
-          : 1.0;
-      final alpha =
-          ((_stAlpha[i] + 0.22 * warp) * edgeFade).clamp(0.0, 0.72);
-      if (alpha <= 0.01) continue;
-      _streakPaint.color = GameColors.streakLight.withOpacity(alpha);
-      canvas.drawLine(
-        Offset(_stX[i], y - len),
-        Offset(_stX[i], math.min(y, hudTop)),
-        _streakPaint,
-      );
+    // 3. Fast near star streaks (elongating with warp, only during boost warp > 0.05).
+    if (warp > 0.05) {
+      final streakWrap = h + 60 * geometry.u;
+      final hudTop = geometry.bottomInset > 0 ? h - geometry.bottomInset : h;
+      _streakPaint.strokeWidth = (1.4 * geometry.u).clamp(1.0, 2.4);
+      for (var i = 0; i < _streakCount; i++) {
+        final len = _stBaseLen[i] * (1.0 + 2.8 * warp);
+        final y = ((_stY[i] + scroll * _stSpeed[i]) % streakWrap) - 30 * geometry.u;
+        if (y - len > hudTop) continue;
+        final edgeFade = geometry.bottomInset > 0 && y > hudTop - 40 * geometry.u
+            ? ((hudTop - (y - len)) / (40 * geometry.u + len)).clamp(0.0, 1.0)
+            : 1.0;
+        final alpha =
+            ((_stAlpha[i] + 0.22 * warp) * edgeFade).clamp(0.0, 0.72);
+        if (alpha <= 0.01) continue;
+        _streakPaint.color = GameColors.streakLight.withOpacity(alpha);
+        canvas.drawLine(
+          Offset(_stX[i], y - len),
+          Offset(_stX[i], math.min(y, hudTop)),
+          _streakPaint,
+        );
+      }
     }
   }
 

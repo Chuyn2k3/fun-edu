@@ -12,6 +12,7 @@ import '../../game/engine/race.dart';
 import '../../game/engine/race_question.dart';
 import '../../game/scene/race_scene.dart';
 import '../../math/math_question.dart';
+import '../../profile/kid_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
 import '../../ui/layout/form_factor.dart';
@@ -216,19 +217,24 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         : (tablet ? 310.0 : 216.0 + safeBottom);
 
     final scene = Consumer(
-      builder: (context, ref, _) =>
-          _sceneOnly(
-            ref.watch(raceControllerProvider.select((s) => (
-                  kidSteps: s.kidSteps,
-                  chipSteps: s.chipSteps,
-                  boosting: s.boosting,
-                  phase: s.phase,
-                  rocket: s.rocket,
-                  trail: s.trail,
-                  wrongSeq: s.wrongSeq,
-                ))),
-            bottomInset: bottomInset,
-          ),
+      builder: (context, ref, _) {
+        final kids = ref.watch(kidsProvider).valueOrNull ?? const [];
+        final currentKidId = ref.watch(currentKidIdProvider).valueOrNull;
+        final currentKid = kids.where((k) => k.id == currentKidId).firstOrNull ?? kids.firstOrNull;
+        return _sceneOnly(
+          ref.watch(raceControllerProvider.select((s) => (
+                kidSteps: s.kidSteps,
+                chipSteps: s.chipSteps,
+                boosting: s.boosting,
+                phase: s.phase,
+                rocket: s.rocket,
+                trail: s.trail,
+                wrongSeq: s.wrongSeq,
+              ))),
+          bottomInset: bottomInset,
+          kidAvatar: currentKid?.avatar,
+        );
+      },
     );
     final topBar = Consumer(
       builder: (context, ref, _) =>
@@ -360,6 +366,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         int wrongSeq,
       }) s, {
       required double bottomInset,
+      String? kidAvatar,
   }) {
     return RaceScene(
       key: _sceneKey,
@@ -371,6 +378,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       won: s.phase != RacePhase.racing &&
           s.phase != RacePhase.loading &&
           s.kidSteps >= raceLength,
+      kidAvatar: kidAvatar,
       stallSeq: s.wrongSeq,
       bottomInset: bottomInset,
     );

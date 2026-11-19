@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../../ui/theme/tokens.dart';
+
 /// Warp speed lines effect: vertical streaks along screen borders that appear
 /// during bursts of speed (correct answers, comet boosts).
 class SpeedLines {
@@ -58,7 +60,7 @@ class SpeedLines {
 
       final alpha = (baseAlpha * masterOpacity).clamp(0.0, 1.0);
       paint.strokeWidth = strokeWidth;
-      paint.color = const Color(0xFFFFFFFF).withOpacity(alpha);
+      paint.color = GameColors.star.withOpacity(alpha);
 
       canvas.drawLine(Offset(x, y1), Offset(x, y2), paint);
     }

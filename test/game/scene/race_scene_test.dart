@@ -270,12 +270,10 @@ void main() {
     expect(state.isStarVisible(4), isTrue);
     expect(state.isStarVisible(8), isTrue);
 
-    // Milestones 4 and 8 are positioned relative to kid on kid lane (lane 0)
-    final g = TrackGeometry(const Size(390, 480));
-    expect(state.luckyStarPosition(4),
-        equals(g.relativeBasePoint(0.4, 0.0, 0, clampToFlight: false)));
-    expect(state.luckyStarPosition(8),
-        equals(g.relativeBasePoint(0.8, 0.0, 0, clampToFlight: false)));
+    // Milestones 4 and 8 are positioned on StarPath kid lane
+    final sp = StarPath(const Size(390, 480));
+    expect(state.luckyStarPosition(4), equals(sp.point(4, isKid: true)));
+    expect(state.luckyStarPosition(8), equals(sp.point(8, isKid: true)));
 
     // At step 3: both still visible
     await tester.pumpWidget(_host(_scene(kid: 3)));
