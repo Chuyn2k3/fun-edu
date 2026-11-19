@@ -38,6 +38,8 @@ abstract final class AppRadii {
 /// Rocket race scene palette (phase 2B-1, "Bản 7"). Only the race scene uses
 /// these; kid-facing UI around it keeps [AppColors].
 abstract final class GameColors {
+  static const transparent = Color(0x00000000);
+
   // Sky gradient, top to bottom.
   static const skyTop = Color(0xFF2A2766);
   static const skyUpper = Color(0xFF4B3C93);
@@ -79,6 +81,17 @@ abstract final class GameColors {
   static const nitroStreakCyan = Color(0xAA00E5FF);
   static const nitroStreakWhite = Color(0x99FFFFFF);
   static const cometRim = Color(0xFFFFB300);
+
+  // Toy cockpit console & AnswerDesk tokens (Giai đoạn 2)
+  static const cockpitBg = Color(0xFFFFF9EE);
+  static const cockpitShadow = Color(0x33000000);
+  static const gaugeBg = Color(0xFFFEF3C7);
+  static const gaugeBorder = Color(0xFFF59E0B);
+  static const gaugeIcon = Color(0xFFD97706);
+  static const gaugeText = Color(0xFF92400E);
+  static const coPilotBg = Color(0xFFFFEDD5);
+  static const chipReactionBehind = Color(0xFFFF7043);
+  static const chipReactionLead = Color(0xFFFFB300);
 
   // Mini vertical progress bar along right edge.
   static const progressTrack = Color(0xFF2E2268);

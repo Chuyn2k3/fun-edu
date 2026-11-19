@@ -916,7 +916,7 @@ class _StarTrackPainter extends CustomPainter {
           GameColors.coronaInner.withOpacity(0.40),
           GameColors.coronaMid.withOpacity(0.20),
           GameColors.coronaOuter.withOpacity(0.06),
-          const Color(0x00000000),
+          GameColors.transparent,
         ],
         const [0.0, 0.42, 0.72, 1.0],
       );
@@ -953,11 +953,11 @@ class _StarTrackPainter extends CustomPainter {
         Offset(wispRect.left, 0),
         Offset(wispRect.right, 0),
         [
-          const Color(0x00FFFFFF),
+          GameColors.transparent,
           GameColors.star.withOpacity(0.20),
           GameColors.ringGlow.withOpacity(0.32),
           GameColors.star.withOpacity(0.20),
-          const Color(0x00FFFFFF),
+          GameColors.transparent,
         ],
         const [0.0, 0.20, 0.50, 0.80, 1.0],
       );
@@ -1124,7 +1124,7 @@ class _RaceForegroundPainter extends CustomPainter {
     const bubbleR = 14.0;
     // Shadow
     canvas.drawCircle(bubbleCenter + const Offset(0, 1.5), bubbleR,
-        Paint()..color = const Color(0x33000000));
+        Paint()..color = GameColors.cockpitShadow);
     // White backing
     canvas.drawCircle(bubbleCenter, bubbleR, Paint()..color = GameColors.star);
     // Border
@@ -1132,7 +1132,9 @@ class _RaceForegroundPainter extends CustomPainter {
       bubbleCenter,
       bubbleR,
       Paint()
-        ..color = isBehind ? const Color(0xFFFF7043) : const Color(0xFFFFB300)
+        ..color = isBehind
+            ? GameColors.chipReactionBehind
+            : GameColors.chipReactionLead
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.8,
     );

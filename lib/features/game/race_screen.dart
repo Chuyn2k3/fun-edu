@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +30,6 @@ const _tryAgain = 'Thử lại nhé!';
 /// steps do not rebuild it).
 @visibleForTesting
 int debugQuestionCardBuilds = 0;
-const _cometLine = 'Câu sao chổi! Đúng là bay vọt 2 nấc';
 
 /// What Chíp reads when [q] appears.
 String spokenRaceQuestion(RaceQuestion q) => switch (q) {
@@ -42,7 +40,7 @@ String spokenRaceQuestion(RaceQuestion q) => switch (q) {
     };
 
 /// "Đua với Chíp": the space scene on top (left on a landscape tablet) and
-/// the warm question area with three chunky keys below (right).
+/// the warm toy cockpit AnswerDesk below (right on landscape tablet).
 class RaceScreen extends ConsumerStatefulWidget {
   const RaceScreen({
     super.key,
@@ -80,6 +78,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   DateTime? _finishingSince;
   int _comboStreak = 0;
   bool _triedCurrent = false;
+
   bool get _isNitroActive => _comboStreak >= 2;
 
   @override
@@ -151,7 +150,11 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         prev?.questionIndex != next.questionIndex;
     if (next.phase == RacePhase.racing && q != null && shown) {
       _triedCurrent = false;
-      _speaker.speak(spokenRaceQuestion(q));
+      if (q.comet) {
+        _speaker.speak(voiceComet);
+      } else {
+        _speaker.speak(spokenRaceQuestion(q));
+      }
     }
     if (prev?.phase != RacePhase.racing && next.phase == RacePhase.racing) {
       _comboStreak = 0;
@@ -172,6 +175,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         next.phase == RacePhase.racing) {
       if (!_triedCurrent) {
         setState(() => _comboStreak++);
+        if (_comboStreak == 2) {
+          _speaker.speak(voiceNitroFast);
+        }
       }
       _next?.cancel();
       _next = Timer(_rightAnswerPause, _controller.showNext);
@@ -201,7 +207,13 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
 
   void _speakAgain() {
     final q = ref.read(raceControllerProvider).current;
-    if (q != null) _speaker.speak(spokenRaceQuestion(q));
+    if (q != null) {
+      if (q.comet) {
+        _speaker.speak(voiceComet);
+      } else {
+        _speaker.speak(spokenRaceQuestion(q));
+      }
+    }
   }
 
   @override
@@ -214,13 +226,14 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     final safeBottom = MediaQuery.paddingOf(context).bottom;
     final double bottomInset = landscape
         ? 0.0
-        : (tablet ? 310.0 : 216.0 + safeBottom);
+        : (tablet ? 310.0 : 256.0 + safeBottom);
 
     final scene = Consumer(
       builder: (context, ref, _) {
         final kids = ref.watch(kidsProvider).valueOrNull ?? const [];
         final currentKidId = ref.watch(currentKidIdProvider).valueOrNull;
-        final currentKid = kids.where((k) => k.id == currentKidId).firstOrNull ?? kids.firstOrNull;
+        final currentKid = kids.where((k) => k.id == currentKidId).firstOrNull ??
+            kids.firstOrNull;
         return _sceneOnly(
           ref.watch(raceControllerProvider.select((s) => (
                 kidSteps: s.kidSteps,
@@ -236,6 +249,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         );
       },
     );
+
     final topBar = Consumer(
       builder: (context, ref, _) =>
           _topBar(ref.watch(raceControllerProvider.select((s) => (
@@ -244,18 +258,20 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
                 count: s.questions.length,
               )))),
     );
-    final hud = FloatingCockpitHUD(
+
+    final desk = AnswerDesk(
       comboStreak: _comboStreak,
       nitroActive: _isNitroActive,
       onKey: (i) => _controller.answer(i),
       onListen: _speakAgain,
     );
+
     final Widget body = switch (form) {
       FormFactor.tabletLandscape => Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              flex: 3,
+              flex: 6, // 60% scene
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -272,20 +288,20 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
                   ),
                   if (_showTryAgain)
                     Positioned(
-                      right: 12,
-                      top: MediaQuery.paddingOf(context).top + 120,
+                      right: 16,
+                      top: MediaQuery.paddingOf(context).top + 100,
                       child: const _TryAgainBubble(),
                     ),
                 ],
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: 4, // 40% desk
               child: SafeArea(
                 left: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 16, 20, 20),
-                  child: hud,
+                  padding: const EdgeInsets.fromLTRB(8, 16, 24, 20),
+                  child: desk,
                 ),
               ),
             ),
@@ -307,30 +323,17 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
             if (_showTryAgain)
               Positioned(
                 right: 12,
-                top: MediaQuery.paddingOf(context).top + (tablet ? 120 : 92),
+                top: MediaQuery.paddingOf(context).top + (tablet ? 110 : 86),
                 child: const _TryAgainBubble(),
               ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    tablet ? 24 : 12,
-                    0,
-                    tablet ? 24 : 12,
-                    tablet ? 16 : 8,
-                  ),
-                  child: hud,
-                ),
-              ),
+              child: desk,
             ),
           ],
         ),
     };
-    // Android back / iOS edge swipe opens the pause overlay instead of
-    // silently abandoning the race; its "Về Góc Chơi" is the explicit exit.
-    // Only a race still loading can be left this way.
+
     final loading = ref.watch(
         raceControllerProvider.select((s) => s.phase == RacePhase.loading));
     return PopScope(
@@ -339,7 +342,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         if (!didPop) _controller.setPaused(true);
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0F0826),
+        backgroundColor: GameColors.spaceTop,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -356,17 +359,17 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   }
 
   Widget _sceneOnly(
-      ({
-        int kidSteps,
-        int chipSteps,
-        bool boosting,
-        RacePhase phase,
-        String rocket,
-        String trail,
-        int wrongSeq,
-      }) s, {
-      required double bottomInset,
-      String? kidAvatar,
+    ({
+      int kidSteps,
+      int chipSteps,
+      bool boosting,
+      RacePhase phase,
+      String rocket,
+      String trail,
+      int wrongSeq,
+    }) s, {
+    required double bottomInset,
+    String? kidAvatar,
   }) {
     return RaceScene(
       key: _sceneKey,
@@ -392,28 +395,59 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       }) s) {
     final tablet = context.isTablet;
     return Padding(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.symmetric(
+        horizontal: tablet ? 28 : 16,
+        vertical: 12,
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _HudButton(
-            size: tablet ? 80 : 64,
+            size: tablet ? 80 : 54,
             onTap: s.phase == RacePhase.racing
                 ? () => _controller.setPaused(true)
                 : null,
           ),
-          const Spacer(),
-          Padding(
-            padding: EdgeInsets.only(top: tablet ? 14 : 8),
-            child: _HudPill(
-              text: s.phase == RacePhase.loading
-                  ? 'Chuẩn bị…'
-                  : 'Câu ${s.questionIndex + 1}/${s.count}',
-              fontSize: tablet ? 24 : 18,
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: tablet ? 20 : 14,
+              vertical: tablet ? 10 : 8,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              boxShadow: const [
+                BoxShadow(color: GameColors.hudEdge, offset: Offset(0, 4)),
+                BoxShadow(
+                  color: GameColors.hudShadow,
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  AppImages.icStar,
+                  width: tablet ? 26 : 20,
+                  height: tablet ? 26 : 20,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  s.phase == RacePhase.loading
+                      ? 'Chuẩn bị…'
+                      : 'Câu ${s.questionIndex + 1}/${s.count}',
+                  style: TextStyle(
+                    fontSize: tablet ? 22 : 16,
+                    fontWeight: FontWeight.w900,
+                    color: GameColors.ink,
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
-          SizedBox(width: tablet ? 80 : 64),
         ],
       ),
     );
@@ -439,45 +473,11 @@ class _HudButton extends StatelessWidget {
           body: AppColors.card,
           edge: GameColors.hudEdge,
           radius: 20,
-          lip: 6,
+          lip: 5,
           pressed: pressed,
         ),
         child:
             Icon(Icons.pause_rounded, size: size * 0.5, color: GameColors.ink),
-      ),
-    );
-  }
-}
-
-class _HudPill extends StatelessWidget {
-  const _HudPill({required this.text, required this.fontSize});
-
-  final String text;
-  final double fontSize;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding:
-          EdgeInsets.symmetric(horizontal: fontSize, vertical: fontSize * 0.45),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [
-          BoxShadow(color: GameColors.hudEdge, offset: Offset(0, 5)),
-          BoxShadow(
-              color: GameColors.hudShadow,
-              blurRadius: 16,
-              offset: Offset(0, 10)),
-        ],
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w900,
-          color: GameColors.ink,
-        ),
       ),
     );
   }
@@ -527,10 +527,10 @@ class _TryAgainBubble extends StatelessWidget {
   }
 }
 
-/// Floating cockpit HUD with dark translucent space glass styling,
-/// Nitro streak indicator, question card, and chunky answer keys.
-class FloatingCockpitHUD extends ConsumerWidget {
-  const FloatingCockpitHUD({
+/// The warm cream toy cockpit console at the bottom of the race screen.
+/// Replaces FloatingCockpitHUD, eliminating BackdropFilter and dark neon glass.
+class AnswerDesk extends ConsumerWidget {
+  const AnswerDesk({
     super.key,
     required this.onKey,
     required this.onListen,
@@ -545,7 +545,6 @@ class FloatingCockpitHUD extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Only what the panel shows: Chíp's steps never rebuild it.
     final state = ref.watch(raceControllerProvider.select((s) => (
           phase: s.phase,
           questions: s.questions,
@@ -565,86 +564,188 @@ class FloatingCockpitHUD extends ConsumerWidget {
 
     final isNitro = nitroActive || comboStreak >= 2;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(tablet ? 28 : 22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xEE160D35),
-                Color(0xF5261858),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(tablet ? 28 : 22),
-            border: Border.all(
-              color: const Color(0x559C7DFF),
-              width: 1.5,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x6608031C),
-                blurRadius: 18,
-                offset: Offset(0, 6),
-              ),
-            ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: GameColors.cockpitBg,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: GameColors.cockpitShadow,
+            blurRadius: 20,
+            offset: Offset(0, -6),
           ),
-          padding: EdgeInsets.fromLTRB(
-            tablet ? 24 : 14,
-            tablet ? 16 : 10,
-            tablet ? 24 : 14,
-            tablet ? 18 : 12,
+        ],
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(36),
+            topRight: Radius.circular(36),
           ),
-          child: q == null
-              ? const SizedBox.shrink()
-              : Column(
-                  mainAxisSize: landscape ? MainAxisSize.max : MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (landscape) const Spacer(),
-                    if (isNitro || q.comet) ...[
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isNitro) _NitroBadge(comboStreak: comboStreak),
-                            if (isNitro && q.comet) const SizedBox(height: 6),
-                            if (q.comet) const _CometBanner(),
-                          ],
+          border: Border(
+            top: BorderSide(
+              color: GameColors.star.withOpacity(0.95),
+              width: 3.5,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: landscape ? 32 : (tablet ? 32 : 16),
+              vertical: tablet ? 18 : 14,
+            ),
+            child: q == null
+                ? const SizedBox.shrink()
+                : Column(
+                    mainAxisSize:
+                        landscape ? MainAxisSize.max : MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (landscape) const Spacer(),
+
+                      // Top instrument bar: Speed Gauge (left) & Co-pilot Chíp (right)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Left: Toy Speed / Energy Gauge
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: tablet ? 12 : 8,
+                              vertical: tablet ? 5 : 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: GameColors.gaugeBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: GameColors.gaugeBorder,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isNitro
+                                      ? Icons.bolt_rounded
+                                      : Icons.speed_rounded,
+                                  size: tablet ? 20 : 16,
+                                  color: GameColors.gaugeIcon,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isNitro
+                                      ? 'BỨT TỐC x$comboStreak!'
+                                      : 'NĂNG LƯỢNG',
+                                  style: TextStyle(
+                                    fontSize: tablet ? 14 : 11,
+                                    fontWeight: FontWeight.w900,
+                                    color: GameColors.gaugeText,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Right: Co-pilot Chíp reaction / speech bubble
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: tablet ? 10 : 8,
+                                  vertical: tablet ? 5 : 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.card,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppColors.accent,
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: GameColors.hudShadow,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  isNitro
+                                      ? 'Nhanh quá!'
+                                      : (q.comet ? 'Sao chổi!' : 'Cố lên!'),
+                                  style: TextStyle(
+                                    fontSize: tablet ? 14 : 11,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                width: tablet ? 42 : 32,
+                                height: tablet ? 42 : 32,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: GameColors.coPilotBg,
+                                  border: Border.all(
+                                    color: AppColors.accent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    isNitro
+                                        ? AppImages.chipSurprise
+                                        : AppImages.chipJoy,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: tablet ? 14 : 10),
+
+                      // Central Question Card (with perched comet if comet question)
+                      _QuestionCard(
+                        key: ValueKey('q-${state.questionIndex}'),
+                        question: q,
+                        onListen: onListen,
+                      ),
+                      SizedBox(height: tablet ? 16 : 10),
+
+                      // 3 Chunky 3D Arcade Keys
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: (tablet ? 80.0 : 64.0) + 10,
+                          maxHeight: tablet ? 280 : 160,
+                        ),
+                        child: SizedBox(
+                          height: landscape ? 240 : (tablet ? 100 : 76),
+                          child: AnswerKeys(
+                            labelOf: (i, ink) => _keyLabel(q, i, ink, tablet),
+                            semanticsOf: (i) => _keySemantics(q, i),
+                            onPressed: enabled ? onKey : null,
+                            wrongKey: state.wrongKey,
+                            wrongSeq: state.wrongSeq,
+                            correctKey: state.correctKey,
+                            gap: tablet ? 16 : 12,
+                          ),
                         ),
                       ),
-                      SizedBox(height: tablet ? 10 : 6),
+                      if (landscape) const Spacer(),
                     ],
-                    _QuestionCard(
-                      key: ValueKey('q-${state.questionIndex}'),
-                      question: q,
-                      onListen: onListen,
-                    ),
-                    SizedBox(height: tablet ? 16 : 10),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: (tablet ? 80.0 : 64.0) + 10,
-                        maxHeight: tablet ? 280 : 160,
-                      ),
-                      child: SizedBox(
-                        height: landscape ? 260 : (tablet ? 100 : 78),
-                        child: AnswerKeys(
-                          labelOf: (i, ink) => _keyLabel(q, i, ink, tablet),
-                          semanticsOf: (i) => _keySemantics(q, i),
-                          onPressed: enabled ? onKey : null,
-                          wrongKey: state.wrongKey,
-                          wrongSeq: state.wrongSeq,
-                          correctKey: state.correctKey,
-                          gap: tablet ? 18 : 12,
-                        ),
-                      ),
-                    ),
-                    if (landscape) const Spacer(),
-                  ],
-                ),
+                  ),
+          ),
         ),
       ),
     );
@@ -681,67 +782,7 @@ class FloatingCockpitHUD extends ConsumerWidget {
       };
 }
 
-class _NitroBadge extends StatelessWidget {
-  const _NitroBadge({required this.comboStreak});
-
-  final int comboStreak;
-
-  @override
-  Widget build(BuildContext context) {
-    final tablet = context.isTablet;
-    final fontSize = tablet ? 18.0 : 14.0;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: tablet ? 14 : 10,
-        vertical: tablet ? 5 : 4,
-      ),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFF5722),
-            Color(0xFFFFB300),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x88FF6D00),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: Colors.white70, width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.bolt_rounded,
-            color: const Color(0xFFFFF6C7),
-            size: fontSize * 1.3,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'NITRO x$comboStreak!',
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: 0.5,
-              shadows: const [
-                Shadow(
-                  color: Color(0x99000000),
-                  offset: Offset(0, 1),
-                  blurRadius: 3,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+typedef FloatingCockpitHUD = AnswerDesk;
 
 /// One glyph key: drawn at the scale shared by the question's three glyphs.
 class _GlyphKey extends ConsumerWidget {
@@ -769,45 +810,6 @@ class _GlyphKey extends ConsumerWidget {
   }
 }
 
-class _CometBanner extends StatelessWidget {
-  const _CometBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final tablet = context.isTablet;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: tablet ? 12 : 8,
-        vertical: tablet ? 4 : 3,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0x33FFA000),
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        border: Border.all(color: const Color(0x88FFD54F)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset(AppImages.comet, height: tablet ? 28 : 20),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              _cometLine,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: tablet ? 18 : 13,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFFFFE082),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// The white question card: a sum, stars to count, or (Tiếng Việt) a big
 /// speaker button to hear the letter or tone mark again.
 class _QuestionCard extends StatelessWidget {
@@ -828,7 +830,6 @@ class _QuestionCard extends StatelessWidget {
           children: [
             Flexible(
               child: FittedBox(
-                fit: BoxFit.scaleDown,
                 child: Text(
                   a.prompt,
                   maxLines: 1,
@@ -852,27 +853,49 @@ class _QuestionCard extends StatelessWidget {
       LetterRaceQuestion() => _listenCard('Chíp đọc chữ nào?', tablet),
       ToneRaceQuestion() => _listenCard('Chíp đọc dấu nào?', tablet),
     };
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: tablet ? 18 : 12, vertical: tablet ? 12 : 7),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.card, GameColors.questionCardTint],
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: [
-          const BoxShadow(
-              color: GameColors.questionCardEdge, offset: Offset(0, 5)),
-          BoxShadow(
-            color: GameColors.keyOrangeEdge.withOpacity(0.14),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+              horizontal: tablet ? 20 : 14, vertical: tablet ? 14 : 10),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(
+              color: q.comet ? GameColors.cometRim : GameColors.questionCardEdge,
+              width: q.comet ? 3.0 : 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: q.comet
+                    ? GameColors.stoneLuckyGlow.withOpacity(0.35)
+                    : GameColors.questionCardEdge,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: GameColors.keyOrangeEdge.withOpacity(0.10),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: child,
+          child: child,
+        ),
+        if (q.comet)
+          Positioned(
+            left: -10,
+            top: -12,
+            child: Image.asset(
+              AppImages.comet,
+              width: tablet ? 42 : 32,
+              height: tablet ? 42 : 32,
+              fit: BoxFit.contain,
+            ),
+          ),
+      ],
     );
   }
 
@@ -894,15 +917,19 @@ class _QuestionCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               ConstrainedBox(
-                // Five stars a row, so 10 reads as two rows of five.
                 constraints: BoxConstraints(maxWidth: star * 5 + 4 * 4),
                 child: Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 4,
-                  runSpacing: 2,
+                  runSpacing: 4,
                   children: [
                     for (var i = 0; i < n; i++)
-                      Image.asset(AppImages.icStar, width: star, height: star),
+                      Image.asset(
+                        AppImages.icStar,
+                        width: star,
+                        height: star,
+                        fit: BoxFit.contain,
+                      ),
                   ],
                 ),
               ),
@@ -914,22 +941,21 @@ class _QuestionCard extends StatelessWidget {
     );
   }
 
-  Widget _listenCard(String hint, bool tablet) {
+  Widget _listenCard(String prompt, bool tablet) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _ListenButton(onTap: onListen, size: tablet ? 104 : 80, big: true),
-        SizedBox(width: tablet ? 20 : 14),
-        Flexible(
+        Expanded(
           child: Text(
-            hint,
+            prompt,
             style: TextStyle(
-              fontSize: tablet ? 30 : 22,
+              fontSize: tablet ? 26 : 19,
               fontWeight: FontWeight.w900,
               color: GameColors.ink,
             ),
           ),
         ),
+        const SizedBox(width: 10),
+        _ListenButton(onTap: onListen, size: tablet ? 80 : 64, big: true),
       ],
     );
   }
@@ -945,16 +971,16 @@ class _ListenButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final face = big ? size : size * 0.8;
-    return Pressable(
-      key: ValueKey(big ? 'listen-big' : 'listen'),
-      onTap: onTap,
-      semanticsLabel: 'Nghe câu hỏi',
-      builder: (pressed) => SizedBox(
-        width: size,
-        height: size,
-        child: Center(
-          child: Container(
+    final face = big ? size * 0.9 : size * 0.72;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Center(
+        child: Pressable(
+          key: ValueKey(big ? 'listen-big' : 'listen'),
+          onTap: onTap,
+          semanticsLabel: 'Nghe câu hỏi',
+          builder: (pressed) => Container(
             width: face,
             height: face,
             decoration: raisedKeyDecoration(

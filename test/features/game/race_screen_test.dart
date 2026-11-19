@@ -39,23 +39,23 @@ void main() {
     expect(key0.height, greaterThanOrEqualTo(80.0));
   });
 
-  testWidgets('Nitro streak badge displays when comboStreak >= 2', (t) async {
+  testWidgets('Nitro streak gauge displays when comboStreak >= 2', (t) async {
     await bootGame(t, size: const Size(390, 844));
     await openRace(t, 'toan');
 
-    // Initially at combo 0: no nitro badge
-    expect(find.textContaining('NITRO'), findsNothing);
+    // Initially at combo 0: no nitro gauge
+    expect(find.textContaining('BỨT TỐC'), findsNothing);
 
-    // First correct answer -> combo 1: still no nitro badge
+    // First correct answer -> combo 1: still no nitro gauge
     await answerRight(t);
-    expect(find.textContaining('NITRO'), findsNothing);
+    expect(find.textContaining('BỨT TỐC'), findsNothing);
 
-    // Second consecutive correct answer -> combo 2: nitro badge appears!
+    // Second consecutive correct answer -> combo 2: nitro gauge appears!
     await answerRight(t);
-    expect(find.textContaining('NITRO x2'), findsOneWidget);
+    expect(find.textContaining('BỨT TỐC x2'), findsOneWidget);
 
-    // Wrong answer -> resets combo to 0: nitro badge disappears
+    // Wrong answer -> resets combo to 0: nitro gauge disappears
     await answerWrong(t);
-    expect(find.textContaining('NITRO'), findsNothing);
+    expect(find.textContaining('BỨT TỐC'), findsNothing);
   });
 }
