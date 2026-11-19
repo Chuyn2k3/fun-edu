@@ -152,6 +152,14 @@ class _HomeBody extends StatelessWidget {
       return _tabletBody(context, bubbleText, sky,
           landscape: formFactor == FormFactor.tabletLandscape);
     }
+    final mq = MediaQuery.of(context);
+    final safeHeight = mq.size.height - mq.padding.top - mq.padding.bottom;
+    final compact = safeHeight < 700;
+    final bottomNavMargin =
+        math.max(mq.padding.bottom, FloatingNavBar.bottomMargin);
+    final bottomPadding =
+        FloatingNavBar.height + bottomNavMargin + (compact ? 8.0 : 12.0);
+
     return Stack(
       children: [
         sky,
@@ -161,7 +169,8 @@ class _HomeBody extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 12, 18, 120),
+                padding: EdgeInsets.fromLTRB(
+                    18, compact ? 8 : 12, 18, bottomPadding),
                 children: [
                   _TopRow(
                     kid: kid,
@@ -170,45 +179,50 @@ class _HomeBody extends StatelessWidget {
                     onParents: () => _openParents(context),
                     onSwitchKid: () => showKidSwitcher(context),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: compact ? 8 : 16),
                   _ChipBlock(
                     bubbleText: bubbleText,
                     total: lessonTotal,
                     doneToday: summary.lessonsToday,
                     onStart: () => context.push('/lesson'),
+                    compact: compact,
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: compact ? 8 : 14),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: InfoPill(
                         leading: Image.asset(AppImages.icFlame,
-                            width: 26, height: 26, fit: BoxFit.contain),
+                            width: compact ? 22 : 26,
+                            height: compact ? 22 : 26,
+                            fit: BoxFit.contain),
                         label:
                             '${summary.learnedDaysThisWeek} ngày học tuần này',
                       ),
                     ),
                   ),
                   if (reward != null) ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: compact ? 6 : 12),
                     _RewardPill(reward: reward!),
                   ],
-                  const SizedBox(height: 18),
-                  const Text(
+                  SizedBox(height: compact ? 8 : 18),
+                  Text(
                     'Hôm nay học gì?',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: compact ? 20 : 24,
                       fontWeight: FontWeight.w900,
                       color: AppColors.text,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: compact ? 8 : 12),
                   _SubjectGrid(
                     masteredWriting: summary.masteredWriting,
                     mathLevelIndex: summary.mathLevelIndex,
                     vietnameseLevelIndex: summary.vietnameseLevelIndex,
                     englishLevelIndex: summary.englishLevelIndex,
+                    compact: compact,
+                    gap: compact ? 8 : 12,
                   ),
                 ],
               ),
@@ -221,7 +235,7 @@ class _HomeBody extends StatelessWidget {
           bottom: 0,
           child: SafeArea(
             top: false,
-            minimum: const EdgeInsets.only(bottom: 12),
+            minimum: const EdgeInsets.only(bottom: FloatingNavBar.bottomMargin),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: _contentMaxWidth),
@@ -464,17 +478,19 @@ class _ChipBlock extends StatelessWidget {
     required this.total,
     required this.onStart,
     this.doneToday = 0,
+    this.compact = false,
   });
 
   final String bubbleText;
   final int total;
   final int doneToday;
   final VoidCallback onStart;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 200,
+      height: compact ? 146 : 200,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -482,12 +498,14 @@ class _ChipBlock extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 112,
+            height: compact ? 86 : 112,
             child: ExcludeSemantics(
               child: Pressable(
                 onTap: onStart,
                 builder: (pressed) => Container(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 96, 18),
+                  padding: compact
+                      ? const EdgeInsets.fromLTRB(16, 12, 80, 12)
+                      : const EdgeInsets.fromLTRB(20, 18, 96, 18),
                   decoration: raisedDecoration(
                     accent: AppColors.accent,
                     tint: Subject.viet.tint,
@@ -497,23 +515,23 @@ class _ChipBlock extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const FittedBox(
+                      FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
                           'Bài hôm nay',
                           style: TextStyle(
-                            fontSize: 26,
+                            fontSize: compact ? 22 : 26,
                             fontWeight: FontWeight.w900,
                             height: 1,
                             color: AppColors.text,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: compact ? 4 : 8),
                       Text(
                         _progressText(doneToday, total),
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: compact ? 12 : 14,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textMuted,
                         ),
@@ -525,25 +543,26 @@ class _ChipBlock extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: 2,
-            bottom: 34,
-            width: 160,
-            height: 166,
+            right: compact ? 4 : 2,
+            bottom: compact ? 20 : 34,
+            width: compact ? 116 : 160,
+            height: compact ? 122 : 166,
             child: ExcludeSemantics(
               child: Image.asset(AppImages.chipMain, fit: BoxFit.contain),
             ),
           ),
           Positioned(
             left: 6,
-            top: 14,
+            top: compact ? 4 : 14,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 190),
-              child: SpeechBubble(text: bubbleText),
+              constraints: BoxConstraints(maxWidth: compact ? 165 : 190),
+              child:
+                  SpeechBubble(text: bubbleText, maxLines: compact ? 2 : null),
             ),
           ),
           Positioned(
-            right: 22,
-            bottom: 26,
+            right: compact ? 14 : 22,
+            bottom: compact ? 11 : 26,
             child: Semantics(
               button: true,
               label: 'Bắt đầu bài hôm nay',
@@ -583,6 +602,7 @@ class _SubjectGrid extends StatelessWidget {
     this.columns = 2,
     this.gap = 12,
     this.cardHeight,
+    this.compact = false,
   });
 
   final int masteredWriting;
@@ -595,12 +615,16 @@ class _SubjectGrid extends StatelessWidget {
   /// Fixed card height for tablet landscape; null sizes cards by content.
   final double? cardHeight;
 
+  /// Compact mode for low-height phone screens.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
     final cards = [
       SubjectCard(
         subject: Subject.viet,
         height: cardHeight,
+        compact: compact,
         imagePath: AppImages.icViet,
         title: 'Viết',
         subtitle: 'Nét, số, chữ cái',
@@ -611,6 +635,7 @@ class _SubjectGrid extends StatelessWidget {
       SubjectCard(
         subject: Subject.tiengViet,
         height: cardHeight,
+        compact: compact,
         imagePath: AppImages.icTiengViet,
         title: 'Tiếng Việt',
         subtitle: 'Chữ, âm, vần',
@@ -621,6 +646,7 @@ class _SubjectGrid extends StatelessWidget {
       SubjectCard(
         subject: Subject.toan,
         height: cardHeight,
+        compact: compact,
         imagePath: AppImages.icToan,
         title: 'Toán',
         subtitle: 'Đếm, cộng trừ',
@@ -631,6 +657,7 @@ class _SubjectGrid extends StatelessWidget {
       SubjectCard(
         subject: Subject.tiengAnh,
         height: cardHeight,
+        compact: compact,
         imagePath: AppImages.icTiengAnh,
         title: 'Tiếng Anh',
         subtitle: 'Chữ cái, từ',

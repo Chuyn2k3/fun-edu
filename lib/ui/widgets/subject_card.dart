@@ -21,6 +21,7 @@ class SubjectCard extends StatelessWidget {
     this.total,
     this.onTap,
     this.height,
+    this.compact = false,
   });
 
   final Subject subject;
@@ -37,6 +38,10 @@ class SubjectCard extends StatelessWidget {
   /// proportion; null keeps the compact phone card sized by its content.
   final double? height;
 
+  /// Compact mode for low-height phone screens (< 700 safe height).
+  /// Reduces icon size, padding, and omits subtitle so all cards fit without scrolling.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
     if (height != null) {
@@ -44,6 +49,12 @@ class SubjectCard extends StatelessWidget {
         builder: (context, c) => _tall(height!, c.maxWidth),
       );
     }
+    final iconBoxSize = compact ? 46.0 : 58.0;
+    final ringSize = compact ? 38.0 : 44.0;
+    final pad = compact
+        ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+        : const EdgeInsets.all(12);
+
     final trailing = onTap == null
         ? const Text(
             'Sắp có',
@@ -57,7 +68,7 @@ class SubjectCard extends StatelessWidget {
             done: done ?? 0,
             total: total ?? 0,
             color: subject.color,
-            size: 44,
+            size: ringSize,
           );
     return Pressable(
       onTap: onTap,
@@ -70,34 +81,35 @@ class SubjectCard extends StatelessWidget {
         child: Material(
           type: MaterialType.transparency,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: pad,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
                     Container(
-                      width: 58,
-                      height: 58,
+                      width: iconBoxSize,
+                      height: iconBoxSize,
                       decoration: BoxDecoration(
                         color: subject.tint,
                         borderRadius: BorderRadius.circular(AppRadii.tile),
                       ),
-                      padding: const EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(4),
                       child: Image.asset(imagePath, fit: BoxFit.contain),
                     ),
                     const Spacer(),
                     trailing,
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: compact ? 6 : 10),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 17,
+                    style: TextStyle(
+                      fontSize: compact ? 15 : 17,
                       fontWeight: FontWeight.w900,
                       color: AppColors.text,
                     ),
@@ -107,8 +119,8 @@ class SubjectCard extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: compact ? 11 : 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textMuted,
                   ),

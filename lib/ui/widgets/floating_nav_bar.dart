@@ -12,6 +12,12 @@ class NavItem {
 
 /// Pill-shaped bottom navigation that floats above the content.
 class FloatingNavBar extends StatelessWidget {
+  /// Standard height of the floating navigation pill (64 minHeight + 16 vertical padding).
+  static const double height = 80.0;
+
+  /// Standard bottom margin when floating above screen edge.
+  static const double bottomMargin = 12.0;
+
   const FloatingNavBar({
     super.key,
     required this.items,

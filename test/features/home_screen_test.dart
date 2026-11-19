@@ -135,6 +135,40 @@ void main() {
     expect(find.byType(NavRail), findsNothing);
   });
 
+  testWidgets(
+      'iPhone nhỏ 375x667: cả 4 thẻ môn học nằm hoàn toàn phía trên FloatingNavBar',
+      (tester) async {
+    _setSize(tester, 375, 667);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+
+    final navBarRect = tester.getRect(find.byType(FloatingNavBar));
+    final englishCardFinder = find.ancestor(
+      of: find.text('Tiếng Anh'),
+      matching: find.byType(SubjectCard),
+    );
+    expect(englishCardFinder, findsOneWidget);
+    final englishRect = tester.getRect(englishCardFinder);
+
+    // Thẻ Tiếng Anh (thẻ dưới cùng bên phải) nằm hoàn toàn phía trên FloatingNavBar
+    expect(englishRect.bottom, lessThan(navBarRect.top));
+  });
+
+  testWidgets(
+      'điện thoại 390x844: chế độ gọn không bật, thẻ môn giữ kích thước tiêu chuẩn',
+      (tester) async {
+    _setSize(tester, 390, 844);
+    await tester.pumpWidget(_app(_fakes(), []));
+    await tester.pumpAndSettle();
+
+    final card = find.ancestor(
+      of: find.text('Viết'),
+      matching: find.byType(SubjectCard),
+    );
+    final subjectCard = tester.widget<SubjectCard>(card);
+    expect(subjectCard.compact, isFalse);
+  });
+
   testWidgets('lời chào theo tên bé, mở bảng đổi bé khi chạm', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));

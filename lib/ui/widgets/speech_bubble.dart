@@ -5,9 +5,10 @@ import '../theme/tokens.dart';
 
 /// White speech bubble with a squared bottom-left corner (the "tail").
 class SpeechBubble extends StatelessWidget {
-  const SpeechBubble({super.key, required this.text});
+  const SpeechBubble({super.key, required this.text, this.maxLines});
 
   final String text;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +24,8 @@ class SpeechBubble extends StatelessWidget {
       ),
       child: Text(
         text,
+        maxLines: maxLines,
+        overflow: maxLines != null ? TextOverflow.ellipsis : null,
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w800,
