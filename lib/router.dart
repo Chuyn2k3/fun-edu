@@ -27,6 +27,7 @@ import 'features/subject/writing_map_screen.dart';
 import 'features/trace/trace_screen.dart';
 import 'parent/screens/parent_home.dart';
 import 'stroke/glyph_repository.dart';
+import 'ui/transitions/smooth_page_transition.dart';
 
 /// Dev-only: lists the bundled glyphs to pick one to trace.
 class GlyphListScreen extends ConsumerWidget {
@@ -70,19 +71,31 @@ final GoRouter appRouter = GoRouter(
       routes: [
         GoRoute(
           path: 'pick',
-          builder: (context, state) => const SubjectPickerScreen(),
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: const SubjectPickerScreen(),
+          ),
         ),
         GoRoute(
           path: 'garage',
-          builder: (context, state) => const GarageScreen(),
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: const GarageScreen(),
+          ),
         ),
         GoRoute(
           path: 'badges',
-          builder: (context, state) => const BadgeCabinetScreen(),
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: const BadgeCabinetScreen(),
+          ),
         ),
         GoRoute(
           path: 'stickers',
-          builder: (context, state) => const StickerAlbumScreen(),
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: const StickerAlbumScreen(),
+          ),
         ),
         GoRoute(
           path: 'race/:subject',
@@ -90,15 +103,18 @@ final GoRouter appRouter = GoRouter(
               subjectFromSlug(state.pathParameters['subject']!) == null
                   ? '/game'
                   : null,
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final args = state.extra is RaceArgs
                 ? state.extra! as RaceArgs
                 : const RaceArgs();
-            return RaceScreen(
+            return buildSmoothTransitionPage(
               // A new key per visit: "Đua lại!" always starts a fresh race.
               key: ValueKey(state.pageKey),
-              subject: subjectFromSlug(state.pathParameters['subject']!)!,
-              retryAfterLoss: args.retryAfterLoss,
+              child: RaceScreen(
+                key: ValueKey(state.pageKey),
+                subject: subjectFromSlug(state.pathParameters['subject']!)!,
+                retryAfterLoss: args.retryAfterLoss,
+              ),
             );
           },
         ),
@@ -106,8 +122,10 @@ final GoRouter appRouter = GoRouter(
           path: 'result',
           redirect: (context, state) =>
               state.extra is RaceResultArgs ? null : '/game',
-          builder: (context, state) =>
-              RaceResultScreen(args: state.extra! as RaceResultArgs),
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: RaceResultScreen(args: state.extra! as RaceResultArgs),
+          ),
         ),
       ],
     ),
@@ -133,11 +151,17 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/subject/viet',
-      builder: (context, state) => const WritingMapScreen(),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const WritingMapScreen(),
+      ),
     ),
     GoRoute(
       path: '/parent',
-      builder: (context, state) => const ParentHome(),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const ParentHome(),
+      ),
     ),
     GoRoute(
       path: '/setup',
@@ -145,42 +169,65 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/placement',
-      builder: (context, state) => const PlacementScreen(),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const PlacementScreen(),
+      ),
     ),
     GoRoute(
       path: '/subject/toan',
-      builder: (context, state) => const MathMapScreen(),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const MathMapScreen(),
+      ),
     ),
     GoRoute(
       path: '/subject/tieng-viet',
-      builder: (context, state) => const VietnameseMapScreen(),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const VietnameseMapScreen(),
+      ),
     ),
     GoRoute(
       path: '/subject/tieng-anh',
-      builder: (context, state) => const EnglishMapScreen(),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const EnglishMapScreen(),
+      ),
     ),
     GoRoute(
       path: '/practice-math/:levelIndex',
-      builder: (context, state) => PracticeMathScreen(
-        int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: PracticeMathScreen(
+          int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+        ),
       ),
     ),
     GoRoute(
       path: '/practice-vietnamese/:levelIndex',
-      builder: (context, state) => PracticeVietnameseScreen(
-        int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: PracticeVietnameseScreen(
+          int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+        ),
       ),
     ),
     GoRoute(
       path: '/practice-english/:levelIndex',
-      builder: (context, state) => PracticeEnglishScreen(
-        int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: PracticeEnglishScreen(
+          int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+        ),
       ),
     ),
     GoRoute(
       path: '/practice/:glyphId',
-      builder: (context, state) =>
-          PracticeScreen(state.pathParameters['glyphId']!),
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: PracticeScreen(state.pathParameters['glyphId']!),
+      ),
     ),
     GoRoute(
       path: '/trace/:glyphId',
