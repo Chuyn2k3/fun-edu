@@ -270,23 +270,31 @@ class _StarPathScene extends StatelessWidget {
       final startY = isLandscapeTablet ? h * 0.64 : h * 0.54;
       final startX = w * 0.50;
 
-      Offset pointAt(int step, {bool isKid = true}) {
-        final t = step / 10.0;
-        final py = startY - (startY - saturnY) * math.pow(t, 0.82);
-        final wave = math.sin(t * math.pi * 1.2) * (w * 0.18);
-        final cx = startX + wave + (saturnX - startX) * t;
-        final laneOffset = (isKid ? -1.0 : 1.0) * (w * 0.12 * (1.0 - t * 0.40));
+      Offset pointAtT(double t, {bool isKid = true}) {
+        final clampedT = t.clamp(0.0, 1.0);
+        final py = startY - (startY - saturnY) * math.pow(clampedT, 0.82);
+        final wave = math.sin(clampedT * math.pi * 1.2) * (w * 0.18);
+        final cx = startX + wave + (saturnX - startX) * clampedT;
+        final laneOffset = (isKid ? -1.0 : 1.0) * (w * 0.12 * (1.0 - clampedT * 0.40));
         return Offset(cx + laneOffset, py);
       }
 
+      Offset pointAt(int step, {bool isKid = true}) =>
+          pointAtT(step / 10.0, isKid: isKid);
+
       double angleAt(int step, {required bool isKid}) {
-        final t0 = math.max(0.0, (step - 0.4) / 10.0);
-        final t1 = math.min(1.0, (step + 0.4) / 10.0);
-        final p0 = pointAt((t0 * 10).round(), isKid: isKid);
-        final p1 = pointAt((t1 * 10).round(), isKid: isKid);
+        final t = (step / 10.0).clamp(0.0, 1.0);
+        const dt = 0.03;
+        final t0 = math.max(0.0, t - dt);
+        final t1 = math.min(1.0, t + dt);
+        final p0 = pointAtT(t0, isKid: isKid);
+        final p1 = pointAtT(t1, isKid: isKid);
         final dx = p1.dx - p0.dx;
         final dy = p1.dy - p0.dy;
-        return math.atan2(dx, -dy);
+        if (dx.abs() < 1e-4 && dy.abs() < 1e-4) return 0.0;
+        final rawAngle = math.atan2(dx, -dy);
+        // Bank gently into the turn (max ~15 degrees)
+        return (rawAngle * 0.35).clamp(-0.26, 0.26);
       }
 
       final kidPos = pointAt(kidStep, isKid: true);
