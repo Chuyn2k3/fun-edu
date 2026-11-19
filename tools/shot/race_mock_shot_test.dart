@@ -294,6 +294,14 @@ class _StarPathScene extends StatelessWidget {
       final kidAngle = angleAt(kidStep, isKid: true);
       final chipAngle = angleAt(chipStep, isKid: false);
 
+      final kidScale = (0.88 + 0.18 * (1.0 - (kidStep / 10.0))).clamp(0.82, 1.06);
+      final chipScale = (0.88 + 0.18 * (1.0 - (chipStep / 10.0))).clamp(0.82, 1.06);
+
+      final maxStep = math.max(kidStep, chipStep);
+      final saturnProgress = (maxStep / 10.0).clamp(0.0, 1.0);
+      final saturnW = (isLandscapeTablet ? 90.0 : 76.0) + 60.0 * math.pow(saturnProgress, 0.85);
+      final saturnH = saturnW * 0.75;
+
       return Stack(
         clipBehavior: Clip.none,
         children: [
@@ -350,23 +358,27 @@ class _StarPathScene extends StatelessWidget {
             ),
           ),
 
-          // 3. Stars and 10 Star Checkpoints
+          // 3. Stars, Stardust Highway & 10 Perspective Checkpoints
           CustomPaint(
             size: Size(w, h),
             painter: _StarPathPainter(
               kidStep: kidStep,
               chipStep: chipStep,
               pointAt: pointAt,
+              saturnPos: Offset(saturnX, saturnY),
             ),
           ),
 
-          // 4. Saturn Destination Planet with Ring
+          // 4. Saturn Destination Planet with Atmospheric Corona & Stardust Wisp
           Positioned(
-            left: saturnX - 48,
-            top: saturnY - 48,
-            width: 96,
-            height: 96,
-            child: Image.asset(AppImages.planet, fit: BoxFit.contain),
+            left: saturnX - saturnW * 0.8,
+            top: saturnY - saturnH * 0.8,
+            width: saturnW * 1.6,
+            height: saturnH * 1.6,
+            child: _AtmosphericPlanetView(
+              width: saturnW,
+              height: saturnH,
+            ),
           ),
 
           // 5. Comet passing by (if comet question)
@@ -381,31 +393,37 @@ class _StarPathScene extends StatelessWidget {
 
           // 6. Kid's Rocket with Avatar & Trajectory Banking Angle
           Positioned(
-            left: kidPos.dx - 32,
-            top: kidPos.dy - 57,
-            width: 64,
-            height: 160,
+            left: kidPos.dx - 32 * kidScale,
+            top: kidPos.dy - 57 * kidScale,
+            width: 64 * kidScale,
+            height: 160 * kidScale,
             child: Transform.rotate(
               angle: kidAngle,
               alignment: const Alignment(0, -0.28),
-              child: _KidRocketView(isNitro: isNitro),
+              child: Transform.scale(
+                scale: kidScale,
+                child: _KidRocketView(isNitro: isNitro),
+              ),
             ),
           ),
 
           // 7. Chíp's Rocket (Pilot Chíp) & Trajectory Banking Angle
           Positioned(
-            left: chipPos.dx - 32,
-            top: chipPos.dy - 50,
-            width: 64,
-            height: 140,
+            left: chipPos.dx - 32 * chipScale,
+            top: chipPos.dy - 50 * chipScale,
+            width: 64 * chipScale,
+            height: 140 * chipScale,
             child: Transform.rotate(
               angle: chipAngle,
               alignment: const Alignment(0, -0.28),
-              child: _ChipRocketView(
-                isBehind: chipStep < kidStep,
-                reactionText: chipStep < kidStep
-                    ? 'Nhanh quá!'
-                    : (chipStep > kidStep ? 'Theo tớ nào!' : null),
+              child: Transform.scale(
+                scale: chipScale,
+                child: _ChipRocketView(
+                  isBehind: chipStep < kidStep,
+                  reactionText: chipStep < kidStep
+                      ? 'Nhanh quá!'
+                      : (chipStep > kidStep ? 'Theo tớ nào!' : null),
+                ),
               ),
             ),
           ),
@@ -415,23 +433,148 @@ class _StarPathScene extends StatelessWidget {
   }
 }
 
+// -----------------------------------------------------------------------------
+// ATMOSPHERIC PLANET VIEW (HÀNH TINH CÓ KHÍ QUYỂN VÀ CHIỀU SÂU VŨ TRỤ)
+// -----------------------------------------------------------------------------
+class _AtmosphericPlanetView extends StatelessWidget {
+  const _AtmosphericPlanetView({
+    required this.width,
+    required this.height,
+  });
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // 1. Deep Atmospheric Outer Corona (Quầng sáng khí quyển mềm)
+        Container(
+          width: width * 1.5,
+          height: height * 1.5,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                const Color(0xFFFFA000).withOpacity(0.40),
+                const Color(0xFFFF7043).withOpacity(0.20),
+                const Color(0xFFAB47BC).withOpacity(0.06),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.42, 0.72, 1.0],
+            ),
+          ),
+        ),
+
+        // 2. Warm Ring Glow
+        Container(
+          width: width * 1.15,
+          height: height * 0.70,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.elliptical(width * 0.58, height * 0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFFD54F).withOpacity(0.30),
+                blurRadius: 22,
+                spreadRadius: 4,
+              ),
+            ],
+          ),
+        ),
+
+        // 3. Saturn Planet Image
+        SizedBox(
+          width: width,
+          height: height,
+          child: Image.asset(AppImages.planet, fit: BoxFit.contain),
+        ),
+
+        // 4. Foreground Stardust Wisps (Bụi sao lướt qua phía trước tạo chiều sâu Z)
+        Positioned(
+          bottom: height * 0.32,
+          child: Container(
+            width: width * 1.05,
+            height: 12,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Colors.white.withOpacity(0.20),
+                  const Color(0xFFFFD54F).withOpacity(0.32),
+                  Colors.white.withOpacity(0.20),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.20, 0.50, 0.80, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _StarPathPainter extends CustomPainter {
   _StarPathPainter({
     required this.kidStep,
     required this.chipStep,
     required this.pointAt,
+    required this.saturnPos,
   });
 
   final int kidStep;
   final int chipStep;
   final Offset Function(int step, {bool isKid}) pointAt;
+  final Offset saturnPos;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw star path lines
+    // 1. Draw 3D Radial Stardust Perspective Lines radiating from Saturn
+    final starWarpPaint = Paint()
+      ..color = Colors.white.withOpacity(0.12)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    final vp = saturnPos; // Vanishing point
+    for (var i = 0; i < 16; i++) {
+      final angle = (i / 16.0) * math.pi + 0.15; // lower hemisphere toward viewer
+      final dx = math.cos(angle);
+      final dy = math.sin(angle);
+      final startDist = 65.0 + (i % 3) * 22.0;
+      final rayLen = 45.0 + (i % 4) * 30.0;
+      final p1 = Offset(vp.dx + dx * startDist, vp.dy + dy * startDist);
+      final p2 = Offset(p1.dx + dx * rayLen, p1.dy + dy * rayLen);
+      canvas.drawLine(p1, p2, starWarpPaint);
+    }
+
+    // 2. Draw Translucent Glowing Stardust Highway Ribbon (3D Road Surface)
+    final roadPaint = Paint()
+      ..color = Colors.white.withOpacity(0.06)
+      ..style = PaintingStyle.fill;
+
+    for (var s = 0; s < 10; s++) {
+      final kp0 = pointAt(s, isKid: true);
+      final cp0 = pointAt(s, isKid: false);
+      final kp1 = pointAt(s + 1, isKid: true);
+      final cp1 = pointAt(s + 1, isKid: false);
+
+      final quad = Path()
+        ..moveTo(kp0.dx, kp0.dy)
+        ..lineTo(cp0.dx, cp0.dy)
+        ..lineTo(cp1.dx, cp1.dy)
+        ..lineTo(kp1.dx, kp1.dy)
+        ..close();
+      canvas.drawPath(quad, roadPaint);
+    }
+
+    // 3. Draw Lane Rails with glow
     final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.18)
-      ..strokeWidth = 2.5
+      ..color = Colors.white.withOpacity(0.24)
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
     final kidPath = Path();
@@ -451,30 +594,34 @@ class _StarPathPainter extends CustomPainter {
     canvas.drawPath(kidPath, linePaint);
     canvas.drawPath(chipPath, linePaint);
 
-    // Draw 10 steps (stepping stones with 3D clay depth)
+    // 4. Draw 10 Checkpoint Stones with Perspective Scale!
     for (var s = 1; s <= 10; s++) {
+      final t = s / 10.0;
+      // Perspective scale: foreground is 1.15x, horizon near Saturn is 0.55x
+      final pScale = 0.55 + 0.60 * (1.0 - t);
+
       final kp = pointAt(s, isKid: true);
       final cp = pointAt(s, isKid: false);
 
       // Kid lane stepping stone
-      _drawStone(canvas, kp, s <= kidStep, s == 4 || s == 8);
+      _drawStone(canvas, kp, s <= kidStep, s == 4 || s == 8, pScale);
       // Chip lane stepping stone
-      _drawStone(canvas, cp, s <= chipStep, s == 4 || s == 8);
+      _drawStone(canvas, cp, s <= chipStep, s == 4 || s == 8, pScale);
     }
   }
 
-  void _drawStone(Canvas canvas, Offset p, bool lit, bool isLucky) {
-    final r = isLucky ? 8.5 : 6.5;
+  void _drawStone(Canvas canvas, Offset p, bool lit, bool isLucky, double pScale) {
+    final r = (isLucky ? 9.5 : 7.0) * pScale;
 
     // Drop shadow
-    canvas.drawCircle(p + const Offset(0, 1.5), r, Paint()..color = const Color(0x33000000));
+    canvas.drawCircle(p + Offset(0, 1.5 * pScale), r, Paint()..color = const Color(0x33000000));
 
     if (lit) {
       // Warm glow
       canvas.drawCircle(
         p,
-        r + 4,
-        Paint()..color = (isLucky ? const Color(0xFFFF9100) : const Color(0xFFFFD54F)).withOpacity(0.4),
+        r + 4 * pScale,
+        Paint()..color = (isLucky ? const Color(0xFFFF9100) : const Color(0xFFFFD54F)).withOpacity(0.45),
       );
     }
 
@@ -488,8 +635,8 @@ class _StarPathPainter extends CustomPainter {
     // Top glossy highlight for 3D clay look
     if (lit) {
       canvas.drawCircle(
-        p - const Offset(1.5, 1.5),
-        r * 0.4,
+        p - Offset(1.2 * pScale, 1.2 * pScale),
+        r * 0.42,
         Paint()..color = Colors.white.withOpacity(0.85),
       );
     }
@@ -497,11 +644,11 @@ class _StarPathPainter extends CustomPainter {
     if (isLucky) {
       canvas.drawCircle(
         p,
-        r + 1.2,
+        r + 1.2 * pScale,
         Paint()
           ..color = const Color(0xFFFF6F00)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
+          ..strokeWidth = 1.5 * pScale,
       );
     }
   }
