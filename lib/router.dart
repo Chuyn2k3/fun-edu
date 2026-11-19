@@ -20,6 +20,7 @@ import 'features/lesson/lesson_done_screen.dart';
 import 'features/lesson/lesson_flow_screen.dart';
 import 'features/placement/placement_screen.dart';
 import 'features/setup/first_run_screen.dart';
+import 'features/shell/kid_scaffold_shell.dart';
 import 'features/subject/english_map_screen.dart';
 import 'features/subject/math_map_screen.dart';
 import 'features/subject/vietnamese_map_screen.dart';
@@ -54,10 +55,100 @@ class GlyphListScreen extends ConsumerWidget {
   }
 }
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// App-wide router. Later tasks add their routes here.
 final GoRouter appRouter = GoRouter(
+  navigatorKey: rootNavigatorKey,
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          KidScaffoldShell(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const HomeScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/game',
+              builder: (context, state) => const GameHubScreen(),
+              routes: [
+                GoRoute(
+                  path: 'pick',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const SubjectPickerScreen(),
+                ),
+                GoRoute(
+                  path: 'garage',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const GarageScreen(),
+                ),
+                GoRoute(
+                  path: 'badges',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const BadgeCabinetScreen(),
+                ),
+                GoRoute(
+                  path: 'stickers',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) => const StickerAlbumScreen(),
+                ),
+                GoRoute(
+                  path: 'race/:subject',
+                  parentNavigatorKey: rootNavigatorKey,
+                  redirect: (context, state) =>
+                      subjectFromSlug(state.pathParameters['subject']!) == null
+                          ? '/game'
+                          : null,
+                  builder: (context, state) {
+                    final args = state.extra is RaceArgs
+                        ? state.extra! as RaceArgs
+                        : const RaceArgs();
+                    return RaceScreen(
+                      // A new key per visit: "Đua lại!" always starts a fresh race.
+                      key: ValueKey(state.pageKey),
+                      subject:
+                          subjectFromSlug(state.pathParameters['subject']!)!,
+                      retryAfterLoss: args.retryAfterLoss,
+                    );
+                  },
+                ),
+                GoRoute(
+                  path: 'result',
+                  parentNavigatorKey: rootNavigatorKey,
+                  redirect: (context, state) =>
+                      state.extra is RaceResultArgs ? null : '/game',
+                  builder: (context, state) =>
+                      RaceResultScreen(args: state.extra! as RaceResultArgs),
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/collection',
+              builder: (context, state) => const CollectionScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/house',
+              builder: (context, state) => const HouseScreen(),
+            ),
+          ],
+        ),
+      ],
+    ),
     GoRoute(
         path: '/lesson', builder: (context, state) => const LessonFlowScreen()),
     GoRoute(
@@ -95,14 +186,6 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const EnglishMapScreen(),
     ),
     GoRoute(
-      path: '/collection',
-      builder: (context, state) => const CollectionScreen(),
-    ),
-    GoRoute(
-      path: '/house',
-      builder: (context, state) => const HouseScreen(),
-    ),
-    GoRoute(
       path: '/practice-math/:levelIndex',
       builder: (context, state) => PracticeMathScreen(
         int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
@@ -124,54 +207,6 @@ final GoRouter appRouter = GoRouter(
       path: '/practice/:glyphId',
       builder: (context, state) =>
           PracticeScreen(state.pathParameters['glyphId']!),
-    ),
-    // Rocket race (2B-1): /game is the Góc Chơi hub (nav "Chơi").
-    GoRoute(
-      path: '/game',
-      builder: (context, state) => const GameHubScreen(),
-      routes: [
-        GoRoute(
-          path: 'pick',
-          builder: (context, state) => const SubjectPickerScreen(),
-        ),
-        GoRoute(
-          path: 'garage',
-          builder: (context, state) => const GarageScreen(),
-        ),
-        GoRoute(
-          path: 'badges',
-          builder: (context, state) => const BadgeCabinetScreen(),
-        ),
-        GoRoute(
-          path: 'stickers',
-          builder: (context, state) => const StickerAlbumScreen(),
-        ),
-        GoRoute(
-          path: 'race/:subject',
-          redirect: (context, state) =>
-              subjectFromSlug(state.pathParameters['subject']!) == null
-                  ? '/game'
-                  : null,
-          builder: (context, state) {
-            final args = state.extra is RaceArgs
-                ? state.extra! as RaceArgs
-                : const RaceArgs();
-            return RaceScreen(
-              // A new key per visit: "Đua lại!" always starts a fresh race.
-              key: ValueKey(state.pageKey),
-              subject: subjectFromSlug(state.pathParameters['subject']!)!,
-              retryAfterLoss: args.retryAfterLoss,
-            );
-          },
-        ),
-        GoRoute(
-          path: 'result',
-          redirect: (context, state) =>
-              state.extra is RaceResultArgs ? null : '/game',
-          builder: (context, state) =>
-              RaceResultScreen(args: state.extra! as RaceResultArgs),
-        ),
-      ],
     ),
     GoRoute(
       path: '/trace/:glyphId',
