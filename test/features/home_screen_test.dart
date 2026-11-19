@@ -358,10 +358,11 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('đang tải thì hiện vòng quay', (tester) async {
+  testWidgets('đang tải thì render ngay cấu trúc, không hiện vòng quay', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
     await tester.pumpAndSettle();
   });
 

@@ -118,7 +118,7 @@ void main() {
     expect(visited, ['0']);
   });
 
-  testWidgets('shows a spinner, not level 1 as current, until loaded',
+  testWidgets('shows level layout immediately without spinner until loaded',
       (t) async {
     _setSize(t, 375, 667);
     final router = GoRouter(routes: [
@@ -133,8 +133,8 @@ void main() {
       ),
     );
     await t.pump();
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Đang học'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(MathMapScreen), findsOneWidget);
   });
 
   testWidgets('no overflow on a tablet', (t) async {

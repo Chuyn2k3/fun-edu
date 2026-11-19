@@ -8,7 +8,6 @@ import 'package:funedu/collection/collection_provider.dart';
 import 'package:funedu/features/collection/collection_screen.dart';
 import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/features/house/house_screen.dart';
-import 'package:funedu/house/house_model.dart';
 import 'package:funedu/house/house_repository.dart';
 import 'package:funedu/learning/today_lesson_provider.dart';
 import 'package:funedu/profile/kid_repository.dart';

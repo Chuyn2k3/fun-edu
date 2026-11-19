@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/game/race_controller.dart';
 import 'package:funedu/features/game/race_screen.dart';
-import 'package:funedu/game/engine/race_question.dart';
 
 void main() {
   testWidgets(
