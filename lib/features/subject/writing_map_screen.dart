@@ -288,7 +288,6 @@ class PracticeScreen extends ConsumerWidget {
       ),
       loading: () => const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => Scaffold(
         backgroundColor: AppColors.background,

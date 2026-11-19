@@ -42,7 +42,7 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
   @override
   Widget build(BuildContext context) {
     final level = ref.watch(mathLevelIndexProvider);
-    final current = level.valueOrNull;
+    final current = level.valueOrNull ?? 0;
     final tablet = context.isTablet;
     final body = Scaffold(
       body: DottedBackground(
@@ -97,10 +97,8 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                     ),
                   ),
                   Expanded(
-                    child: current == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : tablet
-                            ? LayoutBuilder(
+                    child: tablet
+                        ? LayoutBuilder(
                                 // 3x3 in both orientations; tile height comes
                                 // from the free height so nine levels fill the
                                 // screen without scrolling.

@@ -7,6 +7,7 @@ import 'progress/level_repository.dart';
 import 'router.dart';
 import 'router_location.dart';
 import 'screen_time/screen_time_guard.dart';
+import 'stroke/glyph_repository.dart';
 import 'ui/layout/orientation_lock.dart';
 import 'ui/precache.dart';
 import 'ui/theme/app_theme.dart';
@@ -59,6 +60,13 @@ class App extends ConsumerWidget {
     final placed = ref.watch(isPlacedProvider);
     // Load the voice setting before any screen can speak.
     final voice = ref.watch(voiceEnabledProvider);
+    // Pre-warm static glyphs and subject levels while in splash or placed kid.
+    ref.watch(glyphListProvider);
+    if (kid.valueOrNull != null) {
+      ref.watch(mathLevelIndexProvider);
+      ref.watch(vietnameseLevelIndexProvider);
+      ref.watch(englishLevelIndexProvider);
+    }
     return MaterialApp.router(
       title: 'Chíp Chíp',
       theme: buildAppTheme(),

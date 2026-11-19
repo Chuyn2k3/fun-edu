@@ -42,7 +42,7 @@ class _VietnameseMapScreenState extends ConsumerState<VietnameseMapScreen> {
   @override
   Widget build(BuildContext context) {
     final level = ref.watch(vietnameseLevelIndexProvider);
-    final current = level.valueOrNull;
+    final current = level.valueOrNull ?? 0;
     final tablet = context.isTablet;
     final body = Scaffold(
       body: DottedBackground(
@@ -97,10 +97,8 @@ class _VietnameseMapScreenState extends ConsumerState<VietnameseMapScreen> {
                     ),
                   ),
                   Expanded(
-                    child: current == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : tablet
-                            ? LayoutBuilder(
+                    child: tablet
+                        ? LayoutBuilder(
                                 builder: (context, c) {
                                   const pad =
                                       EdgeInsets.fromLTRB(16, 8, 16, 24);
