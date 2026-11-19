@@ -23,6 +23,7 @@ rm -rf test/_shot
 ```
 
 - `W`, `H` are logical points (default 390x844; iPad portrait 1024x1366, landscape 1366x1024); `SHOT_OUT` is the PNG path.
+- `TEXT_SCALE`: tỷ lệ cỡ chữ hệ thống cho `home_shot_test.dart` (mặc định 1.0; ví dụ `TEXT_SCALE=1.3`, `1.6`, `2.0` để kiểm thử khả năng đáp ứng cỡ chữ lớn).
 - `flutter_tester` draws shadows without blur, so they look harsher than on a device.
 - Always delete `test/_shot/` before committing.
 - Rocket race scene: `tools/shot/race_shot_test.dart` (same steps; env `ROCKET`, `TRAIL`, `KID`, `CHIP`) writes `$SHOT_OUT-0.png`, `-0.5.png`, `-1.png` around a comet answer. Race screens (race, comet, Tiếng Việt, cut-scene, badge, offer, win, lose): `tools/shot/game_shot_test.dart` writes `$SHOT_OUT-<name>.png` (env `ONLY=name,...`). Góc Chơi (hub, hub-end, garage, garage-fly, garage-trails, badges, stickers): `tools/shot/hub_shot_test.dart`, same env. Frame-cost bench (flutter_tester, debug JIT, not a device verdict): `tools/shot/race_bench_test.dart` with `W`/`H` of the scene box.

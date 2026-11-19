@@ -169,6 +169,34 @@ void main() {
     expect(subjectCard.compact, isFalse);
   });
 
+  for (final scale in const [1.3, 1.6, 2.0]) {
+    testWidgets(
+        'điện thoại 390x844 textScale $scale: không tràn, nút Play >= 64 và bấm được',
+        (tester) async {
+      _setSize(tester, 390, 844);
+      final visited = <String>[];
+      await tester.pumpWidget(MediaQuery(
+        data: MediaQueryData(
+          size: const Size(390, 844),
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: _app(_fakes(), visited),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final playFinder = _labeled('Bắt đầu bài hôm nay');
+      expect(playFinder, findsOneWidget);
+      final playSize = tester.getSize(playFinder);
+      expect(playSize.width, greaterThanOrEqualTo(64));
+      expect(playSize.height, greaterThanOrEqualTo(64));
+
+      await tester.tap(playFinder);
+      await tester.pumpAndSettle();
+      expect(visited, ['/lesson']);
+    });
+  }
+
   testWidgets('lời chào theo tên bé, mở bảng đổi bé khi chạm', (tester) async {
     _setSize(tester, 375, 667);
     await tester.pumpWidget(_app(_fakes(), []));

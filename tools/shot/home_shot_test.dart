@@ -50,7 +50,17 @@ void main() {
           todayLessonProvider.overrideWith((ref) async => const [WritingItem('net-xien'), MathItem(0), WritingItem('net-cong')]),
           glyphProvider.overrideWith((ref, id) async => Glyph(id: id, label: 'Nét xiên', strokes: const [])),
         ],
-        child: MaterialApp(theme: buildAppTheme(), debugShowCheckedModeBanner: false, home: const HomeScreen()),
+        child: MaterialApp(
+          theme: buildAppTheme(),
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(_env('TEXT_SCALE', '1.0')),
+            ),
+            child: child!,
+          ),
+          home: const HomeScreen(),
+        ),
       ),
     ));
     for (var i = 0; i < 5; i++) {

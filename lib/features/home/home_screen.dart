@@ -489,106 +489,109 @@ class _ChipBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: compact ? 146 : 200,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: compact ? 86 : 112,
-            child: ExcludeSemantics(
-              child: Pressable(
-                onTap: onStart,
-                builder: (pressed) => Container(
-                  padding: compact
-                      ? const EdgeInsets.fromLTRB(16, 12, 80, 12)
-                      : const EdgeInsets.fromLTRB(20, 18, 96, 18),
-                  decoration: raisedDecoration(
-                    accent: AppColors.accent,
-                    tint: Subject.viet.tint,
-                    pressed: pressed,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          'Bài hôm nay',
-                          style: TextStyle(
-                            fontSize: compact ? 22 : 26,
-                            fontWeight: FontWeight.w900,
-                            height: 1,
-                            color: AppColors.text,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: compact ? 4 : 8),
-                      Text(
-                        _progressText(doneToday, total),
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final topSpace = compact ? 60.0 : 88.0;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(top: topSpace),
+          child: ExcludeSemantics(
+            child: Pressable(
+              onTap: onStart,
+              builder: (pressed) => Container(
+                constraints: BoxConstraints(minHeight: compact ? 86 : 112),
+                padding: compact
+                    ? const EdgeInsets.fromLTRB(16, 12, 80, 12)
+                    : const EdgeInsets.fromLTRB(20, 18, 96, 18),
+                decoration: raisedDecoration(
+                  accent: AppColors.accent,
+                  tint: Subject.viet.tint,
+                  pressed: pressed,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Bài hôm nay',
                         style: TextStyle(
-                          fontSize: compact ? 12 : 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textMuted,
+                          fontSize: compact ? 22 : 26,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                          color: AppColors.text,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: compact ? 4 : 8),
+                    Text(
+                      _progressText(doneToday, total),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: compact ? 12 : 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          Positioned(
-            right: compact ? 4 : 2,
-            bottom: compact ? 20 : 34,
-            width: compact ? 116 : 160,
-            height: compact ? 122 : 166,
-            child: ExcludeSemantics(
-              child: Image.asset(AppImages.chipMain, fit: BoxFit.contain),
+        ),
+        Positioned(
+          right: compact ? 4 : 2,
+          bottom: compact ? 20 : 34,
+          width: compact ? 116 : 160,
+          height: compact ? 122 : 166,
+          child: ExcludeSemantics(
+            child: Image.asset(AppImages.chipMain, fit: BoxFit.contain),
+          ),
+        ),
+        Positioned(
+          left: 6,
+          top: compact ? 4 : 8,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: compact ? 165 : 190),
+            child: SpeechBubble(
+              text: bubbleText,
+              maxLines: compact ? 2 : (textScale > 1.2 ? 2 : null),
             ),
           ),
-          Positioned(
-            left: 6,
-            top: compact ? 4 : 14,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: compact ? 165 : 190),
-              child:
-                  SpeechBubble(text: bubbleText, maxLines: compact ? 2 : null),
-            ),
-          ),
-          Positioned(
-            right: compact ? 14 : 22,
-            bottom: compact ? 11 : 26,
-            child: Semantics(
-              button: true,
-              label: 'Bắt đầu bài hôm nay',
-              excludeSemantics: true,
-              child: Material(
-                color: AppColors.accent,
-                shape: const CircleBorder(
-                  side: BorderSide(color: AppColors.card, width: 4),
-                ),
-                elevation: 6,
-                shadowColor: AppColors.accent,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onStart,
-                  child: const SizedBox(
-                    width: 64,
-                    height: 64,
-                    child: Icon(Icons.play_arrow_rounded,
-                        size: 38, color: AppColors.card),
-                  ),
+        ),
+        Positioned(
+          right: compact ? 14 : 22,
+          bottom: compact ? 11 : 24,
+          child: Semantics(
+            button: true,
+            label: 'Bắt đầu bài hôm nay',
+            excludeSemantics: true,
+            child: Material(
+              color: AppColors.accent,
+              shape: const CircleBorder(
+                side: BorderSide(color: AppColors.card, width: 4),
+              ),
+              elevation: 6,
+              shadowColor: AppColors.accent,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onStart,
+                child: const SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: Icon(Icons.play_arrow_rounded,
+                      size: 38, color: AppColors.card),
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
