@@ -156,7 +156,7 @@ Trạng thái kiểm tra: `flutter analyze` sạch, **2626 test Dart đạt** (�
 
 **Việc của chủ dự án (đang thực hiện / chưa xác nhận xong):**
 - **Đang chạy thử `--profile` trên máy thật (2026-11-19):** trải nghiệm thực tế độ mượt 120fps ProMotion, chuyển giọng song ngữ `vi-VN` / `en-US`, in/chia sẻ PDF phiếu tập tô và giấy khen, ghi nhận lỗi/góp ý hiển thị (nếu có).
-- Thu hồi khóa OpenAI cũ (nằm trong lịch sử git của app cũ).
+- **Thu hồi 2 khóa cũ** nằm trong lịch sử git của app cũ (`lib/helper/global.dart` ở các nhánh `main`, `develop`, `new-web`, `deploy-web`, `refactor-code`, `update-ios`, `feature/fun-edu-2.0-phase1`; commit `fc1f937`): khóa OpenAI `sk-91GC3l…` (đã comment) và khóa Google Gemini `AIzaSyBJHVEE…` (**đang dùng** trong code cũ). Thu hồi trên trang quản lý khóa của OpenAI và Google AI Studio; nhánh `chipchip` không chứa khóa nào.
 - Ghi lại nét mẫu thật cho **nét cơ bản và số 0–9** bằng `/dev/recorder` (hiện là **dữ liệu tạm máy sinh**) và thử với bé theo `docs/phase0/stroke-test.md`. **Chữ cái và dấu thanh** đã được chủ dự án duyệt giữ nguyên (2026-11-18).
 
 **Điểm biết là chưa hoàn hảo (nhỏ, có thể sửa sau):**
@@ -187,6 +187,10 @@ Trạng thái kiểm tra: `flutter analyze` sạch, **2626 test Dart đạt** (�
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
+0. **Việc kế tiếp (2026-11-19, chủ dự án đã thử máy thật: ổn, chỉ còn lỗi nhỏ):**
+   - Sửa 4 lỗi nhỏ trước beta: `docs/superpowers/plans/2026-11-19-sua-loi-nho-truoc-beta.md` (thẻ Toán bị che ở 375×667, thẻ bài hôm nay khi chữ lớn, màn chào Android 12+ chế độ tối, emoji thành ô vuông ở màn kết quả đua).
+   - Đua tên lửa đồng bộ thiết kế, bỏ "nét AI": `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`. **Có cổng duyệt ảnh mẫu (Giai đoạn 0)** trước khi code tiếp.
+   - Cách làm: kỹ sư trưởng (AI) lập kế hoạch và rà soát; một AI khác code theo kế hoạch.
 1. **Chủ dự án đang chạy thử bản `--profile` trên máy thật (2026-11-19):**
    - Đánh giá thực tế độ mượt 120fps ProMotion (các animation cho ăn, trang trí, vuốt ve Chíp, đua tên lửa Free-Flight, chuyển cảnh tab).
    - Kiểm tra in/chia sẻ PDF khổ A4 offline (phiếu tập tô ở Góc ba mẹ & giấy khen ở Tab Sưu tập).
