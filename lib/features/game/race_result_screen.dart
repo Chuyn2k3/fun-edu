@@ -621,7 +621,12 @@ class _StarsPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('⭐', style: TextStyle(fontSize: 16)),
+                Image.asset(
+                  AppImages.icStar,
+                  width: tablet ? 24 : 20,
+                  height: tablet ? 24 : 20,
+                  fit: BoxFit.contain,
+                ),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
