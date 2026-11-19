@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:funedu/game/scene/flame_painter.dart';
+import 'package:funedu/game/scene/trails.dart';
 import 'package:funedu/profile/avatars.dart';
 import 'package:funedu/ui/assets.dart';
 import 'package:funedu/ui/theme/app_theme.dart';
@@ -231,8 +233,21 @@ class _StarPathScene extends StatelessWidget {
         return Offset(cx + laneOffset, py);
       }
 
+      double angleAt(int step, {required bool isKid}) {
+        final t0 = math.max(0.0, (step - 0.4) / 10.0);
+        final t1 = math.min(1.0, (step + 0.4) / 10.0);
+        final p0 = pointAt((t0 * 10).round(), isKid: isKid);
+        final p1 = pointAt((t1 * 10).round(), isKid: isKid);
+        final dx = p1.dx - p0.dx;
+        final dy = p1.dy - p0.dy;
+        // Tangent angle: 0 rad is pointing up (-Y)
+        return math.atan2(dx, -dy);
+      }
+
       final kidPos = pointAt(kidStep, isKid: true);
       final chipPos = pointAt(chipStep, isKid: false);
+      final kidAngle = angleAt(kidStep, isKid: true);
+      final chipAngle = angleAt(chipStep, isKid: false);
 
       return Stack(
         clipBehavior: Clip.none,
@@ -283,22 +298,35 @@ class _StarPathScene extends StatelessWidget {
               child: Image.asset(AppImages.comet, fit: BoxFit.contain),
             ),
 
-          // 5. Kid's Rocket with Avatar
+          // 5. Kid's Rocket with Avatar & Trajectory Angle
           Positioned(
-            left: kidPos.dx - 36,
-            top: kidPos.dy - 46,
-            width: 72,
-            height: 92,
-            child: _KidRocketView(isNitro: isNitro),
+            left: kidPos.dx - 32,
+            top: kidPos.dy - 57,
+            width: 64,
+            height: 160,
+            child: Transform.rotate(
+              angle: kidAngle,
+              alignment: const Alignment(0, -0.28),
+              child: _KidRocketView(isNitro: isNitro),
+            ),
           ),
 
-          // 6. Chíp's Rocket (Pilot Chíp)
+          // 6. Chíp's Rocket (Pilot Chíp) & Trajectory Angle
           Positioned(
-            left: chipPos.dx - 36,
-            top: chipPos.dy - 46,
-            width: 72,
-            height: 92,
-            child: _ChipRocketView(isBehind: chipStep < kidStep),
+            left: chipPos.dx - 32,
+            top: chipPos.dy - 50,
+            width: 64,
+            height: 140,
+            child: Transform.rotate(
+              angle: chipAngle,
+              alignment: const Alignment(0, -0.28),
+              child: _ChipRocketView(
+                isBehind: chipStep < kidStep,
+                reactionText: chipStep < kidStep
+                    ? 'Nhanh quá!'
+                    : (chipStep > kidStep ? 'Theo tớ nào!' : null),
+              ),
+            ),
           ),
         ],
       );
@@ -342,7 +370,7 @@ class _StarPathPainter extends CustomPainter {
     canvas.drawPath(kidPath, linePaint);
     canvas.drawPath(chipPath, linePaint);
 
-    // Draw 10 steps (stepping stones)
+    // Draw 10 steps (stepping stones with 3D clay depth)
     for (var s = 1; s <= 10; s++) {
       final kp = pointAt(s, isKid: true);
       final cp = pointAt(s, isKid: false);
@@ -355,26 +383,98 @@ class _StarPathPainter extends CustomPainter {
   }
 
   void _drawStone(Canvas canvas, Offset p, bool lit, bool isLucky) {
-    final r = isLucky ? 8.0 : 6.0;
-    final fill = Paint()
-      ..color = lit
-          ? (isLucky ? const Color(0xFFFFD54F) : const Color(0xFFFFEA79))
-          : Colors.white.withOpacity(0.25)
-      ..style = PaintingStyle.fill;
+    final r = isLucky ? 8.5 : 6.5;
+
+    // Drop shadow
+    canvas.drawCircle(p + const Offset(0, 1.5), r, Paint()..color = const Color(0x33000000));
 
     if (lit) {
-      // Glow ring
-      canvas.drawCircle(p, r + 4, Paint()..color = const Color(0xFFFFD54F).withOpacity(0.35));
+      // Warm glow
+      canvas.drawCircle(
+        p,
+        r + 4,
+        Paint()..color = (isLucky ? const Color(0xFFFF9100) : const Color(0xFFFFD54F)).withOpacity(0.4),
+      );
     }
+
+    final fill = Paint()
+      ..color = lit
+          ? (isLucky ? const Color(0xFFFFB300) : const Color(0xFFFFEE58))
+          : Colors.white.withOpacity(0.35)
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(p, r, fill);
 
+    // Top glossy highlight for 3D clay look
+    if (lit) {
+      canvas.drawCircle(
+        p - const Offset(1.5, 1.5),
+        r * 0.4,
+        Paint()..color = Colors.white.withOpacity(0.85),
+      );
+    }
+
     if (isLucky) {
-      canvas.drawCircle(p, r + 1.5, Paint()..color = const Color(0xFFFF8F00)..style = PaintingStyle.stroke..strokeWidth = 1.5);
+      canvas.drawCircle(
+        p,
+        r + 1.2,
+        Paint()
+          ..color = const Color(0xFFFF6F00)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _FlamePainter extends CustomPainter {
+  const _FlamePainter({required this.isNitro});
+
+  final bool isNitro;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    FlameRenderer.paint(
+      canvas,
+      nozzle: Offset(size.width / 2, 0),
+      width: isNitro ? 22 : 15,
+      length: isNitro ? 46 : 24,
+      time: 0.5,
+      intensity: isNitro ? 1.7 : 1.0,
+      palette: isNitro ? FlamePalette.blue : FlamePalette.classic,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _SpeedStreaksPainter extends CustomPainter {
+  const _SpeedStreaksPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cyanPaint = Paint()
+      ..color = const Color(0xAA00E5FF)
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+
+    final whitePaint = Paint()
+      ..color = const Color(0x99FFFFFF)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+
+    // 4 fine streaks trailing behind
+    canvas.drawLine(const Offset(6, 45), const Offset(-8, 95), cyanPaint);
+    canvas.drawLine(const Offset(58, 45), const Offset(72, 95), cyanPaint);
+    canvas.drawLine(const Offset(18, 55), const Offset(10, 100), whitePaint);
+    canvas.drawLine(const Offset(46, 55), const Offset(54, 100), whitePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _KidRocketView extends StatelessWidget {
@@ -384,113 +484,142 @@ class _KidRocketView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        // Engine Flame
-        Positioned(
-          bottom: isNitro ? -30 : -16,
-          child: Container(
-            width: isNitro ? 24 : 16,
-            height: isNitro ? 38 : 22,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isNitro
-                    ? const [Colors.white, Color(0xFF00E5FF), Color(0xFF0091EA)]
-                    : const [Colors.white, Color(0xFFFFD600), Color(0xFFFF3D00)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: isNitro ? const Color(0xFF00E5FF).withOpacity(0.8) : const Color(0xFFFF9100).withOpacity(0.8),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Rocket Body
-        Image.asset(AppImages.rocketOrange, fit: BoxFit.contain),
-        // Kid Avatar in cockpit window!
-        Positioned(
-          top: 18,
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              image: DecorationImage(
-                image: AssetImage(kidAvatars[0]),
-                fit: BoxFit.cover,
+    const rocketW = 64.0;
+    const rocketH = 114.0;
+    const nozzleY = 91.0;
+
+    return SizedBox(
+      width: rocketW,
+      height: rocketH + (isNitro ? 60 : 30),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          // 1. Speed streaks trailing behind when Nitro
+          if (isNitro)
+            const Positioned(
+              top: 50,
+              child: CustomPaint(
+                size: Size(rocketW, 100),
+                painter: _SpeedStreaksPainter(),
               ),
             ),
-          ),
-        ),
-        // Nitro wind lines trailing behind
-        if (isNitro)
+
+          // 2. Multi-layer rocket flame
           Positioned(
-            bottom: -10,
-            left: -8,
-            child: Icon(Icons.air_rounded, color: Colors.white.withOpacity(0.8), size: 20),
+            top: nozzleY,
+            child: CustomPaint(
+              size: Size(isNitro ? 44 : 28, isNitro ? 65 : 35),
+              painter: _FlamePainter(isNitro: isNitro),
+            ),
           ),
-      ],
+
+          // 3. Rocket Body
+          SizedBox(
+            width: rocketW,
+            height: rocketH,
+            child: Image.asset(AppImages.rocketOrange, fit: BoxFit.contain),
+          ),
+
+          // 4. Kid Avatar in the circular porthole window
+          Positioned(
+            top: 51.5,
+            left: 24.5,
+            child: Container(
+              width: 15,
+              height: 15,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFD4E6F1), width: 1.2),
+                image: DecorationImage(
+                  image: AssetImage(kidAvatars[0]),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _ChipRocketView extends StatelessWidget {
-  const _ChipRocketView({required this.isBehind});
+  const _ChipRocketView({
+    required this.isBehind,
+    this.reactionText,
+  });
 
   final bool isBehind;
+  final String? reactionText;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        // Engine Flame
-        Positioned(
-          bottom: -14,
-          child: Container(
-            width: 14,
-            height: 20,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white, Color(0xFFFFD600), Color(0xFFFF3D00)],
-              ),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFFFF9100).withOpacity(0.6), blurRadius: 8),
-              ],
-            ),
-          ),
-        ),
-        // Rocket Body
-        Image.asset(AppImages.rocketChip, fit: BoxFit.contain),
-        // Chíp reaction bubble when behind
-        if (isBehind)
+    const rocketW = 64.0;
+    const rocketH = 99.0;
+    const nozzleY = 81.0;
+
+    return SizedBox(
+      width: rocketW,
+      height: rocketH + 30,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          // 1. Engine Flame (Classic)
           Positioned(
-            top: -12,
-            right: -10,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.accent, width: 2),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-              ),
-              child: const Icon(Icons.sentiment_very_satisfied_rounded, size: 16, color: AppColors.accent),
+            top: nozzleY,
+            child: CustomPaint(
+              size: const Size(26, 32),
+              painter: _FlamePainter(isNitro: false),
             ),
           ),
-      ],
+
+          // 2. Rocket Body (Chíp is already sculpted inside)
+          SizedBox(
+            width: rocketW,
+            height: rocketH,
+            child: Image.asset(AppImages.rocketChip, fit: BoxFit.contain),
+          ),
+
+          // 3. Chíp Speech / Reaction Bubble
+          if (reactionText != null)
+            Positioned(
+              top: -16,
+              left: rocketW - 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.accent, width: 2),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2)),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      isBehind ? AppImages.chipSurprise : AppImages.chipJoy,
+                      width: 20,
+                      height: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      reactionText!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.text,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
