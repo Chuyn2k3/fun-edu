@@ -758,9 +758,8 @@ class _StallPuff {
 
 typedef _Racer = Racer;
 
-/// Layer 3: Static Star Track, stardust highway ribbon, 10 perspective-scaled
-/// stepping stones, and Saturn with atmospheric corona and depth wisps.
-/// Only repaints when steps change or resized.
+/// Layer 3: Approaching Destination Planet Saturn with atmospheric corona
+/// and depth wisps. Only repaints when steps change or resized.
 class _StarTrackPainter extends CustomPainter {
   _StarTrackPainter({
     required this.starPath,
@@ -774,131 +773,17 @@ class _StarTrackPainter extends CustomPainter {
   final int chipSteps;
   final ui.Image? planetImage;
 
-  static final Paint _warpRayPaint = Paint()
-    ..color = GameColors.warpRay.withOpacity(0.12)
-    ..strokeWidth = 1.2
-    ..strokeCap = StrokeCap.round;
-
-  static final Paint _roadPaint = Paint()
-    ..color = GameColors.roadSurface.withOpacity(0.06)
-    ..style = PaintingStyle.fill;
-
-  static final Paint _railPaint = Paint()
-    ..color = GameColors.roadRail.withOpacity(0.24)
-    ..strokeWidth = 2.0
-    ..style = PaintingStyle.stroke;
-
-  static final Paint _stoneShadowPaint = Paint()..color = GameColors.stoneShadow;
-  static final Paint _stoneHighlightPaint = Paint()
-    ..color = GameColors.star.withOpacity(0.85);
-
   static final Path _unitCircle = Path()
     ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
 
   @override
   void paint(Canvas canvas, Size size) {
     final sp = starPath;
-    final vp = sp.planetCenter;
 
-    // 1. Draw 3D Radial Stardust Perspective Lines radiating from Saturn
-    for (var i = 0; i < 16; i++) {
-      final angle = (i / 16.0) * math.pi + 0.15;
-      final dx = math.cos(angle);
-      final dy = math.sin(angle);
-      final startDist = 65.0 + (i % 3) * 22.0;
-      final rayLen = 45.0 + (i % 4) * 30.0;
-      final p1 = Offset(vp.dx + dx * startDist, vp.dy + dy * startDist);
-      final p2 = Offset(p1.dx + dx * rayLen, p1.dy + dy * rayLen);
-      canvas.drawLine(p1, p2, _warpRayPaint);
-    }
-
-    // 2. Draw Translucent Glowing Stardust Highway Ribbon (3D Road Surface)
-    for (var s = 0; s < 10; s++) {
-      final kp0 = sp.point(s, isKid: true);
-      final cp0 = sp.point(s, isKid: false);
-      final kp1 = sp.point(s + 1, isKid: true);
-      final cp1 = sp.point(s + 1, isKid: false);
-
-      final quad = Path()
-        ..moveTo(kp0.dx, kp0.dy)
-        ..lineTo(cp0.dx, cp0.dy)
-        ..lineTo(cp1.dx, cp1.dy)
-        ..lineTo(kp1.dx, kp1.dy)
-        ..close();
-      canvas.drawPath(quad, _roadPaint);
-    }
-
-    // 3. Draw Lane Rails with glow
-    final kidPath = Path();
-    final chipPath = Path();
-    for (var s = 0; s <= 10; s++) {
-      final kp = sp.point(s, isKid: true);
-      final cp = sp.point(s, isKid: false);
-      if (s == 0) {
-        kidPath.moveTo(kp.dx, kp.dy);
-        chipPath.moveTo(cp.dx, cp.dy);
-      } else {
-        kidPath.lineTo(kp.dx, kp.dy);
-        chipPath.lineTo(cp.dx, cp.dy);
-      }
-    }
-    canvas.drawPath(kidPath, _railPaint);
-    canvas.drawPath(chipPath, _railPaint);
-
-    // 4. Draw 10 Checkpoint Stones with Perspective Scale!
-    for (var s = 1; s <= 10; s++) {
-      final pScale = sp.stoneScaleAt(s);
-      final kp = sp.point(s, isKid: true);
-      final cp = sp.point(s, isKid: false);
-
-      _drawStone(canvas, kp, s <= kidSteps, s == 4 || s == 8, pScale);
-      _drawStone(canvas, cp, s <= chipSteps, s == 4 || s == 8, pScale);
-    }
-
-    // 5. Draw Approaching Destination Planet Saturn with Atmospheric Corona & Depth Wisps
+    // Draw Approaching Destination Planet Saturn with Atmospheric Corona & Depth Wisps
     final maxStep = math.max(kidSteps, chipSteps);
     final pr = sp.planetRectFor(maxStep / 10.0);
     _paintAtmosphericPlanet(canvas, pr);
-  }
-
-  void _drawStone(
-      Canvas canvas, Offset p, bool lit, bool isLucky, double pScale) {
-    final r = (isLucky ? 9.5 : 7.0) * pScale;
-
-    // Drop shadow
-    canvas.drawCircle(p + Offset(0, 1.5 * pScale), r, _stoneShadowPaint);
-
-    if (lit) {
-      // Warm glow
-      final glowPaint = Paint()
-        ..color = (isLucky ? GameColors.stoneLuckyGlow : GameColors.stoneLitGlow)
-            .withOpacity(0.45);
-      canvas.drawCircle(p, r + 4 * pScale, glowPaint);
-    }
-
-    final fill = Paint()
-      ..color = lit
-          ? (isLucky ? GameColors.stoneLucky : GameColors.stoneLit)
-          : GameColors.stoneUnlit.withOpacity(0.35)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(p, r, fill);
-
-    // Top glossy highlight for 3D clay look
-    if (lit) {
-      canvas.drawCircle(
-        p - Offset(1.2 * pScale, 1.2 * pScale),
-        r * 0.42,
-        _stoneHighlightPaint,
-      );
-    }
-
-    if (isLucky) {
-      final luckyRim = Paint()
-        ..color = GameColors.stoneLuckyBorder
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5 * pScale;
-      canvas.drawCircle(p, r + 1.2 * pScale, luckyRim);
-    }
   }
 
   void _paintAtmosphericPlanet(Canvas canvas, Rect pr) {
@@ -987,6 +872,22 @@ class _RaceForegroundPainter extends CustomPainter {
   final TrackGeometry geometry;
   final StarPath starPath;
 
+  static final Path _unitCircle = Path()
+    ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
+  static final Paint _starGlowPaint = Paint()
+    ..shader = ui.Gradient.radial(
+      Offset.zero,
+      1,
+      [
+        GameColors.planetHalo.withOpacity(0.55),
+        GameColors.planetHalo.withOpacity(0.18),
+        GameColors.planetHalo.withOpacity(0),
+      ],
+      const [0.0, 0.55, 1.0],
+    );
+  static final Paint _starFillPaint = Paint()..color = GameColors.flameOuter;
+  static final Paint _starCorePaint = Paint()..color = GameColors.starWarm;
+
   static final Path _streak = Path()
     ..moveTo(0, -0.5)
     ..cubicTo(0.3, -0.42, 0.7, -0.14, 1, 0)
@@ -1014,6 +915,9 @@ class _RaceForegroundPainter extends CustomPainter {
       canvas.save();
       canvas.translate(shake.dx, shake.dy);
     }
+
+    // Lucky stars at milestones 4 and 8 on kid's flight line.
+    _paintLuckyStars(canvas, sp, s.widget.kidSteps, t, still);
 
     final kid = s._kid, chip = s._chip;
     kid.pose(sp, t, still: still);
@@ -1188,6 +1092,50 @@ class _RaceForegroundPainter extends CustomPainter {
     }
     if (fade < 1) canvas.restore();
     canvas.restore();
+  }
+
+  void _paintLuckyStars(
+    Canvas canvas,
+    StarPath sp,
+    int kidSteps,
+    double t,
+    bool still,
+  ) {
+    for (final milestone in RaceSceneState.luckyStarMilestones) {
+      if (kidSteps >= milestone) continue;
+      final pt = sp.point(milestone, isKid: true);
+      final pScale = sp.stoneScaleAt(milestone);
+      final bob = still ? 0.0 : math.sin(t * 3.2 + milestone) * 3.5;
+      final pulse =
+          still ? 1.0 : (0.94 + 0.08 * math.sin(t * 5.0 + milestone));
+      final center = Offset(pt.dx, pt.dy + bob);
+
+      final outerR = 15.0 * pScale * pulse;
+      final innerR = outerR * 0.46;
+
+      // Radial golden glow
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.scale(outerR * 1.9, outerR * 1.9);
+      canvas.drawPath(_unitCircle, _starGlowPaint);
+      canvas.restore();
+
+      final starPath = Path();
+      for (var i = 0; i < 10; i++) {
+        final angle = -math.pi / 2 + i * math.pi / 5;
+        final r = i.isEven ? outerR : innerR;
+        final x = center.dx + r * math.cos(angle);
+        final y = center.dy + r * math.sin(angle);
+        if (i == 0) {
+          starPath.moveTo(x, y);
+        } else {
+          starPath.lineTo(x, y);
+        }
+      }
+      starPath.close();
+      canvas.drawPath(starPath, _starFillPaint);
+      canvas.drawCircle(center, innerR * 0.55, _starCorePaint);
+    }
   }
 
   @override
