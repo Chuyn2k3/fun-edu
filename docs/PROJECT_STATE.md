@@ -185,9 +185,9 @@ Trạng thái kiểm tra: `flutter analyze` sạch, **2631 test Dart đạt** (�
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-0. **Việc kế tiếp (2026-11-19, chủ dự án đã thử máy thật: ổn, chỉ còn lỗi nhỏ):**
-   - Sửa 4 lỗi nhỏ trước beta: `docs/superpowers/plans/2026-11-19-sua-loi-nho-truoc-beta.md` (thẻ Toán bị che ở 375×667, thẻ bài hôm nay khi chữ lớn, màn chào Android 12+ chế độ tối, emoji thành ô vuông ở màn kết quả đua).
-   - Đua tên lửa đồng bộ thiết kế, bỏ "nét AI": `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`. **Có cổng duyệt ảnh mẫu (Giai đoạn 0)** trước khi code tiếp.
+0. **Việc kế tiếp (2026-11-19):**
+   - **Sửa 4 lỗi nhỏ trước beta:** Đã xong 100% (`8aab810`, `2f574dc`, `b540b5c`, `c09276c`, `babbd83`), đã push `chipchip`.
+   - **Đua tên lửa đồng bộ thiết kế, bỏ "nét AI":** `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`. Đã xong **Giai đoạn 0 (Cổng duyệt ảnh mẫu)**: xuất 5 ảnh mockup tĩnh đối sánh trước/sau (đường sao 10 bậc, trời chạng vạng ấm, AnswerDesk kem, Kid in cockpit, silhouette quà), commit `10ee968`. **Đang chờ chủ dự án duyệt ảnh trước khi tiến hành code Giai đoạn 1–3.**
    - Cách làm: kỹ sư trưởng (AI) lập kế hoạch và rà soát; một AI khác code theo kế hoạch.
 1. **Chủ dự án đang chạy thử bản `--profile` trên máy thật (2026-11-19):**
    - Đánh giá thực tế độ mượt 120fps ProMotion (các animation cho ăn, trang trí, vuốt ve Chíp, đua tên lửa Free-Flight, chuyển cảnh tab).
