@@ -164,39 +164,84 @@ class _MockRaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scene = _StarPathScene(
-      kidStep: kidStep,
-      chipStep: chipStep,
-      isNitro: isNitro,
-      isComet: isComet,
-    );
-
-    final desk = _AnswerDesk(
-      questionNumber: questionNumber,
-      isComet: isComet,
-      isLandscapeTablet: isLandscapeTablet,
-    );
-
-    if (isLandscapeTablet) {
-      return Row(
-        children: [
-          Expanded(flex: 58, child: scene),
-          Expanded(flex: 42, child: desk),
-        ],
-      );
-    }
-
-    return Column(
+    return Stack(
       children: [
-        Expanded(flex: 54, child: scene),
-        Expanded(flex: 46, child: desk),
+        // 1. Full-screen Space Scene (Vũ trụ đồ chơi tràn toàn màn hình)
+        Positioned.fill(
+          child: _StarPathScene(
+            kidStep: kidStep,
+            chipStep: chipStep,
+            isNitro: isNitro,
+            isComet: isComet,
+            isLandscapeTablet: isLandscapeTablet,
+          ),
+        ),
+
+        // 2. Cockpit Top HUD (Pause + Chặng N/10)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isLandscapeTablet ? 36 : 20,
+                vertical: 10,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: raisedDecoration(radius: 24),
+                    child: const Icon(Icons.pause_rounded, size: 28, color: AppColors.text),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: raisedDecoration(radius: AppRadii.pill),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(AppImages.icStar, width: 22, height: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Chặng $questionNumber/10',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // 3. Toy Cockpit Dashboard Console at Bottom
+        Positioned(
+          left: isLandscapeTablet ? 140 : 0,
+          right: isLandscapeTablet ? 140 : 0,
+          bottom: 0,
+          child: _ToyCockpitDashboard(
+            questionNumber: questionNumber,
+            isComet: isComet,
+            isNitro: isNitro,
+            isLandscapeTablet: isLandscapeTablet,
+          ),
+        ),
       ],
     );
   }
 }
 
 // -----------------------------------------------------------------------------
-// STAR PATH SCENE (CẢNH ĐƯỜNG SAO VỀ HÀNH TINH)
+// STAR PATH SCENE (CẢNH VŨ TRỤ TRÀN VIỀN — HƯỚNG 1 COCKPIT)
 // -----------------------------------------------------------------------------
 class _StarPathScene extends StatelessWidget {
   const _StarPathScene({
@@ -204,12 +249,14 @@ class _StarPathScene extends StatelessWidget {
     required this.chipStep,
     required this.isNitro,
     required this.isComet,
+    required this.isLandscapeTablet,
   });
 
   final int kidStep;
   final int chipStep;
   final bool isNitro;
   final bool isComet;
+  final bool isLandscapeTablet;
 
   @override
   Widget build(BuildContext context) {
@@ -217,19 +264,18 @@ class _StarPathScene extends StatelessWidget {
       final w = c.maxWidth;
       final h = c.maxHeight;
 
-      // Calculate path points for 10 steps
-      // Step 0 is bottom, Step 10 is Saturn destination
+      // Flight zone runs from above dashboard up to Saturn near top.
       final saturnX = w * 0.50;
-      final saturnY = h * 0.16;
+      final saturnY = isLandscapeTablet ? h * 0.14 : h * 0.12;
+      final startY = isLandscapeTablet ? h * 0.64 : h * 0.54;
+      final startX = w * 0.50;
 
       Offset pointAt(int step, {bool isKid = true}) {
         final t = step / 10.0;
-        // Perspective curve: steps are further apart at bottom, closer near top
-        final py = h * 0.90 - (h * 0.90 - saturnY) * math.pow(t, 0.78);
-        // S-curve lateral shift
-        final cx = w * 0.50 + math.sin(t * math.pi * 1.2) * (w * 0.12);
-        // Dual lane lateral offset
-        final laneOffset = (isKid ? -1.0 : 1.0) * (w * 0.11 * (1.0 - t * 0.45));
+        final py = startY - (startY - saturnY) * math.pow(t, 0.82);
+        final wave = math.sin(t * math.pi * 1.2) * (w * 0.18);
+        final cx = startX + wave + (saturnX - startX) * t;
+        final laneOffset = (isKid ? -1.0 : 1.0) * (w * 0.12 * (1.0 - t * 0.40));
         return Offset(cx + laneOffset, py);
       }
 
@@ -240,7 +286,6 @@ class _StarPathScene extends StatelessWidget {
         final p1 = pointAt((t1 * 10).round(), isKid: isKid);
         final dx = p1.dx - p0.dx;
         final dy = p1.dy - p0.dy;
-        // Tangent angle: 0 rad is pointing up (-Y)
         return math.atan2(dx, -dy);
       }
 
@@ -252,7 +297,7 @@ class _StarPathScene extends StatelessWidget {
       return Stack(
         clipBehavior: Clip.none,
         children: [
-          // 1. Warm Twilight Sky
+          // 1. Warm Twilight Space Background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -269,7 +314,43 @@ class _StarPathScene extends StatelessWidget {
             ),
           ),
 
-          // 2. Stars and Stepping stones
+          // 2. Soft Glowing Cosmic Nebula Clouds (Mây vũ trụ đất sét)
+          Positioned(
+            top: h * 0.08,
+            left: w * 0.05,
+            child: Container(
+              width: 180,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFFF69B4).withOpacity(0.18),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: h * 0.24,
+            right: w * 0.05,
+            child: Container(
+              width: 220,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF00E5FF).withOpacity(0.16),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Stars and 10 Star Checkpoints
           CustomPaint(
             size: Size(w, h),
             painter: _StarPathPainter(
@@ -279,26 +360,26 @@ class _StarPathScene extends StatelessWidget {
             ),
           ),
 
-          // 3. Saturn destination planet
+          // 4. Saturn Destination Planet with Ring
           Positioned(
-            left: saturnX - 44,
-            top: saturnY - 44,
-            width: 88,
-            height: 88,
+            left: saturnX - 48,
+            top: saturnY - 48,
+            width: 96,
+            height: 96,
             child: Image.asset(AppImages.planet, fit: BoxFit.contain),
           ),
 
-          // 4. Comet passing by (if comet question)
+          // 5. Comet passing by (if comet question)
           if (isComet)
             Positioned(
-              left: w * 0.32,
-              top: h * 0.28,
-              width: 72,
-              height: 72,
+              left: w * 0.30,
+              top: h * 0.20,
+              width: 76,
+              height: 76,
               child: Image.asset(AppImages.comet, fit: BoxFit.contain),
             ),
 
-          // 5. Kid's Rocket with Avatar & Trajectory Angle
+          // 6. Kid's Rocket with Avatar & Trajectory Banking Angle
           Positioned(
             left: kidPos.dx - 32,
             top: kidPos.dy - 57,
@@ -311,7 +392,7 @@ class _StarPathScene extends StatelessWidget {
             ),
           ),
 
-          // 6. Chíp's Rocket (Pilot Chíp) & Trajectory Angle
+          // 7. Chíp's Rocket (Pilot Chíp) & Trajectory Banking Angle
           Positioned(
             left: chipPos.dx - 32,
             top: chipPos.dy - 50,
@@ -625,111 +706,212 @@ class _ChipRocketView extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------------------
-// ANSWER DESK ("BÀN HỌC" KEM CỦA APP)
+// TOY COCKPIT DASHBOARD (BẢNG ĐIỀU KHIỂN PHI THUYỀN ĐỒ CHƠI)
 // -----------------------------------------------------------------------------
-class _AnswerDesk extends StatelessWidget {
-  const _AnswerDesk({
+class _ToyCockpitDashboard extends StatelessWidget {
+  const _ToyCockpitDashboard({
     required this.questionNumber,
     required this.isComet,
+    required this.isNitro,
     required this.isLandscapeTablet,
   });
 
   final int questionNumber;
   final bool isComet;
+  final bool isNitro;
   final bool isLandscapeTablet;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.background,
+        color: Color(0xFFFFF9EE), // Warm ivory toy plastic
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
+          topLeft: Radius.circular(36),
+          topRight: Radius.circular(36),
         ),
         boxShadow: [
+          // Specular top highlight (clay rim)
           BoxShadow(
             color: Color(0x33000000),
-            blurRadius: 16,
-            offset: Offset(0, -4),
+            blurRadius: 20,
+            offset: Offset(0, -6),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isLandscapeTablet ? 32 : 20,
-            vertical: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(36),
+            topRight: Radius.circular(36),
           ),
-          child: Column(
-            children: [
-              // Header: Pause button + "Câu N/10"
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: raisedDecoration(radius: 22),
-                    child: const Icon(Icons.pause_rounded, size: 26, color: AppColors.text),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: raisedDecoration(radius: AppRadii.pill),
-                    child: Text(
-                      'Câu $questionNumber/10',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.text,
+          border: Border(
+            top: BorderSide(color: Colors.white.withOpacity(0.95), width: 3.5),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isLandscapeTablet ? 48 : 20,
+              vertical: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top dashboard row: Cockpit Instrument Gauges & Co-pilot Chíp!
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Left: Toy Energy/Speed Gauge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isNitro ? Icons.bolt_rounded : Icons.speed_rounded,
+                            size: 18,
+                            color: const Color(0xFFD97706),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isNitro ? 'BỨT TỐC x2!' : 'NĂNG LƯỢNG',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFB45309),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const Spacer(),
 
-              // Question Card (Thẻ câu hỏi nổi chất liệu đất sét)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                decoration: raisedDecoration(
-                  radius: AppRadii.card,
-                  accent: isComet ? const Color(0xFFFFB300) : AppColors.accent,
+                    // Right: Co-pilot Chíp peering from the cockpit!
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.accent, width: 1.5),
+                            boxShadow: const [
+                              BoxShadow(color: Color(0x1F000000), blurRadius: 4, offset: Offset(0, 2)),
+                            ],
+                          ),
+                          child: Text(
+                            isNitro
+                                ? 'Vùuu! Nhanh quá!'
+                                : (isComet ? 'Sao chổi kìa bé!' : 'Nhấn nút nào bé ơi!'),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.text,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFFFEDD5),
+                            border: Border.all(color: AppColors.accent, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              isNitro ? AppImages.chipSurprise : AppImages.chipJoy,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (isComet) ...[
-                      Image.asset(AppImages.comet, width: 34, height: 34, fit: BoxFit.contain),
-                      const SizedBox(width: 12),
+                const SizedBox(height: 12),
+
+                // Center: Molded Inset Monitor with Question
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: isComet ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+                      width: isComet ? 3 : 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isComet ? const Color(0x33F59E0B) : const Color(0x14000000),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
                     ],
-                    const Text(
-                      '3 + 2 = ?',
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.text,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (isComet) ...[
+                        Image.asset(AppImages.comet, width: 34, height: 34, fit: BoxFit.contain),
+                        const SizedBox(width: 10),
+                      ],
+                      const Text(
+                        '3 + 2 = ?',
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Bottom: 3 Chunky 3D Arcade Candy Buttons
+                Row(
+                  children: const [
+                    Expanded(
+                      child: _ToyArcadeButton(
+                        label: '4',
+                        topColor: Color(0xFFFF8A65),
+                        lipColor: Color(0xFFE64A19),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _ToyArcadeButton(
+                        label: '5',
+                        topColor: Color(0xFFFFB703),
+                        lipColor: Color(0xFFE08700),
+                        isHighlighted: true,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _ToyArcadeButton(
+                        label: '6',
+                        topColor: Color(0xFF38BDF8),
+                        lipColor: Color(0xFF0284C7),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const Spacer(),
-
-              // 3 Candy Answer Keys
-              Row(
-                children: [
-                  Expanded(child: _CandyKey(text: '4', color: const Color(0xFFFF8A65))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _CandyKey(text: '5', color: const Color(0xFF4DB6AC), isCorrect: true)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _CandyKey(text: '6', color: const Color(0xFF81C784))),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
+                const SizedBox(height: 4),
+              ],
+            ),
           ),
         ),
       ),
@@ -737,40 +919,69 @@ class _AnswerDesk extends StatelessWidget {
   }
 }
 
-class _CandyKey extends StatelessWidget {
-  const _CandyKey({
-    required this.text,
-    required this.color,
-    this.isCorrect = false,
+class _ToyArcadeButton extends StatelessWidget {
+  const _ToyArcadeButton({
+    required this.label,
+    required this.topColor,
+    required this.lipColor,
+    this.isHighlighted = false,
   });
 
-  final String text;
-  final Color color;
-  final bool isCorrect;
+  final String label;
+  final Color topColor;
+  final Color lipColor;
+  final bool isHighlighted;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 68,
       decoration: BoxDecoration(
-        color: color,
+        color: topColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isHighlighted ? const Color(0xFFFFFFFF) : Colors.white.withOpacity(0.4),
+          width: isHighlighted ? 2.5 : 1.5,
+        ),
         boxShadow: [
+          // 3D tactile bottom lip
           BoxShadow(
-            color: color.withOpacity(0.55),
+            color: lipColor,
             offset: const Offset(0, 5),
+            blurRadius: 0,
+          ),
+          // Soft ambient drop shadow
+          BoxShadow(
+            color: lipColor.withOpacity(0.35),
+            offset: const Offset(0, 7),
+            blurRadius: 6,
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            color: Colors.white,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Top specular highlight pill
+          Positioned(
+            top: 4,
+            child: Container(
+              width: 44,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.45),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
           ),
-        ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
