@@ -193,6 +193,12 @@ Trạng thái kiểm tra: `flutter analyze` sạch, **2673 test Dart đạt** (�
      - **Giai đoạn 1 (Cảnh đua StarPath):** ĐÃ XONG 100% (`StarPath`, 10 bậc sao phối cảnh 3D, khí quyển Sao Thổ, cửa kính có avatar bé, bỏ vệt dọc và thanh tiến độ mép phải, 2673 test đạt, UI frame 0.22ms).
      - **Giai đoạn 2 (Bàn trả lời AnswerDesk & buồng lái đồ chơi):** ĐÃ XONG 100% (bàn kem `GameColors.cockpitBg`, viền highlight clay trắng, đồng hồ "BỨT TỐC x2!", Chíp phi công đồng hành, sao chổi góc thẻ câu hỏi, iPad ngang 60/40, bỏ hoàn toàn HUD neon và chữ tiếng Anh).
      - **Giai đoạn 3 (Màn kết quả đồng bộ):** ĐÃ XONG 100% (gradient chuyển màu êm dài >120pt, thẻ thưởng gộp 1 hàng, quà khóa silhouette `GameColors.lockedSilhouette` với "?", bỏ hoàn toàn `ImageFilter.blur` và `BackdropFilter`, tiêu đề thua ngắn 2 dòng).
+   - **Chuyển màn 1-chạm mượt mà, tức thì, 0 vòng xoay loading:** docs/superpowers/plans/2026-11-19-offline-instant-transitions-no-spinner.md.
+     - **Chuyển 4 tab chính tức thì 0ms:** Dùng NoTransitionPage loại bỏ hoàn toàn độ trễ trượt 400ms, thanh nav bar đứng yên vững chãi.
+     - **Xóa sạch 100% CircularProgressIndicator:** Áp dụng Optimistic Structural Rendering cho HomeScreen, CollectionScreen, HouseScreen, MathMapScreen, VietnameseMapScreen, EnglishMapScreen, WritingMapScreen (PracticeScreen) — khung giao diện luôn hiện ngay lập tức trong frame đầu tiên.
+     - **Chống giật layout buồng lái đua RaceScreen:** Thay SizedBox.shrink() bằng _CockpitPlaceholder giữ nguyên chiều cao bàn điều khiển với đèn hiệu "Sẵn sàng xuất phát!", nạp song song glyphs trong RaceController.start.
+     - **Hiệu ứng chuyển màn con êm dịu (Arcade Micro-Transitions):** buildSmoothTransitionPage (Fade + Scale nhẹ 0.97 -> 1.0 trong 160ms Curves.easeOutCubic) cho mọi màn hình con.
+     - **Kiểm thử toàn diện:** Đạt 2,682/2,682 tests (flutter test), flutter analyze 0 issues.
    - Cách làm: kỹ sư trưởng (AI) lập kế hoạch và rà soát; một AI khác code theo kế hoạch.
 1. **Chủ dự án đang chạy thử bản `--profile` trên máy thật (2026-11-19):**
    - Đánh giá thực tế độ mượt 120fps ProMotion (các animation cho ăn, trang trí, vuốt ve Chíp, đua tên lửa Free-Flight, chuyển cảnh tab).
