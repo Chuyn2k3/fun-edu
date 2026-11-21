@@ -86,3 +86,12 @@ Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` 
 - Gửi kèm `baseVersion`; lệch thì máy chủ báo xung đột và trả bản đang có → app gộp rồi gửi lại.
 - Không đồng bộ: `stroke_attempts` (nét vẽ), giọng đọc, bé đang chọn, thời điểm đồng ý.
 - Đồng bộ khi: đăng nhập, mở lại app, mỗi 5 phút khi đang mở, bấm "Lưu online ngay".
+
+## 7. Phòng đua qua mạng (2B-2)
+
+- Ba mẹ đã đăng nhập → Góc Chơi → **"Mời bạn đua"** (qua cổng ba mẹ) → "Tạo phòng" → đưa mã 6 ký tự cho ba mẹ bạn. Bên kia: **"Nhập mã"** → gõ mã → phòng chờ.
+- Phòng chờ: mã to + "Chép mã", danh sách 2–4 bạn, bé chọn môn của mình (Toán / Tiếng Việt), 6 sticker Chíp; chủ phòng bấm **"Bắt đầu!"** → đếm 3-2-1 → trận đua (màn đua cũ, tên lửa + ảnh của bạn thay Chíp; có 3–4 bạn thì làn thứ hai là bạn đang dẫn đầu).
+- Về đích: màn xếp hạng cập nhật trực tiếp; chủ phòng **"Đua lại!"** đưa cả phòng về phòng chờ.
+- Trận qua mạng **không cộng sao vũ trụ, không tính huy hiệu và không đổi nhịp Chíp** (chỉ trận với Chíp mới tính).
+- Thử local: chạy máy chủ (mục 1), 2 máy ảo/điện thoại cùng trỏ `FUNEDU_API_URL`, đăng nhập 2 tài khoản khác nhau. Giao thức chi tiết: `server/README.md` mục "Race rooms".
+- Máy chủ giữ phòng trong bộ nhớ: khởi động lại máy chủ thì các phòng đang mở mất (bé vào phòng mới).

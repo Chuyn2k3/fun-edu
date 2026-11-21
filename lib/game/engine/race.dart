@@ -145,6 +145,12 @@ class Race {
     if (chipSteps >= raceLength) _finish(won: false);
   }
 
+  /// Someone else reached the planet first (online room): the race ends
+  /// as a loss where the kid stands.
+  void endLost() {
+    if (!finished) _finish(won: false);
+  }
+
   void _finish({required bool won}) {
     outcome = RaceOutcome(
       won: won,

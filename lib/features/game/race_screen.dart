@@ -23,6 +23,7 @@ import '../../voice/voice_lines.dart';
 import 'answer_keys.dart';
 import 'glyph_view.dart';
 import 'race_controller.dart';
+import 'race_rival.dart';
 
 const _tryAgain = 'Thử lại nhé!';
 
@@ -52,10 +53,14 @@ class RaceScreen extends ConsumerStatefulWidget {
     super.key,
     required this.subject,
     this.retryAfterLoss = false,
+    this.rival,
   });
 
   final RaceSubject subject;
   final bool retryAfterLoss;
+
+  /// Online room: race this friend instead of Chíp.
+  final RaceRival? rival;
 
   @override
   ConsumerState<RaceScreen> createState() => _RaceScreenState();
@@ -95,7 +100,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     Future.microtask(() {
       if (mounted) {
         _controller.start(widget.subject,
-            retryAfterLoss: widget.retryAfterLoss);
+            retryAfterLoss: widget.retryAfterLoss, rival: widget.rival);
       }
     });
     WidgetsBinding.instance.addObserver(this);
@@ -203,7 +208,13 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     final waited = DateTime.now().difference(since);
     final rest = hold - waited;
     _leave = Timer(rest.isNegative ? Duration.zero : rest, () {
-      if (mounted) context.go('/game/result', extra: result);
+      if (!mounted) return;
+      // Online: the room's ranking screen (it waits for the others).
+      if (result.online) {
+        context.go('/game/room/result');
+      } else {
+        context.go('/game/result', extra: result);
+      }
     });
   }
 
@@ -243,6 +254,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
               ))),
           bottomInset: bottomInset,
           kidAvatar: currentKid?.avatar,
+          rival: ref.watch(raceControllerProvider.select((s) => s.rival)),
         );
       },
     );
@@ -347,7 +359,10 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
             if (paused)
               _PauseOverlay(
                 onResume: () => _controller.setPaused(false),
-                onLeave: () => context.go('/game'),
+                onLeave: () {
+                  widget.rival?.leave();
+                  context.go('/game');
+                },
               ),
           ],
         ),
@@ -367,6 +382,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     }) s, {
     required double bottomInset,
     String? kidAvatar,
+    RivalView? rival,
   }) {
     return RaceScene(
       key: _sceneKey,
@@ -379,6 +395,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
           s.phase != RacePhase.loading &&
           s.kidSteps >= raceLength,
       kidAvatar: kidAvatar,
+      rivalRocket: rival?.rocket,
+      rivalAvatar: rival?.avatar,
+      rivalName: rival?.name,
       stallSeq: s.wrongSeq,
       bottomInset: bottomInset,
     );

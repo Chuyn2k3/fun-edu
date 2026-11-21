@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +15,7 @@ import '../../learning/writing_ladder.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
+import 'race_rival.dart';
 
 /// Seeds question building; tests override it for a fixed race.
 final raceRandomProvider = Provider<Random>((ref) => Random());
@@ -46,10 +49,15 @@ class RaceResultArgs {
     required this.rocket,
     required this.trail,
     this.luckyStarsCollected = 0,
+    this.online = false,
   });
 
   final RaceSubject subject;
   final RaceOutcome outcome;
+
+  /// A race in an online room: nothing is recorded (stars, badges and
+  /// Chíp's pacing stay for races with Chíp); the room shows the ranking.
+  final bool online;
 
   /// Null when saving the race failed: nothing was stored, no stars.
   final RaceRecordResult? record;
@@ -118,9 +126,14 @@ class RaceState {
     this.wasRetryAfterLoss = false,
     this.paused = false,
     this.result,
+    this.rival,
   });
 
   final RacePhase phase;
+
+  /// The friend racing the kid online; null when racing Chíp.
+  final RivalView? rival;
+  bool get online => rival != null;
   final RaceSubject? subject;
   final List<RaceQuestion> questions;
 
@@ -163,6 +176,7 @@ class RaceState {
     int? Function()? correctKey,
     bool? paused,
     RaceResultArgs? result,
+    RivalView? rival,
   }) =>
       RaceState(
         phase: phase ?? this.phase,
@@ -181,6 +195,7 @@ class RaceState {
         wasRetryAfterLoss: wasRetryAfterLoss,
         paused: paused ?? this.paused,
         result: result ?? this.result,
+        rival: rival ?? this.rival,
       );
 }
 
@@ -193,20 +208,34 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
   Duration _shownAt = Duration.zero;
   bool _starting = false;
   bool _disposed = false;
+  RaceRival? _rival;
+  StreamSubscription<RivalView>? _rivalSub;
 
   /// Race time, which only moves through [advance].
   Duration get now => _now;
 
   @override
   RaceState build() {
-    ref.onDispose(() => _disposed = true);
+    ref.onDispose(() {
+      _disposed = true;
+      _rivalSub?.cancel();
+    });
     return const RaceState();
   }
 
   /// Loads the kid's levels and game profile and builds the questions.
-  Future<void> start(RaceSubject subject, {bool retryAfterLoss = false}) async {
+  ///
+  /// With a [rival] (online room) the second rocket is the friend instead of
+  /// Chíp: it moves with the room, and the race is lost when a friend lands
+  /// first.
+  Future<void> start(
+    RaceSubject subject, {
+    bool retryAfterLoss = false,
+    RaceRival? rival,
+  }) async {
     if (_starting || _race != null) return;
     _starting = true;
+    _rival = rival;
     final repo = await ref.read(gameRepositoryProvider.future);
     final levels = await ref.read(levelRepositoryProvider.future);
     final progress = await ref.read(progressRepositoryProvider.future);
@@ -259,7 +288,24 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       trail: sel.trail,
       slowdown: slowdown,
       wasRetryAfterLoss: retryAfterLoss,
+      rival: rival?.view,
+      chipSteps: rival?.view.steps ?? 0,
     );
+    if (rival != null) {
+      _rivalSub = rival.changes.listen(_onRival);
+      _onRival(rival.view);
+    }
+  }
+
+  void _onRival(RivalView v) {
+    final race = _race;
+    if (race == null || state.phase != RacePhase.racing) return;
+    race.chipSteps = v.steps;
+    state = state.copyWith(chipSteps: v.steps, rival: v);
+    if (v.beatKid) {
+      race.endLost();
+      _finish();
+    }
   }
 
   /// Moves race time on by [dt]; Chíp may step.
@@ -269,6 +315,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       return;
     }
     _now += dt;
+    if (_rival != null) return; // The friend moves with the room, not here.
     final before = race.chipSteps;
     race.tick(_now);
     if (race.chipSteps != before) {
@@ -302,6 +349,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       correctKey: () => index,
       wrongKey: () => null,
     );
+    _rival?.kidStepped(race.kidSteps);
     if (race.finished) _finish();
     return true;
   }
@@ -333,6 +381,22 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       chipSteps: race.chipSteps,
     );
     RaceRecordResult? record;
+    if (_rival != null) {
+      _rivalSub?.cancel();
+      state = state.copyWith(
+        phase: RacePhase.done,
+        result: RaceResultArgs(
+          subject: state.subject!,
+          outcome: o,
+          record: null,
+          kidSteps: race.kidSteps,
+          rocket: state.rocket,
+          trail: state.trail,
+          online: true,
+        ),
+      );
+      return;
+    }
     try {
       final repo = await ref.read(gameRepositoryProvider.future);
       record = await repo.recordRace(

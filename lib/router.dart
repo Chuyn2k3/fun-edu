@@ -6,6 +6,11 @@ import 'package:flutter/material.dart';
 import 'features/collection/collection_screen.dart';
 import 'features/dev/gallery_screen.dart';
 import 'features/dev/recorder_screen.dart';
+import 'game/engine/race_question.dart';
+import 'features/online_race/room_entry_screen.dart';
+import 'features/online_race/room_lobby_screen.dart';
+import 'features/online_race/room_race_screen.dart';
+import 'features/online_race/room_result_screen.dart';
 import 'features/game/badge_cabinet_screen.dart';
 import 'features/game/game_hub_screen.dart';
 import 'features/game/garage_screen.dart';
@@ -117,6 +122,43 @@ final GoRouter appRouter = GoRouter(
               ),
             );
           },
+        ),
+        // 2B-2 online rooms (entry is behind the parent gate).
+        GoRoute(
+          path: 'room',
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: RoomEntryScreen(
+                join: state.uri.queryParameters['mode'] == 'join'),
+          ),
+          routes: [
+            GoRoute(
+              path: 'lobby',
+              pageBuilder: (context, state) => buildSmoothTransitionPage(
+                key: state.pageKey,
+                child: const RoomLobbyScreen(),
+              ),
+            ),
+            GoRoute(
+              path: 'race',
+              pageBuilder: (context, state) => buildSmoothTransitionPage(
+                key: ValueKey(state.pageKey),
+                child: RoomRaceScreen(
+                  key: ValueKey(state.pageKey),
+                  subject: state.extra is RaceSubject
+                      ? state.extra! as RaceSubject
+                      : RaceSubject.toan,
+                ),
+              ),
+            ),
+            GoRoute(
+              path: 'result',
+              pageBuilder: (context, state) => buildSmoothTransitionPage(
+                key: state.pageKey,
+                child: const RoomResultScreen(),
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: 'result',

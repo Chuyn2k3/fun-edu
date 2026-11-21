@@ -39,6 +39,9 @@ class RaceScene extends StatefulWidget {
     required this.boosting,
     required this.won,
     this.kidAvatar,
+    this.rivalRocket,
+    this.rivalAvatar,
+    this.rivalName,
     this.stallSeq = 0,
     this.lanes = 2,
     this.bottomInset = 0,
@@ -62,6 +65,12 @@ class RaceScene extends StatefulWidget {
 
   /// Kid's chosen avatar asset path for the porthole window.
   final String? kidAvatar;
+
+  /// Online room: the second rocket is a friend's (their garage rocket and
+  /// avatar) instead of Chíp's; null races Chíp.
+  final String? rivalRocket;
+  final String? rivalAvatar;
+  final String? rivalName;
 
   /// Sequence number incremented on wrong answers to trigger sputter dip.
   final int stallSeq;
@@ -88,7 +97,9 @@ class RaceSceneState extends State<RaceScene>
       seed: 1);
   late final _Racer _chip = _Racer(
       lane: 1,
-      sprite: RocketSprite.chip,
+      sprite: widget.rivalRocket == null
+          ? RocketSprite.chip
+          : RocketSprite.forItem(widget.rivalRocket!),
       trail: TrailStyle.flame,
       seed: 2,
       isChip: true);
@@ -107,6 +118,14 @@ class RaceSceneState extends State<RaceScene>
   static const _overtakeDuration = 0.75;
 
   String get kidAvatarAsset => widget.kidAvatar ?? kidAvatars[0];
+
+  bool get _hasRival => widget.rivalRocket != null;
+
+  /// The friend's avatar, or a default one so the window is never empty.
+  String get rivalAvatarAsset {
+    final a = widget.rivalAvatar;
+    return a == null || a.isEmpty || !kidAvatars.contains(a) ? kidAvatars[1] : a;
+  }
 
   // --- test hooks -----------------------------------------------------------
   @visibleForTesting
@@ -226,6 +245,7 @@ class RaceSceneState extends State<RaceScene>
         _kid.sprite.asset,
         _chip.sprite.asset,
         kidAvatarAsset,
+        if (_hasRival) rivalAvatarAsset,
         AppImages.planet,
         AppImages.comet,
         AppImages.chipSurprise,
@@ -238,6 +258,13 @@ class RaceSceneState extends State<RaceScene>
     final old = oldWidget;
     if (old.kidRocket != widget.kidRocket) {
       _kid.sprite = RocketSprite.forItem(widget.kidRocket);
+      _images.resolve(createLocalImageConfiguration(context), _assets);
+    }
+    // The leading friend can change during an online race.
+    if (old.rivalRocket != widget.rivalRocket || old.rivalAvatar != widget.rivalAvatar) {
+      if (widget.rivalRocket != null) {
+        _chip.sprite = RocketSprite.forItem(widget.rivalRocket!);
+      }
       _images.resolve(createLocalImageConfiguration(context), _assets);
     }
     if (old.kidAvatar != widget.kidAvatar) {
@@ -328,6 +355,7 @@ class RaceSceneState extends State<RaceScene>
   bool get _kidLeads => widget.won || _kid.pos > _chip.pos + 0.02;
   bool get _chipLeads => !widget.won && _chip.pos > _kid.pos + 0.02;
   bool get _chipWantsLead =>
+      !_hasRival &&
       !widget.won &&
       (_chipLeads || (widget.kidSteps == 0 && widget.chipSteps == 0));
 
@@ -369,7 +397,7 @@ class RaceSceneState extends State<RaceScene>
     return Semantics(
       container: true,
       label: 'Tên lửa của bé: $kid trên ${RaceScene.steps} nấc. '
-          'Chíp Chíp: $chip trên ${RaceScene.steps} nấc.',
+          '${widget.rivalName ?? 'Chíp Chíp'}: $chip trên ${RaceScene.steps} nấc.',
       child: LayoutBuilder(builder: (context, c) {
         final size = c.biggest;
         final g = TrackGeometry(size,
@@ -975,7 +1003,7 @@ class _RaceForegroundPainter extends CustomPainter {
     // 3. Rocket Body & Kid Avatar in window
     final rocketImg = state._images[r.sprite.asset].value;
     final avatarImg = r.isChip
-        ? null
+        ? (state._hasRival ? state._images[state.rivalAvatarAsset].value : null)
         : state._images[state.kidAvatarAsset].value;
     RocketSprite.paintRocket(
       canvas,
@@ -986,7 +1014,7 @@ class _RaceForegroundPainter extends CustomPainter {
     );
 
     // 4. Chíp reaction bubble (pilot Chíp expressions)
-    if (r.isChip && !still) {
+    if (r.isChip && !still && !state._hasRival) {
       final isBehind = state.widget.chipSteps < state.widget.kidSteps;
       final reactionImg = state
           ._images[isBehind ? AppImages.chipSurprise : AppImages.chipJoy].value;

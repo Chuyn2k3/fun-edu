@@ -111,7 +111,7 @@ void main() {
     expect(find.text('42'), findsNothing);
   });
 
-  testWidgets('"Mời bạn đua" and "Nhập mã" say "Sắp có"', (t) async {
+  testWidgets('without a server, "Mời bạn đua" and "Nhập mã" say "Sắp có"', (t) async {
     await bootGame(t);
     await _openHub(t);
     for (final label in ['Mời bạn đua', 'Nhập mã']) {

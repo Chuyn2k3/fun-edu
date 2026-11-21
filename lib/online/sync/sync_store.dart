@@ -56,6 +56,7 @@ const _kidSettings = [
   'bedtimeStart',
   'bedtimeEnd',
   'chipHouse',
+  'raceNickname',
 ];
 
 /// Maps the local database to sync records and merges records from the
@@ -494,12 +495,13 @@ class SyncStore {
       await _db.customStatement('DELETE FROM ${t.actualTableName} WHERE kid_id = ?', [id]);
     }
     await _db.customStatement(
-      "DELETE FROM app_settings WHERE key IN (?, ?, ?, ?) OR key LIKE ?",
+      "DELETE FROM app_settings WHERE key IN (?, ?, ?, ?, ?) OR key LIKE ?",
       [
         'dailyLimitMinutes.$id',
         'bedtimeStart.$id',
         'bedtimeEnd.$id',
         'chipHouse.$id',
+        'raceNickname.$id',
         'extraMinutes.$id.%',
       ],
     );

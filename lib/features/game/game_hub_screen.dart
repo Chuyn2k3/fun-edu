@@ -8,6 +8,8 @@ import '../../game/data/badges.dart';
 import '../../game/data/game_repository.dart';
 import '../../game/engine/race_question.dart';
 import '../../game/scene/rocket_sprite.dart';
+import '../../online/online_config.dart';
+import '../../parent/parent_gate_route.dart';
 import '../../ui/assets.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
@@ -471,12 +473,24 @@ class _RaceHero extends StatelessWidget {
   }
 }
 
-/// "Mời bạn đua" and "Nhập mã" (online races come in 2B-2): "Sắp có".
-class _SoonRow extends StatelessWidget {
+/// "Mời bạn đua" and "Nhập mã": online rooms (2B-2), opened through the
+/// parent gate. A build without a server says "Sắp có".
+class _SoonRow extends ConsumerWidget {
   const _SoonRow();
 
+  Future<void> _open(BuildContext context, WidgetRef ref, String mode) async {
+    if (!ref.read(onlineConfigProvider).enabled) {
+      _soon(context);
+      return;
+    }
+    if (await showParentGate(context) && context.mounted) {
+      context.push('/game/room?mode=$mode');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final online = ref.watch(onlineConfigProvider).enabled;
     final tablet = context.isTablet;
     final label = TextStyle(
       fontSize: tablet ? 24 : 18,
@@ -487,8 +501,8 @@ class _SoonRow extends StatelessWidget {
       children: [
         Expanded(
           child: Pressable(
-            onTap: () => _soon(context),
-            semanticsLabel: 'Mời bạn đua, sắp có',
+            onTap: () => _open(context, ref, 'create'),
+            semanticsLabel: online ? 'Mời bạn đua' : 'Mời bạn đua, sắp có',
             builder: (pressed) => Container(
               decoration: raisedKeyDecoration(
                 top: GameColors.keyBlueTop,
@@ -543,8 +557,8 @@ class _SoonRow extends StatelessWidget {
         SizedBox(width: tablet ? 20 : 14),
         Expanded(
           child: Pressable(
-            onTap: () => _soon(context),
-            semanticsLabel: 'Nhập mã, sắp có',
+            onTap: () => _open(context, ref, 'join'),
+            semanticsLabel: online ? 'Nhập mã' : 'Nhập mã, sắp có',
             builder: (pressed) => Container(
               decoration: raisedKeyDecoration(
                 top: GameColors.keyGreenTop,

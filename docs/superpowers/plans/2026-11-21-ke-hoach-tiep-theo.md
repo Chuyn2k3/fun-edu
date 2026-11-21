@@ -33,10 +33,10 @@
 
 | Bước | Nội dung | Xong khi |
 |---|---|---|
-| 2B2-1 | Máy chủ phòng: `POST /rooms` (mã 6 ký tự, 30 phút, 2–4 bé), vào phòng, WebSocket `/ws/room` (phòng chờ, bắt đầu, vị trí ~5 lần/giây, về đích, mất mạng 20 giây, chống bấm quá nhanh) | Test WebSocket: 4 client đua hết trận, 1 client rớt mạng rồi vào lại |
-| 2B2-2 | Cảnh đua **2–4 làn** (`StarPath` mở rộng), tên lửa bạn có avatar, camera theo bé | Test không chồng làn 320–1366; đo `--profile` máy thật |
-| 2B2-3 | App: "Mời bạn đua" (ba mẹ tạo mã, sau cổng), "Nhập mã", phòng chờ, trận qua mạng (câu hỏi theo trình độ từng bé, sinh trên máy), màn kết quả có thứ hạng + "Đua lại!" | Hai máy giả lập đua với nhau qua máy chủ local |
-| 2B2-4 | Sticker cảm xúc Chíp (bộ có sẵn, ảnh nền xanh tách bằng `chroma_key.py`), biệt danh đua (mặc định tên gọi ở nhà, ba mẹ đổi ở Góc ba mẹ) | Không có ô nhập chữ nào trong phòng |
+| 2B2-1 ✅ | Máy chủ phòng: `POST /api/v1/rooms`, WebSocket `/ws/room` (phòng trong bộ nhớ: phòng chờ, đếm ngược, bước +1/+2 tối thiểu 600 ms, thứ hạng do máy chủ quyết, sticker cố định, vào lại trong 20 s, đua lại, rời phòng; giới hạn tạo phòng / đoán mã) | **Xong:** 9 test WebSocket (chạy 3 lần ổn định), 34 test máy chủ |
+| 2B2-2 ✅ (rút gọn) | Cảnh đua: làn thứ hai là tên lửa + ảnh của bạn đang dẫn đầu (`RaceScene.rivalRocket/rivalAvatar/rivalName`); **chưa vẽ 4 làn** — 3–4 bạn thì xem đủ ở màn xếp hạng | **Xong** |
+| 2B2-3 ✅ | App: `RoomController` (`lib/online/room/`, kết nối lại 3 lần), `RaceRival` + `OnlineRival`, "Mời bạn đua"/"Nhập mã" qua cổng ba mẹ, phòng chờ (mã, chép mã, chọn môn, "Bắt đầu!", 3-2-1), trận đua dùng lại `RaceScreen`, màn xếp hạng + "Đua lại!"; trận online không lưu vào `race_results` | **Xong:** 18 test (bộ điều khiển phòng, đối thủ, luồng trên app) |
+| 2B2-4 ✅ | 6 sticker Chíp (ảnh sticker 3D có sẵn) ở phòng chờ + màn xếp hạng, biệt danh đua (`raceNickname.<kidId>`, đồng bộ, mặc định tên gọi ở nhà) | **Xong** |
 
 ## Việc nhỏ xen kẽ (khi chờ chủ dự án chuẩn bị)
 
