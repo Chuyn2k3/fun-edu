@@ -5,6 +5,24 @@ online rocket race rooms. Design: `../docs/superpowers/specs/2026-11-21-giai-doa
 
 Stack: Java 21, Spring Boot 3.3, PostgreSQL 16, Flyway (`src/main/resources/db/migration`).
 
+## API (v1)
+
+| Method | Path | Auth | |
+|---|---|---|---|
+| POST | `/api/v1/auth/google`, `/api/v1/auth/apple` | — | `{idToken}` → `{accessToken, refreshToken, expiresIn, familyId}`; first sign-in creates the family |
+| POST | `/api/v1/auth/refresh` | — | `{refreshToken}` → new pair; the old token dies, reusing it ends every session |
+| POST | `/api/v1/auth/logout` | — | `{refreshToken}` → 204 |
+| GET | `/api/v1/me` | Bearer | `{familyId, provider, email}` |
+| DELETE | `/api/v1/account` | Bearer | Deletes the family and all its data → 204 |
+
+One parent account (Google **or** Apple) per family. Access tokens: HS256,
+15 min. Refresh tokens: 256-bit random, stored as SHA-256, 90 days.
+`/api/v1/auth/**` is limited to 20 requests per minute per address. Errors
+are `{"error": "<code>"}` only.
+
+The server refuses to start without `AUTH_JWT_SECRET` (≥ 32 bytes). With no
+`GOOGLE_CLIENT_IDS`, Google sign-in rejects every token (fail closed).
+
 ## Run tests
 
 ```bash
@@ -21,7 +39,8 @@ TEST_DB_URL=jdbc:postgresql://localhost:5432/funedu_test TEST_DB_USER=funedu TES
 ## Run locally
 
 ```bash
-DB_URL=jdbc:postgresql://localhost:5432/funedu DB_USER=funedu DB_PASSWORD=funedu ./gradlew bootRun
+DB_URL=jdbc:postgresql://localhost:5432/funedu DB_USER=funedu DB_PASSWORD=funedu \
+  AUTH_JWT_SECRET=$(openssl rand -base64 48) GOOGLE_CLIENT_IDS=<client id> ./gradlew bootRun
 curl localhost:8080/actuator/health
 ```
 
@@ -29,7 +48,7 @@ curl localhost:8080/actuator/health
 
 ```bash
 cd deploy
-cp .env.example .env   # fill in API_DOMAIN and a strong DB_PASSWORD
+cp .env.example .env   # fill in every value; never commit .env
 docker compose up -d --build
 ```
 

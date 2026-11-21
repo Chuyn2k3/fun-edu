@@ -7,3 +7,11 @@ spring:
     password: ${TEST_DB_PASSWORD:funedu}
   flyway:
     clean-disabled: false
+funedu:
+  auth:
+    jwt-secret: test-secret-that-is-at-least-32-bytes-long!!
+    requests-per-minute: 1000
+    google:
+      client-ids: test-google-client
+    apple:
+      client-ids: com.ibme.funedu

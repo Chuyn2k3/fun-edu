@@ -42,10 +42,11 @@ class ServerSkeletonTest {
 
     @Test
     void otherActuatorEndpointsAreNotExposed() {
-        assertThat(http.getForEntity("/actuator/env", String.class).getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(http.getForEntity("/actuator/beans", String.class).getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+        // Blocked by security (401) or simply absent (404): never readable.
+        for (String path : new String[] {"/actuator/env", "/actuator/beans", "/actuator/heapdump"}) {
+            assertThat(http.getForEntity(path, String.class).getStatusCode())
+                    .isIn(HttpStatus.UNAUTHORIZED, HttpStatus.NOT_FOUND);
+        }
     }
 
     @Test

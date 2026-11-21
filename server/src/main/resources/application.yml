@@ -27,3 +27,21 @@ management:
       show-details: never
       probes:
         enabled: true
+
+funedu:
+  auth:
+    # Required, >= 32 bytes, from the environment only.
+    jwt-secret: ${AUTH_JWT_SECRET:}
+    access-ttl: 15m
+    refresh-ttl: 90d
+    requests-per-minute: 20
+    google:
+      issuers: [https://accounts.google.com, accounts.google.com]
+      jwks-uri: https://www.googleapis.com/oauth2/v3/certs
+      # Comma-separated OAuth client ids (Android, iOS, web) from Google Cloud.
+      client-ids: ${GOOGLE_CLIENT_IDS:}
+    apple:
+      issuers: [https://appleid.apple.com]
+      jwks-uri: https://appleid.apple.com/auth/keys
+      # Bundle id for iOS + Services ID for Android/web.
+      client-ids: ${APPLE_CLIENT_IDS:com.ibme.funedu}
