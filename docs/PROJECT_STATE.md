@@ -1,7 +1,7 @@
 # Chíp Chíp — Tình trạng dự án và hướng dẫn tiếp nhận
 
 > **Đọc file này trước tiên** nếu bạn (người hoặc AI) mới tiếp nhận dự án. Nó tóm tắt: app là gì, vì sao làm như vậy, giao diện trông ra sao, code tổ chức thế nào, đã làm tới đâu, còn gì dở, và làm gì tiếp.
-> Cập nhật lần cuối: 2026-11-15, sau khi phóng to dấu thanh trên ô viết (giai đoạn 2A; chờ chủ dự án duyệt nét mẫu). Nhánh làm việc: `chipchip`.
+> Cập nhật lần cuối: 2026-11-21, sau rà soát tổng thể và sửa 4 lỗi (sao chổi, bản đồ khi đang tải, Nhà Chíp khi đang tải, vuốt quay lại iOS). Kế hoạch tiếp: `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md`. Nhánh làm việc: `chipchip`.
 > Khi xong một phần việc, **cập nhật mục 6 (Đã làm), 7 (Còn dở) và 8 (Làm gì tiếp)** của file này.
 
 ---
@@ -95,7 +95,7 @@ tools/glyphs/test_letters.py   # pytest cho chữ cái (11 test)
 assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướng xuống); chữ cái `chu-*`, dấu `dau-*` có thêm ruling/context/speech
 ```
 
-**Route:** `/` trang chủ · `/lesson` · `/lesson/done` · `/subject/viet` · `/subject/toan` · `/practice/:glyphId` · `/practice-math/:levelIndex` · `/game` (Góc Chơi) · `/game/pick` (chọn môn) · `/game/race/:subject` · `/game/result` · `/game/garage` · `/game/badges` · `/game/stickers` · `/placement` · `/setup` · `/parent` (sau cổng) · `/trace/:glyphId` · debug: `/dev/glyphs`, `/dev/recorder` (ghi nét mẫu), `/dev/gallery` (xem linh kiện giao diện). Mở trực tiếp: `flutter run --route=/dev/recorder`.
+**Route:** `/` trang chủ · `/collection` (Sưu tập) · `/house` (Nhà Chíp) · `/lesson` · `/lesson/done` · `/subject/viet` · `/subject/toan` · `/subject/tieng-viet` · `/subject/tieng-anh` · `/practice-vietnamese/:levelIndex` · `/practice-english/:levelIndex` · `/practice/:glyphId` · `/practice-math/:levelIndex` · `/game` (Góc Chơi) · `/game/pick` (chọn môn) · `/game/race/:subject` · `/game/result` · `/game/garage` · `/game/badges` · `/game/stickers` · `/placement` · `/setup` · `/parent` (sau cổng) · `/trace/:glyphId` · debug: `/dev/glyphs`, `/dev/recorder` (ghi nét mẫu), `/dev/gallery` (xem linh kiện giao diện). Mở trực tiếp: `flutter run --route=/dev/recorder`. **Chuyển màn:** 4 tab chính (`/`, `/game`, `/collection`, `/house`) dùng `NoTransitionPage`; màn con dùng `buildSmoothTransitionPage` (`lib/ui/transitions/`): iOS là `CupertinoPage` (giữ vuốt quay lại), nơi khác mờ + phóng nhẹ 160 ms. (Commit `a180a9d` thêm `KidScaffoldShell`/`StatefulShellRoute` nhưng đã gỡ ở `b78e43b`.)
 
 **Dữ liệu (drift, mọi bảng tiến độ có `kid_id`):** `kid_profiles`, `app_settings` (key/value), `stroke_attempts` (mỗi nét chấm, kèm toạ độ), `glyph_progress`, `lesson_completions` (sao), `subject_levels`, `daily_usage`, `real_rewards`; dữ liệu trò chơi (v7, **tách riêng khỏi dữ liệu học**): `race_results`, `game_profile`, `game_items`, `game_badges`, `game_counters`. Khoá cài đặt: `voiceEnabled`, `consentAt`, `currentKidId`, `dailyLimitMinutes.{kidId}` (mặc định 45), `bedtimeStart.{kidId}`/`bedtimeEnd.{kidId}` (`HH:mm`), `extraMinutes.{kidId}.{yyyy-MM-dd}`.
 
@@ -121,7 +121,7 @@ assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướ
 | `docs/phase0/asset-list.md` | Danh sách ảnh cần làm, mẹo dùng Gemini |
 | `docs/superpowers/specs/assets/generated-assets-gallery.md` | Bộ ảnh 3D độ phân giải cao đã tạo |
 
-## 6. Đã làm (tới 2026-11-17)
+## 6. Đã làm (tới 2026-11-21)
 
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
@@ -151,8 +151,9 @@ assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướ
 | 3C | **Tab "Nhà Chíp" + tối ưu 120fps & animation tùy chỉnh (offline 100%, 2026-11-18):** Mở khóa tab cuối cùng **Nhà Chíp** (`/house`, `kidNavHouse = 3` trong `kid_nav.dart`) trên thanh điều hướng bé (điện thoại `FloatingNavBar`, iPad `NavRail` + bố cục 2 cột khi ngang). Lưu trạng thái riêng từng bé trong `AppSettings` khóa `'chipHouse.<kidId>'` (dọn sạch khi xóa bé, không đổi schema Drift, không import `lib/game/`). Chỉ theo dõi `spentStars` nội bộ nên **không trừ tổng sao học tập** dùng cho Quà ba mẹ. Sân khấu phòng (`lib/features/house/room_stage.dart`) tách 3 lớp `RepaintBoundary` chuẩn 120fps (iOS đã bật `CADisableMinimumFrameDurationOnPhone`): phòng tĩnh không vẽ lại khi animation chạy; hiệu ứng **cho ăn** (món ăn bay theo vòng cung vào Chíp, Chíp nhún bật squash-stretch đổi biểu cảm vui + pháo sao/trái tim/hoa giấy lên cấp), **trang trí** (dải sáng lấp lánh quét tường / vòng sáng thảm / pháo sao góc phòng / vương miện rơi nảy lên đầu Chíp), **vuốt ve** (lắc vui + trái tim bay lên), thanh XP mượt bằng `TweenAnimationBuilder`. Đồng thời tối ưu 120fps các màn vừa làm: bỏ `Opacity` gây `saveLayer` trên trạm khóa Tiếng Việt & Tiếng Anh, gộp alpha vào ma trận `_lockedGreyscaleMatrix` ở Sưu tập (giảm nửa `saveLayer`), bọc `RepaintBoundary` quanh tờ A4 `WorksheetPreview` để phóng to 120fps, thay `GridView(shrinkWrap: true)` ở Nhà Chíp bằng `_TwoColumnGrid` một lượt layout. Spec: `docs/superpowers/specs/2026-11-18-giai-doan-3c-nha-chip-design.md`, Plan: `docs/superpowers/plans/2026-11-18-giai-doan-3c-nha-chip.md` | Xong (chủ dự án đang chạy thử `--profile` máy thật) |
 | Sửa lỗi trước beta | **Sửa 4 lỗi nhỏ giao diện & hiển thị (2026-11-19):** (1) iPhone nhỏ 375×667: tự động bật bố cục gọn khi chiều cao an toàn < 700 (bỏ dòng phụ, icon 46, vòng 38, padding gọn) và tính đệm đáy theo `FloatingNavBar.height` (80pt) + `bottomMargin` (12pt), giúp cả 4 thẻ môn hiện trọn trên thanh điều hướng không cần cuộn; (2) Điện thoại cỡ chữ lớn: bỏ chiều cao cố định của thẻ "Bài hôm nay", cho thẻ tự co giãn theo nội dung, tự co ảnh Chíp và giới hạn dòng bong bóng, vượt qua kiểm thử `textScaler` 1.3, 1.6, 2.0 không tràn; (3) Android 12+: bổ sung `values-night-v31/styles.xml` giữ nền kem `@color/splash_bg` để màn chào hệ thống đồng bộ với `SplashView` Flutter cả khi bật chế độ tối; (4) Màn kết quả đua: thay emoji ⭐ bằng ảnh 3D `AppImages.icStar`, loại bỏ hoàn toàn ô vuông (tofu). Plan: `docs/superpowers/plans/2026-11-19-sua-loi-nho-truoc-beta.md` | Xong |
 | Đua tên lửa — Giai đoạn 1–3 | **Đua tên lửa đồng bộ thiết kế, bỏ "nét AI" — Toàn bộ Giai đoạn 1, 2, 3 (2026-11-19):** Chủ dự án duyệt thiết kế Giai đoạn 0 ("THẤY OK HƠN R ĐẤY"). Hoàn thành 100%: (1) **Giai đoạn 1 Cảnh đua (`lib/game/scene/`):** `StarPath` 11 điểm 3D hướng tâm Sao Thổ, 2 làn không chồng nhau trên mọi cỡ màn hình 320–1366, góc nghiêng tự nhiên không lộn ngược, tách lớp tĩnh `_StarTrackPainter` trong `RepaintBoundary` riêng; **bỏ hoàn toàn các vệt ray và chấm mốc dọc đường** để trả lại không gian vũ trụ sâu thẳm tự do, tên lửa bé có cửa kính cắt tròn hiện avatar của bé, sao may mắn mốc 4 và 8 là sao vàng 3D phát sáng bồng bềnh; (2) **Giai đoạn 2 Bàn trả lời AnswerDesk (`lib/features/game/race_screen.dart`):** Thay HUD neon kính mờ bằng bàn điều khiển đồ chơi màu kem `GameColors.cockpitBg`, viền bóng clay trắng 3.5px, đồng hồ bứt tốc tiếng Việt "BỨT TỐC x2!" (bỏ chữ tiếng Anh "NITRO"), Chíp phi công đồng hành có bóng tròn và lời thoại cổ vũ, sao chổi đậu góc thẻ câu hỏi kèm viền vàng `GameColors.cometRim`, iPad ngang chia 60% cảnh / 40% bàn điều khiển căn giữa không còn khoảng trống tối; (3) **Giai đoạn 3 Màn kết quả (`lib/features/game/race_result_screen.dart`):** Bầu trời chuyển sang kem bằng dải gradient êm dài (>120pt) bỏ cạnh cắt và vệt hồng gắt, gộp phần thưởng vào 1 thẻ hàng ngang (+9 sao vũ trụ, +2 sao may mắn), quà kế tiếp thay bằng bóng đen silhouette `GameColors.lockedSilhouette` kèm dấu "?" (loại bỏ hoàn toàn `ImageFilter.blur` và `BackdropFilter` khỏi game, 0 hardcoded `Color(0x...)`), tiêu đề thua ngắn gọn 2 dòng ("Suýt nữa thôi!" và "Chỉ còn 2 bước!"); (4) Toàn bộ 2,673 test đạt 100%, `flutter analyze` 0 lỗi. Plan: `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md` | Xong |
+| Rà soát 2026-11-21 | Sau khi kéo 27 commit (đua tên lửa GĐ 0–3, sửa lỗi trước beta, chuyển màn tức thì): (1) câu sao chổi đọc lời sao chổi **rồi đọc câu hỏi** (`spokenRaceIntro`), nút loa luôn đọc câu hỏi — trước đó trận Tiếng Việt có 3 câu bé không nghe được chữ; (2) bản đồ Toán/Tiếng Việt/Tiếng Anh khi chưa tải cấp hiện ô trung tính (không "Đang học" cấp 1, không khóa, không bấm); (3) Nhà Chíp bỏ qua cho ăn/trang trí khi dữ liệu chưa tải (`kidId == null`); (4) iOS dùng `CupertinoPage` cho màn con; `app.dart` nạp sẵn cấp môn bằng `ref.listen`; xóa 25 màu `GameColors` không dùng. 2685 test đạt, analyze sạch | Xong |
 
-Trạng thái kiểm tra: `flutter analyze` sạch, **2673 test Dart đạt** (≈1680 là test cặp chữ/dấu trong `letter_confusion_test.dart`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
+Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2685 test Dart đạt** (≈1680 là test cặp chữ/dấu trong `letter_confusion_test.dart`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
@@ -162,6 +163,9 @@ Trạng thái kiểm tra: `flutter analyze` sạch, **2673 test Dart đạt** (�
 - Ghi lại nét mẫu thật cho **nét cơ bản và số 0–9** bằng `/dev/recorder` (hiện là **dữ liệu tạm máy sinh**) và thử với bé theo `docs/phase0/stroke-test.md`. **Chữ cái và dấu thanh** đã được chủ dự án duyệt giữ nguyên (2026-11-18).
 
 **Điểm biết là chưa hoàn hảo (nhỏ, có thể sửa sau):**
+- Trang chủ và Sưu tập in số 0 (sao, ngày học, vòng tiến độ) thoáng qua trước khi dữ liệu tải xong (đợt A của kế hoạch 2026-11-21).
+- Hành tinh đích trong trận đua to lên theo từng nấc (không chuyển động mượt); lớp này có blur 12 nhưng chỉ vẽ lại khi lên nấc.
+- File lớn nên tách dần: `collection_screen.dart`, `race_screen.dart`, `room_stage.dart`, `race_scene.dart`, `race_result_screen.dart`.
 - Hết giờ đúng lúc chuyển màn: màn mới có thể hiện thoáng qua trước khi màn ngủ phủ lên. Nếu kiểm tra giờ bị lỗi DB thì mặc định cho chơi (fail open).
 - Tiến độ Viết trên trang chủ chưa tính các chữ được bỏ qua nhờ xếp cấp.
 - Bé bị lùi cấp Toán thì ô trên bản đồ khóa lại (không thông báo, nhưng bé thấy).
@@ -186,7 +190,8 @@ Trạng thái kiểm tra: `flutter analyze` sạch, **2673 test Dart đạt** (�
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-0. **Việc kế tiếp (2026-11-19):**
+0. **Việc kế tiếp (2026-11-21): xem `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md`** — Đợt A dọn trước beta (không nháy số 0, quà chờ ở Góc Chơi, `GameRepository` transaction, …) → B phản hồi máy thật → C chữ hoa tập viết (2G) → D Vở của bé → E Toán nâng cao; chờ chủ dự án chốt thứ tự và mẫu chữ hoa.
+   **Đã làm (2026-11-19):**
    - **Sửa 4 lỗi nhỏ trước beta:** Đã xong 100% (`8aab810`, `2f574dc`, `b540b5c`, `c09276c`, `babbd83`), đã push `chipchip`.
    - **Đua tên lửa đồng bộ thiết kế, bỏ "nét AI":** `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`.
      - **Giai đoạn 0 (Cổng duyệt ảnh mẫu):** Đã được chủ dự án duyệt ("THẤY OK HƠN R ĐẤY" 2026-11-19).
