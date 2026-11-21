@@ -7,6 +7,10 @@ class KidProfiles extends Table {
   TextColumn get avatar => text()();
   IntColumn get age => integer()();
   DateTimeColumn get createdAt => dateTime()();
+
+  /// Stable id across devices for online sync (v8). Set for every kid; null
+  /// only in the instant between the v8 column add and its backfill.
+  TextColumn get uuid => text().nullable()();
 }
 
 /// Plain key/value store for app-wide settings (current kid, voice, ...).

@@ -1365,8 +1365,14 @@ class $KidProfilesTable extends KidProfiles
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
-  List<GeneratedColumn> get $columns => [id, nickname, avatar, age, createdAt];
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+      'uuid', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, nickname, avatar, age, createdAt, uuid];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1404,6 +1410,10 @@ class $KidProfilesTable extends KidProfiles
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('uuid')) {
+      context.handle(
+          _uuidMeta, uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta));
+    }
     return context;
   }
 
@@ -1423,6 +1433,8 @@ class $KidProfilesTable extends KidProfiles
           .read(DriftSqlType.int, data['${effectivePrefix}age'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      uuid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}uuid']),
     );
   }
 
@@ -1438,12 +1450,17 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
   final String avatar;
   final int age;
   final DateTime createdAt;
+
+  /// Stable id across devices for online sync (v8). Set for every kid; null
+  /// only in the instant between the v8 column add and its backfill.
+  final String? uuid;
   const KidProfile(
       {required this.id,
       required this.nickname,
       required this.avatar,
       required this.age,
-      required this.createdAt});
+      required this.createdAt,
+      this.uuid});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1452,6 +1469,9 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
     map['avatar'] = Variable<String>(avatar);
     map['age'] = Variable<int>(age);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || uuid != null) {
+      map['uuid'] = Variable<String>(uuid);
+    }
     return map;
   }
 
@@ -1462,6 +1482,7 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
       avatar: Value(avatar),
       age: Value(age),
       createdAt: Value(createdAt),
+      uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
     );
   }
 
@@ -1474,6 +1495,7 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
       avatar: serializer.fromJson<String>(json['avatar']),
       age: serializer.fromJson<int>(json['age']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      uuid: serializer.fromJson<String?>(json['uuid']),
     );
   }
   @override
@@ -1485,6 +1507,7 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
       'avatar': serializer.toJson<String>(avatar),
       'age': serializer.toJson<int>(age),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'uuid': serializer.toJson<String?>(uuid),
     };
   }
 
@@ -1493,13 +1516,15 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
           String? nickname,
           String? avatar,
           int? age,
-          DateTime? createdAt}) =>
+          DateTime? createdAt,
+          Value<String?> uuid = const Value.absent()}) =>
       KidProfile(
         id: id ?? this.id,
         nickname: nickname ?? this.nickname,
         avatar: avatar ?? this.avatar,
         age: age ?? this.age,
         createdAt: createdAt ?? this.createdAt,
+        uuid: uuid.present ? uuid.value : this.uuid,
       );
   KidProfile copyWithCompanion(KidProfilesCompanion data) {
     return KidProfile(
@@ -1508,6 +1533,7 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
       avatar: data.avatar.present ? data.avatar.value : this.avatar,
       age: data.age.present ? data.age.value : this.age,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
     );
   }
 
@@ -1518,13 +1544,14 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
           ..write('nickname: $nickname, ')
           ..write('avatar: $avatar, ')
           ..write('age: $age, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('uuid: $uuid')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, nickname, avatar, age, createdAt);
+  int get hashCode => Object.hash(id, nickname, avatar, age, createdAt, uuid);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1533,7 +1560,8 @@ class KidProfile extends DataClass implements Insertable<KidProfile> {
           other.nickname == this.nickname &&
           other.avatar == this.avatar &&
           other.age == this.age &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.uuid == this.uuid);
 }
 
 class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
@@ -1542,12 +1570,14 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
   final Value<String> avatar;
   final Value<int> age;
   final Value<DateTime> createdAt;
+  final Value<String?> uuid;
   const KidProfilesCompanion({
     this.id = const Value.absent(),
     this.nickname = const Value.absent(),
     this.avatar = const Value.absent(),
     this.age = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.uuid = const Value.absent(),
   });
   KidProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -1555,6 +1585,7 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
     required String avatar,
     required int age,
     required DateTime createdAt,
+    this.uuid = const Value.absent(),
   })  : nickname = Value(nickname),
         avatar = Value(avatar),
         age = Value(age),
@@ -1565,6 +1596,7 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
     Expression<String>? avatar,
     Expression<int>? age,
     Expression<DateTime>? createdAt,
+    Expression<String>? uuid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1572,6 +1604,7 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
       if (avatar != null) 'avatar': avatar,
       if (age != null) 'age': age,
       if (createdAt != null) 'created_at': createdAt,
+      if (uuid != null) 'uuid': uuid,
     });
   }
 
@@ -1580,13 +1613,15 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
       Value<String>? nickname,
       Value<String>? avatar,
       Value<int>? age,
-      Value<DateTime>? createdAt}) {
+      Value<DateTime>? createdAt,
+      Value<String?>? uuid}) {
     return KidProfilesCompanion(
       id: id ?? this.id,
       nickname: nickname ?? this.nickname,
       avatar: avatar ?? this.avatar,
       age: age ?? this.age,
       createdAt: createdAt ?? this.createdAt,
+      uuid: uuid ?? this.uuid,
     );
   }
 
@@ -1608,6 +1643,9 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
     return map;
   }
 
@@ -1618,7 +1656,8 @@ class KidProfilesCompanion extends UpdateCompanion<KidProfile> {
           ..write('nickname: $nickname, ')
           ..write('avatar: $avatar, ')
           ..write('age: $age, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('uuid: $uuid')
           ..write(')'))
         .toString();
   }
@@ -3911,6 +3950,246 @@ class GameCountersCompanion extends UpdateCompanion<GameCounter> {
   }
 }
 
+class $SyncedRecordsTable extends SyncedRecords
+    with TableInfo<$SyncedRecordsTable, SyncedRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncedRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+      'key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _payloadJsonMeta =
+      const VerificationMeta('payloadJson');
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+      'payload_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [key, version, payloadJson];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'synced_records';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncedRecord> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+          _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    } else if (isInserting) {
+      context.missing(_versionMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+          _payloadJsonMeta,
+          payloadJson.isAcceptableOrUnknown(
+              data['payload_json']!, _payloadJsonMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  SyncedRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncedRecord(
+      key: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      payloadJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payload_json']),
+    );
+  }
+
+  @override
+  $SyncedRecordsTable createAlias(String alias) {
+    return $SyncedRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncedRecord extends DataClass implements Insertable<SyncedRecord> {
+  final String key;
+  final int version;
+
+  /// Canonical JSON (sorted keys) of the payload last sent or received; null
+  /// for a tombstone or a record this device deliberately does not hold.
+  final String? payloadJson;
+  const SyncedRecord(
+      {required this.key, required this.version, this.payloadJson});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || payloadJson != null) {
+      map['payload_json'] = Variable<String>(payloadJson);
+    }
+    return map;
+  }
+
+  SyncedRecordsCompanion toCompanion(bool nullToAbsent) {
+    return SyncedRecordsCompanion(
+      key: Value(key),
+      version: Value(version),
+      payloadJson: payloadJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadJson),
+    );
+  }
+
+  factory SyncedRecord.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncedRecord(
+      key: serializer.fromJson<String>(json['key']),
+      version: serializer.fromJson<int>(json['version']),
+      payloadJson: serializer.fromJson<String?>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'version': serializer.toJson<int>(version),
+      'payloadJson': serializer.toJson<String?>(payloadJson),
+    };
+  }
+
+  SyncedRecord copyWith(
+          {String? key,
+          int? version,
+          Value<String?> payloadJson = const Value.absent()}) =>
+      SyncedRecord(
+        key: key ?? this.key,
+        version: version ?? this.version,
+        payloadJson: payloadJson.present ? payloadJson.value : this.payloadJson,
+      );
+  SyncedRecord copyWithCompanion(SyncedRecordsCompanion data) {
+    return SyncedRecord(
+      key: data.key.present ? data.key.value : this.key,
+      version: data.version.present ? data.version.value : this.version,
+      payloadJson:
+          data.payloadJson.present ? data.payloadJson.value : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncedRecord(')
+          ..write('key: $key, ')
+          ..write('version: $version, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, version, payloadJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncedRecord &&
+          other.key == this.key &&
+          other.version == this.version &&
+          other.payloadJson == this.payloadJson);
+}
+
+class SyncedRecordsCompanion extends UpdateCompanion<SyncedRecord> {
+  final Value<String> key;
+  final Value<int> version;
+  final Value<String?> payloadJson;
+  final Value<int> rowid;
+  const SyncedRecordsCompanion({
+    this.key = const Value.absent(),
+    this.version = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncedRecordsCompanion.insert({
+    required String key,
+    required int version,
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : key = Value(key),
+        version = Value(version);
+  static Insertable<SyncedRecord> custom({
+    Expression<String>? key,
+    Expression<int>? version,
+    Expression<String>? payloadJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (version != null) 'version': version,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncedRecordsCompanion copyWith(
+      {Value<String>? key,
+      Value<int>? version,
+      Value<String?>? payloadJson,
+      Value<int>? rowid}) {
+    return SyncedRecordsCompanion(
+      key: key ?? this.key,
+      version: version ?? this.version,
+      payloadJson: payloadJson ?? this.payloadJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncedRecordsCompanion(')
+          ..write('key: $key, ')
+          ..write('version: $version, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3928,6 +4207,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GameItemsTable gameItems = $GameItemsTable(this);
   late final $GameBadgesTable gameBadges = $GameBadgesTable(this);
   late final $GameCountersTable gameCounters = $GameCountersTable(this);
+  late final $SyncedRecordsTable syncedRecords = $SyncedRecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3945,7 +4225,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         gameProfile,
         gameItems,
         gameBadges,
-        gameCounters
+        gameCounters,
+        syncedRecords
       ];
 }
 
@@ -4673,6 +4954,7 @@ typedef $$KidProfilesTableCreateCompanionBuilder = KidProfilesCompanion
   required String avatar,
   required int age,
   required DateTime createdAt,
+  Value<String?> uuid,
 });
 typedef $$KidProfilesTableUpdateCompanionBuilder = KidProfilesCompanion
     Function({
@@ -4681,6 +4963,7 @@ typedef $$KidProfilesTableUpdateCompanionBuilder = KidProfilesCompanion
   Value<String> avatar,
   Value<int> age,
   Value<DateTime> createdAt,
+  Value<String?> uuid,
 });
 
 class $$KidProfilesTableFilterComposer
@@ -4706,6 +4989,9 @@ class $$KidProfilesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+      column: $table.uuid, builder: (column) => ColumnFilters(column));
 }
 
 class $$KidProfilesTableOrderingComposer
@@ -4731,6 +5017,9 @@ class $$KidProfilesTableOrderingComposer
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+      column: $table.uuid, builder: (column) => ColumnOrderings(column));
 }
 
 class $$KidProfilesTableAnnotationComposer
@@ -4756,6 +5045,9 @@ class $$KidProfilesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
 }
 
 class $$KidProfilesTableTableManager extends RootTableManager<
@@ -4786,6 +5078,7 @@ class $$KidProfilesTableTableManager extends RootTableManager<
             Value<String> avatar = const Value.absent(),
             Value<int> age = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<String?> uuid = const Value.absent(),
           }) =>
               KidProfilesCompanion(
             id: id,
@@ -4793,6 +5086,7 @@ class $$KidProfilesTableTableManager extends RootTableManager<
             avatar: avatar,
             age: age,
             createdAt: createdAt,
+            uuid: uuid,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -4800,6 +5094,7 @@ class $$KidProfilesTableTableManager extends RootTableManager<
             required String avatar,
             required int age,
             required DateTime createdAt,
+            Value<String?> uuid = const Value.absent(),
           }) =>
               KidProfilesCompanion.insert(
             id: id,
@@ -4807,6 +5102,7 @@ class $$KidProfilesTableTableManager extends RootTableManager<
             avatar: avatar,
             age: age,
             createdAt: createdAt,
+            uuid: uuid,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6099,6 +6395,149 @@ typedef $$GameCountersTableProcessedTableManager = ProcessedTableManager<
     ),
     GameCounter,
     PrefetchHooks Function()>;
+typedef $$SyncedRecordsTableCreateCompanionBuilder = SyncedRecordsCompanion
+    Function({
+  required String key,
+  required int version,
+  Value<String?> payloadJson,
+  Value<int> rowid,
+});
+typedef $$SyncedRecordsTableUpdateCompanionBuilder = SyncedRecordsCompanion
+    Function({
+  Value<String> key,
+  Value<int> version,
+  Value<String?> payloadJson,
+  Value<int> rowid,
+});
+
+class $$SyncedRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncedRecordsTable> {
+  $$SyncedRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncedRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncedRecordsTable> {
+  $$SyncedRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncedRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncedRecordsTable> {
+  $$SyncedRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => column);
+}
+
+class $$SyncedRecordsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncedRecordsTable,
+    SyncedRecord,
+    $$SyncedRecordsTableFilterComposer,
+    $$SyncedRecordsTableOrderingComposer,
+    $$SyncedRecordsTableAnnotationComposer,
+    $$SyncedRecordsTableCreateCompanionBuilder,
+    $$SyncedRecordsTableUpdateCompanionBuilder,
+    (
+      SyncedRecord,
+      BaseReferences<_$AppDatabase, $SyncedRecordsTable, SyncedRecord>
+    ),
+    SyncedRecord,
+    PrefetchHooks Function()> {
+  $$SyncedRecordsTableTableManager(_$AppDatabase db, $SyncedRecordsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncedRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncedRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncedRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<String?> payloadJson = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncedRecordsCompanion(
+            key: key,
+            version: version,
+            payloadJson: payloadJson,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String key,
+            required int version,
+            Value<String?> payloadJson = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncedRecordsCompanion.insert(
+            key: key,
+            version: version,
+            payloadJson: payloadJson,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncedRecordsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncedRecordsTable,
+    SyncedRecord,
+    $$SyncedRecordsTableFilterComposer,
+    $$SyncedRecordsTableOrderingComposer,
+    $$SyncedRecordsTableAnnotationComposer,
+    $$SyncedRecordsTableCreateCompanionBuilder,
+    $$SyncedRecordsTableUpdateCompanionBuilder,
+    (
+      SyncedRecord,
+      BaseReferences<_$AppDatabase, $SyncedRecordsTable, SyncedRecord>
+    ),
+    SyncedRecord,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6129,4 +6568,6 @@ class $AppDatabaseManager {
       $$GameBadgesTableTableManager(_db, _db.gameBadges);
   $$GameCountersTableTableManager get gameCounters =>
       $$GameCountersTableTableManager(_db, _db.gameCounters);
+  $$SyncedRecordsTableTableManager get syncedRecords =>
+      $$SyncedRecordsTableTableManager(_db, _db.syncedRecords);
 }

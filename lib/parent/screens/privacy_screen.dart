@@ -21,8 +21,16 @@ const _sections = <(String, List<String>)>[
   (
     'Dữ liệu lưu ở đâu',
     [
-      'Toàn bộ dữ liệu chỉ nằm trên máy này. Ứng dụng không có tài khoản '
-          'và không gửi dữ liệu của bé lên máy chủ nào.',
+      'Mặc định toàn bộ dữ liệu chỉ nằm trên máy này và ứng dụng không gửi '
+          'gì lên mạng.',
+      'Nếu ba mẹ đăng nhập "Tài khoản gia đình" (Google hoặc Apple) trong Góc '
+          'ba mẹ, ứng dụng lưu lên máy chủ của FunEdu: tên gọi ở nhà, ảnh đại '
+          'diện, tuổi, tiến độ học và trò chơi, phần thưởng và cài đặt giờ '
+          'chơi — để dùng chung trên nhiều máy. Từ tài khoản Google/Apple, '
+          'chúng tôi chỉ giữ mã định danh và email của ba mẹ. Các nét bé viết '
+          'không bao giờ rời khỏi máy.',
+      'Ba mẹ có thể đăng xuất hoặc xóa tài khoản online bất cứ lúc nào; xóa '
+          'tài khoản sẽ xóa vĩnh viễn mọi dữ liệu của gia đình trên máy chủ.',
     ],
   ),
   (

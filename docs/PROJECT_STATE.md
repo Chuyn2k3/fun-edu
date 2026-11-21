@@ -63,7 +63,8 @@ lib/
                                #   bé chưa xếp cấp → /placement); gắn ScreenTimeGuard; nút back riêng
   router.dart                  # appRouter (go_router) — danh sách route ở dưới
   router_location.dart         # theo dõi vị trí route kể cả khi pop (go_router 15 không báo khi pop)
-  data/app_database.dart       # drift, schemaVersion 7, migration từ 1→7 (v7: bảng trò chơi)
+  data/app_database.dart       # drift, schemaVersion 8, migration từ 1→8 (v7: bảng trò chơi, v8: uuid bé + synced_records)
+  online/                      # 2D: OnlineConfig (--dart-define), ApiClient, auth/ (token, phiên, Google/Apple), sync/ (SyncStore gộp, SyncEngine, SyncController)
   stroke/                      # BỘ CHẤM NÉT (Dart thuần): geometry, glyph (JSON; GlyphRuling, inWindow() quy nét về vùng chữ), grader, glyph_session (thứ tự nét)
   features/trace/trace_pad.dart# khung vẽ ngón tay (chuẩn hóa [0,1], 1 ngón, kiểu sáp màu)
   features/writing/            # màn tập viết (ô li, Chíp phản ứng, Xem mẫu, Nghe, Xóa)
@@ -117,6 +118,7 @@ assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướ
 | `docs/superpowers/plans/2026-11-12-giai-doan-1b-toan-xep-cap.md` | Kế hoạch 1B (đã xong) |
 | `docs/superpowers/plans/2026-11-13-giai-doan-1c-goc-ba-me.md` | Kế hoạch 1C (đã xong) |
 | `docs/superpowers/plans/2026-11-13-giai-doan-1d-muot-va-ipad.md` | Kế hoạch 1D (đã xong, chờ thử máy thật) |
+| `docs/online-setup.md` | Chạy máy chủ + DB local, chạy app trỏ vào máy chủ, cấu hình Google/Apple, thiết kế đồng bộ |
 | `docs/perf.md` | Cách đo hiệu năng (profile), điểm nóng đã xử lý, cách chụp màn hình |
 | `docs/phase0/stroke-test.md` | Cách ghi nét mẫu và thử bộ chấm nét với bé thật |
 | `docs/phase0/asset-list.md` | Danh sách ảnh cần làm, mẹo dùng Gemini |
@@ -155,8 +157,9 @@ assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướ
 | Rà soát 2026-11-21 | Sau khi kéo 27 commit (đua tên lửa GĐ 0–3, sửa lỗi trước beta, chuyển màn tức thì): (1) câu sao chổi đọc lời sao chổi **rồi đọc câu hỏi** (`spokenRaceIntro`), nút loa luôn đọc câu hỏi — trước đó trận Tiếng Việt có 3 câu bé không nghe được chữ; (2) bản đồ Toán/Tiếng Việt/Tiếng Anh khi chưa tải cấp hiện ô trung tính (không "Đang học" cấp 1, không khóa, không bấm); (3) Nhà Chíp bỏ qua cho ăn/trang trí khi dữ liệu chưa tải (`kidId == null`); (4) iOS dùng `CupertinoPage` cho màn con; `app.dart` nạp sẵn cấp môn bằng `ref.listen`; xóa 25 màu `GameColors` không dùng. 2685 test đạt, analyze sạch | Xong |
 | 2D-1 Khung máy chủ | `server/` (Spring Boot 3.3.5, Java 21, Gradle wrapper 8.10.2, PostgreSQL 16, Flyway V1 `families` + `parent_accounts` chỉ cho `provider = 'google'`), chỉ mở `/actuator/health` (không lộ chi tiết), lỗi không trả message/stacktrace; `Dockerfile` (người dùng không phải root), `deploy/` Docker Compose (db + app + Caddy HTTPS, `.env` không commit). Test: `./gradlew test` (Testcontainers hoặc `TEST_DB_URL`) — 5 test đạt. `AGENTS.md` đổi quy tắc mạng theo spec đã duyệt | Xong (chưa build image Docker thật) |
 | 2D-2 Đăng nhập máy chủ | `POST /api/v1/auth/google|apple` (kiểm `id_token` bằng JWKS: chữ ký, `iss`, `aud` theo `GOOGLE_CLIENT_IDS`/`APPLE_CLIENT_IDS`, hạn dùng; chưa cấu hình client id thì từ chối hết), lần đầu tạo gia đình; **mỗi gia đình đúng 1 tài khoản** (Flyway V2 `UNIQUE (family_id)`); access token HS256 15 phút (`AUTH_JWT_SECRET` ≥ 32 byte, thiếu thì không khởi động), refresh token 256 bit lưu SHA-256, 90 ngày, xoay vòng mỗi lần, dùng lại token cũ → thu hồi mọi phiên; `/auth/logout`, `GET /me`, `DELETE /account` (xóa cả gia đình, token còn hạn cũng hết dùng được); 20 lần/phút/địa chỉ cho `/auth/**`; lỗi chỉ trả `{error}`. 16 test máy chủ đạt. Còn lại: thu hồi token Apple khi xóa tài khoản (2D-7), nonce chống phát lại `id_token` (cân nhắc khi làm app ở 2D-3) | Xong |
+| 2D-3…2D-6 Đăng nhập + đồng bộ trong app | **Máy chủ:** Flyway V3 `sync_records` + `POST /api/v1/sync` (kho bản ghi theo khóa, xung đột theo `baseVersion`, tombstone, phân trang, danh sách trắng loại bản ghi, không có nét vẽ), `/api/v1/auth/apple/callback` (Apple trên Android) — 25 test. **App:** drift **v8** (`kid_profiles.uuid`, bảng `synced_records`); `lib/online/` (`OnlineConfig` từ `--dart-define`, `ApiClient`, `SecureTokenStore`, `SessionController`, `IdentityProviders` Google/Apple, `SyncStore`/`SyncEngine`/`SyncController`); thẻ `FamilyAccountCard` ở Góc ba mẹ → Cài đặt (đồng ý trước, đăng nhập Google/Apple, "Lưu online ngay", đăng xuất, xóa tài khoản online); chính sách quyền riêng tư cập nhật; Android release thêm quyền `INTERNET` + activity nhận kết quả Apple. Gói mới ghim: `http` 1.6.0 (đã có sẵn gián tiếp), `flutter_secure_storage` 9.2.2, `google_sign_in` 6.2.1, `sign_in_with_apple` 6.1.3 (`js` chỉ dùng cho web bị hạ 0.7.1→0.6.7). Hướng dẫn chạy + cấu hình Google/Apple: `docs/online-setup.md`. 2713 test Flutter đạt | Xong code (chưa chạy trên máy thật, chưa có client id thật) |
 
-Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2685 test Dart đạt** (≈1680 là test cặp chữ/dấu trong `letter_confusion_test.dart`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
+Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2713 test Dart đạt**, máy chủ **25 test** (`cd server && ./gradlew test`) (≈1680 là test cặp chữ/dấu trong `letter_confusion_test.dart`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
@@ -193,7 +196,7 @@ Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2685 test Dar
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-0. **Việc kế tiếp (2026-11-21): xem `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md`** — chủ dự án chốt: **2D tài khoản gia đình + lưu dữ liệu online trước, rồi 2B-2 phòng đua tên lửa qua mạng + đua với bóng**; đăng nhập Google hoặc Apple, mỗi gia đình một tài khoản; máy chủ Spring Boot ở `server/` trong repo này. Spec `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` **đã duyệt** (gồm đổi quy tắc "không gọi mạng"); phòng đua hiện ảnh đại diện + biệt danh đua. Chữ hoa, Vở của bé, Toán nâng cao để sau.
+0. **Việc kế tiếp (2026-11-21): xem `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md`** — chủ dự án chốt: **2D tài khoản gia đình + lưu dữ liệu online trước, rồi 2B-2 phòng đua tên lửa qua mạng + đua với bóng**; đăng nhập Google hoặc Apple, mỗi gia đình một tài khoản; máy chủ Spring Boot ở `server/` trong repo này. Spec `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` **đã duyệt** (gồm đổi quy tắc "không gọi mạng"); phòng đua hiện ảnh đại diện + biệt danh đua. **Đã xong code 2D-1…2D-6 (2026-11-21)**; còn **2D-7** (đưa máy chủ lên Oracle, HTTPS, sao lưu, thu hồi token Apple khi xóa tài khoản — cần tên miền, client id Google/Apple thật) và thử trên máy thật theo `docs/online-setup.md`; sau đó **2B-2**. Chữ hoa, Vở của bé, Toán nâng cao để sau.
    **Đã làm (2026-11-19):**
    - **Sửa 4 lỗi nhỏ trước beta:** Đã xong 100% (`8aab810`, `2f574dc`, `b540b5c`, `c09276c`, `babbd83`), đã push `chipchip`.
    - **Đua tên lửa đồng bộ thiết kế, bỏ "nét AI":** `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`.

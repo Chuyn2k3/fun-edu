@@ -1,3 +1,5 @@
+import 'online/online_config.dart';
+import 'online/sync/sync_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -59,6 +61,11 @@ class App extends ConsumerWidget {
     final placed = ref.watch(isPlacedProvider);
     // Load the voice setting before any screen can speak.
     final voice = ref.watch(voiceEnabledProvider);
+    // Online sync runs only in a build with a server address, and only once a
+    // parent signed in (the controller does nothing until then).
+    if (ref.watch(onlineConfigProvider).enabled) {
+      ref.listen(syncControllerProvider, (_, __) {});
+    }
     // Pre-warm subject levels so the maps open with them. Listening (not
     // watching) keeps them alive without rebuilding the whole app when a
     // level changes.

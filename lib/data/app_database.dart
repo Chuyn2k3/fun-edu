@@ -5,6 +5,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../game/data/game_tables.dart';
+import '../online/uuid.dart';
 import '../profile/kid_tables.dart';
 import '../progress/progress_tables.dart';
 import '../rewards/reward_tables.dart';
@@ -32,6 +33,20 @@ class StrokeAttempts extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
+/// What this device last exchanged with the server for each synced record
+/// key: the server version and the payload (to spot local edits).
+class SyncedRecords extends Table {
+  TextColumn get key => text()();
+  IntColumn get version => integer()();
+
+  /// Canonical JSON (sorted keys) of the payload last sent or received; null
+  /// for a tombstone or a record this device deliberately does not hold.
+  TextColumn get payloadJson => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 @DriftDatabase(
   tables: [
     StrokeAttempts,
@@ -47,13 +62,14 @@ class StrokeAttempts extends Table {
     GameItems,
     GameBadges,
     GameCounters,
+    SyncedRecords,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,8 +91,29 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(gameBadges);
             await m.createTable(gameCounters);
           }
+          if (from < 8) await _upgradeToV8(m, from);
         },
       );
+
+  /// v7 -> v8: online sync. Kids get a stable uuid; a table remembers what
+  /// was last synced. The column is added only when missing: databases older
+  /// than v4 created `kid_profiles` in its v8 shape during this same upgrade.
+  Future<void> _upgradeToV8(Migrator m, int from) => transaction(() async {
+        final cols = await customSelect('PRAGMA table_info(kid_profiles)').get();
+        if (cols.isEmpty) {
+          await m.createTable(kidProfiles);
+        } else if (!cols.any((c) => c.read<String>('name') == 'uuid')) {
+          await m.addColumn(kidProfiles, kidProfiles.uuid);
+        }
+        final missing = await (select(kidProfiles)
+              ..where((t) => t.uuid.isNull()))
+            .get();
+        for (final k in missing) {
+          await (update(kidProfiles)..where((t) => t.id.equals(k.id)))
+              .write(KidProfilesCompanion(uuid: Value(newUuid())));
+        }
+        await m.createTable(syncedRecords);
+      });
 
   /// v3 -> v4: adds kid profiles and scopes every progress table by kid.
   ///
@@ -132,6 +169,7 @@ class AppDatabase extends _$AppDatabase {
               avatar: AppImages.chipMain,
               age: 5,
               createdAt: DateTime.now(),
+              uuid: Value(newUuid()),
             ),
           );
           await into(appSettings).insert(

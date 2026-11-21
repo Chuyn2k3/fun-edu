@@ -10,12 +10,14 @@ import '../../screen_time/screen_time_service.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../parent_unlock.dart';
+import 'family_account_card.dart';
 import 'parent_card.dart';
 import 'privacy_screen.dart';
 
 const String _confirmWord = 'XÓA';
 
-/// "Cài đặt" tab: voice, redo placement, privacy policy, delete all data.
+/// "Cài đặt" tab: voice, family account (online), redo placement, privacy
+/// policy, delete all data.
 /// [kidId] is the kid selected in the parent corner, null when none exists.
 class SettingsTab extends ConsumerWidget {
   const SettingsTab({super.key, required this.kidId});
@@ -87,6 +89,8 @@ class SettingsTab extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          const FamilyAccountCard(),
           if (kid != null) ...[
             const SizedBox(height: 12),
             _ActionCard(

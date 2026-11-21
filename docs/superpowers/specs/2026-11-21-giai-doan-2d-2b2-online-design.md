@@ -47,20 +47,12 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 
 **Offline-first:** mọi ghi vẫn vào drift trước; đồng bộ chạy nền khi có mạng (mở app, xong bài, xong trận, mỗi 5 phút khi đang mở, kéo để làm mới ở Góc ba mẹ).
 
-**Thay đổi schema drift v8** (migration + test giữ mọi đường nâng cấp cũ):
-- Mỗi bảng được đồng bộ thêm `uuid` (khóa toàn cục, sinh trên máy), `updated_at`, `deleted` (xóa mềm để truyền được việc xóa), `dirty` (chưa đẩy).
-- Bảng `sync_state` (con trỏ `server_version` lần kéo cuối).
+**Thiết kế đã làm (2026-11-21) — kho bản ghi theo khóa** (thay cho cột `uuid/updated_at/dirty` ở mọi bảng, để không phải sửa từng repository):
+- Máy chủ: bảng `sync_records (family_id, key, kind, payload jsonb, deleted, version, updated_at)`, khóa chính `(family_id, key)`; `version` từ một sequence, các lần đồng bộ của một gia đình chạy tuần tự (advisory lock) nên con trỏ không bỏ sót bản ghi. Loại bản ghi có danh sách trắng (không có nét vẽ).
+- App drift **v8**: `kid_profiles.uuid` (khóa toàn cục của bé, migration tự cấp) + bảng `synced_records (key, version, payload_json)` nhớ bản đã đồng bộ. Con trỏ ở `app_settings` khóa `sync.cursor`.
+- Khóa bản ghi và luật gộp: xem `docs/online-setup.md` §6.
 
-**Giao thức:** `POST /sync` gửi `{since: version, changes: [...]}` → máy chủ ghi, gán `version` tăng dần toàn cục (bigserial) → trả `{changes kể từ since, version mới}`. Một lời gọi = vừa đẩy vừa kéo, idempotent theo `uuid`.
-
-**Luật gộp theo loại dữ liệu:**
-
-| Loại | Bảng | Luật |
-|---|---|---|
-| Nhật ký chỉ thêm | `lesson_completions` (sao), `daily_usage`, `race_results` | Hợp theo `uuid` — không bao giờ mất sao |
-| Trạng thái | `kid_profiles`, `glyph_progress`, `subject_levels`, cài đặt theo bé (giới hạn giờ, giờ ngủ, Nhà Chíp), `game_profile`, `game_items`, `game_badges`, `game_counters`, `real_rewards` | Bản ghi mới hơn thắng (máy chủ so `updated_at`, hòa thì `version`) |
-| Ngoại lệ | `glyph_progress.completions`, sao vũ trụ | Lấy lớn hơn (không để hai máy chơi song song làm mất lượt) |
-| Không đồng bộ | `stroke_attempts`, cài đặt riêng máy (`voiceEnabled`) | Chỉ trên máy |
+**Giao thức:** `POST /api/v1/sync` gửi `{since, changes:[{key, payload, deleted, baseVersion}]}` → máy chủ lưu các thay đổi có `baseVersion` khớp, các thay đổi lệch trả về trong `conflicts` kèm bản đang có → trả `{version, records (≤ 1000, theo version), conflicts, hasMore}`. App đẩy tối đa 500 thay đổi/lần, kéo hết các trang rồi mới gộp (bé trước, tiến độ sau).
 
 **Máy thứ hai đăng nhập:** nếu máy đã có bé chưa đồng bộ → hỏi ba mẹ "Gộp bé trên máy này vào tài khoản?" (gộp hoặc ghép với bé cùng tên đã có).
 

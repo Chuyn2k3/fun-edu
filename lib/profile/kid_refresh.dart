@@ -8,14 +8,17 @@ import 'kid_repository.dart';
 
 /// Re-reads everything that depends on the kid list or the current kid.
 /// Call after `addKid`, `setCurrentKid` or any other profile change.
-void refreshAfterKidChange(WidgetRef ref) {
-  ref.invalidate(currentKidIdProvider);
-  ref.invalidate(kidsProvider);
-  ref.invalidate(progressRepositoryProvider);
-  ref.invalidate(levelRepositoryProvider);
-  ref.invalidate(homeSummaryProvider);
-  ref.invalidate(todayLessonProvider);
-  ref.invalidate(mathLevelIndexProvider);
-  ref.invalidate(isPlacedProvider);
-  ref.invalidate(pendingRewardProvider);
+void refreshAfterKidChange(WidgetRef ref) => invalidateKidData(ref.invalidate);
+
+/// Same as [refreshAfterKidChange], for any `invalidate` (WidgetRef or Ref).
+void invalidateKidData(void Function(ProviderOrFamily) invalidate) {
+  invalidate(currentKidIdProvider);
+  invalidate(kidsProvider);
+  invalidate(progressRepositoryProvider);
+  invalidate(levelRepositoryProvider);
+  invalidate(homeSummaryProvider);
+  invalidate(todayLessonProvider);
+  invalidate(mathLevelIndexProvider);
+  invalidate(isPlacedProvider);
+  invalidate(pendingRewardProvider);
 }

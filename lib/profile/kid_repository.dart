@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
+import '../online/uuid.dart';
 
 const int maxKids = 4;
 const String _currentKidKey = 'currentKidId';
@@ -32,6 +33,7 @@ class KidRepository {
                 avatar: avatar,
                 age: age,
                 createdAt: _now(),
+                uuid: Value(newUuid()),
               ),
             );
         if (await currentKidId() == null) await setCurrentKid(id);

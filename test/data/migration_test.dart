@@ -293,4 +293,58 @@ CREATE TABLE subject_levels (
     expect(await db.select(db.gameBadges).get(), isEmpty);
     expect(await db.select(db.gameCounters).get(), isEmpty);
   });
+
+  test('upgrading from v7 gives every kid a uuid and adds synced_records',
+      () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute(
+            'CREATE TABLE kid_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'nickname TEXT NOT NULL, avatar TEXT NOT NULL, age INTEGER NOT NULL, '
+            'created_at INTEGER NOT NULL)',
+          );
+          raw.execute(
+            "INSERT INTO kid_profiles (nickname, avatar, age, created_at) VALUES ('Na', 'a', 5, 1700000000)",
+          );
+          raw.execute(
+            "INSERT INTO kid_profiles (nickname, avatar, age, created_at) VALUES ('Bo', 'b', 4, 1700000001)",
+          );
+          raw.execute('PRAGMA user_version = 7');
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    final kids = await KidRepository(db).kids();
+    expect(kids, hasLength(2));
+    final uuids = kids.map((k) => k.uuid).toList();
+    expect(uuids, everyElement(matches(RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'))));
+    expect(uuids.toSet(), hasLength(2));
+    expect(await db.select(db.syncedRecords).get(), isEmpty);
+  });
+
+  test('upgrading from v1 reaches v8 with uuid on new kids', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute(v2Tables);
+          raw.execute(
+            "INSERT INTO stroke_attempts (glyph_id, stroke_index, ok, deviation, created_at) VALUES ('so-1', 0, 1, 0.1, 1700000000)",
+          );
+          raw.execute('PRAGMA user_version = 1');
+        },
+      ),
+    );
+    addTearDown(db.close);
+    final kids = await KidRepository(db).kids();
+    expect(kids.single.uuid, isNotNull);
+    final id = await KidRepository(db).addKid(
+        nickname: 'Mi', avatar: AppImages.chipMain, age: 4);
+    final added = (await KidRepository(db).kids()).firstWhere((k) => k.id == id);
+    expect(added.uuid, isNotNull);
+    expect(added.uuid, isNot(kids.single.uuid));
+  });
 }
+
