@@ -1,58 +1,58 @@
-# Kế hoạch tiếp theo (sau rà soát 2026-11-21)
+# Kế hoạch tiếp theo (cập nhật 2026-11-21)
 
-> Thứ tự đề xuất, chờ chủ dự án duyệt. Mỗi đợt khi bắt đầu sẽ có plan chi tiết riêng (TDD, rà soát từng task) như các giai đoạn trước.
-> Nguyên tắc giữ nguyên: offline 100%, không SDK theo dõi, Riverpod, màu qua `tokens.dart`, ảnh qua `AppImages`, `flutter analyze` sạch + `flutter test` đạt trước mỗi commit.
+> **Hướng chủ dự án chốt:** làm **2D: tài khoản gia đình + lưu dữ liệu online** trước, rồi **2B-2: phòng đua tên lửa qua mạng + đua với bóng**. Đăng nhập Apple + Google. Máy chủ Java Spring Boot ở thư mục `server/` của repo này.
+> Thiết kế: `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` (**chờ duyệt**). Khi spec được duyệt, mỗi bước dưới đây có plan chi tiết riêng (TDD, rà soát từng task).
 
-## Đã xong trong đợt rà soát này
+## Đã xong trong đợt rà soát 2026-11-21
 
-- Câu sao chổi trong trận đua giờ đọc "Câu sao chổi! Trả lời đúng là bay vọt 2 nấc!" **rồi đọc tiếp câu hỏi**; nút loa luôn đọc câu hỏi (trước đây trận Tiếng Việt có 3/10 câu bé không nghe được chữ cần chọn).
-- Bản đồ Toán / Tiếng Việt / Tiếng Anh: khi chưa tải xong cấp, các ô hiện trung tính (không "Đang học" ở cấp 1, không ổ khóa, không bấm được).
-- Nhà Chíp: khi chưa tải xong (hoặc lỗi đọc), cho ăn / trang trí không làm gì (trước đây Chíp nói sai "chưa đủ sao").
-- iOS: màn con dùng `CupertinoPage` (giữ vuốt mép trái để quay lại); Android vẫn mờ + phóng nhẹ 160 ms.
-- `app.dart` nạp sẵn cấp môn bằng `ref.listen` (không dựng lại cả app khi đổi cấp); xóa 25 màu `GameColors` không dùng.
+- Câu sao chổi đọc lời sao chổi **rồi đọc câu hỏi**; nút loa luôn đọc câu hỏi.
+- Bản đồ Toán / Tiếng Việt / Tiếng Anh: ô trung tính khi chưa tải xong cấp.
+- Nhà Chíp: không cho ăn/trang trí khi dữ liệu chưa tải.
+- iOS dùng `CupertinoPage` cho màn con (giữ vuốt quay lại).
+- `app.dart` nạp sẵn cấp bằng `ref.listen`; xóa 25 màu `GameColors` không dùng.
 
-## Đợt A — Dọn trước beta (nhỏ, ~1–2 ngày, làm ngay được)
+## Bước 0 — Chuẩn bị (song song, phần lớn là việc của chủ dự án)
 
-1. **Trang chủ và Sưu tập không nháy số 0.** Khi đang tải: ẩn con số (sao, "N ngày học tuần này", vòng tiến độ) bằng khung trống cùng kích thước thay vì in 0; "Bài hôm nay" chưa bấm được tới khi có danh sách bài. Test: provider treo `Completer` → không có chữ "0 ngày", nút bài hôm nay không mở `/lesson`.
-2. **Góc Chơi báo quà đang chờ** (mục 7: thoát tấm chọn quà thì chỉ Xưởng độ biết). Thêm chấm "Quà chờ bé!" trên thẻ Xưởng độ ở Góc Chơi.
-3. **`GameRepository`:** `select()` kiểm loại món (tên lửa/vệt); `select`/`markSeen` trong transaction.
-4. **`_letterNames` trong màn đua** đọc từ `speech` của glyph thay vì bảng chép tay.
-5. Bản đồ Toán còn `Opacity` cho ô khóa (Tiếng Việt/Anh đã bỏ) → làm giống hai màn kia.
+- Duyệt spec, đồng ý đổi quy tắc "không gọi mạng" trong `AGENTS.md` (spec §2).
+- Tên miền API, SSH máy Oracle, Apple "Sign in with Apple", Google OAuth client id, nơi lưu bản sao lưu (spec §10).
+- AI: kiểm phiên bản các gói Flutter mới tương thích Flutter 3.24.5 / Dart 3.5 rồi ghim.
 
-## Đợt B — Phản hồi thử máy thật (chờ chủ dự án)
+## 2D — Tài khoản gia đình + đồng bộ (~3–4 tuần)
 
-- Tổng hợp lỗi/góp ý từ đợt `flutter run --profile` (120 Hz, giọng `vi-VN`/`en-US`, in PDF, bố cục điện thoại/iPad).
-- Nếu tụt khung trong trận đua: bỏ trước 3 lần `MaskFilter.blur` (lửa ngoài ×2, vệt sao chổi) và blur 12 của vòng sáng hành tinh.
-- Kiểm tra vuốt quay lại iOS trên máy thật sau khi đổi sang `CupertinoPage`.
+| Bước | Nội dung | Xong khi |
+|---|---|---|
+| 2D-1 | Khung `server/`: Spring Boot 3 + Java 21 + Gradle, PostgreSQL + Flyway, `/actuator/health`, Testcontainers, `docker-compose` (app + db + Caddy), README chạy local | `./gradlew test` xanh; `docker compose up` chạy được trên máy dev |
+| 2D-2 | Đăng nhập: kiểm `id_token` Apple/Google bằng JWKS, access JWT 15 phút + refresh token băm xoay vòng, đăng xuất, **xóa tài khoản**, giới hạn tần suất | Test với JWKS giả: token sai `aud`/hết hạn bị từ chối |
+| 2D-3 | App: `lib/online/` (client HTTP, lưu token an toàn), màn "Tài khoản gia đình" trong Góc ba mẹ (đăng nhập / đăng xuất / xóa), cập nhật màn đồng ý + chính sách quyền riêng tư | Chưa đăng nhập: không lời gọi mạng nào (có test) |
+| 2D-4 | drift **v8**: `uuid`, `updated_at`, `deleted`, `dirty` cho bảng đồng bộ; `sync_state`; migration + test mọi đường v1→v8 | Test migration xanh, dữ liệu cũ có uuid |
+| 2D-5 | Máy chủ `/sync` (đẩy + kéo một lời gọi, `version` toàn cục, luật gộp spec §5, lọc theo `family_id` từ token) | Test: hai máy offline cùng học rồi đồng bộ không mất/nhân đôi sao; không đọc được dữ liệu gia đình khác |
+| 2D-6 | App: bộ đồng bộ nền (mở app, xong bài/trận, 5 phút, kéo làm mới), trạng thái "Đã lưu online lúc …" ở Góc ba mẹ, gộp bé khi máy thứ hai đăng nhập | Thử 2 máy giả lập: điện thoại + iPad thấy cùng tiến độ |
+| 2D-7 | Triển khai lên máy Oracle: HTTPS, biến môi trường bí mật, sao lưu `pg_dump` hằng đêm ra ngoài + thử khôi phục, log không chứa tên bé/token | API thật chạy; bản sao lưu khôi phục được |
 
-## Đợt C — Chữ hoa tập viết (giai đoạn 2G, lớn nhất, ~1–1,5 tuần)
+## 2B-2 — Phòng đua qua mạng + đua với bóng (~3 tuần)
 
-Mục tiêu: 29 chữ hoa tiếng Việt (A Ă Â B C D Đ E Ê G H I K L M N O Ô Ơ P Q R S T U Ư V X Y), chấm nét như chữ thường.
+| Bước | Nội dung | Xong khi |
+|---|---|---|
+| 2B2-1 | Máy chủ phòng: `POST /rooms` (mã 6 ký tự, 30 phút, 2–4 bé), vào phòng, WebSocket `/ws/room` (phòng chờ, bắt đầu, vị trí ~5 lần/giây, về đích, mất mạng 20 giây, chống bấm quá nhanh) | Test WebSocket: 4 client đua hết trận, 1 client rớt mạng rồi vào lại |
+| 2B2-2 | Cảnh đua **2–4 làn** (`StarPath` mở rộng), tên lửa bạn có avatar, camera theo bé | Test không chồng làn 320–1366; đo `--profile` máy thật |
+| 2B2-3 | App: "Mời bạn đua" (ba mẹ tạo mã, sau cổng), "Nhập mã", phòng chờ, trận qua mạng (câu hỏi theo trình độ từng bé, sinh trên máy), màn kết quả có thứ hạng + "Đua lại!" | Hai máy giả lập đua với nhau qua máy chủ local |
+| 2B2-4 | Sticker cảm xúc Chíp (bộ có sẵn, ảnh nền xanh tách bằng `chroma_key.py`), tùy chọn chỉ hiện ảnh đại diện | Không có ô nhập chữ nào trong phòng |
+| 2B2-5 | Đua với bóng: lưu bóng mỗi trận, đồng bộ lên, danh sách "bạn đua" (đã chung phòng + ba mẹ đồng ý), "Đua với bóng của <bạn>" trong Góc Chơi | Đua bóng chạy offline sau khi đã tải về |
 
-1. **Nét mẫu** (`tools/glyphs/letters.py`): thêm chữ hoa `hoa-*` theo mẫu chữ viết trường tiểu học (cao 5 ô li trên khung 12 ô li), dùng lại các nét con (`cong_kin_pen`, `khuyet_*`, `mu`, `breve`, `rau`). `render_sheet.py` vẽ bảng xem; pytest: số nét, chiều, không tự cắt sai, mũ/dấu phụ khớp chữ gốc. **Cổng duyệt:** chủ dự án duyệt bảng chữ hoa trước khi làm tiếp.
-2. **Chấm nét:** `GradeConfig.forGlyph` giữ luật `ruling` (chữ cao 5 ô li → hệ số 1); mở rộng `letter_confusion_test.dart` cho cặp chữ hoa dễ nhầm (U/Ư, O/Ô/Ơ, A/Ă/Â, D/Đ, E/Ê, V/U).
-3. **Thang Viết:** thêm nhóm "Chữ hoa" sau dấu thanh trong `writing_ladder.dart` / `writing_sections.dart`; bản đồ Viết, tab Tiến độ ba mẹ, phiếu tập tô PDF (nhóm mới) tự nhận nhóm. Bài xếp cấp không đổi.
-4. **Giọng đọc:** `speech` "Mình viết chữ A hoa nhé!".
-5. Không đổi schema drift (tiến độ theo glyph id).
+## Việc nhỏ xen kẽ (khi chờ chủ dự án chuẩn bị)
 
-## Đợt D — Vở của bé (~3–4 ngày)
+- Trang chủ và Sưu tập không nháy số 0 lúc tải.
+- Góc Chơi báo "Quà chờ bé!"; `GameRepository.select()` kiểm loại món, `select`/`markSeen` trong transaction.
+- `_letterNames` trong màn đua đọc từ `speech` của glyph.
+- Bản đồ Toán bỏ `Opacity` ô khóa.
+- Sửa lỗi từ đợt chủ dự án chạy `--profile` máy thật.
 
-- Lưu lại lần viết đẹp nhất mỗi chữ (đã có toạ độ trong `stroke_attempts`; chọn lần ít sai nhất, gần nhất) — **không chụp ảnh, không thêm dữ liệu cá nhân**.
-- Tab mới trong Sưu tập: lưới trang vở, vẽ lại nét của bé bằng `CustomPainter` trên ô li; ba mẹ xem trong Góc ba mẹ; in một trang "Vở của bé" PDF.
-- Có thể cần chỉ mục cho `stroke_attempts` (đổi schema → tăng `schemaVersion`, migration + test).
+## Để sau 2D + 2B-2
 
-## Đợt E — Toán nâng cao (~1 tuần)
-
-- Cấp 10–12: số đến 100 (chục và đơn vị, que tính), xem đồng hồ (giờ đúng/giờ rưỡi), nhận biết tiền Việt Nam (tờ 1.000–10.000, ảnh vẽ phẳng, không dùng ảnh tiền thật).
-- Bản đồ Toán điện thoại thêm 3 trạm; iPad đổi lưới 3×3 → 3×4 (kiểm lại `_fits`).
-- Trận đua thêm dạng so sánh (mục 7: bé ở cấp so sánh đang đua bằng câu đếm).
-
-## Xen kẽ — Tách file lớn (không đổi hành vi)
-
-Tách theo widget con, có test bảo vệ trước khi tách: `collection_screen.dart` (1865 dòng), `race_screen.dart` (1282), `room_stage.dart` (1200), `race_scene.dart` (1146), `race_result_screen.dart` (1128).
+Chữ hoa tập viết (2G), Vở của bé, Toán nâng cao (số đến 100, đồng hồ, tiền), tách file lớn, 2E gói trả phí (dùng lại tài khoản + máy chủ của 2D).
 
 ## Cần chủ dự án quyết
 
-1. Thứ tự đợt C/D/E (đề xuất C → D → E vì tập viết là điểm khác biệt chính).
-2. Chữ hoa: theo mẫu chữ nào (mẫu chữ viết tiểu học hiện hành, kiểu 1 nét thanh đậm hay đơn giản hóa cho bé 3–6 tuổi)?
-3. 2E gói trả phí: giá và số cấp miễn phí mỗi môn — vẫn đang mở, cần chốt trước khi làm máy chủ.
+1. Duyệt spec 2D + 2B-2 và đổi quy tắc "không gọi mạng".
+2. Trong phòng đua hiện **tên gọi ở nhà** của bé hay mặc định **chỉ ảnh đại diện**?
+3. Có cần mời ba/mẹ thứ hai vào cùng tài khoản gia đình ngay ở 2D không, hay để sau?
