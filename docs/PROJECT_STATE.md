@@ -190,7 +190,7 @@ Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2685 test Dar
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-0. **Việc kế tiếp (2026-11-21): xem `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md`** — chủ dự án chốt: **2D tài khoản gia đình + lưu dữ liệu online trước, rồi 2B-2 phòng đua tên lửa qua mạng + đua với bóng**; đăng nhập Apple + Google; máy chủ Spring Boot ở `server/` trong repo này. Spec `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` **chờ duyệt** (gồm đổi quy tắc "không gọi mạng"). Chữ hoa, Vở của bé, Toán nâng cao để sau.
+0. **Việc kế tiếp (2026-11-21): xem `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md`** — chủ dự án chốt: **2D tài khoản gia đình + lưu dữ liệu online trước, rồi 2B-2 phòng đua tên lửa qua mạng + đua với bóng**; đăng nhập chỉ bằng Google (bỏ Apple); máy chủ Spring Boot ở `server/` trong repo này. Spec `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` **chờ duyệt** (gồm đổi quy tắc "không gọi mạng"). Chữ hoa, Vở của bé, Toán nâng cao để sau.
    **Đã làm (2026-11-19):**
    - **Sửa 4 lỗi nhỏ trước beta:** Đã xong 100% (`8aab810`, `2f574dc`, `b540b5c`, `c09276c`, `babbd83`), đã push `chipchip`.
    - **Đua tên lửa đồng bộ thiết kế, bỏ "nét AI":** `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`.

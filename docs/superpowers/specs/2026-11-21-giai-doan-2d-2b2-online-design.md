@@ -1,7 +1,7 @@
 # Giai đoạn 2D + 2B-2 — Tài khoản gia đình, lưu dữ liệu online, phòng đua tên lửa qua mạng
 
 > Trạng thái: **bản nháp chờ chủ dự án duyệt** (2026-11-21).
-> Đã chốt với chủ dự án: (1) làm **2D trước**, rồi **2B-2**; (2) ba mẹ đăng nhập bằng **Apple + Google**; (3) phòng đua **trực tiếp (WebSocket) + đua với bóng**; (4) máy chủ Java Spring Boot đặt trong **thư mục `server/` của repo này** (nhánh `chipchip`).
+> Đã chốt với chủ dự án: (1) làm **2D trước**, rồi **2B-2**; (2) ba mẹ đăng nhập **chỉ bằng Google** (bỏ Apple, chủ dự án chốt 2026-11-21); (3) phòng đua **trực tiếp (WebSocket) + đua với bóng**; (4) máy chủ Java Spring Boot đặt trong **thư mục `server/` của repo này** (nhánh `chipchip`).
 > Spec gốc: `2026-11-12-fun-edu-overhaul-design.md` §5.2, §9.2. Spec 2B-1: `2026-11-16-giai-doan-2b1-dua-ten-lua-mot-minh-design.md`.
 
 ## 1. Mục tiêu
@@ -13,8 +13,8 @@
 ## 2. Thay đổi quy tắc dự án (cần chủ dự án đồng ý)
 
 `AGENTS.md` hiện ghi "không gọi mạng". Đề xuất đổi thành:
-- App **chỉ gọi máy chủ riêng của FunEdu** (và máy chủ đăng nhập Apple/Google lúc ba mẹ đăng nhập), **chỉ sau khi ba mẹ đăng nhập** trong Góc ba mẹ. Chưa đăng nhập thì không có lời gọi mạng nào.
-- Không SDK phân tích/quảng cáo; gói mới chỉ: `sign_in_with_apple`, `google_sign_in`, `http`, `web_socket_channel`, `flutter_secure_storage` (phiên bản tương thích Flutter 3.24.5, ghim cứng).
+- App **chỉ gọi máy chủ riêng của FunEdu** (và máy chủ đăng nhập Google lúc ba mẹ đăng nhập), **chỉ sau khi ba mẹ đăng nhập** trong Góc ba mẹ. Chưa đăng nhập thì không có lời gọi mạng nào.
+- Không SDK phân tích/quảng cáo; gói mới chỉ: `google_sign_in`, `http`, `web_socket_channel`, `flutter_secure_storage` (phiên bản tương thích Flutter 3.24.5, ghim cứng).
 - Dữ liệu trò chơi vẫn tách khỏi dữ liệu học (bảng riêng, luồng đồng bộ riêng).
 
 ## 3. Kiến trúc
@@ -35,12 +35,13 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 
 ## 4. Tài khoản gia đình (2D)
 
-- **Đăng nhập** (chỉ trong Góc ba mẹ, sau cổng người lớn): "Đăng nhập với Apple" / "Đăng nhập với Google" → app nhận `id_token` → `POST /auth/apple|google` → máy chủ kiểm chữ ký bằng JWKS của Apple/Google, kiểm `aud` = client id của app → tạo/tìm `parent_account` → trả **access token** (JWT 15 phút) + **refresh token** (chuỗi ngẫu nhiên, máy chủ chỉ lưu bản băm, xoay vòng mỗi lần dùng). Lưu trong `flutter_secure_storage`.
+- **Đăng nhập** (chỉ trong Góc ba mẹ, sau cổng người lớn): "Đăng nhập với Google" → app nhận `id_token` → `POST /auth/google` → máy chủ kiểm chữ ký bằng JWKS của Google, kiểm `aud` = client id của app → tạo/tìm `parent_account` → trả **access token** (JWT 15 phút) + **refresh token** (chuỗi ngẫu nhiên, máy chủ chỉ lưu bản băm, xoay vòng mỗi lần dùng). Lưu trong `flutter_secure_storage`.
+- **Rủi ro App Store:** quy định 4.8 của Apple yêu cầu app có đăng nhập bên thứ ba (Google) phải có thêm một cách đăng nhập bảo vệ quyền riêng tư (thường là Sign in with Apple). Chỉ có Google thì bản iOS **có thể bị từ chối khi duyệt**. Máy chủ để sẵn `POST /auth/<nhà cung cấp>` để thêm Apple sau mà không đổi dữ liệu. Android không bị ảnh hưởng.
 - **Một gia đình** = một hoặc hai tài khoản ba mẹ (mời người thứ hai bằng mã 6 ký tự, làm sau nếu cần) + tối đa 4 bé.
-- **Xóa tài khoản** ngay trong app (Apple bắt buộc): xóa toàn bộ dữ liệu gia đình trên máy chủ; dữ liệu trên máy giữ hoặc xóa theo lựa chọn của ba mẹ.
+- **Xóa tài khoản** ngay trong app (App Store và Google Play đều bắt buộc): xóa toàn bộ dữ liệu gia đình trên máy chủ; dữ liệu trên máy giữ hoặc xóa theo lựa chọn của ba mẹ.
 - **Đăng xuất**: app quay về chế độ chỉ trên máy, dữ liệu trên máy giữ nguyên.
 
-**Dữ liệu máy chủ giữ về ba mẹ:** nhà cung cấp + mã định danh từ Apple/Google, email (nếu Apple/Google cho; Apple có thể ẩn email). **Về bé:** tên gọi ở nhà, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy (dữ liệu tối thiểu).
+**Dữ liệu máy chủ giữ về ba mẹ:** mã định danh Google (`sub`) và email. **Về bé:** tên gọi ở nhà, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy (dữ liệu tối thiểu).
 
 ## 5. Đồng bộ dữ liệu (2D)
 
@@ -88,7 +89,7 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 
 - HTTPS/WSS bắt buộc; token ngắn hạn; refresh token băm; giới hạn tần suất `/auth`, `/rooms`.
 - Mọi truy vấn lọc theo `family_id` lấy từ token (không tin id từ app) — có test chống truy cập chéo gia đình.
-- Bí mật (client id Apple/Google, khóa ký JWT, mật khẩu DB) chỉ trong biến môi trường máy chủ / file `.env` không commit.
+- Bí mật (client id Google, khóa ký JWT, mật khẩu DB) chỉ trong biến môi trường máy chủ / file `.env` không commit.
 - Sao lưu: `pg_dump` hằng đêm, mã hóa, gửi ra nơi lưu trữ khác máy Oracle; thử khôi phục mỗi tháng.
 - Theo dõi: `/actuator/health`, log có cấu trúc (không ghi tên bé, không ghi token).
 - Cập nhật chính sách quyền riêng tư + màn đồng ý + mục "An toàn dữ liệu" trên Google Play / "Nhãn quyền riêng tư" App Store (theo Nghị định 13/2023 về dữ liệu cá nhân: ba mẹ đồng ý trước khi gửi dữ liệu của bé).
@@ -105,6 +106,5 @@ Gói trả phí và xác thực giao dịch (2E), web cho ba mẹ, chat chữ, p
 ## 10. Chủ dự án cần chuẩn bị (không đưa vào code)
 
 1. Tên miền cho API (ví dụ `api.<tên miền của bạn>`) trỏ về máy Oracle; quyền SSH vào máy Oracle.
-2. Apple Developer: bật "Sign in with Apple" cho `com.ibme.funedu`, tạo Service ID/Key.
-3. Google Cloud: OAuth client id cho Android (SHA-1 khóa ký), iOS và web (để máy chủ kiểm `aud`).
-4. Nơi lưu bản sao lưu ngoài máy Oracle.
+2. Google Cloud: OAuth client id cho Android (SHA-1 khóa ký), iOS và web (để máy chủ kiểm `aud`).
+3. Nơi lưu bản sao lưu ngoài máy Oracle.

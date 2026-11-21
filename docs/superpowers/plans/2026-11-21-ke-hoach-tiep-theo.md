@@ -1,6 +1,6 @@
 # Kế hoạch tiếp theo (cập nhật 2026-11-21)
 
-> **Hướng chủ dự án chốt:** làm **2D: tài khoản gia đình + lưu dữ liệu online** trước, rồi **2B-2: phòng đua tên lửa qua mạng + đua với bóng**. Đăng nhập Apple + Google. Máy chủ Java Spring Boot ở thư mục `server/` của repo này.
+> **Hướng chủ dự án chốt:** làm **2D: tài khoản gia đình + lưu dữ liệu online** trước, rồi **2B-2: phòng đua tên lửa qua mạng + đua với bóng**. Đăng nhập **chỉ bằng Google** (bỏ Apple; lưu ý rủi ro duyệt App Store ở spec §4). Máy chủ Java Spring Boot ở thư mục `server/` của repo này.
 > Thiết kế: `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` (**chờ duyệt**). Khi spec được duyệt, mỗi bước dưới đây có plan chi tiết riêng (TDD, rà soát từng task).
 
 ## Đã xong trong đợt rà soát 2026-11-21
@@ -14,7 +14,7 @@
 ## Bước 0 — Chuẩn bị (song song, phần lớn là việc của chủ dự án)
 
 - Duyệt spec, đồng ý đổi quy tắc "không gọi mạng" trong `AGENTS.md` (spec §2).
-- Tên miền API, SSH máy Oracle, Apple "Sign in with Apple", Google OAuth client id, nơi lưu bản sao lưu (spec §10).
+- Tên miền API, SSH máy Oracle, Google OAuth client id, nơi lưu bản sao lưu (spec §10).
 - AI: kiểm phiên bản các gói Flutter mới tương thích Flutter 3.24.5 / Dart 3.5 rồi ghim.
 
 ## 2D — Tài khoản gia đình + đồng bộ (~3–4 tuần)
@@ -22,7 +22,7 @@
 | Bước | Nội dung | Xong khi |
 |---|---|---|
 | 2D-1 | Khung `server/`: Spring Boot 3 + Java 21 + Gradle, PostgreSQL + Flyway, `/actuator/health`, Testcontainers, `docker-compose` (app + db + Caddy), README chạy local | `./gradlew test` xanh; `docker compose up` chạy được trên máy dev |
-| 2D-2 | Đăng nhập: kiểm `id_token` Apple/Google bằng JWKS, access JWT 15 phút + refresh token băm xoay vòng, đăng xuất, **xóa tài khoản**, giới hạn tần suất | Test với JWKS giả: token sai `aud`/hết hạn bị từ chối |
+| 2D-2 | Đăng nhập: kiểm `id_token` Google bằng JWKS, access JWT 15 phút + refresh token băm xoay vòng, đăng xuất, **xóa tài khoản**, giới hạn tần suất | Test với JWKS giả: token sai `aud`/hết hạn bị từ chối |
 | 2D-3 | App: `lib/online/` (client HTTP, lưu token an toàn), màn "Tài khoản gia đình" trong Góc ba mẹ (đăng nhập / đăng xuất / xóa), cập nhật màn đồng ý + chính sách quyền riêng tư | Chưa đăng nhập: không lời gọi mạng nào (có test) |
 | 2D-4 | drift **v8**: `uuid`, `updated_at`, `deleted`, `dirty` cho bảng đồng bộ; `sync_state`; migration + test mọi đường v1→v8 | Test migration xanh, dữ liệu cũ có uuid |
 | 2D-5 | Máy chủ `/sync` (đẩy + kéo một lời gọi, `version` toàn cục, luật gộp spec §5, lọc theo `family_id` từ token) | Test: hai máy offline cùng học rồi đồng bộ không mất/nhân đôi sao; không đọc được dữ liệu gia đình khác |
