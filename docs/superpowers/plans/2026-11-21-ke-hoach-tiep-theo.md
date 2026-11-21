@@ -1,6 +1,6 @@
 # Kế hoạch tiếp theo (cập nhật 2026-11-21)
 
-> **Hướng chủ dự án chốt:** làm **2D: tài khoản gia đình + lưu dữ liệu online** trước, rồi **2B-2: phòng đua tên lửa qua mạng + đua với bóng**. Hướng dẫn chạy: `docs/online-setup.md`. Đăng nhập **Google hoặc Apple**, mỗi gia đình **một tài khoản**. Máy chủ Java Spring Boot ở thư mục `server/` của repo này.
+> **Hướng chủ dự án chốt:** làm **2D: tài khoản gia đình + lưu dữ liệu online** trước, rồi **2B-2: phòng đua tên lửa qua mạng** (không làm đua với bóng). Hướng dẫn chạy: `docs/online-setup.md`. Đăng nhập **Google hoặc Apple**, mỗi gia đình **một tài khoản**. Máy chủ Java Spring Boot ở thư mục `server/` của repo này.
 > Thiết kế: `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md` (**chờ duyệt**). Khi spec được duyệt, mỗi bước dưới đây có plan chi tiết riêng (TDD, rà soát từng task).
 
 ## Đã xong trong đợt rà soát 2026-11-21
@@ -29,7 +29,7 @@
 | 2D-6 ✅ | App: `SyncStore` (xuất/gộp 12 loại bản ghi), `SyncEngine` (đẩy ≤ 500, kéo hết trang, gộp, lặp tối đa 5 vòng), `SyncController` (đăng nhập, mở lại app, 5 phút, bấm tay; làm mới mọi màn sau khi kéo về) | **Xong:** 8 test hai máy với máy chủ giả: sao cộng đúng không mất/không nhân đôi, xung đột gộp số lớn hơn, xóa bé lan sang máy kia, nét vẽ không rời máy, phân trang 700 bài, phần thưởng đã đổi |
 | 2D-7 (còn) | Triển khai lên máy Oracle: HTTPS, biến môi trường bí mật, sao lưu `pg_dump` hằng đêm ra ngoài + thử khôi phục, log không chứa tên bé/token | API thật chạy; bản sao lưu khôi phục được |
 
-## 2B-2 — Phòng đua qua mạng + đua với bóng (~3 tuần)
+## 2B-2 — Phòng đua qua mạng (~2 tuần; **không làm đua với bóng**)
 
 | Bước | Nội dung | Xong khi |
 |---|---|---|
@@ -37,7 +37,6 @@
 | 2B2-2 | Cảnh đua **2–4 làn** (`StarPath` mở rộng), tên lửa bạn có avatar, camera theo bé | Test không chồng làn 320–1366; đo `--profile` máy thật |
 | 2B2-3 | App: "Mời bạn đua" (ba mẹ tạo mã, sau cổng), "Nhập mã", phòng chờ, trận qua mạng (câu hỏi theo trình độ từng bé, sinh trên máy), màn kết quả có thứ hạng + "Đua lại!" | Hai máy giả lập đua với nhau qua máy chủ local |
 | 2B2-4 | Sticker cảm xúc Chíp (bộ có sẵn, ảnh nền xanh tách bằng `chroma_key.py`), biệt danh đua (mặc định tên gọi ở nhà, ba mẹ đổi ở Góc ba mẹ) | Không có ô nhập chữ nào trong phòng |
-| 2B2-5 | Đua với bóng: lưu bóng mỗi trận, đồng bộ lên, danh sách "bạn đua" (đã chung phòng + ba mẹ đồng ý), "Đua với bóng của <bạn>" trong Góc Chơi | Đua bóng chạy offline sau khi đã tải về |
 
 ## Việc nhỏ xen kẽ (khi chờ chủ dự án chuẩn bị)
 

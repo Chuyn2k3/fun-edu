@@ -16,6 +16,26 @@ Stack: Java 21, Spring Boot 3.3, PostgreSQL 16, Flyway (`src/main/resources/db/m
 | DELETE | `/api/v1/account` | Bearer | Deletes the family and all its data → 204 |
 | POST | `/api/v1/sync` | Bearer | `{since, changes:[{key, payload, deleted, baseVersion}]}` → `{version, records, conflicts, hasMore}` |
 
+| POST | `/api/v1/rooms` | Bearer | Opens a race room → `{code, expiresAt}` (6 chars, no 0/O/1/I, 30 min) |
+| WS | `/ws/room?code=XXXXXX` | Bearer (handshake header) | Live race room, see below |
+
+### Race rooms
+
+In memory (rooms live minutes; one instance is enough). JSON messages with a
+`t` type. Client → server: `join {kid, name, avatar, rocket}` (first),
+`start` (host, ≥ 2 kids), `step {n}` (+1 or +2, ≥ 600 ms apart, up to 10),
+`sticker {id}` (fixed set: cheer, wow, love, fast, hi, gg; 1 per 1.5 s),
+`again` (host, after the race), `leave`. Server → client: `room` (full
+snapshot: `state` lobby/countdown/racing/done, `you`, `host`, `startsAt`,
+`players[{id, name, avatar, rocket, steps, rank, connected}]`), `sticker
+{from, id}`, `error {code}` (`not_found`, `room_full`, `started`,
+`not_host`, `need_two`, `too_many`, `expired`, `bad_message`).
+
+The server decides the finish order. A dropped kid may rejoin within 20 s
+with the same kid id and keeps their steps. Names are cleaned to one line of
+≤ 16 characters; avatars must be app asset paths; no free text is relayed.
+Each family may open 20 rooms an hour and miss a code 10 times a minute.
+
 ### Sync
 
 Family data is stored as keyed records (`kid:<uuid>`, `glyph:<kid>:<glyph>`,

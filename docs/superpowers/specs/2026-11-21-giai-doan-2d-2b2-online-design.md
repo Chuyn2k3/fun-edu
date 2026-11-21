@@ -1,13 +1,13 @@
 # Giai đoạn 2D + 2B-2 — Tài khoản gia đình, lưu dữ liệu online, phòng đua tên lửa qua mạng
 
 > Trạng thái: **chủ dự án đã duyệt** (2026-11-21), gồm đổi quy tắc "không gọi mạng" ở §2.
-> Đã chốt với chủ dự án: (1) làm **2D trước**, rồi **2B-2**; (2) ba mẹ đăng nhập bằng **Google hoặc Apple**, **mỗi gia đình đúng một tài khoản** (không mời bố/mẹ thứ hai) — chủ dự án chốt 2026-11-21; (3) phòng đua **trực tiếp (WebSocket) + đua với bóng**; (4) máy chủ Java Spring Boot đặt trong **thư mục `server/` của repo này** (nhánh `chipchip`).
+> Đã chốt với chủ dự án: (1) làm **2D trước**, rồi **2B-2**; (2) ba mẹ đăng nhập bằng **Google hoặc Apple**, **mỗi gia đình đúng một tài khoản** (không mời bố/mẹ thứ hai) — chủ dự án chốt 2026-11-21; (3) phòng đua **trực tiếp (WebSocket)**, **không làm đua với bóng**; (4) máy chủ Java Spring Boot đặt trong **thư mục `server/` của repo này** (nhánh `chipchip`).
 > Spec gốc: `2026-11-12-fun-edu-overhaul-design.md` §5.2, §9.2. Spec 2B-1: `2026-11-16-giai-doan-2b1-dua-ten-lua-mot-minh-design.md`.
 
 ## 1. Mục tiêu
 
 - Ba mẹ đăng nhập một lần → tiến độ của các bé **lưu trên máy chủ**, dùng được trên **nhiều máy** (điện thoại + iPad), không mất khi đổi máy.
-- Bé **mời bạn đua tên lửa** bằng mã phòng do ba mẹ tạo; nếu bạn không online thì **đua với bóng** của bạn.
+- Bé **mời bạn đua tên lửa** bằng mã phòng do ba mẹ tạo; các bé đua cùng lúc.
 - Giữ nguyên lời hứa sản phẩm: không quảng cáo, không SDK theo dõi, dữ liệu bé tối thiểu, **app vẫn chạy đầy đủ khi không có mạng hoặc không đăng nhập**.
 
 ## 2. Thay đổi quy tắc dự án (cần chủ dự án đồng ý)
@@ -71,10 +71,7 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 - Mất mạng: tên lửa đứng yên, kết nối lại trong 20 giây thì đua tiếp; quá hạn thì bé đó dừng, trận tiếp tục với các bạn còn lại; bé mất mạng vẫn nhận sao như thua.
 - Xong trận: màn kết quả có thứ hạng + "Đua lại!" (cùng phòng).
 
-**Đua với bóng**
-- Mỗi trận (một mình hoặc trong phòng) lưu "bóng" = mốc thời gian từng nấc, gửi lên khi đồng bộ (đã đăng nhập).
-- Bé chỉ thấy bóng của **bạn đua** = bé đã từng chung phòng, và ba mẹ đồng ý kết bạn ở Góc ba mẹ.
-- Góc Chơi: "Đua với bóng của <bạn>" — đua offline với bóng đã tải về.
+**Đua với bóng: bỏ** (chủ dự án chốt 2026-11-21 chỉ làm phòng đua trực tiếp).
 
 **An toàn trẻ em:** không tìm kiếm người lạ, không phòng công khai, chỉ vào bằng mã do người lớn tạo; trong phòng hiện ảnh đại diện + biệt danh đua do ba mẹ đặt; không chữ tự do giữa các bé.
 
