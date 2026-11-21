@@ -1,0 +1,9 @@
+# Tests run on Testcontainers PostgreSQL unless TEST_DB_URL points at an
+# existing database (e.g. a sandbox without Docker Hub access).
+spring:
+  datasource:
+    url: ${TEST_DB_URL:}
+    username: ${TEST_DB_USER:funedu}
+    password: ${TEST_DB_PASSWORD:funedu}
+  flyway:
+    clean-disabled: false

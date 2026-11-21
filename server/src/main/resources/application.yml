@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: funedu-server
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/funedu}
+    username: ${DB_USER:funedu}
+    password: ${DB_PASSWORD:funedu}
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

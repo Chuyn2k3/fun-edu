@@ -1,6 +1,6 @@
 # Giai đoạn 2D + 2B-2 — Tài khoản gia đình, lưu dữ liệu online, phòng đua tên lửa qua mạng
 
-> Trạng thái: **bản nháp chờ chủ dự án duyệt** (2026-11-21).
+> Trạng thái: **chủ dự án đã duyệt** (2026-11-21), gồm đổi quy tắc "không gọi mạng" ở §2.
 > Đã chốt với chủ dự án: (1) làm **2D trước**, rồi **2B-2**; (2) ba mẹ đăng nhập **chỉ bằng Google** (bỏ Apple, chủ dự án chốt 2026-11-21); (3) phòng đua **trực tiếp (WebSocket) + đua với bóng**; (4) máy chủ Java Spring Boot đặt trong **thư mục `server/` của repo này** (nhánh `chipchip`).
 > Spec gốc: `2026-11-12-fun-edu-overhaul-design.md` §5.2, §9.2. Spec 2B-1: `2026-11-16-giai-doan-2b1-dua-ten-lua-mot-minh-design.md`.
 
@@ -41,7 +41,7 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 - **Xóa tài khoản** ngay trong app (App Store và Google Play đều bắt buộc): xóa toàn bộ dữ liệu gia đình trên máy chủ; dữ liệu trên máy giữ hoặc xóa theo lựa chọn của ba mẹ.
 - **Đăng xuất**: app quay về chế độ chỉ trên máy, dữ liệu trên máy giữ nguyên.
 
-**Dữ liệu máy chủ giữ về ba mẹ:** mã định danh Google (`sub`) và email. **Về bé:** tên gọi ở nhà, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy (dữ liệu tối thiểu).
+**Dữ liệu máy chủ giữ về ba mẹ:** mã định danh Google (`sub`) và email. **Về bé:** tên gọi ở nhà, biệt danh đua, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy (dữ liệu tối thiểu).
 
 ## 5. Đồng bộ dữ liệu (2D)
 
@@ -68,7 +68,8 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 
 **Tạo và vào phòng**
 - Ba mẹ (sau cổng) bấm "Mời bạn đua" → `POST /rooms` → mã **6 ký tự** (bỏ ký tự dễ nhầm 0/O, 1/I), hết hạn 30 phút, 2–4 bé. Ba mẹ gửi mã cho ba mẹ bạn qua Zalo/tin nhắn (app không có chat).
-- Bé (hoặc ba mẹ) bấm "Nhập mã" → vào **phòng chờ**: thấy tên lửa + ảnh đại diện + tên gọi của các bạn; chủ phòng bấm "Bắt đầu".
+- Bé (hoặc ba mẹ) bấm "Nhập mã" → vào **phòng chờ**: thấy tên lửa + ảnh đại diện + **biệt danh đua** của các bạn; chủ phòng bấm "Bắt đầu".
+- **Biệt danh đua** (chủ dự án chốt 2026-11-21): mỗi bé có một biệt danh hiện trong phòng đua, mặc định là tên gọi ở nhà, ba mẹ đổi được ở Góc ba mẹ (tối đa 16 ký tự, chọn từ gợi ý có sẵn hoặc gõ). Ảnh đại diện luôn hiện kèm.
 
 **Trong trận (WebSocket, máy chủ giữ trận)**
 - Mỗi bé nhận **câu hỏi theo trình độ của mình** (sinh trên máy như 2B-1, cùng 10 nấc), nên bé 3 tuổi và 6 tuổi đua công bằng.
@@ -83,7 +84,7 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 - Bé chỉ thấy bóng của **bạn đua** = bé đã từng chung phòng, và ba mẹ đồng ý kết bạn ở Góc ba mẹ.
 - Góc Chơi: "Đua với bóng của <bạn>" — đua offline với bóng đã tải về.
 
-**An toàn trẻ em:** không tìm kiếm người lạ, không phòng công khai, chỉ vào bằng mã do người lớn tạo; tên gọi hiện trong phòng có thể thay bằng chỉ ảnh đại diện (tùy chọn ở Góc ba mẹ); không chữ tự do.
+**An toàn trẻ em:** không tìm kiếm người lạ, không phòng công khai, chỉ vào bằng mã do người lớn tạo; trong phòng hiện ảnh đại diện + biệt danh đua do ba mẹ đặt; không chữ tự do giữa các bé.
 
 ## 7. Bảo mật và vận hành
 
