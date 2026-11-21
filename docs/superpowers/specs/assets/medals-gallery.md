@@ -76,3 +76,31 @@ Tổng hợp bộ 8 huy hiệu / huy chương 3D phong cách đồ chơi đất 
 
 ![Phi Công Chăm Chỉ](generated/medals/badge_rocket_teal_1794815213547.jpg)
 
+---
+
+## 9. Bạn Đua Vui Vẻ (Friend Racer)
+- **Tập tin**: [clay_rocket_medal_badge_1795278433705.jpg](generated/medals/clay_rocket_medal_badge_1795278433705.jpg)
+- **Chủ đề**: `two rockets in parallel on an orange medal (Bạn Đua Vui Vẻ)`
+- **Mô tả**: Huy chương đất sét tròn dày màu vàng cam, nổi bật với hai chiếc tên lửa nhỏ bay song song, dải ruy-băng ngắn màu cam.
+
+![Bạn Đua Vui Vẻ](generated/medals/clay_rocket_medal_badge_1795278433705.jpg)
+
+---
+
+## 10. Nhà Vô Địch (Friend Champion)
+- **Tập tin**: [clay_medal_badge_1795278435338.jpg](generated/medals/clay_medal_badge_1795278435338.jpg)
+- **Chủ đề**: `trophy cup with a star on a gold medal (Nhà Vô Địch)`
+- **Mô tả**: Huy chương vàng đất sét nổi khối chiếc cúp vô địch có ngôi sao tươi tắn, ruy-băng đỏ tươi.
+
+![Nhà Vô Địch](generated/medals/clay_medal_badge_1795278435338.jpg)
+
+---
+
+## 11. Cuộc Đua Lớn (Big Race)
+- **Tập tin**: [clay_space_medal_badge_png_1795278472125.jpg](generated/medals/clay_space_medal_badge_png_1795278472125.jpg)
+- **Chủ đề**: `four colored rockets around a planet on a navy medal (Cuộc Đua Lớn)`
+- **Mô tả**: Huy chương đất sét màu xanh navy với hành tinh ở trung tâm và bốn chiếc tên lửa mini bốn màu bay quanh vòng tròn quỹ đạo.
+
+![Cuộc Đua Lớn](generated/medals/clay_space_medal_badge_png_1795278472125.jpg)
+
+

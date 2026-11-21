@@ -65,7 +65,7 @@ enum GameBadge {
     title: 'Bạn Đua Vui Vẻ',
     howTo: 'Đua với bạn 5 trận',
     stickerId: 'sticker_thumb',
-    image: AppImages.rocketChip,
+    image: AppImages.badgeFriendRacer,
     online: true,
   ),
   friendChampion(
@@ -73,7 +73,7 @@ enum GameBadge {
     title: 'Nhà Vô Địch',
     howTo: 'Về nhất khi đua với bạn 3 lần',
     stickerId: 'sticker_joy',
-    image: AppImages.icCrown,
+    image: AppImages.badgeFriendChampion,
     online: true,
   ),
   bigRace(
@@ -81,7 +81,7 @@ enum GameBadge {
     title: 'Cuộc Đua Lớn',
     howTo: 'Đua trong phòng đủ 4 bạn',
     stickerId: 'sticker_surprise',
-    image: AppImages.planet,
+    image: AppImages.badgeBigRace,
     online: true,
   ),
   cheerleader(

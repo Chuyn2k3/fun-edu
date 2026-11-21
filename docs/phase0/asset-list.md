@@ -61,12 +61,12 @@ Mỗi sticker một hình riêng, nền trắng, nhìn cùng phong cách với C
 
 Đang dùng **ảnh 3D có sẵn làm tạm** (đúng nghĩa nhưng chưa phải huy chương). Khi vẽ xong: ảnh nền xanh lá, tách bằng `tools/assets/chroma_key.py`, xuất 1x/2x/3x vào `assets/images/game/`, đổi đường dẫn trong `lib/game/data/badges.dart` (`image:`) và `AppImages.stickers`.
 
-| Huy hiệu | Ảnh tạm | Gợi ý vẽ (cùng kiểu huy chương đất sét 3D như 8 huy hiệu cũ) |
+| Huy hiệu | Ảnh thực tế / Ảnh tạm | Gợi ý vẽ (cùng kiểu huy chương đất sét 3D như 8 huy hiệu cũ) |
 |---|---|---|
-| Bạn Đua Vui Vẻ (`friend_racer`) | `rocket-chip.png` | Hai tên lửa nhỏ bay song song, dải ruy băng cam |
-| Nhà Vô Địch (`friend_champion`) | `ic-crown.png` | Cúp vàng có ngôi sao, ruy băng đỏ |
-| Cuộc Đua Lớn (`big_race`) | `planet.png` | Bốn tên lửa bốn màu quanh hành tinh |
-| Cổ Vũ Nhiệt Tình (`cheerleader`) | `ic-star.png` | Cờ cổ vũ + trái tim |
+| Bạn Đua Vui Vẻ (`friend_racer`) | `badge-friend-racer.png` (Đã vẽ 3D) | Hai tên lửa nhỏ bay song song, dải ruy băng cam |
+| Nhà Vô Địch (`friend_champion`) | `badge-friend-champion.png` (Đã vẽ 3D) | Cúp vàng có ngôi sao, ruy băng đỏ |
+| Cuộc Đua Lớn (`big_race`) | `badge-big-race.png` (Đã vẽ 3D) | Bốn tên lửa bốn màu quanh hành tinh |
+| Cổ Vũ Nhiệt Tình (`cheerleader`) | `ic-star.png` (Tạm - Chờ reset quota) | Cờ cổ vũ + trái tim |
 
 | Sticker hiếm | Ảnh tạm | Gợi ý vẽ (Chíp 3D, viền vàng lấp lánh) |
 |---|---|---|

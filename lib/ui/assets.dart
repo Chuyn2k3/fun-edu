@@ -36,6 +36,9 @@ abstract final class AppImages {
   static const badgeMathWhiz = 'assets/images/game/badge-math-whiz.png';
   static const badgeLetterMaster = 'assets/images/game/badge-letter-master.png';
   static const badgePilot = 'assets/images/game/badge-pilot.png';
+  static const badgeFriendRacer = 'assets/images/game/badge-friend-racer.png';
+  static const badgeFriendChampion = 'assets/images/game/badge-friend-champion.png';
+  static const badgeBigRace = 'assets/images/game/badge-big-race.png';
   static const stickerClap = 'assets/images/game/sticker-clap.png';
   static const stickerLaugh = 'assets/images/game/sticker-laugh.png';
   static const stickerPilotGoggles = 'assets/images/game/sticker-pilot-goggles.png';
@@ -107,6 +110,9 @@ abstract final class AppImages {
     badgeMathWhiz,
     badgeLetterMaster,
     badgePilot,
+    badgeFriendRacer,
+    badgeFriendChampion,
+    badgeBigRace,
     stickerClap,
     stickerLaugh,
     stickerPilotGoggles,

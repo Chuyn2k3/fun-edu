@@ -38,6 +38,9 @@ python3 tools/assets/chroma_key.py "$G/medals/friendship_medal_badge_v2_17948152
 python3 tools/assets/chroma_key.py "$G/medals/sieu_toan_hoc_badge_1794815196337.jpg" "$C/game/badge-math-whiz.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/medals/clay_medal_badge_crayon_1794815200501.jpg" "$C/game/badge-letter-master.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/medals/badge_rocket_teal_1794815213547.jpg" "$C/game/badge-pilot.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/medals/clay_rocket_medal_badge_1795278433705.jpg" "$C/game/badge-friend-racer.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/medals/clay_medal_badge_1795278435338.jpg" "$C/game/badge-friend-champion.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/medals/clay_space_medal_badge_png_1795278472125.jpg" "$C/game/badge-big-race.json" assets/images/game
 # Album stickers (Chíp poses) on green #00C853.
 python3 tools/assets/chroma_key.py "$G/stickers/sticker_clap.jpg" "$C/game/sticker-clap.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/stickers/sticker_laugh.jpg" "$C/game/sticker-laugh.json" assets/images/game
