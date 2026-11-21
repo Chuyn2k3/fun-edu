@@ -1,6 +1,7 @@
 package com.ibme.funedu.server.web;
 
 import com.ibme.funedu.server.auth.AuthFailedException;
+import com.ibme.funedu.server.sync.SyncService;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,8 @@ public class ApiErrors {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "unauthorized"));
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
+            SyncService.BadSyncRequest.class})
     ResponseEntity<Map<String, String>> badRequest() {
         return ResponseEntity.badRequest().body(Map.of("error", "bad_request"));
     }

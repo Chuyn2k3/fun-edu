@@ -1,5 +1,8 @@
 # HTTPS certificates are issued automatically for API_DOMAIN.
 {$API_DOMAIN} {
 	encode gzip
+	request_body {
+		max_size 4MB
+	}
 	reverse_proxy app:8080
 }
