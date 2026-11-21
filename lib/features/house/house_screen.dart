@@ -92,6 +92,9 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
   }
 
   Future<void> _onFeed(ChipHouseData data, HouseTreat treat) async {
+    // Placeholder shown while loading (or on a read error): nothing to
+    // spend or save yet, so stay quiet instead of saying "not enough stars".
+    if (data.kidId == null) return;
     final now = ref.read(houseClockProvider)();
     final res = applyFeed(
       current: data.state,
@@ -121,6 +124,9 @@ class _HouseScreenState extends ConsumerState<HouseScreen> {
   }
 
   Future<void> _onDecorTap(ChipHouseData data, HouseItem item) async {
+    // Placeholder shown while loading (or on a read error): nothing to
+    // spend or save yet, so stay quiet instead of saying "not enough stars".
+    if (data.kidId == null) return;
     if (data.state.equippedId(item.slot) == item.id) {
       _triggerFx(
         speech: '${item.title} đang trang trí trong phòng rồi nè!',

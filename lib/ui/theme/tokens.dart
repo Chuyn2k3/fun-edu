@@ -50,33 +50,21 @@ abstract final class GameColors {
 
   // Free-flight deep space backdrop, nebulae and warp streaks.
   static const spaceTop = Color(0xFF130D36);
-  static const spaceMid = Color(0xFF24185E);
-  static const spaceBottom = Color(0xFF1A1044);
   static const nebulaViolet = Color(0xFF6C4CE0);
   static const nebulaMagenta = Color(0xFFB854D6);
   static const nebulaCyan = Color(0xFF3E92CC);
   static const streakLight = Color(0xFFD8E6FF);
 
-  // Redesigned rocket race scene tokens (StarPath, atmosphere, stone checkpoints)
+  // Redesigned rocket race scene tokens (StarPath, planet atmosphere).
   static const coronaInner = Color(0xFFFFA000);
   static const coronaMid = Color(0xFFFF7043);
   static const coronaOuter = Color(0xFFAB47BC);
   static const ringGlow = Color(0xFFFFD54F);
 
-  static const stoneLit = Color(0xFFFFEE58);
-  static const stoneLitGlow = Color(0xFFFFD54F);
-  static const stoneLucky = Color(0xFFFFB300);
   static const stoneLuckyGlow = Color(0xFFFF9100);
-  static const stoneLuckyBorder = Color(0xFFFF6F00);
-  static const stoneUnlit = Color(0xFFFFFFFF);
-  static const stoneShadow = Color(0x33000000);
 
   static const windowBezel = Color(0xFFD4E6F1);
   static const windowBezelDark = Color(0xFF1B2631);
-
-  static const roadSurface = Color(0xFFFFFFFF);
-  static const roadRail = Color(0xFFFFFFFF);
-  static const warpRay = Color(0xFFFFFFFF);
 
   static const nitroStreakCyan = Color(0xAA00E5FF);
   static const nitroStreakWhite = Color(0x99FFFFFF);
@@ -94,12 +82,7 @@ abstract final class GameColors {
   static const chipReactionLead = Color(0xFFFFB300);
   static const lockedSilhouette = Color(0xFF6B5E8C);
 
-  // Mini vertical progress bar along right edge.
-  static const progressTrack = Color(0xFF2E2268);
-  static const progressBorder = Color(0xFF8A78D6);
-  static const progressKid = Color(0xFFFF8A34);
-  static const progressChip = Color(0xFFFFFFFF);
-  static const progressChipRing = Color(0xFFFF7043);
+  // Grey puff when the kid's rocket sputters after a wrong answer.
   static const stallSmoke = Color(0xFF48425E);
 
   /// White sprite mask for the smoke/sparkle atlas; each particle tints it.
@@ -107,8 +90,6 @@ abstract final class GameColors {
 
   // 2.5D track slab.
   static const track = Color(0xFF7B66C9);
-  static const trackFar = Color(0xFF6A56B8);
-  static const trackRim = Color(0xFF5B4AA8);
   static const trackSide = Color(0xFF43358A);
   static const trackTie = Color(0xFF9784DA);
   static const laneLine = Color(0xFFB9A9F0);
@@ -153,20 +134,9 @@ abstract final class GameColors {
     Color(0xFFFFB3D9),
   ];
 
-  // Clouds drawn in code (2.5D: light top, lilac-pink underside).
-  static const cloudTop = Color(0xFFFFF7F9);
-  static const cloudLight = Color(0xFFFFF0F3);
-  static const cloudShade = Color(0xFFF5CFDA);
-  static const cloudFar = Color(0xFFC9B3EE);
-  static const cloudFarShade = Color(0xFFA990DE);
-
   // Comet streak.
   static const cometHead = Color(0xFFFFFBE8);
   static const cometTail = Color(0xFFFFB547);
-
-  // Overtake banner.
-  static const overtakeBannerTop = Color(0xFFFF8F00);
-  static const overtakeBannerBottom = Color(0xFFFF6D00);
 
   // Race screen, around the scene ("Bản 7"): warm cream question area.
   static const panelTop = Color(0xFFFFF4E4);

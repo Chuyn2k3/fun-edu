@@ -1,4 +1,7 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/ui/transitions/smooth_page_transition.dart';
 
@@ -13,7 +16,7 @@ void main() {
     final page = buildSmoothTransitionPage<void>(
       key: key,
       child: child,
-    );
+    ) as CustomTransitionPage<void>;
 
     expect(page.key, key);
     expect(page.transitionDuration, const Duration(milliseconds: 160));
@@ -30,5 +33,17 @@ void main() {
     expect(widget, isA<FadeTransition>());
     final fade = widget as FadeTransition;
     expect(fade.child, isA<ScaleTransition>());
+  });
+
+  test('iOS keeps the system page so the edge swipe back works', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    const key = ValueKey('ios-page');
+    final page = buildSmoothTransitionPage<void>(
+      key: key,
+      child: const SizedBox(),
+    );
+    expect(page, isA<CupertinoPage<void>>());
+    expect(page.key, key);
   });
 }

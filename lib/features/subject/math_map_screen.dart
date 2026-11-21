@@ -42,7 +42,9 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
   @override
   Widget build(BuildContext context) {
     final level = ref.watch(mathLevelIndexProvider);
-    final current = level.valueOrNull ?? 0;
+    // Null until loaded: tiles show neutral (no lock, no tick, no tap)
+    // rather than claiming level 1 is current.
+    final current = level.valueOrNull;
     final tablet = context.isTablet;
     final body = Scaffold(
       body: DottedBackground(
@@ -133,7 +135,7 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                                       title: mathLevels[i].title,
                                       current: current,
                                       tablet: true,
-                                      onTap: i <= current
+                                      onTap: current != null && i <= current
                                           ? () => _openPractice(i)
                                           : null,
                                     ),
@@ -150,7 +152,7 @@ class _MathMapScreenState extends ConsumerState<MathMapScreen> {
                                   index: i,
                                   title: mathLevels[i].title,
                                   current: current,
-                                  onTap: i <= current
+                                  onTap: current != null && i <= current
                                       ? () => _openPractice(i)
                                       : null,
                                 ),
@@ -181,7 +183,8 @@ class _LevelTile extends StatelessWidget {
 
   final int index;
   final String title;
-  final int current;
+  /// The kid's level; null while it is still loading.
+  final int? current;
   final VoidCallback? onTap;
 
   Widget _tabletContent({
@@ -263,9 +266,9 @@ class _LevelTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final done = index < current;
+    final done = current != null && index < current!;
     final isCurrent = index == current;
-    final locked = index > current;
+    final locked = current != null && index > current!;
     return Opacity(
       opacity: locked ? 0.5 : 1,
       child: Pressable(

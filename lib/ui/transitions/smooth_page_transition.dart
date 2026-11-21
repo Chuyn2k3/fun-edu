@@ -1,14 +1,20 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
-/// Builds a gentle, buttery-smooth page transition (160ms Fade + subtle Scale 0.97 -> 1.0)
-/// styled like modern arcade and tactile mobile apps, replacing the heavy OS slide transitions
-/// that cause dropped frames and visual hitching.
-CustomTransitionPage<T> buildSmoothTransitionPage<T>({
+/// Page for a kid sub-screen.
+///
+/// On iOS this is the system [CupertinoPage], so the edge swipe back keeps
+/// working. Elsewhere it is a gentle 160 ms fade plus a subtle 0.97 -> 1.0
+/// scale instead of the heavier platform slide.
+Page<T> buildSmoothTransitionPage<T>({
   required Widget child,
   required LocalKey key,
   Duration duration = const Duration(milliseconds: 160),
 }) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return CupertinoPage<T>(key: key, child: child);
+  }
   return CustomTransitionPage<T>(
     key: key,
     child: child,

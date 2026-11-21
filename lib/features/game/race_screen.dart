@@ -39,6 +39,12 @@ String spokenRaceQuestion(RaceQuestion q) => switch (q) {
       LetterRaceQuestion() || ToneRaceQuestion() => q.spoken,
     };
 
+/// What Chíp says when [q] first appears: a comet question announces itself
+/// and then still reads the question, so the kid can always answer it.
+String spokenRaceIntro(RaceQuestion q) => q.comet
+    ? '$voiceComet ${spokenRaceQuestion(q)}'
+    : spokenRaceQuestion(q);
+
 /// "Đua với Chíp": the space scene on top (left on a landscape tablet) and
 /// the warm toy cockpit AnswerDesk below (right on landscape tablet).
 class RaceScreen extends ConsumerStatefulWidget {
@@ -150,11 +156,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         prev?.questionIndex != next.questionIndex;
     if (next.phase == RacePhase.racing && q != null && shown) {
       _triedCurrent = false;
-      if (q.comet) {
-        _speaker.speak(voiceComet);
-      } else {
-        _speaker.speak(spokenRaceQuestion(q));
-      }
+      _speaker.speak(spokenRaceIntro(q));
     }
     if (prev?.phase != RacePhase.racing && next.phase == RacePhase.racing) {
       _comboStreak = 0;
@@ -207,13 +209,8 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
 
   void _speakAgain() {
     final q = ref.read(raceControllerProvider).current;
-    if (q != null) {
-      if (q.comet) {
-        _speaker.speak(voiceComet);
-      } else {
-        _speaker.speak(spokenRaceQuestion(q));
-      }
-    }
+    // The listen button repeats the question itself, comet or not.
+    if (q != null) _speaker.speak(spokenRaceQuestion(q));
   }
 
   @override

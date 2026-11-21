@@ -59,11 +59,13 @@ class App extends ConsumerWidget {
     final placed = ref.watch(isPlacedProvider);
     // Load the voice setting before any screen can speak.
     final voice = ref.watch(voiceEnabledProvider);
-    // Pre-warm subject levels while in splash or placed kid.
+    // Pre-warm subject levels so the maps open with them. Listening (not
+    // watching) keeps them alive without rebuilding the whole app when a
+    // level changes.
     if (kid.valueOrNull != null) {
-      ref.watch(mathLevelIndexProvider);
-      ref.watch(vietnameseLevelIndexProvider);
-      ref.watch(englishLevelIndexProvider);
+      ref.listen(mathLevelIndexProvider, (_, __) {});
+      ref.listen(vietnameseLevelIndexProvider, (_, __) {});
+      ref.listen(englishLevelIndexProvider, (_, __) {});
     }
     return MaterialApp.router(
       title: 'Chíp Chíp',

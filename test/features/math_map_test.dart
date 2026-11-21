@@ -135,6 +135,9 @@ void main() {
     await t.pump();
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(MathMapScreen), findsOneWidget);
+    // Not level 1 as current while the level loads.
+    expect(find.text('Đang học'), findsNothing);
+    expect(find.byKey(const ValueKey('locked-1')), findsNothing);
   });
 
   testWidgets('no overflow on a tablet', (t) async {

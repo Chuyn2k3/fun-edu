@@ -40,7 +40,9 @@ class _EnglishMapScreenState extends ConsumerState<EnglishMapScreen> {
   @override
   Widget build(BuildContext context) {
     final level = ref.watch(englishLevelIndexProvider);
-    final current = level.valueOrNull ?? 0;
+    // Null until loaded: tiles show neutral (no lock, no tick, no tap)
+    // rather than claiming level 1 is current.
+    final current = level.valueOrNull;
     final tablet = context.isTablet;
     final body = Scaffold(
       body: DottedBackground(
@@ -130,7 +132,7 @@ class _EnglishMapScreenState extends ConsumerState<EnglishMapScreen> {
                                       level: englishLevels[i],
                                       current: current,
                                       tablet: true,
-                                      onTap: i <= current
+                                      onTap: current != null && i <= current
                                           ? () => _openPractice(i)
                                           : null,
                                     ),
@@ -148,7 +150,7 @@ class _EnglishMapScreenState extends ConsumerState<EnglishMapScreen> {
                                   level: englishLevels[i],
                                   current: current,
                                   tablet: false,
-                                  onTap: i <= current
+                                  onTap: current != null && i <= current
                                       ? () => _openPractice(i)
                                       : null,
                                 ),
@@ -176,15 +178,16 @@ class _LevelTile extends StatelessWidget {
 
   final int index;
   final EnglishLevel level;
-  final int current;
+  /// The kid's level; null while it is still loading.
+  final int? current;
   final bool tablet;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final done = index < current;
+    final done = current != null && index < current!;
     final active = index == current;
-    final locked = index > current;
+    final locked = current != null && index > current!;
     final accent = locked ? AppColors.textMuted : Subject.tiengAnh.color;
 
     return Pressable(

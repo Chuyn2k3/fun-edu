@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/game/race_screen.dart';
 import 'package:funedu/game/scene/race_scene.dart';
+import 'package:funedu/voice/voice_lines.dart';
 
 import 'game_test_helpers.dart';
 
@@ -57,5 +58,24 @@ void main() {
     // Wrong answer -> resets combo to 0: nitro gauge disappears
     await answerWrong(t);
     expect(find.textContaining('BỨT TỐC'), findsNothing);
+  });
+
+  testWidgets('a comet question still reads the letter aloud (Tiếng Việt)',
+      (t) async {
+    final h = await bootGame(t, size: const Size(390, 844));
+    await openRace(t, 'tieng-viet');
+    await answerRight(t);
+    await answerRight(t);
+    final q = raceState(t).current!;
+    expect(q.comet, isTrue, reason: 'question 3 is a comet');
+    expect(q.spoken, isNotEmpty);
+    expect(h.speaker.spoken.last, '$voiceComet ${q.spoken}');
+
+    // The listen button repeats the letter itself, not the comet line.
+    await t.tap(find.byKey(const ValueKey('listen-big')).evaluate().isNotEmpty
+        ? find.byKey(const ValueKey('listen-big'))
+        : find.byKey(const ValueKey('listen')));
+    await t.pump();
+    expect(h.speaker.spoken.last, q.spoken);
   });
 }

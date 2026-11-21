@@ -31,6 +31,10 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(MathMapScreen), findsOneWidget);
+    // Level not known yet: no tile claims to be current, none is locked.
+    expect(find.textContaining('Đang học'), findsNothing);
+    expect(find.byIcon(Icons.lock_rounded), findsNothing);
+    expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
   });
 
   testWidgets(
@@ -53,6 +57,10 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(VietnameseMapScreen), findsOneWidget);
+    // Level not known yet: no tile claims to be current, none is locked.
+    expect(find.textContaining('Đang học'), findsNothing);
+    expect(find.byIcon(Icons.lock_rounded), findsNothing);
+    expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
   });
 
   testWidgets(
@@ -75,6 +83,10 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(EnglishMapScreen), findsOneWidget);
+    // Level not known yet: no tile claims to be current, none is locked.
+    expect(find.textContaining('Đang học'), findsNothing);
+    expect(find.byIcon(Icons.lock_rounded), findsNothing);
+    expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
   });
 
   testWidgets(

@@ -24,5 +24,4 @@ String spokenQuestion(MathQuestion q) => switch (q) {
 
 /// Lines read aloud during rocket race events.
 const voiceNitroFast = 'Nhanh quá!';
-const voiceComet = 'Câu sao chổi! Đúng là bay vọt 2 nấc';
-
+const voiceComet = 'Câu sao chổi! Trả lời đúng là bay vọt 2 nấc!';
