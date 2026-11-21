@@ -1,3 +1,5 @@
+import 'dart:math';
+
 /// Items offered at milestones, in offer order.
 const rewardPool = [
   'rocket_blue',
@@ -75,4 +77,43 @@ int? starsUntilOffered(
   }
   final m = all[offer];
   return m > stars ? m - stars : 0;
+}
+
+/// Rare stickers: a lucky drop after a race with friends, gold-framed in
+/// the album. Never bought, never required for anything.
+const rareStickers = [
+  'rare_chip_sleep',
+  'rare_chip_write',
+  'rare_rocket_chip',
+  'rare_crown',
+  'rare_comet',
+  'rare_planet',
+];
+
+const rareStickerTitles = {
+  'rare_chip_sleep': 'Chíp ngủ say',
+  'rare_chip_write': 'Chíp tập viết',
+  'rare_rocket_chip': 'Chíp lái tên lửa',
+  'rare_crown': 'Vương miện vàng',
+  'rare_comet': 'Sao chổi rực rỡ',
+  'rare_planet': 'Hành tinh vành đai',
+};
+
+/// After this many races with friends without a rare sticker, the next one
+/// always brings one (no long unlucky streaks).
+const rareStickerPity = 6;
+
+/// The rare sticker this online race drops, or null. Winners are luckier
+/// (1 in 3, otherwise 1 in 5); never a sticker the kid already has.
+String? rareStickerDrop({
+  required Set<String> owned,
+  required int racesWithoutRare,
+  required int? rank,
+  required Random rng,
+}) {
+  final left = rareStickers.where((s) => !owned.contains(s)).toList();
+  if (left.isEmpty) return null;
+  final lucky = racesWithoutRare + 1 >= rareStickerPity ||
+      rng.nextInt(rank == 1 ? 3 : 5) == 0;
+  return lucky ? left[rng.nextInt(left.length)] : null;
 }

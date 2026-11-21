@@ -71,6 +71,8 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 - Mất mạng: tên lửa đứng yên, kết nối lại trong 20 giây thì đua tiếp; quá hạn thì bé đó dừng, trận tiếp tục với các bạn còn lại; bé mất mạng vẫn nhận sao như thua.
 - Xong trận: màn kết quả có thứ hạng + "Đua lại!" (cùng phòng).
 
+**Phần thưởng (chủ dự án chốt 2026-11-21):** đua với bạn **có sao vũ trụ** (nhất 7, nhì 5, ba/tư 4, chưa về đích 3, + sao chổi + sao may mắn), **4 huy hiệu riêng** (Bạn Đua Vui Vẻ, Nhà Vô Địch, Cuộc Đua Lớn, Cổ Vũ Nhiệt Tình) và **6 sticker hiếm** khung vàng (rơi 1/5, về nhất 1/3, chắc chắn sau 6 trận liền chưa có). Không đụng nhịp Chíp, kỷ lục và huy hiệu đua với Chíp. Bạn về trước thì bé vẫn bay tiếp để giành hạng.
+
 **Đua với bóng: bỏ** (chủ dự án chốt 2026-11-21 chỉ làm phòng đua trực tiếp).
 
 **An toàn trẻ em:** không tìm kiếm người lạ, không phòng công khai, chỉ vào bằng mã do người lớn tạo; trong phòng hiện ảnh đại diện + biệt danh đua do ba mẹ đặt; không chữ tự do giữa các bé.

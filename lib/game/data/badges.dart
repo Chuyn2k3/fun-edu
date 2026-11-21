@@ -56,6 +56,41 @@ enum GameBadge {
     howTo: 'Đua 20 trận',
     stickerId: 'sticker_wave_rocket',
     image: AppImages.badgePilot,
+  ),
+
+  // Online rooms (2B-2). Placeholder art from the existing 3D set until the
+  // badge medals are drawn (docs/phase0/asset-list.md).
+  friendRacer(
+    id: 'friend_racer',
+    title: 'Bạn Đua Vui Vẻ',
+    howTo: 'Đua với bạn 5 trận',
+    stickerId: 'sticker_thumb',
+    image: AppImages.rocketChip,
+    online: true,
+  ),
+  friendChampion(
+    id: 'friend_champion',
+    title: 'Nhà Vô Địch',
+    howTo: 'Về nhất khi đua với bạn 3 lần',
+    stickerId: 'sticker_joy',
+    image: AppImages.icCrown,
+    online: true,
+  ),
+  bigRace(
+    id: 'big_race',
+    title: 'Cuộc Đua Lớn',
+    howTo: 'Đua trong phòng đủ 4 bạn',
+    stickerId: 'sticker_surprise',
+    image: AppImages.planet,
+    online: true,
+  ),
+  cheerleader(
+    id: 'cheerleader',
+    title: 'Cổ Vũ Nhiệt Tình',
+    howTo: 'Gửi 20 sticker cổ vũ cho bạn',
+    stickerId: 'sticker_encourage',
+    image: AppImages.icStar,
+    online: true,
   );
 
   const GameBadge({
@@ -64,6 +99,7 @@ enum GameBadge {
     required this.howTo,
     required this.stickerId,
     required this.image,
+    this.online = false,
   });
 
   final String id;
@@ -71,6 +107,9 @@ enum GameBadge {
   final String howTo;
   final String stickerId;
   final String image;
+
+  /// Earned only by racing friends in online rooms.
+  final bool online;
 
   static GameBadge? byId(String id) {
     for (final b in values) {

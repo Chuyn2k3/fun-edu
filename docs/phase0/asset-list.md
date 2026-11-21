@@ -55,3 +55,26 @@ Tỷ lệ dọc, rộng ít nhất 1170 px. Không cần tách nền.
 
 ### Sticker (khoảng 30 hình)
 Mỗi sticker một hình riêng, nền trắng, nhìn cùng phong cách với Chíp Chíp. Chốt danh sách cụ thể cùng chủ dự án trước khi làm.
+
+
+## Phần thưởng đua với bạn (2B-2, cần vẽ)
+
+Đang dùng **ảnh 3D có sẵn làm tạm** (đúng nghĩa nhưng chưa phải huy chương). Khi vẽ xong: ảnh nền xanh lá, tách bằng `tools/assets/chroma_key.py`, xuất 1x/2x/3x vào `assets/images/game/`, đổi đường dẫn trong `lib/game/data/badges.dart` (`image:`) và `AppImages.stickers`.
+
+| Huy hiệu | Ảnh tạm | Gợi ý vẽ (cùng kiểu huy chương đất sét 3D như 8 huy hiệu cũ) |
+|---|---|---|
+| Bạn Đua Vui Vẻ (`friend_racer`) | `rocket-chip.png` | Hai tên lửa nhỏ bay song song, dải ruy băng cam |
+| Nhà Vô Địch (`friend_champion`) | `ic-crown.png` | Cúp vàng có ngôi sao, ruy băng đỏ |
+| Cuộc Đua Lớn (`big_race`) | `planet.png` | Bốn tên lửa bốn màu quanh hành tinh |
+| Cổ Vũ Nhiệt Tình (`cheerleader`) | `ic-star.png` | Cờ cổ vũ + trái tim |
+
+| Sticker hiếm | Ảnh tạm | Gợi ý vẽ (Chíp 3D, viền vàng lấp lánh) |
+|---|---|---|
+| `rare_chip_sleep` Chíp ngủ say | `chip-sleep.png` | Chíp ngủ trên mặt trăng |
+| `rare_chip_write` Chíp tập viết | `chip-write.png` | Chíp viết chữ phát sáng |
+| `rare_rocket_chip` Chíp lái tên lửa | `game/rocket-chip.png` | Chíp đội mũ phi công vàng |
+| `rare_crown` Vương miện vàng | `ic-crown.png` | Chíp đội vương miện |
+| `rare_comet` Sao chổi rực rỡ | `game/comet.png` | Chíp cưỡi sao chổi |
+| `rare_planet` Hành tinh vành đai | `game/planet.png` | Chíp ngồi trên vành Sao Thổ |
+
+Sticker của 4 huy hiệu mới dùng tư thế Chíp có sẵn: giơ ngón cái, vui mừng, ngạc nhiên, cổ vũ.

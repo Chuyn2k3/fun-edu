@@ -203,7 +203,7 @@ void main() {
     await t.tap(find.text('Tủ huy hiệu'));
     await pumpReal(t, times: 6);
     expect(find.byType(BadgeCabinetScreen), findsOneWidget);
-    expect(find.text('Đã có 1/8 huy hiệu'), findsOneWidget);
+    expect(find.text('Đã có 1/12 huy hiệu'), findsOneWidget);
 
     final earned = find.byKey(const ValueKey('badge-scholar'));
     expect(find.descendant(of: earned, matching: find.text('Nhà Thông Thái')),
@@ -230,6 +230,9 @@ void main() {
       expect(find.descendant(of: tile, matching: find.byType(ColorFiltered)),
           findsOneWidget);
     }
+    // Only the earned badge has a date (the grid is lazy: scroll back up).
+    await t.scrollUntilVisible(earned, -200,
+        scrollable: find.byType(Scrollable).first);
     expect(find.textContaining('Đạt ngày'), findsOneWidget);
   });
 
@@ -243,7 +246,7 @@ void main() {
     appRouter.go('/game/stickers');
     await pumpReal(t, times: 6);
     expect(find.byType(StickerAlbumScreen), findsOneWidget);
-    expect(find.text('Đã có 2/10 sticker'), findsOneWidget);
+    expect(find.text('Đã có 2/20 sticker'), findsOneWidget);
 
     Finder tile(String id) => find.byKey(ValueKey('sticker-$id'));
     for (final id in ['sticker_clap', 'sticker_wave_rocket']) {
@@ -286,8 +289,8 @@ void main() {
             of: find.byKey(const ValueKey('hub-stars')),
             matching: find.text('24')),
         findsOneWidget);
-    expect(find.text('0/8 huy hiệu'), findsOneWidget);
-    expect(find.text('0/10 sticker'), findsOneWidget);
+    expect(find.text('0/12 huy hiệu'), findsOneWidget);
+    expect(find.text('0/20 sticker'), findsOneWidget);
     expect(find.byKey(const ValueKey('hub-garage-new')), findsNothing);
 
     // The hub stays mounted under the picker, the race and the result.
@@ -318,9 +321,9 @@ void main() {
             of: find.byKey(const ValueKey('hub-stars')),
             matching: find.text('33')),
         findsOneWidget);
-    expect(find.text('1/8 huy hiệu'), findsOneWidget);
+    expect(find.text('1/12 huy hiệu'), findsOneWidget);
     // sticker_clap picked + the scholar badge's sticker.
-    expect(find.text('2/10 sticker'), findsOneWidget);
+    expect(find.text('2/20 sticker'), findsOneWidget);
     expect(_textOf(t, 'hub-garage-new'), '1');
     expect(find.text('Có 1 món mới chờ lắp!'), findsOneWidget);
     await t.scrollUntilVisible(

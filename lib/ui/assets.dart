@@ -59,6 +59,18 @@ abstract final class AppImages {
     'sticker_abacus': stickerAbacus,
     'sticker_crayon': stickerCrayon,
     'sticker_wave_rocket': stickerWaveRocket,
+    // Online-room badge stickers: Chíp's poses.
+    'sticker_thumb': chipThumb,
+    'sticker_joy': chipJoy,
+    'sticker_surprise': chipSurprise,
+    'sticker_encourage': chipEncourage,
+    // Rare stickers (gold frame), dropped after races with friends.
+    'rare_chip_sleep': chipSleep,
+    'rare_chip_write': chipWrite,
+    'rare_rocket_chip': rocketChip,
+    'rare_crown': icCrown,
+    'rare_comet': comet,
+    'rare_planet': planet,
   };
 
   static const all = [

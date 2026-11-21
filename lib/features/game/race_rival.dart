@@ -9,7 +9,9 @@ class RivalView {
     required this.name,
     required this.avatar,
     required this.rocket,
-    this.beatKid = false,
+    this.myRank,
+    this.roomOver = false,
+    this.players = 2,
   });
 
   /// Steps of the best-placed other racer (0..10).
@@ -20,8 +22,15 @@ class RivalView {
   final String avatar;
   final String rocket;
 
-  /// Someone else finished before the kid: the kid's race is over.
-  final bool beatKid;
+  /// The kid's finish position once the room has given it.
+  final int? myRank;
+
+  /// The room ended (everyone in, time up) while the kid was still flying:
+  /// the kid's race is over where they stand.
+  final bool roomOver;
+
+  /// Kids who started the race (for the "Cuộc Đua Lớn" badge).
+  final int players;
 }
 
 abstract class RaceRival {

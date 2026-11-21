@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:funedu/data/app_database.dart';
+import 'package:funedu/features/game/race_controller.dart';
 import 'package:funedu/features/game/race_screen.dart';
+import 'package:funedu/game/data/game_repository.dart';
+import 'package:funedu/game/engine/race.dart';
 import 'package:funedu/features/online_race/room_lobby_screen.dart';
 import 'package:funedu/features/online_race/room_result_screen.dart';
 import 'package:funedu/game/engine/race_question.dart';
@@ -78,20 +82,43 @@ void main() {
     await t.pump();
     expect(t.widget<RaceScene>(find.byType(RaceScene)).chipSteps, 4);
 
-    // Bo lands first: the kid's race ends and the room's ranking opens.
-    room.set(RoomState(
-      phase: RoomPhase.racing,
-      code: 'ABC234',
-      you: 'p1',
-      host: 'p1',
-      players: [_p('p1', steps: 1, name: 'Na'), _p('p2', steps: 10, rank: 1, name: 'Bo')],
-    ));
+    // Bo lands first: the kid keeps flying for second place.
+    room.set(_room(RoomPhase.racing,
+        players: [_p('p1', steps: 1, name: 'Na'), _p('p2', steps: 10, rank: 1, name: 'Bo')]));
+    await pumpReal(t, times: 4);
+    expect(find.byType(RaceScreen), findsOneWidget);
+
+    while (room.steps.isEmpty || room.steps.last < 10) {
+      await answerRight(t);
+    }
+    // The room ranks the kid second.
+    room.set(_room(RoomPhase.done, players: [
+      _p('p1', steps: 10, rank: 2, name: 'Na'),
+      _p('p2', steps: 10, rank: 1, name: 'Bo'),
+    ]));
     await pumpReal(t, times: 12, step: const Duration(milliseconds: 300));
     expect(find.byType(RoomResultScreen), findsOneWidget);
-    expect(find.text('Về nhất'), findsOneWidget);
-    // Online races are not stored with the races against Chíp.
+    expect(find.text('Về nhì'), findsOneWidget);
+    // Second place: 5 stars (+ comets and lucky stars of this race).
+    expect(find.byKey(const ValueKey('room-reward')), findsOneWidget);
     final rows = await t.runAsync(() => h.db.select(h.db.raceResults).get());
-    expect(rows, isEmpty);
+    expect(rows!.single.subject, 'online:toan');
+    expect(rows.single.stars, greaterThanOrEqualTo(5));
+  });
+
+  testWidgets('a room that ends mid-race still gives the kid stars',
+      (t) async {
+    final room = FakeRoom(_room(RoomPhase.racing));
+    final h = await bootGame(t, extra: [roomControllerProvider.overrideWith(() => room)]);
+    appRouter.go('/game/room/race', extra: RaceSubject.toan);
+    await pumpReal(t, times: 8);
+    await answerRight(t);
+    room.set(_room(RoomPhase.done,
+        players: [_p('p1', steps: 1, name: 'Na'), _p('p2', steps: 10, rank: 1, name: 'Bo')]));
+    await pumpReal(t, times: 12, step: const Duration(milliseconds: 300));
+    expect(find.byType(RoomResultScreen), findsOneWidget);
+    final rows = await t.runAsync(() => h.db.select(h.db.raceResults).get());
+    expect(rows!.single.stars, 3);
   });
 
   testWidgets('lobby: the host starts once two kids are in; the race opens',
@@ -177,6 +204,58 @@ void main() {
     await t.tap(find.byKey(const ValueKey('room-go')));
     await pumpReal(t);
     expect(find.text('Mã phòng có 6 ký tự'), findsOneWidget);
+  });
+
+  testWidgets('the ranking shows the stars and a rare sticker drop', (t) async {
+    final room = FakeRoom(_room(RoomPhase.done, players: [
+      _p('p1', steps: 10, rank: 1, name: 'Na'),
+      _p('p2', steps: 8, rank: 2, name: 'Bo'),
+    ]));
+    await bootGame(t, extra: [roomControllerProvider.overrideWith(() => room)]);
+    appRouter.go('/game/room/result',
+        extra: const RaceResultArgs(
+          subject: RaceSubject.toan,
+          outcome: RaceOutcome(
+            won: true,
+            kidTime: Duration(seconds: 30),
+            firstTryCorrect: 8,
+            cometsFirstTry: 0,
+            answered: 8,
+            missed: [],
+          ),
+          record: null,
+          kidSteps: 10,
+          rocket: 'rocket_orange',
+          trail: 'trail_flame',
+          online: true,
+          rank: 1,
+          onlineRecord: OnlineRaceRecord(
+            starsEarned: 7,
+            totalStars: 7,
+            milestonesCrossed: [],
+            newBadges: [],
+            rareSticker: 'rare_crown',
+          ),
+        ));
+    await pumpReal(t);
+    expect(find.text('Bé về nhất!'), findsOneWidget);
+    expect(find.text('+7 sao vũ trụ'), findsOneWidget);
+    expect(find.text('Sticker hiếm!'), findsOneWidget);
+    expect(find.text('Vương miện vàng'), findsOneWidget);
+  });
+
+  testWidgets('the album shows an owned rare sticker with its gold label',
+      (t) async {
+    await bootGame(t, seed: (db, kid) async {
+      await db.into(db.gameItems).insert(
+          GameItemsCompanion.insert(kidId: kid, itemId: 'rare_comet'));
+    });
+    appRouter.go('/game/stickers');
+    await pumpReal(t);
+    final tile = find.byKey(const ValueKey('sticker-rare_comet'));
+    await t.scrollUntilVisible(tile, 300, scrollable: find.byType(Scrollable).first);
+    expect(find.descendant(of: tile, matching: find.text('Hiếm')), findsOneWidget);
+    expect(find.descendant(of: tile, matching: find.text('Sao chổi rực rỡ')), findsOneWidget);
   });
 }
 

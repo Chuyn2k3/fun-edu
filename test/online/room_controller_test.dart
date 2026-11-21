@@ -218,18 +218,29 @@ void main() {
       final v = OnlineRival.viewOf(room([p('p1', 5), p('p2', 3), p('p3', 7)]));
       expect(v.name, 'p3');
       expect(v.steps, 7);
-      expect(v.beatKid, isFalse);
+      expect(v.myRank, isNull);
+      expect(v.roomOver, isFalse);
+      expect(v.players, 3);
     });
 
-    test('a friend who landed comes first and ends the kid\'s race', () {
+    test('a friend who landed comes first, but the kid races on', () {
       final v = OnlineRival.viewOf(room([p('p1', 9), p('p2', 10, 1), p('p3', 9)]));
       expect(v.name, 'p2');
-      expect(v.beatKid, isTrue);
+      expect(v.roomOver, isFalse);
     });
 
-    test('the kid landing first is not beaten', () {
-      final v = OnlineRival.viewOf(room([p('p1', 10, 1), p('p2', 10, 2)]));
-      expect(v.beatKid, isFalse);
+    test('carries the kid\'s place once the room gives it', () {
+      final v = OnlineRival.viewOf(room([p('p1', 10, 2), p('p2', 10, 1)]));
+      expect(v.myRank, 2);
+    });
+
+    test('a finished room ends the kid\'s race', () {
+      final s = RoomState(
+        phase: RoomPhase.done,
+        you: 'p1',
+        players: [p('p1', 4), p('p2', 10, 1)].map(RoomPlayer.fromJson).toList(),
+      );
+      expect(OnlineRival.viewOf(s).roomOver, isTrue);
     });
   });
 }

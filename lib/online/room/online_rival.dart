@@ -24,7 +24,9 @@ class OnlineRival implements RaceRival {
       name: best?.name ?? '',
       avatar: best?.avatar ?? '',
       rocket: best?.rocket ?? 'rocket_blue',
-      beatKid: me != null && me.rank == null && others.any((p) => p.rank != null),
+      myRank: me?.rank,
+      roomOver: s.phase == RoomPhase.done || s.phase == RoomPhase.error,
+      players: s.players.length,
     );
   }
 

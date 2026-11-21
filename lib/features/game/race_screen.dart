@@ -211,7 +211,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       if (!mounted) return;
       // Online: the room's ranking screen (it waits for the others).
       if (result.online) {
-        context.go('/game/room/result');
+        context.go('/game/room/result', extra: result);
       } else {
         context.go('/game/result', extra: result);
       }

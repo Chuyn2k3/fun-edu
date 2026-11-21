@@ -1,4 +1,4 @@
-import 'dart:math' show max;
+import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +20,11 @@ const _kWins = 'wins';
 const _kMath = 'math_correct';
 const _kViet = 'tv_correct';
 const _kRaces = 'races';
+const _kOnlineRaces = 'online_races';
+const _kOnlineWins = 'online_wins';
+const _kOnlineBig = 'online_big';
+const _kStickersSent = 'stickers_sent';
+const _kSinceRare = 'online_since_rare';
 
 /// Counter key marking a garage item as seen (value 1). Reuses the per-kid
 /// key/value counters table so "new item" needs no schema change.
@@ -30,6 +35,25 @@ bool _isGarageItem(String id) =>
 
 const double _slowdownFactor = 1.15;
 const int _defaultMeanMs = 6000;
+
+/// What one online race gave the kid.
+class OnlineRaceRecord {
+  const OnlineRaceRecord({
+    required this.starsEarned,
+    required this.totalStars,
+    required this.milestonesCrossed,
+    required this.newBadges,
+    this.rareSticker,
+  });
+
+  final int starsEarned;
+  final int totalStars;
+  final List<int> milestonesCrossed;
+  final List<GameBadge> newBadges;
+
+  /// The rare sticker that dropped, if any.
+  final String? rareSticker;
+}
 
 class RaceRecordResult {
   const RaceRecordResult({
@@ -238,6 +262,102 @@ class GameRepository {
         newBadges: fresh,
       );
     });
+  }
+
+  /// A race in an online room. Stars for everyone who raced (more for the
+  /// first places), the online badges and maybe a rare sticker. Chíp's
+  /// pacing, best times and the Chíp badges are left alone: the row is
+  /// stored under `online:<subject>` so the Chíp stats never count it.
+  Future<OnlineRaceRecord> recordOnlineRace(
+    RaceSubject subject,
+    RaceOutcome o, {
+    required int? rank,
+    required int players,
+    required Random rng,
+  }) async {
+    final kid = _requireKid();
+    return _db.transaction(() async {
+      final profile = await _profile(kid);
+      final before = profile?.cosmicStars ?? 0;
+      final stars = onlineCosmicStarsFor(o, rank: rank) + o.luckyStarsCollected;
+      final total = before + stars;
+      await _db.into(_db.raceResults).insert(
+            RaceResultsCompanion.insert(
+              kidId: kid,
+              subject: 'online:${_subjectKey(subject)}',
+              finishedAt: _now(),
+              won: rank == 1,
+              kidTimeMs: o.kidTime.inMilliseconds,
+              firstTryCorrect: o.firstTryCorrect,
+              cometsFirstTry: o.cometsFirstTry,
+              stars: stars,
+            ),
+          );
+      await _db.into(_db.gameProfile).insertOnConflictUpdate(
+            GameProfileCompanion(
+              kidId: Value(kid),
+              cosmicStars: Value(total),
+              selectedRocket: Value(profile?.selectedRocket ?? 'rocket_orange'),
+              selectedTrail: Value(profile?.selectedTrail ?? 'trail_flame'),
+              meanAnswerMs: Value(profile?.meanAnswerMs ?? _defaultMeanMs),
+              slowNextRace: Value(profile?.slowNextRace ?? false),
+              retryAfterLossPending: Value(profile?.retryAfterLossPending ?? false),
+            ),
+          );
+
+      Future<int> bump(String k, int by) async {
+        final v = await _counter(kid, k) + by;
+        await _setCounter(kid, k, v);
+        return v;
+      }
+
+      final races = await bump(_kOnlineRaces, 1);
+      final wins = await bump(_kOnlineWins, rank == 1 ? 1 : 0);
+      final big = await bump(_kOnlineBig, players >= 4 ? 1 : 0);
+      final cheers = await _counter(kid, _kStickersSent);
+      final reached = <GameBadge>{
+        if (races >= 5) GameBadge.friendRacer,
+        if (wins >= 3) GameBadge.friendChampion,
+        if (big >= 1) GameBadge.bigRace,
+        if (cheers >= 20) GameBadge.cheerleader,
+      };
+      final have = await badges();
+      final fresh = [
+        for (final b in GameBadge.values)
+          if (reached.contains(b) && !have.contains(b)) b,
+      ];
+      for (final b in fresh) {
+        await _db.into(_db.gameBadges).insert(
+              GameBadgesCompanion.insert(kidId: kid, badgeId: b.id, earnedAt: _now()),
+            );
+      }
+
+      final owned = await _ownedOf(kid);
+      final since = await _counter(kid, _kSinceRare);
+      final rare = rareStickerDrop(
+          owned: owned, racesWithoutRare: since, rank: rank, rng: rng);
+      if (rare != null) {
+        await _db.into(_db.gameItems).insertOnConflictUpdate(
+              GameItemsCompanion.insert(kidId: kid, itemId: rare),
+            );
+      }
+      await _setCounter(kid, _kSinceRare, rare == null ? since + 1 : 0);
+
+      return OnlineRaceRecord(
+        starsEarned: stars,
+        totalStars: total,
+        milestonesCrossed: milestonesBetween(before, total),
+        newBadges: fresh,
+        rareSticker: rare,
+      );
+    });
+  }
+
+  /// A cheer sticker sent to a friend (counts toward "Cổ Vũ Nhiệt Tình").
+  Future<void> countStickerSent() async {
+    final kid = kidId;
+    if (kid == null) return;
+    await _setCounter(kid, _kStickersSent, await _counter(kid, _kStickersSent) + 1);
   }
 
   Future<int> totalStars() async {

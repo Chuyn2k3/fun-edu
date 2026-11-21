@@ -186,6 +186,12 @@ abstract final class GameColors {
   /// Silhouette of a sticker not owned yet.
   static const silhouette = Color(0xFFB9AEDB);
 
+  /// Rare stickers: gold frame and soft gold fill; label ink >= 4.5:1 on
+  /// the fill.
+  static const rareGold = Color(0xFFE0A100);
+  static const rareGoldTint = Color(0xFFFFF4CC);
+  static const rareInk = Color(0xFF6B4A00);
+
   // Fireworks sparks.
   static const fireworks = [
     Color(0xFFFFD24A),

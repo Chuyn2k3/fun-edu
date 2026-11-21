@@ -13,11 +13,14 @@ import 'game_widgets.dart';
 /// One Chíp Chíp sticker: from a milestone gift ([badge] null) or given
 /// with a badge.
 class StickerInfo {
-  const StickerInfo(this.id, this.title, {this.badge});
+  const StickerInfo(this.id, this.title, {this.badge, this.rare = false});
 
   final String id;
   final String title;
   final GameBadge? badge;
+
+  /// A rare sticker (gold frame): a lucky drop from races with friends.
+  final bool rare;
 }
 
 /// Every sticker, gifts first (pool order), then one per badge.
@@ -27,6 +30,8 @@ final List<StickerInfo> stickerCatalogue = [
       StickerInfo(id, itemTitle(id).replaceFirst('Sticker ', '')),
   for (final b in GameBadge.values)
     StickerInfo(b.stickerId, _badgeStickerTitles[b]!, badge: b),
+  for (final id in rareStickers)
+    StickerInfo(id, rareStickerTitles[id]!, rare: true),
 ];
 
 const _badgeStickerTitles = {
@@ -38,6 +43,10 @@ const _badgeStickerTitles = {
   GameBadge.mathWhiz: 'Chíp cầm bàn tính',
   GameBadge.letterMaster: 'Chíp cầm bút sáp',
   GameBadge.pilot: 'Chíp vẫy tay trên tên lửa',
+  GameBadge.friendRacer: 'Chíp giơ ngón cái',
+  GameBadge.friendChampion: 'Chíp vui mừng',
+  GameBadge.bigRace: 'Chíp ngạc nhiên',
+  GameBadge.cheerleader: 'Chíp cổ vũ',
 };
 
 /// Sticker ids the kid has: gift stickers owned, plus one per badge earned.
@@ -159,6 +168,7 @@ class StickerAlbumScreen extends ConsumerWidget {
   static String _howTo(StickerInfo s, StickerAlbumData d) {
     final b = s.badge;
     if (b != null) return 'Huy hiệu ${b.title}';
+    if (s.rare) return 'Hiếm: có thể nhận khi đua với bạn';
     final left = starsUntilOffered(s.id, owned: d.items, stars: d.stars);
     if (left == null) return 'Quà sao vũ trụ';
     return left == 0 ? 'Quà đang chờ bé!' : 'Còn $left sao vũ trụ';
@@ -192,15 +202,25 @@ class _StickerTile extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         padding: EdgeInsets.fromLTRB(10, tablet ? 16 : 12, 10, 12),
-        decoration: owned
-            ? whiteChunkyDecoration(lip: 7)
-            : BoxDecoration(
-                color: GameColors.lockedFill,
+        decoration: owned && sticker.rare
+            ? BoxDecoration(
+                color: GameColors.rareGoldTint,
                 borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: GameColors.rareGold, width: 4),
                 boxShadow: const [
-                  BoxShadow(color: GameColors.lockedEdge, offset: Offset(0, 7)),
+                  BoxShadow(color: GameColors.rareGold, offset: Offset(0, 7)),
                 ],
-              ),
+              )
+            : owned
+                ? whiteChunkyDecoration(lip: 7)
+                : BoxDecoration(
+                    color: GameColors.lockedFill,
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: GameColors.lockedEdge, offset: Offset(0, 7)),
+                    ],
+                  ),
         child: Column(
           children: [
             Expanded(
@@ -227,9 +247,20 @@ class _StickerTile extends StatelessWidget {
                 fontSize: tablet ? 19 : 15,
                 height: 1.15,
                 fontWeight: FontWeight.w900,
-                color: owned ? GameColors.ink : GameColors.lockedInk,
+                color: owned
+                    ? (sticker.rare ? GameColors.rareInk : GameColors.ink)
+                    : GameColors.lockedInk,
               ),
             ),
+            if (owned && sticker.rare)
+              Text(
+                'Hiếm',
+                style: TextStyle(
+                  fontSize: tablet ? 16 : 13,
+                  fontWeight: FontWeight.w900,
+                  color: GameColors.rareInk,
+                ),
+              ),
             if (!owned) ...[
               const SizedBox(height: 6),
               TilePill(text: howTo, icon: Icons.lock_rounded, maxLines: 2),

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/game/data/badges.dart';
 import 'package:funedu/game/data/reward_pool.dart';
+import 'package:funedu/ui/assets.dart';
 
 void main() {
   test('milestones follow the spec then every 50', () {
@@ -24,7 +25,17 @@ void main() {
   });
 
   test('badges have unique ids and Vietnamese titles', () {
-    expect(GameBadge.values.map((b) => b.id).toSet(), hasLength(8));
+    expect(GameBadge.values.map((b) => b.id).toSet(), hasLength(12));
+    expect(GameBadge.values.where((b) => b.online), hasLength(4));
+    // Every badge gives its own sticker, and every sticker has art.
+    expect(GameBadge.values.map((b) => b.stickerId).toSet(), hasLength(12));
+    for (final b in GameBadge.values) {
+      expect(AppImages.stickers[b.stickerId], isNotNull, reason: b.id);
+    }
+    for (final r in rareStickers) {
+      expect(AppImages.stickers[r], isNotNull, reason: r);
+      expect(rareStickerTitles[r], isNotNull, reason: r);
+    }
     expect(GameBadge.speedKing.title, 'Vua Thần Tốc');
     expect(GameBadge.byId('pilot'), GameBadge.pilot);
     expect(GameBadge.byId('nope'), isNull);

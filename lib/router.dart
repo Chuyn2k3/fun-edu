@@ -155,7 +155,11 @@ final GoRouter appRouter = GoRouter(
               path: 'result',
               pageBuilder: (context, state) => buildSmoothTransitionPage(
                 key: state.pageKey,
-                child: const RoomResultScreen(),
+                child: RoomResultScreen(
+                  rewards: state.extra is RaceResultArgs
+                      ? state.extra! as RaceResultArgs
+                      : null,
+                ),
               ),
             ),
           ],

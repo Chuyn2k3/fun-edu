@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../game/data/game_repository.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
 import 'room_transport.dart';
@@ -245,7 +246,14 @@ class RoomController extends Notifier<RoomState> {
   void step(int steps) => _socket?.send({'t': 'step', 'n': steps});
 
   void sticker(String id) {
-    if (roomStickers.contains(id)) _socket?.send({'t': 'sticker', 'id': id});
+    final socket = _socket;
+    if (!roomStickers.contains(id) || socket == null) return;
+    socket.send({'t': 'sticker', 'id': id});
+    // Counts toward the "Cổ Vũ Nhiệt Tình" badge; a failure is harmless.
+    unawaited(ref
+        .read(gameRepositoryProvider.future)
+        .then((repo) => repo.countStickerSent())
+        .catchError((Object _) {}));
   }
 
   Future<void> leave() async {

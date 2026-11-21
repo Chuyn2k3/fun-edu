@@ -50,7 +50,15 @@ class RaceResultArgs {
     required this.trail,
     this.luckyStarsCollected = 0,
     this.online = false,
+    this.onlineRecord,
+    this.rank,
   });
+
+  /// Online race rewards (null when saving failed).
+  final OnlineRaceRecord? onlineRecord;
+
+  /// Online race finish position, null when not finished or unknown.
+  final int? rank;
 
   final RaceSubject subject;
   final RaceOutcome outcome;
@@ -302,7 +310,8 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     if (race == null || state.phase != RacePhase.racing) return;
     race.chipSteps = v.steps;
     state = state.copyWith(chipSteps: v.steps, rival: v);
-    if (v.beatKid) {
+    // Friends landing first do not stop the kid: they fly on for 2nd/3rd.
+    if (v.roomOver) {
       race.endLost();
       _finish();
     }
@@ -381,20 +390,9 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       chipSteps: race.chipSteps,
     );
     RaceRecordResult? record;
-    if (_rival != null) {
-      _rivalSub?.cancel();
-      state = state.copyWith(
-        phase: RacePhase.done,
-        result: RaceResultArgs(
-          subject: state.subject!,
-          outcome: o,
-          record: null,
-          kidSteps: race.kidSteps,
-          rocket: state.rocket,
-          trail: state.trail,
-          online: true,
-        ),
-      );
+    final rival = _rival;
+    if (rival != null) {
+      await _finishOnline(rival, race, o);
       return;
     }
     try {
@@ -423,6 +421,52 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
         rocket: state.rocket,
         trail: state.trail,
         luckyStarsCollected: o.luckyStarsCollected,
+      ),
+    );
+  }
+
+  /// Waits (briefly) for the room to give the kid's place, then records the
+  /// online race: stars, online badges, maybe a rare sticker.
+  Future<void> _finishOnline(RaceRival rival, Race race, RaceOutcome o) async {
+    var view = rival.view;
+    if (view.myRank == null && !view.roomOver && race.kidSteps >= raceLength) {
+      try {
+        view = await rival.changes
+            .firstWhere((v) => v.myRank != null || v.roomOver)
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {
+        // No answer from the room: count it as a finished, unranked race.
+      }
+    }
+    await _rivalSub?.cancel();
+    OnlineRaceRecord? record;
+    try {
+      final repo = await ref.read(gameRepositoryProvider.future);
+      record = await repo.recordOnlineRace(
+        state.subject!,
+        o,
+        rank: view.myRank,
+        players: view.players,
+        rng: ref.read(raceRandomProvider),
+      );
+    } catch (e) {
+      debugPrint('Saving the online race failed: $e');
+    }
+    if (_disposed) return;
+    if (record != null) ref.read(gameDataRevisionProvider.notifier).state++;
+    state = state.copyWith(
+      phase: RacePhase.done,
+      result: RaceResultArgs(
+        subject: state.subject!,
+        outcome: o,
+        record: null,
+        kidSteps: race.kidSteps,
+        rocket: state.rocket,
+        trail: state.trail,
+        luckyStarsCollected: o.luckyStarsCollected,
+        online: true,
+        onlineRecord: record,
+        rank: view.myRank,
       ),
     );
   }
