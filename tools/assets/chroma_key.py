@@ -11,7 +11,8 @@ Two modes, same CLI shape as cut_sheet.py:
 Usage: python3 chroma_key.py <image> <config.json> <out_dir>
 
 Config: {"items": [{"name": "badge-pilot", "box": [l, t, r, b],
-                    "mode": "chroma"|"solid", "key_dist": 90, "trim_shadow": false|"run"|"band"}],
+                    "mode": "chroma"|"solid", "key_dist": 90, "trim_shadow": false|"run"|"band",
+                    "min_hole": 40}],
          "export_widths": [w1x, w2x, w3x]}
 """
 import argparse
@@ -116,8 +117,15 @@ def _finish(rgb: np.ndarray, is_bg: np.ndarray, despill_ref, pad: int) -> Image.
 
 
 def chroma_cutout(img: Image.Image, box: tuple, pad: int = 0,
-                  key_dist: int = KEY_DIST) -> Image.Image:
-    """Transparent-background cutout of `box` from a flat-colour background."""
+                  key_dist: int = KEY_DIST,
+                  min_hole: int | None = None) -> Image.Image:
+    """Transparent-background cutout of `box` from a flat-colour background.
+
+    Background seen through the object (inside a ring or a swirl) is removed
+    when the enclosed patch has at least `min_hole` pixels; the default is
+    max(200, area / 2500), so small green details of the art survive. Lower
+    it per item when a small enclosed patch of key is left behind.
+    """
     rgb = np.asarray(img.crop(box).convert("RGB")).astype(float)
     bg = _corner_colour(rgb)
     dist = np.abs(rgb - bg).sum(axis=2)
@@ -131,7 +139,7 @@ def chroma_cutout(img: Image.Image, box: tuple, pad: int = 0,
         loose = ((chroma < 0.18) & (rgb[:, :, 1] > 35)) | (
             (rgb[:, :, 0] < 0.12 * g) & (rgb[:, :, 1] > 25) & (rgb[:, :, 1] < 110))
     is_bg = _edge_connected(cand)
-    area = max(200, cand.size // 2500)
+    area = min_hole if min_hole is not None else max(200, cand.size // 2500)
     is_bg |= _big_holes(cand & ~is_bg, min_area=area)
     if bg.max() - bg.min() > 100:
         # Green slivers hugging the outline: same hue as the key, close to it.
@@ -292,6 +300,10 @@ def run(image_path: Path, config_path: Path, out_dir: Path) -> None:
         if mode not in ("chroma", "solid"):
             _fail(f"item '{name}': unknown mode {mode!r}")
         kw = {"key_dist": item["key_dist"]} if "key_dist" in item else {}
+        if "min_hole" in item:
+            if mode != "chroma" or not (isinstance(item["min_hole"], int) and item["min_hole"] > 0):
+                _fail(f"item '{name}': min_hole must be a positive integer (chroma mode)")
+            kw["min_hole"] = item["min_hole"]
         fn = chroma_cutout if mode == "chroma" else solid_cutout
         try:
             cut = fn(sheet, tuple(box), pad=0, **kw)
