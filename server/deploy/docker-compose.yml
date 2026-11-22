@@ -28,6 +28,9 @@ services:
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
       GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS}
       APPLE_CLIENT_IDS: ${APPLE_CLIENT_IDS}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
     # Only Caddy talks to the app; no public port.
     expose:
       - "8080"

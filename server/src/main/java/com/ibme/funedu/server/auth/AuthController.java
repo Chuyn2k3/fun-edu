@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 public class AuthController {
 
-    public record SignInRequest(@NotBlank @Size(max = 8192) String idToken) {}
+    /** [authorizationCode]: Apple only, optional (lets deletion revoke Apple's token). */
+    public record SignInRequest(
+            @NotBlank @Size(max = 8192) String idToken,
+            @Size(max = 2048) String authorizationCode) {}
 
     public record RefreshRequest(@NotBlank @Size(max = 256) String refreshToken) {}
 
@@ -32,7 +35,7 @@ public class AuthController {
         if (!auth.supports(provider)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
         }
-        return ResponseEntity.ok(auth.signIn(provider, req.idToken()));
+        return ResponseEntity.ok(auth.signIn(provider, req.idToken(), req.authorizationCode()));
     }
 
     @PostMapping("/auth/refresh")

@@ -73,9 +73,12 @@ Google Cloud Console → APIs & Services → Credentials, tạo 3 OAuth client:
 1. Apple Developer → Identifiers → `com.ibme.funedu` → bật **Sign in with Apple**.
 2. Xcode → Runner → Signing & Capabilities → **+ Sign in with Apple** (tạo `Runner.entitlements`). Chưa thêm sẵn vào repo vì phải bật capability ở trên trước, nếu không bản ký sẽ lỗi.
 3. Android dùng trang web của Apple: tạo **Services ID** (ví dụ `com.ibme.funedu.signin`), bật Sign in with Apple, khai báo Return URL `https://<API_DOMAIN>/api/v1/auth/apple/callback`. Đưa Services ID vào `APPLE_SERVICE_ID` (app) và `APPLE_CLIENT_IDS` (máy chủ).
-4. Tạo Key "Sign in with Apple" (file `.p8`) — để thu hồi token khi xóa tài khoản (bước 2D-7, chưa làm). Không commit file này.
+4. Tạo Key "Sign in with Apple" (file `.p8`) và điền `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (dán nội dung file `.p8`) vào `server/deploy/.env`. Máy chủ dùng nó để đổi mã đăng nhập lấy token Apple (lưu mã hóa) và **thu hồi token khi ba mẹ xóa tài khoản** (Apple bắt buộc). Không có key thì máy chủ bỏ qua bước này. Không commit file này.
 
 ## 5. Triển khai lên máy Oracle
+
+Sao lưu: `server/deploy/backup.sh` chạy hằng đêm bằng cron (mã hóa AES-256 bằng `BACKUP_PASSPHRASE`, giữ 14 ngày, có thể chép ra ngoài bằng rclone qua `BACKUP_REMOTE`); thử khôi phục mỗi tháng bằng `restore.sh` (vào DB nháp `funedu_restore`). Chi tiết: `server/README.md` mục Backups.
+
 
 Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` (điền đủ), `docker compose up -d --build`. Caddy tự cấp HTTPS cho `API_DOMAIN`.
 

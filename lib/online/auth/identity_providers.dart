@@ -5,11 +5,15 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../online_config.dart';
 
+/// What Sign in with Apple gives: the id token, and a one-time code the
+/// server exchanges so that deleting the account can revoke Apple's access.
+typedef AppleSignIn = ({String idToken, String? authorizationCode});
+
 /// Gets an id token from Google or Apple; null when the parent cancels.
 abstract class IdentityProviders {
   bool get appleAvailable;
   Future<String?> googleIdToken();
-  Future<String?> appleIdToken();
+  Future<AppleSignIn?> appleSignIn();
   Future<void> signOut();
 }
 
@@ -41,7 +45,7 @@ class PlatformIdentityProviders implements IdentityProviders {
   }
 
   @override
-  Future<String?> appleIdToken() async {
+  Future<AppleSignIn?> appleSignIn() async {
     try {
       final cred = await SignInWithApple.getAppleIDCredential(
         scopes: const [AppleIDAuthorizationScopes.email],
@@ -52,7 +56,9 @@ class PlatformIdentityProviders implements IdentityProviders {
               )
             : null,
       );
-      return cred.identityToken;
+      final token = cred.identityToken;
+      if (token == null) return null;
+      return (idToken: token, authorizationCode: cred.authorizationCode);
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) return null;
       rethrow;

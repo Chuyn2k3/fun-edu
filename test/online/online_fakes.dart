@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 class FakeIds implements IdentityProviders {
   String? google = 'google-id-token';
   String? apple = 'apple-id-token';
+  String? appleCode = 'apple-code';
   bool apple_ = true;
   int signOuts = 0;
 
@@ -14,7 +15,8 @@ class FakeIds implements IdentityProviders {
   @override
   Future<String?> googleIdToken() async => google;
   @override
-  Future<String?> appleIdToken() async => apple;
+  Future<AppleSignIn?> appleSignIn() async =>
+      apple == null ? null : (idToken: apple!, authorizationCode: appleCode);
   @override
   Future<void> signOut() async => signOuts++;
 }

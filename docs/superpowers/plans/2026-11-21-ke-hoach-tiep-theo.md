@@ -27,7 +27,7 @@
 | 2D-4 ✅ | drift **v8**: `kid_profiles.uuid` + bảng `synced_records` (thiết kế "kho bản ghi theo khóa", không thêm cột vào các bảng khác) | **Xong:** test migration v7→v8 và v1→v8 |
 | 2D-5 ✅ | Máy chủ `/api/v1/sync` (Flyway V3 `sync_records`, xung đột theo `baseVersion`, tombstone, trang 1000, giới hạn 2000 thay đổi / 16 KB, danh sách trắng loại bản ghi), `/api/v1/auth/apple/callback` cho Apple trên Android | **Xong:** 25 test máy chủ |
 | 2D-6 ✅ | App: `SyncStore` (xuất/gộp 12 loại bản ghi), `SyncEngine` (đẩy ≤ 500, kéo hết trang, gộp, lặp tối đa 5 vòng), `SyncController` (đăng nhập, mở lại app, 5 phút, bấm tay; làm mới mọi màn sau khi kéo về) | **Xong:** 8 test hai máy với máy chủ giả: sao cộng đúng không mất/không nhân đôi, xung đột gộp số lớn hơn, xóa bé lan sang máy kia, nét vẽ không rời máy, phân trang 700 bài, phần thưởng đã đổi |
-| 2D-7 (còn) | Triển khai lên máy Oracle: HTTPS, biến môi trường bí mật, sao lưu `pg_dump` hằng đêm ra ngoài + thử khôi phục, log không chứa tên bé/token | API thật chạy; bản sao lưu khôi phục được |
+| 2D-7 (code xong, chờ máy thật) | Triển khai lên máy Oracle: HTTPS, biến môi trường bí mật, sao lưu `pg_dump` hằng đêm ra ngoài + thử khôi phục, log không chứa tên bé/token | API thật chạy; bản sao lưu khôi phục được |
 
 ## 2B-2 — Phòng đua qua mạng (~2 tuần; **không làm đua với bóng**)
 

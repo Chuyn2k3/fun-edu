@@ -22,19 +22,27 @@ public class AuthService {
     /** The signed-in parent, re-read from the database on every request. */
     public record Parent(UUID id, UUID familyId, String provider, String email) {}
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthService.class);
+
     private final IdTokenDecoders idTokens;
     private final TokenService tokens;
     private final AuthProperties props;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
+    private final AppleProperties apple;
+    private final AppleTokenApi appleApi;
+    private final TokenCipher cipher;
 
     public AuthService(IdTokenDecoders idTokens, TokenService tokens, AuthProperties props,
-            JdbcTemplate jdbc, TransactionTemplate tx) {
+            JdbcTemplate jdbc, TransactionTemplate tx, AppleProperties apple, AppleTokenApi appleApi) {
         this.idTokens = idTokens;
         this.tokens = tokens;
         this.props = props;
         this.jdbc = jdbc;
         this.tx = tx;
+        this.apple = apple;
+        this.appleApi = appleApi;
+        this.cipher = new TokenCipher(props.jwtSecret());
     }
 
     public boolean supports(String provider) {
@@ -42,6 +50,15 @@ public class AuthService {
     }
 
     public Session signIn(String provider, String idToken) {
+        return signIn(provider, idToken, null);
+    }
+
+    /**
+     * [authorizationCode] (Apple only): exchanged for Apple's refresh token,
+     * kept sealed so deleting the account can revoke it. Apple being down
+     * never blocks the sign-in.
+     */
+    public Session signIn(String provider, String idToken, String authorizationCode) {
         Jwt jwt = idTokens.decode(provider, idToken);
         String subject = jwt.getSubject();
         String email = emailOf(jwt);
@@ -52,7 +69,24 @@ public class AuthService {
             // Two devices signed in for the first time at once: the other one won.
             parent = tx.execute(s -> findOrCreate(provider, subject, email));
         }
+        if ("apple".equals(provider) && authorizationCode != null && !authorizationCode.isBlank()
+                && apple.configured()) {
+            linkApple(parent, jwt, authorizationCode);
+        }
         return newSession(parent);
+    }
+
+    private void linkApple(Parent parent, Jwt jwt, String code) {
+        String clientId = jwt.getAudience().stream()
+                .filter(props.apple().clientIds()::contains).findFirst().orElse(null);
+        if (clientId == null) return;
+        try {
+            appleApi.exchange(clientId, code).ifPresent(rt -> jdbc.update(
+                    "UPDATE parent_accounts SET apple_refresh_token = ?, apple_client_id = ? WHERE id = ?",
+                    cipher.seal(rt), clientId, parent.id()));
+        } catch (RuntimeException e) {
+            log.warn("Apple code exchange failed: {}", e.getClass().getSimpleName());
+        }
     }
 
     // Commit even when we answer 401: revoking every session on reuse must stick.
@@ -99,7 +133,19 @@ public class AuthService {
 
     /** Deletes the whole family; tokens and (later) kids and progress cascade. */
     public void deleteAccount(Parent parent) {
+        var appleLink = jdbc.query(
+                "SELECT apple_refresh_token, apple_client_id FROM parent_accounts WHERE id = ?",
+                (rs, i) -> new String[] {rs.getString(1), rs.getString(2)}, parent.id());
         jdbc.update("DELETE FROM families WHERE id = ?", parent.familyId());
+        // Apple requires revoking its tokens on account deletion. Best effort:
+        // the account is gone either way.
+        if (!appleLink.isEmpty() && appleLink.get(0)[0] != null && apple.configured()) {
+            try {
+                appleApi.revoke(appleLink.get(0)[1], cipher.open(appleLink.get(0)[0]));
+            } catch (RuntimeException e) {
+                log.warn("Apple token revoke failed: {}", e.getClass().getSimpleName());
+            }
+        }
     }
 
     private Parent findOrCreate(String provider, String subject, String email) {

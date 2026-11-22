@@ -80,6 +80,8 @@ void main() {
     await c.read(sessionProvider.future);
     await c.read(sessionProvider.notifier).signIn('apple');
     expect(requests.first.url.path, '/api/v1/auth/apple');
+    expect(jsonDecode(requests.first.body),
+        {'idToken': 'apple-id-token', 'authorizationCode': 'apple-code'});
     expect(c.read(sessionProvider).value!.provider, 'apple');
   });
 

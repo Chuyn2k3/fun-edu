@@ -27,8 +27,15 @@ class SessionController extends AsyncNotifier<StoredSession?> {
   Future<void> signIn(String provider) async {
     final ids = ref.read(identityProvidersProvider);
     String? idToken;
+    String? appleCode;
     try {
-      idToken = provider == 'apple' ? await ids.appleIdToken() : await ids.googleIdToken();
+      if (provider == 'apple') {
+        final apple = await ids.appleSignIn();
+        idToken = apple?.idToken;
+        appleCode = apple?.authorizationCode;
+      } else {
+        idToken = await ids.googleIdToken();
+      }
     } catch (_) {
       throw const SignInException(SignInFailure.rejected);
     }
@@ -36,7 +43,11 @@ class SessionController extends AsyncNotifier<StoredSession?> {
 
     Map<String, Object?>? res;
     try {
-      res = await _api.post('/api/v1/auth/$provider', {'idToken': idToken});
+      res = await _api.post('/api/v1/auth/$provider', {
+        'idToken': idToken,
+        // Lets the server revoke Apple's access when the account is deleted.
+        if (appleCode != null) 'authorizationCode': appleCode,
+      });
     } on ApiException catch (e) {
       throw SignInException(
           e.status == 0 ? SignInFailure.network : SignInFailure.rejected);

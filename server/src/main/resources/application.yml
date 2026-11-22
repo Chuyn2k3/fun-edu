@@ -45,3 +45,9 @@ funedu:
       jwks-uri: https://appleid.apple.com/auth/keys
       # Bundle id for iOS + Services ID for Android/web.
       client-ids: ${APPLE_CLIENT_IDS:com.ibme.funedu}
+  apple:
+    # Sign in with Apple key (Apple Developer > Keys): exchange codes and
+    # revoke tokens on account deletion. Optional; skipped when unset.
+    team-id: ${APPLE_TEAM_ID:}
+    key-id: ${APPLE_KEY_ID:}
+    private-key: ${APPLE_PRIVATE_KEY:}

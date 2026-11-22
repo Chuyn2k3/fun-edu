@@ -9,7 +9,7 @@ Stack: Java 21, Spring Boot 3.3, PostgreSQL 16, Flyway (`src/main/resources/db/m
 
 | Method | Path | Auth | |
 |---|---|---|---|
-| POST | `/api/v1/auth/google`, `/api/v1/auth/apple` | — | `{idToken}` → `{accessToken, refreshToken, expiresIn, familyId}`; first sign-in creates the family |
+| POST | `/api/v1/auth/google`, `/api/v1/auth/apple` | — | `{idToken, authorizationCode?}` → `{accessToken, refreshToken, expiresIn, familyId}`; first sign-in creates the family. Apple: the code is exchanged (with `APPLE_TEAM_ID/KEY_ID/PRIVATE_KEY`) for Apple's refresh token, stored AES-GCM sealed, and revoked when the account is deleted (Apple's rule); Apple being down never blocks sign-in or deletion |
 | POST | `/api/v1/auth/refresh` | — | `{refreshToken}` → new pair; the old token dies, reusing it ends every session |
 | POST | `/api/v1/auth/logout` | — | `{refreshToken}` → 204 |
 | GET | `/api/v1/me` | Bearer | `{familyId, provider, email}` |
