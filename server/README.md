@@ -92,4 +92,23 @@ docker compose up -d --build
 
 Caddy serves HTTPS for `API_DOMAIN` (its DNS must point at the VM, ports 80/443
 open). Only `/actuator/health` is exposed. Secrets live only in `.env`.
-Nightly off-site backups are added in step 2D-7.
+### Backups
+
+`deploy/backup.sh` dumps the database (`pg_dump -Fc`), encrypts it with
+AES-256 (`BACKUP_PASSPHRASE`, PBKDF2) and keeps 14 days in
+`deploy/backups/`; with `BACKUP_REMOTE` set it also copies each file off the
+VM with rclone (the Oracle VM is a single point of failure). Run it nightly:
+
+```bash
+crontab -e   # 15 3 * * * cd /opt/funedu/server/deploy && ./backup.sh >> backup.log 2>&1
+```
+
+Try a restore every month into a scratch database (`funedu_restore`, the
+live one is never touched unless `RESTORE_DB=funedu`):
+
+```bash
+./restore.sh backups/funedu-<stamp>.dump.enc
+```
+
+Keep `BACKUP_PASSPHRASE` somewhere safe off the VM too: without it no backup
+can be read.
