@@ -339,6 +339,11 @@ pw.Widget _strokeNumberBadge({
 
 double _pdfY(double normY, PdfPoint size) => (1.0 - normY) * size.y;
 
+/// The worksheet's ô li cell (paper + grid) — shared with "Vở của bé".
+void paintWorksheetCellBackground(
+        PdfGraphics canvas, PdfPoint size, GlyphRuling? ruling) =>
+    _paintCellBackground(canvas, size, ruling);
+
 void _paintCellBackground(
   PdfGraphics canvas,
   PdfPoint size,

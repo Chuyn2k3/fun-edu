@@ -20,6 +20,7 @@ import '../../voice/speaker.dart';
 import '../../worksheet/worksheet_pdf.dart';
 import '../../worksheet/worksheet_printer.dart';
 import '../home/kid_nav.dart';
+import 'notebook_section.dart';
 
 const _phoneMaxWidth = 560.0;
 const _tabletMaxWidth = 1140.0;
@@ -50,13 +51,29 @@ BoxDecoration _primaryButtonDecoration({
 /// Single-pass greyscale + 0.38 alpha matrix (avoids nested Opacity +
 /// ColorFiltered double saveLayer during 120fps scrolling).
 const _lockedGreyscaleMatrix = <double>[
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0, 0, 0, 0.38, 0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0.38,
+  0,
 ];
 
-enum CollectionTab { stickers, calendar, certificates }
+enum CollectionTab { stickers, calendar, certificates, notebook }
 
 /// "Sưu tập" tab (/collection): learning sticker album, attendance calendar
 /// (no streak pressure), and printable kid certificates. 100% learning data.
@@ -175,56 +192,60 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       final unlockedStickers = stickers.where((s) => s.unlocked).length;
       final unlockedCerts = certs.where((c) => c.unlocked).length;
 
-      final content = _fadeInWhenLoaded(snapAsync.hasValue, CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              tablet ? 8 : 16,
-              tablet ? 20 : 12,
-              tablet ? 28 : 16,
-              14,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _HeaderRow(
-                    title: 'Sưu tập của ${snap.displayKidName}',
-                    stars: snap.totalStars,
-                    tablet: tablet,
+      final content = _fadeInWhenLoaded(
+          snapAsync.hasValue,
+          CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  tablet ? 8 : 16,
+                  tablet ? 20 : 12,
+                  tablet ? 28 : 16,
+                  14,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _HeaderRow(
+                        title: 'Sưu tập của ${snap.displayKidName}',
+                        stars: snap.totalStars,
+                        tablet: tablet,
+                      ),
+                      SizedBox(height: tablet ? 18 : 14),
+                      _ChipHeroBanner(
+                        snapshot: snap,
+                        unlockedStickers: unlockedStickers,
+                        totalStickers: stickers.length,
+                        unlockedCerts: unlockedCerts,
+                        totalCerts: certs.length,
+                        tablet: tablet,
+                      ),
+                      SizedBox(height: tablet ? 20 : 14),
+                      _SectionSwitcher(
+                        selected: _tab,
+                        stickerBadge: '$unlockedStickers/${stickers.length}',
+                        certBadge: '$unlockedCerts/${certs.length}',
+                        tablet: tablet,
+                        onSelect: (t) => setState(() => _tab = t),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: tablet ? 18 : 14),
-                  _ChipHeroBanner(
-                    snapshot: snap,
-                    unlockedStickers: unlockedStickers,
-                    totalStickers: stickers.length,
-                    unlockedCerts: unlockedCerts,
-                    totalCerts: certs.length,
-                    tablet: tablet,
-                  ),
-                  SizedBox(height: tablet ? 20 : 14),
-                  _SectionSwitcher(
-                    selected: _tab,
-                    stickerBadge: '$unlockedStickers/${stickers.length}',
-                    certBadge: '$unlockedCerts/${certs.length}',
-                    tablet: tablet,
-                    onSelect: (t) => setState(() => _tab = t),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          if (_tab == CollectionTab.stickers)
-            _buildStickersSliver(stickers, ff)
-          else if (_tab == CollectionTab.calendar)
-            _buildCalendarSliver(snap, viewedMonth, now, tablet, landscape)
-          else
-            _buildCertificatesSliver(certs, snap, ff),
-          SliverToBoxAdapter(
-            child: SizedBox(height: tablet ? 36 : 124),
-          ),
-        ],
-      ));
+              if (_tab == CollectionTab.stickers)
+                _buildStickersSliver(stickers, ff)
+              else if (_tab == CollectionTab.calendar)
+                _buildCalendarSliver(snap, viewedMonth, now, tablet, landscape)
+              else if (_tab == CollectionTab.certificates)
+                _buildCertificatesSliver(certs, snap, ff)
+              else
+                const NotebookSliver(),
+              SliverToBoxAdapter(
+                child: SizedBox(height: tablet ? 36 : 124),
+              ),
+            ],
+          ));
 
       if (!tablet) {
         return Stack(
@@ -248,8 +269,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                 minimum: const EdgeInsets.only(bottom: 12),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: _phoneMaxWidth),
+                    constraints: const BoxConstraints(maxWidth: _phoneMaxWidth),
                     child: FloatingNavBar(
                       items: kidNavItems,
                       selected: kidNavCollection,
@@ -648,7 +668,8 @@ class _MiniStatBadge extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(icon, width: tablet ? 22 : 18, height: tablet ? 22 : 18),
+              Image.asset(icon,
+                  width: tablet ? 22 : 18, height: tablet ? 22 : 18),
               const SizedBox(width: 5),
               Flexible(
                 child: FittedBox(
@@ -700,46 +721,69 @@ class _SectionSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _TabPill(
-            key: const ValueKey('collection-tab-stickers'),
-            label: 'Sticker',
-            sublabel: stickerBadge,
-            icon: Icons.auto_awesome_rounded,
-            active: selected == CollectionTab.stickers,
-            tablet: tablet,
-            onTap: () => onSelect(CollectionTab.stickers),
-          ),
-        ),
+    final pills = _pills();
+    // Four tabs: one row on tablets, 2 x 2 on phones (room for the labels).
+    if (tablet) {
+      return Row(children: [
+        for (var i = 0; i < pills.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(child: pills[i]),
+        ],
+      ]);
+    }
+    return Column(children: [
+      Row(children: [
+        Expanded(child: pills[0]),
         const SizedBox(width: 10),
-        Expanded(
-          child: _TabPill(
-            key: const ValueKey('collection-tab-calendar'),
-            label: 'Lịch học',
-            sublabel: 'Tháng',
-            icon: Icons.calendar_month_rounded,
-            active: selected == CollectionTab.calendar,
-            tablet: tablet,
-            onTap: () => onSelect(CollectionTab.calendar),
-          ),
-        ),
+        Expanded(child: pills[1])
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        Expanded(child: pills[2]),
         const SizedBox(width: 10),
-        Expanded(
-          child: _TabPill(
-            key: const ValueKey('collection-tab-certificates'),
-            label: 'Giấy khen',
-            sublabel: certBadge,
-            icon: Icons.workspace_premium_rounded,
-            active: selected == CollectionTab.certificates,
-            tablet: tablet,
-            onTap: () => onSelect(CollectionTab.certificates),
-          ),
-        ),
-      ],
-    );
+        Expanded(child: pills[3])
+      ]),
+    ]);
   }
+
+  List<Widget> _pills() => [
+        _TabPill(
+          key: const ValueKey('collection-tab-stickers'),
+          label: 'Sticker',
+          sublabel: stickerBadge,
+          icon: Icons.auto_awesome_rounded,
+          active: selected == CollectionTab.stickers,
+          tablet: tablet,
+          onTap: () => onSelect(CollectionTab.stickers),
+        ),
+        _TabPill(
+          key: const ValueKey('collection-tab-calendar'),
+          label: 'Lịch học',
+          sublabel: 'Tháng',
+          icon: Icons.calendar_month_rounded,
+          active: selected == CollectionTab.calendar,
+          tablet: tablet,
+          onTap: () => onSelect(CollectionTab.calendar),
+        ),
+        _TabPill(
+          key: const ValueKey('collection-tab-certificates'),
+          label: 'Giấy khen',
+          sublabel: certBadge,
+          icon: Icons.workspace_premium_rounded,
+          active: selected == CollectionTab.certificates,
+          tablet: tablet,
+          onTap: () => onSelect(CollectionTab.certificates),
+        ),
+        _TabPill(
+          key: const ValueKey('collection-tab-notebook'),
+          label: 'Vở của bé',
+          sublabel: 'Chữ đẹp nhất',
+          icon: Icons.menu_book_rounded,
+          active: selected == CollectionTab.notebook,
+          tablet: tablet,
+          onTap: () => onSelect(CollectionTab.notebook),
+        ),
+      ];
 }
 
 class _TabPill extends StatelessWidget {
@@ -1173,7 +1217,9 @@ class _MonthArrowButton extends StatelessWidget {
           child: Icon(
             icon,
             size: tablet ? 32 : 28,
-            color: enabled ? AppColors.text : CollectionColors.lockedInk.withOpacity(0.45),
+            color: enabled
+                ? AppColors.text
+                : CollectionColors.lockedInk.withOpacity(0.45),
           ),
         ),
       ),
