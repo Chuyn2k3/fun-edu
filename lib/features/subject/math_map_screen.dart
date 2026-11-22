@@ -219,10 +219,10 @@ class _LevelTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.text,
+                    color: locked ? AppColors.textMuted : AppColors.text,
                   ),
                 ),
                 if (isCurrent)
@@ -269,20 +269,25 @@ class _LevelTile extends StatelessWidget {
     final done = current != null && index < current!;
     final isCurrent = index == current;
     final locked = current != null && index > current!;
-    return Opacity(
-      opacity: locked ? 0.5 : 1,
-      child: Pressable(
-        onTap: onTap,
-        builder: (pressed) {
-          final raised = raisedDecoration(
-            accent: Subject.toan.color,
-            tint: Subject.toan.tint,
-            radius: AppRadii.tile,
-            pressed: pressed,
-          );
-          return Container(
-            // The current lesson gets a solid orange lip.
-            decoration: isCurrent
+    return Pressable(
+      onTap: onTap,
+      builder: (pressed) {
+        final raised = raisedDecoration(
+          accent: Subject.toan.color,
+          tint: Subject.toan.tint,
+          radius: AppRadii.tile,
+          pressed: pressed,
+        );
+        final deco = locked
+            ? BoxDecoration(
+                color: CollectionColors.lockedSurface,
+                borderRadius: BorderRadius.circular(AppRadii.tile),
+                border: Border.all(
+                  color: CollectionColors.lockedBorder,
+                  width: 1.5,
+                ),
+              )
+            : (isCurrent
                 ? raised.copyWith(
                     border: Border(
                       bottom: BorderSide(
@@ -291,72 +296,75 @@ class _LevelTile extends StatelessWidget {
                       ),
                     ),
                   )
-                : raised,
-            child: tablet
-                ? _tabletContent(
-                    done: done, isCurrent: isCurrent, locked: locked)
-                : ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 72),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${index + 1}',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textMuted,
-                            ),
+                : raised);
+        return Container(
+          decoration: deco,
+          child: tablet
+              ? _tabletContent(
+                  done: done, isCurrent: isCurrent, locked: locked)
+              : ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 72),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textMuted,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColors.text,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: locked
+                                      ? AppColors.textMuted
+                                      : AppColors.text,
+                                ),
+                              ),
+                              if (isCurrent)
+                                const Text(
+                                  'Đang học',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryOnTint,
                                   ),
                                 ),
-                                if (isCurrent)
-                                  const Text(
-                                    'Đang học',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.primaryOnTint,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                            ],
                           ),
-                          if (done)
-                            Icon(
-                              Icons.check_circle_rounded,
-                              key: ValueKey('done-$index'),
-                              size: 28,
-                              color: Subject.toan.color,
-                            ),
-                          if (locked)
-                            Icon(
-                              Icons.lock_rounded,
-                              key: ValueKey('locked-$index'),
-                              size: 26,
-                              color: AppColors.textMuted,
-                            ),
-                        ],
-                      ),
+                        ),
+                        if (done)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            key: ValueKey('done-$index'),
+                            size: 28,
+                            color: Subject.toan.color,
+                          ),
+                        if (locked)
+                          Icon(
+                            Icons.lock_rounded,
+                            key: ValueKey('locked-$index'),
+                            size: 26,
+                            color: AppColors.textMuted,
+                          ),
+                      ],
                     ),
                   ),
-          );
-        },
-      ),
+                ),
+        );
+      },
     );
   }
 }

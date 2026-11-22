@@ -397,7 +397,8 @@ class GameRepository {
     return _ownedOf(kid);
   }
 
-  /// Equips owned items; throws [StateError] for an item the kid lacks.
+  /// Equips owned items; throws [StateError] for an item the kid lacks,
+  /// or [ArgumentError] if an item kind does not match its slot.
   /// Equipped items count as seen.
   Future<void> select({String? rocket, String? trail}) async {
     final kid = _requireKid();
@@ -407,19 +408,27 @@ class GameRepository {
         throw StateError('$id is not owned');
       }
     }
-    await markSeen([if (rocket != null) rocket, if (trail != null) trail]);
-    final p = await _profile(kid);
-    await _db.into(_db.gameProfile).insertOnConflictUpdate(
-          GameProfileCompanion(
-            kidId: Value(kid),
-            cosmicStars: Value(p?.cosmicStars ?? 0),
-            selectedRocket: Value(rocket ?? p?.selectedRocket ?? 'rocket_orange'),
-            selectedTrail: Value(trail ?? p?.selectedTrail ?? 'trail_flame'),
-            meanAnswerMs: Value(p?.meanAnswerMs ?? _defaultMeanMs),
-            slowNextRace: Value(p?.slowNextRace ?? false),
-            retryAfterLossPending: Value(p?.retryAfterLossPending ?? false),
-          ),
-        );
+    if (rocket != null && !rocket.startsWith('rocket_')) {
+      throw ArgumentError.value(rocket, 'rocket', 'Must be a rocket item');
+    }
+    if (trail != null && !trail.startsWith('trail_')) {
+      throw ArgumentError.value(trail, 'trail', 'Must be a trail item');
+    }
+    await _db.transaction(() async {
+      await markSeen([if (rocket != null) rocket, if (trail != null) trail]);
+      final p = await _profile(kid);
+      await _db.into(_db.gameProfile).insertOnConflictUpdate(
+            GameProfileCompanion(
+              kidId: Value(kid),
+              cosmicStars: Value(p?.cosmicStars ?? 0),
+              selectedRocket: Value(rocket ?? p?.selectedRocket ?? 'rocket_orange'),
+              selectedTrail: Value(trail ?? p?.selectedTrail ?? 'trail_flame'),
+              meanAnswerMs: Value(p?.meanAnswerMs ?? _defaultMeanMs),
+              slowNextRace: Value(p?.slowNextRace ?? false),
+              retryAfterLossPending: Value(p?.retryAfterLossPending ?? false),
+            ),
+          );
+    });
   }
 
   Future<({String rocket, String trail})> selected() async {
@@ -512,9 +521,13 @@ class GameRepository {
   Future<void> markSeen(Iterable<String> itemIds) async {
     final kid = kidId;
     if (kid == null) return;
-    for (final id in itemIds) {
-      await _setCounter(kid, _seenKey(id), 1);
-    }
+    final ids = itemIds.toList();
+    if (ids.isEmpty) return;
+    await _db.transaction(() async {
+      for (final id in ids) {
+        await _setCounter(kid, _seenKey(id), 1);
+      }
+    });
   }
 
   Future<Duration> meanAnswer() async {

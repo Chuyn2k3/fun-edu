@@ -32,6 +32,7 @@ class GameHubData {
     required this.stickers,
     required this.rocket,
     required this.stats,
+    this.hasPendingOffer = false,
   });
 
   final int stars;
@@ -42,12 +43,14 @@ class GameHubData {
   final int stickers;
   final String rocket;
   final Map<RaceSubject, GameStats> stats;
+  final bool hasPendingOffer;
 }
 
 final gameHubProvider = FutureProvider.autoDispose<GameHubData>((ref) async {
   ref.watch(gameDataRevisionProvider);
   final repo = await ref.watch(gameRepositoryProvider.future);
   final badges = await repo.badges();
+  final offer = await repo.pendingOffer();
   return GameHubData(
     stars: await repo.totalStars(),
     newItems: (await repo.newGarageItems()).length,
@@ -57,6 +60,7 @@ final gameHubProvider = FutureProvider.autoDispose<GameHubData>((ref) async {
     stats: {
       for (final s in RaceSubject.values) s: await repo.stats(s),
     },
+    hasPendingOffer: offer.isNotEmpty,
   );
 });
 
@@ -773,12 +777,16 @@ class _GarageEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = data?.newItems ?? 0;
+    final hasPendingOffer = data?.hasPendingOffer ?? false;
+    final subtitle = hasPendingOffer
+        ? 'Quà chờ bé!'
+        : (n > 0 ? 'Có $n món mới chờ lắp!' : 'Chọn tên lửa và vệt khói');
     return _EntryCard(
       key: const ValueKey('hub-garage'),
       image: RocketSprite.forItem(data?.rocket ?? 'rocket_orange').asset,
       tilt: 0.35,
       title: 'Xưởng độ tên lửa',
-      subtitle: n > 0 ? 'Có $n món mới chờ lắp!' : 'Chọn tên lửa và vệt khói',
+      subtitle: subtitle,
       count: n,
       countKey: const ValueKey('hub-garage-new'),
       tall: tall,

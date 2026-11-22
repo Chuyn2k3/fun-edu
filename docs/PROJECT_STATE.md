@@ -191,9 +191,9 @@ Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2744 test Dar
 - 2B-1 câu hỏi: bé đang ở cấp so sánh (`so-sanh-10`) đua bằng câu **đếm** (trận đua không có dạng so sánh).
 - 2B-1 nhịp Chíp: thời gian trả lời trung bình tính cả thời gian các lần bấm sai của câu đó (Chíp chậm hơn một chút, có lợi cho bé). Trung bình đã lưu trước bản sửa ÷ số câu (chỉ có trên máy thử nhánh này) thấp hơn thật 20–60 %; không viết migration vì đây chỉ là gợi ý nhịp, bị kẹp 1,5–15 giây và chỉ dùng tới câu đúng đầu tiên của trận sau, rồi tự kéo về đúng qua các trận mới.
 - 2B-1 chậm sau thua: thua một trận thì mọi trận sau đều chậm ×1,15 cho tới khi bé thắng một trận; trận bỏ ngang giữa chừng không xóa cờ này. Cột `retry_after_loss_pending` được ghi nhưng chưa đọc ở đâu (bỏ hoặc dùng ở lần đổi schema sau).
-- 2B-1 quà đang chờ: nếu bé thoát tấm chọn quà (nút quay lại Android), quà chờ chỉ hiện ở Xưởng độ ("Quà chờ bé!") và màn kết quả sau, Góc Chơi chưa báo.
+- 2B-1 quà đang chờ: đã xử lý xong (Góc Chơi báo "Quà chờ bé!" khi có lượt chọn quà chưa nhận).
 - 2B-1 ảnh: còn vệt bóng nhỏ trên vài ảnh (hành tinh, chân tên lửa xanh dương và xanh lá, huy hiệu Không Bỏ Cuộc và Vua Thần Tốc).
-- 2B-1 hoãn (nhỏ): khi có nhiều lượt quà chờ, món không thuộc lượt quà hiện tại có thể hiện "Còn 0 sao"; `GameRepository.select()` không kiểm loại món (tên lửa/vệt); bảng `_letterNames` trong màn trận đấu trùng dữ liệu đọc của nét chữ (có thể lệch); panel thua trên iPad ngang còn dải trống; bước 8–10 trên màn nhích ít hơn do phối cảnh; `select`/`markSeen` không nằm trong transaction.
+- 2B-1 hoãn (nhỏ): khi có nhiều lượt quà chờ, món không thuộc lượt quà hiện tại có thể hiện "Còn 0 sao"; panel thua trên iPad ngang còn dải trống; bước 8–10 trên màn nhích ít hơn do phối cảnh.
 - Cả 4 đảo môn học (Tập viết, Tiếng Việt, Toán, Tiếng Anh) và cả 4 tab thanh điều hướng (Học, Chơi, Sưu tập, Nhà Chíp) đều đã mở khóa; trong Góc Chơi còn 2 thẻ chế độ đua cùng bạn (2B-2) hiện "Sắp có".
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
@@ -218,6 +218,11 @@ Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2744 test Dar
      - Cập nhật `AppImages`, `GameBadge`, xuất đủ 3 độ phân giải (1x/2x/3x) vào `assets/images/game/`.
      - Cập nhật `tools/assets/build_app_images.sh`, `test/ui/assets_test.dart` (33 game assets), kiểm thử đạt 100%.
      - Còn 5 sticker hiếm còn lại (`rare_chip_write`, `rare_rocket_chip`, `rare_crown`, `rare_comet`, `rare_planet`) chờ tạo bổ sung.
+   - **Hoàn thiện các chi tiết nhỏ & tối ưu hiệu năng (2026-11-22):**
+     - `GameRepository.select()`: kiểm tra loại món tên lửa (`rocket_`) và vệt khói (`trail_`), bọc transaction.
+     - `GameRepository.markSeen()`: bọc transaction khi cập nhật nhiều món.
+     - `GameHubScreen`: hiển thị subtitle "Quà chờ bé!" khi bé có quà cột mốc chưa chọn.
+     - `MathMapScreen`: bỏ hoàn toàn widget `Opacity` ở ô khóa, dùng `BoxDecoration` locked đồng bộ với Tiếng Việt và Tiếng Anh, giảm tải GPU.
    - Cách làm: kỹ sư trưởng (AI) lập kế hoạch và rà soát; một AI khác code theo kế hoạch.
 1. **Chủ dự án đang chạy thử bản `--profile` trên máy thật (2026-11-19):**
    - Đánh giá thực tế độ mượt 120fps ProMotion (các animation cho ăn, trang trí, vuốt ve Chíp, đua tên lửa Free-Flight, chuyển cảnh tab).

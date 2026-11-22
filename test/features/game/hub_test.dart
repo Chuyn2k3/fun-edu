@@ -168,6 +168,15 @@ void main() {
     expect(find.byKey(const ValueKey('hub-garage-new')), findsNothing);
   });
 
+  testWidgets('hub shows Quà chờ bé! when a milestone offer is pending',
+      (t) async {
+    await bootGame(t, seed: (db, kid) async {
+      await _stars(db, kid, 10);
+    });
+    await _openHub(t);
+    expect(find.text('Quà chờ bé!'), findsOneWidget);
+  });
+
   testWidgets('achievements show per-subject numbers from stats()', (t) async {
     await bootGame(t, seed: (db, kid) async {
       await _race(db, kid, 'toan', won: true, ms: 75000, first: 9);

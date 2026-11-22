@@ -151,6 +151,13 @@ void main() {
       expect(await repo.selected(), (rocket: 'rocket_blue', trail: 'trail_flame'));
     });
 
+    test('select enforces item kind', () async {
+      await setStars(10);
+      await repo.pick('rocket_blue');
+      expect(() => repo.select(trail: 'rocket_blue'), throwsArgumentError);
+      expect(() => repo.select(rocket: 'trail_flame'), throwsArgumentError);
+    });
+
     test('empty pool gives no offer', () async {
       await setStars(10);
       for (final id in [
