@@ -53,4 +53,9 @@ python3 tools/assets/chroma_key.py "$G/stickers/sticker_hug_heart.jpg" "$C/game/
 python3 tools/assets/chroma_key.py "$G/stickers/sticker_abacus.jpg" "$C/game/sticker-abacus.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/stickers/sticker_crayon.jpg" "$C/game/sticker-crayon.json" assets/images/game
 python3 tools/assets/chroma_key.py "$G/stickers/sticker_wave_rocket.jpg" "$C/game/sticker-wave-rocket.json" assets/images/game
-python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_chip_sleep_1795319342671.jpg" "$C/game/sticker-rare-chip-sleep.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_chip_sleep.jpg" "$C/game/sticker-rare-chip-sleep.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_chip_write.jpg" "$C/game/sticker-rare-chip-write.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_rocket_chip.jpg" "$C/game/sticker-rare-rocket-chip.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_crown.jpg" "$C/game/sticker-rare-crown.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_comet.jpg" "$C/game/sticker-rare-comet.json" assets/images/game
+python3 tools/assets/chroma_key.py "$G/stickers/sticker_rare_planet.jpg" "$C/game/sticker-rare-planet.json" assets/images/game

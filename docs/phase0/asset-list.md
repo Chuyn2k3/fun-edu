@@ -71,10 +71,10 @@ Mỗi sticker một hình riêng, nền trắng, nhìn cùng phong cách với C
 | Sticker hiếm | Ảnh thực tế / Ảnh tạm | Gợi ý vẽ (Chíp 3D, viền vàng lấp lánh) |
 |---|---|---|
 | `rare_chip_sleep` Chíp ngủ say | `sticker-rare-chip-sleep.png` (Đã vẽ 3D) | Chíp ngủ trên mặt trăng |
-| `rare_chip_write` Chíp tập viết | `chip-write.png` | Chíp viết chữ phát sáng |
-| `rare_rocket_chip` Chíp lái tên lửa | `game/rocket-chip.png` | Chíp đội mũ phi công vàng |
-| `rare_crown` Vương miện vàng | `ic-crown.png` | Chíp đội vương miện |
-| `rare_comet` Sao chổi rực rỡ | `game/comet.png` | Chíp cưỡi sao chổi |
-| `rare_planet` Hành tinh vành đai | `game/planet.png` | Chíp ngồi trên vành Sao Thổ |
+| `rare_chip_write` Chíp tập viết | `sticker-rare-chip-write.png` (Đã vẽ 3D) | Chíp viết chữ phát sáng |
+| `rare_rocket_chip` Chíp lái tên lửa | `sticker-rare-rocket-chip.png` (Đã vẽ 3D) | Chíp đội mũ phi công vàng |
+| `rare_crown` Vương miện vàng | `sticker-rare-crown.png` (Đã vẽ 3D) | Chíp đội vương miện |
+| `rare_comet` Sao chổi rực rỡ | `sticker-rare-comet.png` (Đã vẽ 3D) | Chíp cưỡi sao chổi |
+| `rare_planet` Hành tinh vành đai | `sticker-rare-planet.png` (Đã vẽ 3D) | Chíp ngồi trên vành Sao Thổ |
 
 Sticker của 4 huy hiệu mới dùng tư thế Chíp có sẵn: giơ ngón cái, vui mừng, ngạc nhiên, cổ vũ.

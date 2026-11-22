@@ -51,6 +51,11 @@ abstract final class AppImages {
   static const stickerCrayon = 'assets/images/game/sticker-crayon.png';
   static const stickerWaveRocket = 'assets/images/game/sticker-wave-rocket.png';
   static const stickerRareChipSleep = 'assets/images/game/sticker-rare-chip-sleep.png';
+  static const stickerRareChipWrite = 'assets/images/game/sticker-rare-chip-write.png';
+  static const stickerRareRocketChip = 'assets/images/game/sticker-rare-rocket-chip.png';
+  static const stickerRareCrown = 'assets/images/game/sticker-rare-crown.png';
+  static const stickerRareComet = 'assets/images/game/sticker-rare-comet.png';
+  static const stickerRarePlanet = 'assets/images/game/sticker-rare-planet.png';
 
   /// Album sticker art by sticker id (Chíp poses, cut from green).
   static const stickers = <String, String>{
@@ -71,11 +76,11 @@ abstract final class AppImages {
     'sticker_encourage': chipEncourage,
     // Rare stickers (gold frame), dropped after races with friends.
     'rare_chip_sleep': stickerRareChipSleep,
-    'rare_chip_write': chipWrite,
-    'rare_rocket_chip': rocketChip,
-    'rare_crown': icCrown,
-    'rare_comet': comet,
-    'rare_planet': planet,
+    'rare_chip_write': stickerRareChipWrite,
+    'rare_rocket_chip': stickerRareRocketChip,
+    'rare_crown': stickerRareCrown,
+    'rare_comet': stickerRareComet,
+    'rare_planet': stickerRarePlanet,
   };
 
   static const all = [
@@ -127,5 +132,10 @@ abstract final class AppImages {
     stickerCrayon,
     stickerWaveRocket,
     stickerRareChipSleep,
+    stickerRareChipWrite,
+    stickerRareRocketChip,
+    stickerRareCrown,
+    stickerRareComet,
+    stickerRarePlanet,
   ];
 }

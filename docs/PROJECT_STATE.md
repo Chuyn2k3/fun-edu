@@ -214,10 +214,15 @@ Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2744 test Dar
      - **Kiểm thử toàn diện:** Đạt 2,682/2,682 tests (flutter test), flutter analyze 0 issues.
    - **Vẽ và tích hợp huy hiệu 3D & sticker hiếm mới cho phòng đua (2026-11-21/22):**
      - ĐÃ XONG 100% toàn bộ 4 huy hiệu 3D: Bạn Đua Vui Vẻ (`badge-friend-racer.png`), Nhà Vô Địch (`badge-friend-champion.png`), Cuộc Đua Lớn (`badge-big-race.png`), Cổ Vũ Nhiệt Tình (`badge-cheerleader.png`).
-     - Đã tạo và tách nền sticker hiếm viền vàng: Chíp ngủ say (`sticker-rare-chip-sleep.png`).
-     - Cập nhật `AppImages`, `GameBadge`, xuất đủ 3 độ phân giải (1x/2x/3x) vào `assets/images/game/`.
-     - Cập nhật `tools/assets/build_app_images.sh`, `test/ui/assets_test.dart` (33 game assets), kiểm thử đạt 100%.
-     - Còn 5 sticker hiếm còn lại (`rare_chip_write`, `rare_rocket_chip`, `rare_crown`, `rare_comet`, `rare_planet`) chờ tạo bổ sung.
+     - ĐÃ XONG 100% trọn bộ 6 sticker hiếm viền vàng (Chíp 3D viền vàng lấp lánh):
+       1. `rare_chip_sleep` Chíp ngủ say (`sticker-rare-chip-sleep.png`)
+       2. `rare_chip_write` Chíp tập viết (`sticker-rare-chip-write.png`)
+       3. `rare_rocket_chip` Chíp lái tên lửa (`sticker-rare-rocket-chip.png`)
+       4. `rare_crown` Vương miện vàng (`sticker-rare-crown.png`)
+       5. `rare_comet` Sao chổi rực rỡ (`sticker-rare-comet.png`)
+       6. `rare_planet` Hành tinh vành đai (`sticker-rare-planet.png`)
+     - Đã thay toàn bộ ảnh tạm trong `AppImages.stickers` bằng tài nguyên ảnh chính thức, xuất đủ 3 độ phân giải (1x/2x/3x) vào `assets/images/game/`.
+     - Cập nhật `tools/assets/build_app_images.sh`, `test/ui/assets_test.dart` (38 game assets), `docs/phase0/asset-list.md`, `docs/superpowers/specs/assets/stickers-gallery.md`, kiểm thử đạt 100%.
    - **Hoàn thiện các chi tiết nhỏ & tối ưu hiệu năng (2026-11-22):**
      - `GameRepository.select()`: kiểm tra loại món tên lửa (`rocket_`) và vệt khói (`trail_`), bọc transaction.
      - `GameRepository.markSeen()`: bọc transaction khi cập nhật nhiều món.

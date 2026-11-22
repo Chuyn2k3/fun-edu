@@ -97,9 +97,55 @@ Tổng hợp bộ 10 sticker tạo hình nhân vật Chíp Chíp (chim sẻ nâu
 # Bộ Sticker Hiếm Viền Vàng (Rare Gold-Border Stickers)
 
 ## 11. rare_chip_sleep (Chíp ngủ say)
-- **Tập tin**: [sticker_rare_chip_sleep_1795319342671.jpg](generated/stickers/sticker_rare_chip_sleep_1795319342671.jpg)
+- **Tập tin**: [sticker_rare_chip_sleep.jpg](generated/stickers/sticker_rare_chip_sleep.jpg)
 - **Mô tả**: Chíp ngủ say sưa cuộn tròn trên mặt trăng lưỡi liềm vàng, viền vàng kim tuyến lấp lánh dày dặn.
 - **Prompt bổ sung**: `sleeping peacefully curled up on a soft yellow clay crescent moon, eyes closed smiling gently, cozy dreaming with tiny golden sparkles, thick sparkling gold metallic outline`
 
-![rare_chip_sleep](generated/stickers/sticker_rare_chip_sleep_1795319342671.jpg)
+![rare_chip_sleep](generated/stickers/sticker_rare_chip_sleep.jpg)
+
+---
+
+## 12. rare_chip_write (Chíp tập viết)
+- **Tập tin**: [sticker_rare_chip_write.jpg](generated/stickers/sticker_rare_chip_write.jpg)
+- **Mô tả**: Chíp cầm bút sáp màu cam vẽ những vệt sáng và chữ lấp lánh trong không gian, viền vàng kim tuyến.
+- **Prompt bổ sung**: `holding a magic orange crayon in its wing and drawing glowing magical golden spark trails and letter sparks in the air, focused happy sparkling eyes, thick sparkling gold metallic outline`
+
+![rare_chip_write](generated/stickers/sticker_rare_chip_write.jpg)
+
+---
+
+## 13. rare_rocket_chip (Chíp lái tên lửa)
+- **Tập tin**: [sticker_rare_rocket_chip.jpg](generated/stickers/sticker_rare_rocket_chip.jpg)
+- **Mô tả**: Chíp đội mũ phi công vàng và kính phi công, ngồi lái phi thuyền tên lửa vàng trắng vui vẻ vẫy cánh.
+- **Prompt bổ sung**: `wearing a shiny golden aviator pilot helmet with goggles, sitting inside a cute white and golden toy rocket cockpit, waving one wing excitedly, thick sparkling gold metallic outline`
+
+![rare_rocket_chip](generated/stickers/sticker_rare_rocket_chip.jpg)
+
+---
+
+## 14. rare_crown (Vương miện vàng)
+- **Tập tin**: [sticker_rare_crown.jpg](generated/stickers/sticker_rare_crown.jpg)
+- **Mô tả**: Chíp đội vương miện hoàng gia vàng nạm đá quý rực rỡ, ngồi tự hào mỉm cười ấm áp.
+- **Prompt bổ sung**: `wearing a chunky royal golden toy crown with colorful inlaid gems proudly tilted on its head, sitting upright in full-body view, smiling warmly, thick sparkling gold metallic outline`
+
+![rare_crown](generated/stickers/sticker_rare_crown.jpg)
+
+---
+
+## 15. rare_comet (Sao chổi rực rỡ)
+- **Tập tin**: [sticker_rare_comet.jpg](generated/stickers/sticker_rare_comet.jpg)
+- **Mô tả**: Chíp giơ hai cánh hò reo cưỡi trên đầu ngôi sao chổi vàng tươi cười với đuôi sao băng lấp lánh.
+- **Prompt bổ sung**: `joyfully riding on top of a friendly smiling golden clay comet with a curving sparkling tail and stardust, arms raised in celebration, thick sparkling gold metallic outline`
+
+![rare_comet](generated/stickers/sticker_rare_comet.jpg)
+
+---
+
+## 16. rare_planet (Hành tinh vành đai)
+- **Tập tin**: [sticker_rare_planet.jpg](generated/stickers/sticker_rare_planet.jpg)
+- **Mô tả**: Chíp ngồi vắt vẻo thảnh thơi trên vành đai phát sáng của hành tinh Sao Thổ màu pastel, chân đung đưa và vẫy cánh chào.
+- **Prompt bổ sung**: `sitting comfortably right on top of the glowing golden/pastel ring of a cute pastel toy planet, cute little feet dangling happily over the ring edge, waving one wing, thick sparkling gold metallic outline`
+
+![rare_planet](generated/stickers/sticker_rare_planet.jpg)
+
 
