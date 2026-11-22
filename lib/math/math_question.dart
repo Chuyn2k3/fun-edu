@@ -114,3 +114,85 @@ class ArithmeticQuestion extends MathQuestion {
   @override
   int get hashCode => Object.hash('arith', a, b, plus, Object.hashAll(choices));
 }
+
+/// Sticks to count: [tens] bundles of ten and [ones] single sticks.
+class TensOnesQuestion extends MathQuestion {
+  const TensOnesQuestion(this.tens, this.ones, this.choices);
+  final int tens;
+  final int ones;
+  final List<int> choices;
+
+  int get answer => tens * 10 + ones;
+
+  @override
+  MathKind get kind => MathKind.tensOnes;
+  @override
+  String get prompt => 'Có bao nhiêu que tính?';
+
+  @override
+  bool operator ==(Object other) =>
+      other is TensOnesQuestion &&
+      other.tens == tens &&
+      other.ones == ones &&
+      _sameList(other.choices, choices);
+  @override
+  int get hashCode => Object.hash('tens', tens, ones, Object.hashAll(choices));
+}
+
+/// An analogue clock at [hour] o'clock or half past. Choices are codes
+/// (see [ClockQuestion.code]) shown with [clockLabel].
+class ClockQuestion extends MathQuestion {
+  const ClockQuestion(this.hour, this.half, this.choices);
+  final int hour;
+  final bool half;
+  final List<int> choices;
+
+  /// One int per time: hour * 2, + 1 for half past.
+  static int code(int hour, bool half) => hour * 2 + (half ? 1 : 0);
+
+  int get answer => code(hour, half);
+
+  @override
+  MathKind get kind => MathKind.clock;
+  @override
+  String get prompt => 'Đồng hồ chỉ mấy giờ?';
+
+  @override
+  bool operator ==(Object other) =>
+      other is ClockQuestion &&
+      other.hour == hour &&
+      other.half == half &&
+      _sameList(other.choices, choices);
+  @override
+  int get hashCode => Object.hash('clock', hour, half, Object.hashAll(choices));
+}
+
+/// "3 giờ" / "3 giờ rưỡi" for a [ClockQuestion.code].
+String clockLabel(int code) => code.isOdd ? '${code ~/ 2} giờ rưỡi' : '${code ~/ 2} giờ';
+
+/// Banknotes in nghìn đồng the money level uses (drawn flat in the app).
+const List<int> vndNotes = [1, 2, 5, 10];
+
+/// Some banknotes; how many nghìn đồng in all?
+class MoneyQuestion extends MathQuestion {
+  const MoneyQuestion(this.notes, this.choices);
+
+  /// Note values in nghìn đồng, from [vndNotes].
+  final List<int> notes;
+  final List<int> choices;
+
+  int get answer => notes.fold(0, (a, b) => a + b);
+
+  @override
+  MathKind get kind => MathKind.money;
+  @override
+  String get prompt => 'Có tất cả bao nhiêu nghìn đồng?';
+
+  @override
+  bool operator ==(Object other) =>
+      other is MoneyQuestion &&
+      _sameList(other.notes, notes) &&
+      _sameList(other.choices, choices);
+  @override
+  int get hashCode => Object.hash('money', Object.hashAll(notes), Object.hashAll(choices));
+}

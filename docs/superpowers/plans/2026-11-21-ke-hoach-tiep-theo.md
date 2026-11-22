@@ -48,6 +48,8 @@
 
 ## Để sau 2D + 2B-2
 
+**Đã làm 2026-11-22:** Chữ hoa tập viết (2G, chờ duyệt mẫu `capitals-sheet.png`), Vở của bé, Toán nâng cao (3 cấp: số đến 100, đồng hồ, tiền).
+
 Chữ hoa tập viết (2G), Vở của bé, Toán nâng cao (số đến 100, đồng hồ, tiền), tách file lớn, 2E gói trả phí (dùng lại tài khoản + máy chủ của 2D).
 
 ## Cần chủ dự án quyết

@@ -16,6 +16,7 @@ import '../../ui/widgets/session_header.dart';
 import '../../ui/widgets/speech_bubble.dart';
 import '../../voice/speaker.dart';
 import '../../voice/voice_lines.dart';
+import 'exercise/advanced_pictures.dart';
 import 'exercise/choice_answers.dart';
 import 'exercise/compare_groups.dart';
 import 'exercise/drag_number_match.dart';
@@ -418,6 +419,17 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
             tileSize: max(_matchTileSize, answerHeight),
             arrange: arrange,
           ),
+        TensOnesQuestion() => _pictureChoice(
+            key, StickBundles(tens: q.tens, ones: q.ones), q.choices, q.answer,
+            answerHeight: answerHeight, arrange: arrange),
+        ClockQuestion() => _pictureChoice(
+            key, ClockFace(hour: q.hour, half: q.half), q.choices, q.answer,
+            answerHeight: answerHeight, arrange: arrange, labelOf: clockLabel),
+        MoneyQuestion() => _pictureChoice(
+            key, BanknoteRow(notes: q.notes), q.choices, q.answer,
+            answerHeight: answerHeight,
+            arrange: arrange,
+            labelOf: (v) => '$v nghìn'),
         ArithmeticQuestion() when arrange != null => arrange(
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -446,6 +458,32 @@ class _MathSessionScreenState extends ConsumerState<MathSessionScreen> {
             ],
           ),
       };
+
+  /// Toán nâng cao: a picture (sticks, clock, banknotes) above three answer
+  /// buttons, or beside them on a landscape tablet.
+  Widget _pictureChoice(
+    Key? key,
+    Widget picture,
+    List<int> choices,
+    int answer, {
+    required double answerHeight,
+    SplitArrange? arrange,
+    String Function(int)? labelOf,
+  }) {
+    ChoiceAnswers answers({bool vertical = false}) => ChoiceAnswers(
+          choices: choices,
+          answer: answer,
+          onAnswered: _onAnswered,
+          tileHeight: answerHeight,
+          vertical: vertical,
+          labelOf: labelOf,
+        );
+    if (arrange != null) return arrange(picture, answers(vertical: true));
+    return Column(
+      key: key,
+      children: [picture, const SizedBox(height: 16), answers()],
+    );
+  }
 
   Widget _arithmeticPrompt(ArithmeticQuestion q) => Row(
         mainAxisAlignment: MainAxisAlignment.center,

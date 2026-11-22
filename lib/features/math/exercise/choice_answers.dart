@@ -19,7 +19,11 @@ class ChoiceAnswers extends StatefulWidget {
     required this.onAnswered,
     this.tileHeight = 72,
     this.vertical = false,
+    this.labelOf,
   });
+
+  /// Text on a button ("3 giờ rưỡi", "7 nghìn"); the number by default.
+  final String Function(int value)? labelOf;
 
   final List<int> choices;
   final int answer;
@@ -121,12 +125,17 @@ class _ChoiceAnswersState extends State<ChoiceAnswers> {
                     boxShadow: raised.boxShadow,
                   )
                 : raised,
-            child: Text(
-              '$v',
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                color: correct ? AppColors.card : AppColors.text,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.labelOf?.call(v) ?? '$v',
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: correct ? AppColors.card : AppColors.text,
+                ),
               ),
             ),
           );

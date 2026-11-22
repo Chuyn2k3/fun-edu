@@ -109,7 +109,7 @@ void main() {
     expect(find.text('Chữ Số 1 bé còn hay sai, cho bé tập thêm nhé.'),
         findsOneWidget);
     expect(find.text('Đang học: So sánh'), findsOneWidget);
-    expect(find.text('3/9'), findsOneWidget);
+    expect(find.text('3/12'), findsOneWidget);
   });
 
   testWidgets('glyph chips are grouped under the four section headings',
@@ -216,11 +216,11 @@ void main() {
     expect(find.text('Thêm bé'), findsOneWidget);
   });
 
-  testWidgets('math label stays within 1..9', (tester) async {
-    await LevelRepository(db, kidId: na).setLevel('toan', 12);
+  testWidgets('math label stays within 1..12', (tester) async {
+    await LevelRepository(db, kidId: na).setLevel('toan', 15);
     await _pumpParent(tester, unlocked: true);
-    expect(find.text('9/9'), findsOneWidget);
-    expect(find.text('Đang học: Cộng trừ trong 20'), findsOneWidget);
+    expect(find.text('12/12'), findsOneWidget);
+    expect(find.text('Đang học: Tiền Việt Nam'), findsOneWidget);
     expect(find.text('Tổng 0 sao'), findsOneWidget);
   });
 

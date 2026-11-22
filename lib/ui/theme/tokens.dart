@@ -323,3 +323,25 @@ abstract final class HouseColors {
   static const xpBarFill = Color(0xFF2E9E5B);
   static const xpBarTrack = Color(0xFFE7E2D8);
 }
+
+/// Toán nâng cao pictures: counting sticks and flat banknotes (drawn in
+/// code, never photos of real money). Text on a note is [AppColors.text] on
+/// the light fill.
+abstract final class MathColors {
+  static const stick = Color(0xFFD9A55B);
+  static const stickEdge = Color(0xFFA9742F);
+  static const band = Color(0xFFC8460F);
+
+  static const clockFace = Color(0xFFFFFFFF);
+  static const clockRim = Color(0xFF3F6FB5);
+
+  /// Banknote fill / border by value (nghìn đồng), echoing the real notes.
+  static const note1Fill = Color(0xFFE4F0D2);
+  static const note1Edge = Color(0xFF6B8E23);
+  static const note2Fill = Color(0xFFEFE3DA);
+  static const note2Edge = Color(0xFF8D6E63);
+  static const note5Fill = Color(0xFFDCE7F7);
+  static const note5Edge = Color(0xFF3F6FB5);
+  static const note10Fill = Color(0xFFF6E7C8);
+  static const note10Edge = Color(0xFFB07A1E);
+}

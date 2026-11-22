@@ -1,7 +1,23 @@
 /// The kind of exercise a math level uses.
-enum MathKind { count, compare, match, add, subtract, addSubtract }
+enum MathKind {
+  count,
+  compare,
+  match,
+  add,
+  subtract,
+  addSubtract,
 
-/// One rung of the 9-level math ladder.
+  /// Tens bundles and single sticks up to 99.
+  tensOnes,
+
+  /// Reading an analogue clock: o'clock and half past.
+  clock,
+
+  /// Adding Vietnamese banknotes (in nghìn đồng).
+  money,
+}
+
+/// One rung of the math ladder (9 basic levels, then 3 advanced ones).
 class MathLevel {
   const MathLevel({
     required this.id,
@@ -33,4 +49,8 @@ const List<MathLevel> mathLevels = [
     kind: MathKind.addSubtract,
     max: 20,
   ),
+  // Advanced (Toán nâng cao).
+  MathLevel(id: 'so-100', title: 'Số đến 100', kind: MathKind.tensOnes, max: 99),
+  MathLevel(id: 'dong-ho', title: 'Xem đồng hồ', kind: MathKind.clock, max: 12),
+  MathLevel(id: 'tien', title: 'Tiền Việt Nam', kind: MathKind.money, max: 20),
 ];

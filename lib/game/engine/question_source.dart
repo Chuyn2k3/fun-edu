@@ -63,6 +63,12 @@ List<RaceQuestion> _mathQuestions(int levelIndex, Random rng) {
         (l) => l.kind == MathKind.count && l.max >= level.max,
         orElse: () => mathLevels.first);
   }
+  // Sticks, clocks and banknotes need their own pictures: the race cockpit
+  // only shows sums and stars, so the advanced levels race with the hardest
+  // arithmetic level.
+  if (const {MathKind.tensOnes, MathKind.clock, MathKind.money}.contains(level.kind)) {
+    level = mathLevels.lastWhere((l) => l.kind == MathKind.addSubtract);
+  }
   final out = <RaceQuestion>[];
   while (out.length < raceQuestionCount) {
     for (final q in generateQuestions(level, rng, count: raceQuestionCount)) {
@@ -79,9 +85,13 @@ MathRaceQuestion? _toMathRace(MathQuestion q, int max, Random rng) {
     CountQuestion c => (c.answer, c.choices),
     MatchQuestion m => (m.answer, m.choices),
     ArithmeticQuestion a => (a.answer, a.choices),
-    CompareQuestion() => (-1, const <int>[]),
+    CompareQuestion() ||
+    TensOnesQuestion() ||
+    ClockQuestion() ||
+    MoneyQuestion() =>
+      (-1, const <int>[]),
   };
-  if (q is CompareQuestion) return null;
+  if (answer < 0) return null;
   if (given.length == 3 &&
       given.toSet().length == 3 &&
       given.contains(answer)) {

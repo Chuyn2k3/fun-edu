@@ -11,6 +11,9 @@ List<Object> _content(MathQuestion q) => switch (q) {
       MatchQuestion() => ['match', q.n],
       CompareQuestion() => ['compare', q.left, q.right, q.ask],
       ArithmeticQuestion() => ['arith', q.a, q.b, q.plus],
+      TensOnesQuestion() => ['tens', q.answer],
+      ClockQuestion() => ['clock', q.answer],
+      MoneyQuestion() => ['money', ...q.notes],
     };
 
 void main() {
@@ -25,9 +28,12 @@ void main() {
       ('cong-10', 'Cộng trong 10', MathKind.add, 10),
       ('tru-10', 'Trừ trong 10', MathKind.subtract, 10),
       ('cong-tru-20', 'Cộng trừ trong 20', MathKind.addSubtract, 20),
+      ('so-100', 'Số đến 100', MathKind.tensOnes, 99),
+      ('dong-ho', 'Xem đồng hồ', MathKind.clock, 12),
+      ('tien', 'Tiền Việt Nam', MathKind.money, 20),
     ];
-    expect(mathLevels.length, 9);
-    for (var i = 0; i < 9; i++) {
+    expect(mathLevels.length, 12);
+    for (var i = 0; i < 12; i++) {
       final l = mathLevels[i];
       expect((l.id, l.title, l.kind, l.max), expected[i]);
     }
@@ -94,6 +100,18 @@ void main() {
                   expect(q.prompt, '${q.a} − ${q.b} = ?');
                 }
                 checkChoices(q.choices, q.answer, level.max);
+              case TensOnesQuestion():
+                expect(q.kind, MathKind.tensOnes);
+                expect(q.choices.toSet(), hasLength(3));
+                expect(q.choices, contains(q.answer));
+              case ClockQuestion():
+                expect(q.kind, MathKind.clock);
+                expect(q.choices.toSet(), hasLength(3));
+                expect(q.choices, contains(q.answer));
+              case MoneyQuestion():
+                expect(q.kind, MathKind.money);
+                expect(q.choices.toSet(), hasLength(3));
+                expect(q.choices, contains(q.answer));
             }
           }
         }
@@ -134,7 +152,9 @@ void main() {
   });
 
   test('addSubtract mixes plus and minus', () {
-    final qs = generateQuestions(mathLevels.last, Random(1), count: 20)
+    final qs = generateQuestions(
+            mathLevels.firstWhere((l) => l.kind == MathKind.addSubtract), Random(1),
+            count: 20)
         .cast<ArithmeticQuestion>();
     expect(qs.any((q) => q.plus), isTrue);
     expect(qs.any((q) => !q.plus), isTrue);

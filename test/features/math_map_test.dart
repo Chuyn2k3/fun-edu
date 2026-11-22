@@ -155,7 +155,7 @@ void main() {
     expect(find.text('home stub'), findsOneWidget);
   });
 
-  testWidgets('home Toán card is active and shows 3/9', (t) async {
+  testWidgets('home Toán card is active and shows 3/12', (t) async {
     _setSize(t, 375, 667);
     final router = GoRouter(routes: [
       GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
@@ -181,7 +181,7 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    expect(find.text('3/9'), findsOneWidget);
+    expect(find.text('3/${mathLevels.length}'), findsOneWidget);
     // The card sits below the fold on a small phone; bring it clear of the
     // floating nav bar first.
     await t.drag(find.byType(ListView), const Offset(0, -200));
@@ -206,7 +206,7 @@ void main() {
     });
   }
 
-  testWidgets('tablet portrait: no orphan row, nine tiles all on screen',
+  testWidgets('tablet portrait: no orphan row, all 12 tiles on screen',
       (t) async {
     await _pump(t, size: const Size(1024, 1366));
     final tops = <double>[];
@@ -217,20 +217,20 @@ void main() {
       expect(r.height, greaterThanOrEqualTo(120));
       tops.add(r.top);
     }
-    expect(tops.length, 9);
+    expect(tops.length, mathLevels.length);
     for (final y in tops.toSet()) {
       expect(tops.where((x) => (x - y).abs() < 1).length, 3);
     }
   });
 
-  testWidgets('tablet landscape: nine tiles fit without scrolling', (t) async {
+  testWidgets('tablet landscape: all tiles fit without scrolling', (t) async {
     await _pump(t, size: const Size(1366, 1024));
     for (final e in find.byType(Pressable).evaluate()) {
       final r = t.getRect(find.byWidget(e.widget));
       expect(r.bottom, lessThanOrEqualTo(1024));
       expect(r.width, greaterThanOrEqualTo(120));
     }
-    expect(find.byType(Pressable), findsNWidgets(9));
+    expect(find.byType(Pressable), findsNWidgets(mathLevels.length));
   });
 
   for (final (size, scale) in const [
@@ -243,7 +243,7 @@ void main() {
       t.platformDispatcher.textScaleFactorTestValue = scale;
       addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
       await _pump(t, size: size);
-      expect(find.byType(Pressable), findsNWidgets(9));
+      expect(find.byType(Pressable), findsNWidgets(mathLevels.length));
       expect(t.takeException(), isNull);
     });
   }

@@ -31,6 +31,9 @@ class MathRaceQuestion extends RaceQuestion {
         MatchQuestion q => q.answer,
         ArithmeticQuestion q => q.answer,
         CompareQuestion() => throw StateError('compare has no int answer'),
+        // Advanced levels race with arithmetic (question_source.dart).
+        TensOnesQuestion() || ClockQuestion() || MoneyQuestion() =>
+          throw StateError('not a race question'),
       };
 
   @override
