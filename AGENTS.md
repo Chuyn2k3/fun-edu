@@ -13,7 +13,7 @@ Quy tắc ngắn (chi tiết trong `docs/PROJECT_STATE.md` mục 3):
 - Nút cho bé ≥ 64, góc ba mẹ ≥ 48, tương phản chữ ≥ 4.5:1. Chuỗi giao diện tiếng Việt.
 - Không quảng cáo, không SDK theo dõi. App chạy đầy đủ không cần mạng; **chỉ gọi máy chủ FunEdu (và Google/Apple lúc đăng nhập), chỉ sau khi ba mẹ đăng nhập** trong Góc ba mẹ (spec `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md`). Dữ liệu của bé tối thiểu; nét vẽ (`stroke_attempts`) không rời máy.
 - Máy chủ: `server/` (Spring Boot 3, Java 21, PostgreSQL, Flyway). Trước khi commit phần máy chủ: `cd server && ./gradlew test`. Bí mật chỉ trong biến môi trường / `.env` không commit.
-- Nét chữ cái và dấu thanh nằm ở `tools/glyphs/letters.py`; tạo lại bằng `python3 tools/glyphs/make_glyphs.py`; không sửa tay file JSON sinh ra trong `assets/glyphs/` (chạy `cd tools/glyphs && python3 -m pytest -q`).
+- Nét chữ cái và dấu thanh nằm ở `tools/glyphs/letters.py`, chữ hoa ở `tools/glyphs/capitals.py`; tạo lại bằng `python3 tools/glyphs/make_glyphs.py`; không sửa tay file JSON sinh ra trong `assets/glyphs/` (chạy `cd tools/glyphs && python3 -m pytest -q`).
 - Đổi bảng drift → tăng `schemaVersion`, thêm migration, chạy build_runner, commit `.g.dart`.
 - Trước khi commit: `flutter analyze` sạch và `flutter test` đạt hết.
 - Làm việc trên nhánh `chipchip`. Không gộp vào `new-web` khi chưa khôi phục `CNAME`.

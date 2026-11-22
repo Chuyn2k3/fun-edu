@@ -12,6 +12,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import capitals  # noqa: E402
 import letters  # noqa: E402
 
 
@@ -106,6 +107,8 @@ def main():
         # byte-identical.
         write(args.out, gid, data, newline=gid not in ('net-ngang', 'net-thang-dung'))
     for g in letters.letters():
+        write(args.out, g['id'], letters.to_json(g))
+    for g in capitals.capitals():
         write(args.out, g['id'], letters.to_json(g))
 
 

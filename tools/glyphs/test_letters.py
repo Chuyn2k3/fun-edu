@@ -232,7 +232,7 @@ def test_json_files(tmp_path):
     subprocess.run([sys.executable, os.path.join(HERE, 'make_glyphs.py'),
                     '--out', str(tmp_path)], check=True)
     names = sorted(os.listdir(tmp_path))
-    assert len(names) == 49
+    assert len(names) == 49 + 29  # + capitals (test_capitals.py)
     for gid in ORDER:
         with open(tmp_path / (gid + '.json'), encoding='utf-8') as f:
             data = json.load(f)

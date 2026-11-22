@@ -22,4 +22,10 @@ const List<String> writingLadder = [
   'chu-h', 'chu-k', 'chu-g', 'chu-y', 'chu-p',
   // Tone marks, written beside an "a" for context.
   'dau-huyen', 'dau-sac', 'dau-nang', 'dau-hoi', 'dau-nga',
+  // Capitals (2G): round and straight shapes first, diacritic variants
+  // right after their base letter (tools/glyphs/capitals.py ORDER).
+  'hoa-o', 'hoa-oo', 'hoa-ow', 'hoa-c', 'hoa-i', 'hoa-l', 'hoa-t', 'hoa-h',
+  'hoa-u', 'hoa-uw', 'hoa-v', 'hoa-x', 'hoa-n', 'hoa-m', 'hoa-a', 'hoa-aw',
+  'hoa-aa', 'hoa-e', 'hoa-ee', 'hoa-s', 'hoa-p', 'hoa-r', 'hoa-b', 'hoa-d',
+  'hoa-dd', 'hoa-k', 'hoa-q', 'hoa-g', 'hoa-y',
 ];

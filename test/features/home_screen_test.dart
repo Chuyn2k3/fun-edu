@@ -245,7 +245,7 @@ void main() {
         of: find.text('Viết'), matching: find.byType(SubjectCard));
     expect(find.descendant(of: card, matching: find.text('Nét, số, chữ cái')),
         findsOneWidget);
-    expect(tester.widget<SubjectCard>(card.first).total, 49);
+    expect(tester.widget<SubjectCard>(card.first).total, 78);
   });
 
   testWidgets('hiện đủ nội dung trang chủ', (tester) async {
@@ -257,7 +257,7 @@ void main() {
     expect(find.text('12'), findsOneWidget);
     expect(find.text('3 ngày học tuần này'), findsOneWidget);
     expect(find.text('Cấp 1'), findsOneWidget);
-    expect(find.text('2/49'), findsOneWidget);
+    expect(find.text('2/78'), findsOneWidget);
     expect(find.text('0/3 bài'), findsOneWidget);
     expect(
       find.text('Hôm nay mình viết Nét xiên và làm Toán nhé!'),

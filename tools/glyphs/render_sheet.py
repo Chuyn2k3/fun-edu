@@ -15,6 +15,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import capitals  # noqa: E402
 import letters  # noqa: E402
 
 FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets', 'fonts')
@@ -71,14 +72,14 @@ def point_at(pts, frac):
     return pts[-2], pts[-1]
 
 
-def draw_cell(img, d, g, ctx, ox, oy):
+def draw_cell(img, d, g, ctx, ox, oy, caps=False):
     w, h = COLS_LI * PX, ROWS_LI * PX
     d.rectangle([ox, oy, ox + w, oy + h], fill=PAPER)
     for i in range(COLS_LI + 1):
         d.line([(ox + i * PX, oy), (ox + i * PX, oy + h)], fill=VLINE, width=1)
     for i in range(ROWS_LI + 1):
         y = TOP_LI + i
-        heavy = abs(y - 8) < 1e-6 or abs(y - 6) < 1e-6
+        heavy = abs(y - 8) < 1e-6 or abs(y - 6) < 1e-6 or (caps and abs(y - 3) < 1e-6)
         d.line([(ox, oy + i * PX), (ox + w, oy + i * PX)],
                fill=HEAVY if heavy else LINE, width=3 if heavy else 1)
     # Pad window (dashed).
@@ -121,8 +122,13 @@ def draw_cell(img, d, g, ctx, ox, oy):
     d.text((ox + w / 2, oy + h + LABEL_H / 2), label, font=font(30), fill=INK, anchor='mm')
 
 
-def render(out, only=None):
-    all_glyphs = letters.letters()
+def render(out, only=None, caps=False):
+    global COLS_LI, TOP_LI, ROWS_LI
+    if caps:
+        # Capitals (with Ă/Â/Ê marks and G/Y loops) use most of the 12 ô li
+        # frame: show all of it so no window is cut.
+        COLS_LI, TOP_LI, ROWS_LI = 10, 0.0, 12
+    all_glyphs = capitals.capitals() if caps else letters.letters()
     by_id = {g['id']: g for g in all_glyphs}
     glyphs = [g for g in all_glyphs if not only or g['id'] in only]
     rows = math.ceil(len(glyphs) / COLS)
@@ -131,17 +137,19 @@ def render(out, only=None):
     H = MARGIN * 2 + TITLE_H + rows * ch + (rows - 1) * GAP
     img = Image.new('RGB', (W, H), (255, 255, 255))
     d = ImageDraw.Draw(img)
-    d.text((MARGIN, MARGIN), 'Chữ cái viết thường + dấu thanh — nét mẫu tạm (máy sinh), cần duyệt',
-           font=font(40), fill=INK)
+    title = ('Chữ hoa — nét mẫu tạm (máy sinh, mẫu tiểu học rút gọn), cần duyệt' if caps
+             else 'Chữ cái viết thường + dấu thanh — nét mẫu tạm (máy sinh), cần duyệt')
+    d.text((MARGIN, MARGIN), title, font=font(40), fill=INK)
     d.text((MARGIN, MARGIN + 56),
-           'Số trong vòng tròn = thứ tự nét, đặt ở điểm bắt đầu; mũi tên = chiều nét. '
-           'Đường đậm: kẻ chân chữ và đầu chữ thường (2 ô li). Khung cam nét đứt = vùng ô viết.',
+           'Số trong vòng tròn = thứ tự nét, đặt ở điểm bắt đầu; mũi tên = chiều nét. ' +
+           ('Đường đậm: chân chữ, đầu chữ thường (2 ô li) và đầu chữ hoa (5 ô li). ' if caps else
+            'Đường đậm: kẻ chân chữ và đầu chữ thường (2 ô li). ') + 'Khung cam nét đứt = vùng ô viết.',
            font=font(24, bold=False), fill=INK)
     for i, g in enumerate(glyphs):
         r, c = divmod(i, COLS)
         ox = MARGIN + c * (cw + GAP)
         oy = MARGIN + TITLE_H + r * (ch + GAP)
-        draw_cell(img, d, g, by_id.get(g.get('context')), ox, oy)
+        draw_cell(img, d, g, by_id.get(g.get('context')), ox, oy, caps)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     img.save(out, optimize=True)
 
@@ -152,9 +160,14 @@ def main():
     ap.add_argument('--out', default='docs/superpowers/specs/assets/letters-sheet.png')
     ap.add_argument('--only', nargs='*', help='glyph ids to draw (default: all)')
     ap.add_argument('--px', type=int, default=PX, help='pixels per ô li')
+    ap.add_argument('--capitals', action='store_true',
+                    help='draw the capitals (default out: capitals-sheet.png)')
     args = ap.parse_args()
     PX = args.px
-    render(args.out, args.only)
+    out = args.out
+    if args.capitals and out == ap.get_default('out'):
+        out = 'docs/superpowers/specs/assets/capitals-sheet.png'
+    render(out, args.only, caps=args.capitals)
 
 
 if __name__ == '__main__':

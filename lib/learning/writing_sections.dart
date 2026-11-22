@@ -1,9 +1,10 @@
-/// The four groups of the writing ladder, in teaching order.
+/// The groups of the writing ladder, in teaching order.
 enum WritingSection {
   strokes('Nét cơ bản'),
   digits('Chữ số'),
   letters('Chữ cái'),
-  marks('Dấu thanh');
+  marks('Dấu thanh'),
+  capitals('Chữ hoa');
 
   const WritingSection(this.title);
 
@@ -11,11 +12,12 @@ enum WritingSection {
 }
 
 /// Section of a glyph id, decided by its prefix (`net-`, `so-`, `chu-`,
-/// `dau-`). Unknown ids fall into [WritingSection.strokes].
+/// `dau-`, `hoa-`). Unknown ids fall into [WritingSection.strokes].
 WritingSection sectionOf(String glyphId) {
   if (glyphId.startsWith('so-')) return WritingSection.digits;
   if (glyphId.startsWith('chu-')) return WritingSection.letters;
   if (glyphId.startsWith('dau-')) return WritingSection.marks;
+  if (glyphId.startsWith('hoa-')) return WritingSection.capitals;
   return WritingSection.strokes;
 }
 

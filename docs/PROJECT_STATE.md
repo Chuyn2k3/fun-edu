@@ -70,7 +70,7 @@ lib/
   features/writing/            # màn tập viết (ô li, Chíp phản ứng, Xem mẫu, Nghe, Xóa)
   math/                        # Toán (Dart thuần): 9 cấp, sinh câu hỏi, luật lên/lùi cấp
   features/math/               # màn làm Toán + dạng bài (chạm đếm, chọn, so sánh, kéo số)
-  learning/                    # thang chữ Viết (49 mục: 15 cũ + 29 chữ cái + 5 dấu thanh), `writing_sections.dart` chia nhóm cho bản đồ và tab tiến độ, soạn "Bài hôm nay" (Viết mới + Toán + Viết ôn)
+  learning/                    # thang chữ Viết (78 mục: 15 cũ + 29 chữ cái + 5 dấu thanh + 29 chữ hoa), `writing_sections.dart` chia nhóm cho bản đồ và tab tiến độ, soạn "Bài hôm nay" (Viết mới + Toán + Viết ôn)
   features/lesson/             # luồng bài học, màn "Xong bài hôm nay!"
   features/subject/            # bản đồ môn Viết và Toán
   features/placement/          # bài thử xếp cấp lần đầu
@@ -91,6 +91,7 @@ lib/
 tools/shot/                    # harness chụp màn hình (không thuộc test/), xem docs/perf.md
 tools/assets/                  # cắt + tách nền ảnh Gemini (Python, có test)
 tools/glyphs/make_glyphs.py    # sinh nét mẫu TẠM cho nét cơ bản, số 0–9, chữ cái và dấu thanh (gọi letters.py)
+tools/glyphs/capitals.py       # NGUỒN của 29 chữ hoa (2G, mẫu tiểu học rút gọn)
 tools/glyphs/letters.py        # NGUỒN của 29 chữ thường (kiểu chữ viết trường học) + 5 dấu thanh: khung 12 ô li, ruling/context/speech
 tools/glyphs/render_sheet.py   # vẽ bảng xem nét -> docs/superpowers/specs/assets/letters-sheet.png
 tools/glyphs/test_letters.py   # pytest cho chữ cái (11 test)
@@ -163,8 +164,9 @@ assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướ
 | Ảnh phần thưởng đua với bạn | 4 huy chương online + 6 sticker hiếm đã vẽ 3D và tách nền (thay ảnh tạm). Sửa sau rà soát: sticker "Chíp tập viết" còn một mảng nền xanh kẹt trong vòng xoáy (lỗ bị bao kín nhỏ hơn ngưỡng 200 điểm ảnh) → `chroma_key.py` thêm tùy chọn `min_hole` theo từng ảnh (mặc định giữ nguyên), config `sticker-rare-chip-write.json` dùng `min_hole: 40`, tạo lại 3 cỡ (chỉ 84 điểm ảnh của mảng đó đổi). 3 test mới cho `min_hole` (17 test công cụ ảnh đạt) | Xong |
 | 2D-7 phần code | **Sao lưu:** `server/deploy/backup.sh` (pg_dump -Fc → openssl AES-256 PBKDF2, giữ 14 ngày, rclone ra ngoài nếu có `BACKUP_REMOTE`, không để lại file dở khi lỗi) + `restore.sh` (vào DB nháp `funedu_restore`); đã thử thật: khôi phục đủ số dòng mọi bảng, sai mật khẩu thì thất bại. **Thu hồi Apple:** app gửi `authorizationCode`, máy chủ đổi lấy refresh token Apple (ES256 client secret từ key `.p8`), lưu mã hóa AES-GCM (Flyway V4), xóa tài khoản thì gọi Apple revoke; thiếu key hoặc Apple lỗi thì bỏ qua, không chặn đăng nhập/xóa. 41 test máy chủ. Còn: chạy thật trên Oracle (tên miền, `.env`, cron) | Xong code |
 | 2B-2 cột xếp hạng (chủ dự án chọn hướng A) | Phòng 3–4 bạn: cột nhỏ ở mép trái dưới nút tạm dừng (`RaceStandingsStrip`, chỗ trời luôn trống, không che hành tinh hay tên lửa về đích): ảnh đại diện từng bạn (bé viền cam), vạch tiến độ, "Nhất/Nhì/Ba/Tư" khi về đích. Phòng 2 bạn và đua với Chíp không hiện (cảnh đã thấy đủ). Cảnh đua vẫn 2 làn. Dữ liệu `RivalView.standings`. Test 4 cỡ màn 320–1366 không tràn; harness `tools/shot/standings_shot_test.dart`. Bản đầu là dải ngang trên cùng nhưng ảnh chụp cho thấy che tên lửa bạn đã về đích → đổi thành cột trái | Xong |
+| 2G Chữ hoa tập viết | 29 chữ hoa `hoa-*` (nguồn `tools/glyphs/capitals.py`, dùng chung bộ nét của `letters.py`): mẫu chữ hoa tiểu học **rút gọn cho bé 3–6 tuổi** — cao 5 ô li, G/Y khuyết dưới 3 ô li, giữ nét móc/cong/lượn đặc trưng, bỏ nét xoắn trang trí; dấu mũ/á/râu trên đỉnh chữ hoa (ngắn hơn 2,5 ô li để luật đầu/cuối nét chấm được, cái chén Ă nằm cao hơn mũ Â 1,3 ô li); G bắt đầu bằng nét cong của C (C ⊂ G như o ⊂ a); nét tay của K chạm thân. Thang Viết 78 mục (nhóm mới **"Chữ hoa"** sau dấu thanh, thứ tự dạy: O Ô Ơ C I L T H U Ư V X N M A Ă Â E Ê S P R B D Đ K Q G Y), đọc "Mình viết chữ a hoa nhé!". Bản đồ Viết, tab Tiến bộ, phiếu tập tô PDF tự có nhóm mới; trận đua Tiếng Việt chỉ dùng chữ thường. Test: 8 pytest `test_capitals.py`; `test/stroke/capital_confusion_test.dart` 1653 test (mỗi chữ viết đúng mẫu được khen, mọi cặp chữ khác bị chấm sai trừ cặp chứa nhau A⊂Ă/Â, O⊂Ô/Ơ/Q, E⊂Ê, U⊂Ư, D⊂Đ, C⊂G; không lỏng hơn số 0). Bảng duyệt `docs/superpowers/specs/assets/capitals-sheet.png` (`render_sheet.py --capitals`). **Chờ chủ dự án duyệt mẫu chữ** | Xong code (chờ duyệt mẫu) |
 
-Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2756 test Dart đạt**, máy chủ **41 test** (`cd server && ./gradlew test`) (≈1680 là test cặp chữ/dấu trong `letter_confusion_test.dart`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
+Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **4525 test Dart đạt** (≈1650 là test chấm nhầm chữ hoa), máy chủ **41 test** (`cd server && ./gradlew test`) (≈1680 là test cặp chữ/dấu trong `letter_confusion_test.dart`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
 
 ## 7. Còn dở / việc của chủ dự án / điểm biết là chưa hoàn hảo
 
