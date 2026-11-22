@@ -175,7 +175,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       final unlockedStickers = stickers.where((s) => s.unlocked).length;
       final unlockedCerts = certs.where((c) => c.unlocked).length;
 
-      final content = CustomScrollView(
+      final content = _fadeInWhenLoaded(snapAsync.hasValue, CustomScrollView(
         slivers: [
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
@@ -224,7 +224,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             child: SizedBox(height: tablet ? 36 : 124),
           ),
         ],
-      );
+      ));
 
       if (!tablet) {
         return Stack(
@@ -1863,3 +1863,14 @@ class _CertificateModalState extends ConsumerState<_CertificateModal> {
     );
   }
 }
+
+/// The page frame (sky, nav) shows at once; the counts fade in once loaded,
+/// so no "0 sao" / locked stickers flash before the real ones.
+Widget _fadeInWhenLoaded(bool loaded, Widget child) => IgnorePointer(
+      ignoring: !loaded,
+      child: AnimatedOpacity(
+        opacity: loaded ? 1 : 0,
+        duration: const Duration(milliseconds: 150),
+        child: child,
+      ),
+    );

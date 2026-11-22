@@ -46,6 +46,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(homeSummaryProvider);
     final lessonAsync = ref.watch(todayLessonProvider);
+    // Until both load, the numbers keep their place but stay hidden (no
+    // "0 ngày học" flash) and "Bài hôm nay" waits.
+    final loading = !summaryAsync.hasValue || !lessonAsync.hasValue;
     final summary = summaryAsync.valueOrNull ??
         const HomeSummary(
           totalStars: 0,
@@ -70,11 +73,21 @@ class HomeScreen extends ConsumerWidget {
           lessonTotal: lesson.length,
           firstLabel: firstLabel,
           reward: ref.watch(pendingRewardProvider).valueOrNull,
+          loading: loading,
         ),
       ),
     );
   }
 }
+
+/// Keeps [child]'s size but hides it while the numbers load.
+Widget _hiddenWhile(bool loading, Widget child) => Visibility(
+      visible: !loading,
+      maintainSize: true,
+      maintainAnimation: true,
+      maintainState: true,
+      child: child,
+    );
 
 class _HomeBody extends StatelessWidget {
   const _HomeBody({
@@ -83,8 +96,10 @@ class _HomeBody extends StatelessWidget {
     required this.lessonTotal,
     required this.firstLabel,
     required this.reward,
+    this.loading = false,
   });
 
+  final bool loading;
   final PendingReward? reward;
   final KidProfile? kid;
   final HomeSummary summary;
@@ -169,6 +184,7 @@ class _HomeBody extends StatelessWidget {
                     kid: kid,
                     level: summary.level,
                     stars: summary.totalStars,
+                    hideStars: loading,
                     onParents: () => _openParents(context),
                     onSwitchKid: () => showKidSwitcher(context),
                   ),
@@ -177,13 +193,15 @@ class _HomeBody extends StatelessWidget {
                     bubbleText: bubbleText,
                     total: lessonTotal,
                     doneToday: summary.lessonsToday,
-                    onStart: () => context.push('/lesson'),
+                    onStart: () {
+                      if (!loading) context.push('/lesson');
+                    },
                     compact: compact,
                   ),
                   SizedBox(height: compact ? 8 : 14),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: FittedBox(
+                    child: _hiddenWhile(loading, FittedBox(
                       fit: BoxFit.scaleDown,
                       child: InfoPill(
                         leading: Image.asset(AppImages.icFlame,
@@ -193,7 +211,7 @@ class _HomeBody extends StatelessWidget {
                         label:
                             '${summary.learnedDaysThisWeek} ngày học tuần này',
                       ),
-                    ),
+                    )),
                   ),
                   if (reward != null) ...[
                     SizedBox(height: compact ? 6 : 12),
@@ -264,21 +282,24 @@ class _HomeBody extends StatelessWidget {
         kid: kid,
         level: summary.level,
         stars: summary.totalStars,
+        hideStars: loading,
         onParents: () => _openParents(context),
         onSwitchKid: () => showKidSwitcher(context),
       ),
       hero: HomeHeroCard(
         bubbleText: bubbleText,
         progressText: _progressText(summary.lessonsToday, lessonTotal),
-        onStart: () => context.push('/lesson'),
+        onStart: () {
+          if (!loading) context.push('/lesson');
+        },
       ),
-      weekPanel: WeekPanel(
+      weekPanel: _hiddenWhile(loading, WeekPanel(
         learnedWeekdays: summary.learnedWeekdays,
         masteredWriting: summary.masteredWriting,
         writingTotal: writingLadder.length,
         mathLevel: summary.mathLevelIndex + 1,
         mathTotal: mathLevels.length,
-      ),
+      )),
       reward: reward == null ? null : _RewardPill(reward: reward!),
       subjects: (columns, cardHeight) => _SubjectGrid(
         cardHeight: cardHeight,
@@ -334,6 +355,7 @@ class _TopRow extends StatelessWidget {
     required this.kid,
     required this.level,
     required this.stars,
+    this.hideStars = false,
     required this.onParents,
     required this.onSwitchKid,
     this.wide = false,
@@ -342,6 +364,9 @@ class _TopRow extends StatelessWidget {
   final KidProfile? kid;
   final int level;
   final int stars;
+
+  /// While loading: the star pill keeps its place, empty.
+  final bool hideStars;
   final VoidCallback onParents;
   final VoidCallback onSwitchKid;
 
@@ -433,10 +458,13 @@ class _TopRow extends StatelessWidget {
           )),
         ),
         if (wide) const SizedBox(width: 16) else const Spacer(),
-        InfoPill(
-          leading: Image.asset(AppImages.icStar,
-              width: 28, height: 28, fit: BoxFit.contain),
-          label: '$stars',
+        _hiddenWhile(
+          hideStars,
+          InfoPill(
+            leading: Image.asset(AppImages.icStar,
+                width: 28, height: 28, fit: BoxFit.contain),
+            label: '$stars',
+          ),
         ),
         const SizedBox(width: 8),
         Semantics(

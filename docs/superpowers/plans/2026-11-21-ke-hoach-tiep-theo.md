@@ -40,10 +40,10 @@
 
 ## Việc nhỏ xen kẽ (khi chờ chủ dự án chuẩn bị)
 
-- Trang chủ và Sưu tập không nháy số 0 lúc tải.
-- Góc Chơi báo "Quà chờ bé!"; `GameRepository.select()` kiểm loại món, `select`/`markSeen` trong transaction.
-- `_letterNames` trong màn đua đọc từ `speech` của glyph.
-- Bản đồ Toán bỏ `Opacity` ô khóa.
+- ✅ Trang chủ và Sưu tập không nháy số 0 lúc tải (trang chủ: số giữ chỗ nhưng ẩn, "Bài hôm nay" chờ; Sưu tập: nội dung hiện dần khi tải xong).
+- ✅ Góc Chơi báo "Quà chờ bé!"; `GameRepository.select()` kiểm loại món, `select`/`markSeen` trong transaction.
+- ✅ `_letterNames` (chỉ dùng dự phòng khi không đọc được file nét chữ): test đối chiếu với `speech` của mọi chữ cái + dấu thanh.
+- ✅ Bản đồ Toán bỏ `Opacity` ô khóa.
 - Sửa lỗi từ đợt chủ dự án chạy `--profile` máy thật.
 
 ## Để sau 2D + 2B-2
