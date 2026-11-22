@@ -91,3 +91,15 @@ Tổng hợp bộ 10 sticker tạo hình nhân vật Chíp Chíp (chim sẻ nâu
 - **Prompt bổ sung**: `sitting in a small white clay rocket, waving`
 
 ![sticker_wave_rocket](generated/stickers/sticker_wave_rocket.jpg)
+
+---
+
+# Bộ Sticker Hiếm Viền Vàng (Rare Gold-Border Stickers)
+
+## 11. rare_chip_sleep (Chíp ngủ say)
+- **Tập tin**: [sticker_rare_chip_sleep_1795319342671.jpg](generated/stickers/sticker_rare_chip_sleep_1795319342671.jpg)
+- **Mô tả**: Chíp ngủ say sưa cuộn tròn trên mặt trăng lưỡi liềm vàng, viền vàng kim tuyến lấp lánh dày dặn.
+- **Prompt bổ sung**: `sleeping peacefully curled up on a soft yellow clay crescent moon, eyes closed smiling gently, cozy dreaming with tiny golden sparkles, thick sparkling gold metallic outline`
+
+![rare_chip_sleep](generated/stickers/sticker_rare_chip_sleep_1795319342671.jpg)
+

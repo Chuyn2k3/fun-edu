@@ -212,11 +212,12 @@ Trạng thái kiểm tra (2026-11-21): `flutter analyze` sạch, **2744 test Dar
      - **Chống giật layout buồng lái đua RaceScreen:** Thay SizedBox.shrink() bằng _CockpitPlaceholder giữ nguyên chiều cao bàn điều khiển với đèn hiệu "Sẵn sàng xuất phát!", nạp song song glyphs trong RaceController.start.
      - **Hiệu ứng chuyển màn con êm dịu (Arcade Micro-Transitions):** buildSmoothTransitionPage (Fade + Scale nhẹ 0.97 -> 1.0 trong 160ms Curves.easeOutCubic) cho mọi màn hình con.
      - **Kiểm thử toàn diện:** Đạt 2,682/2,682 tests (flutter test), flutter analyze 0 issues.
-   - **Vẽ và tích hợp huy hiệu 3D mới cho phòng đua (2026-11-21):**
-     - Đã tạo và tách nền chroma-key 3 huy hiệu 3D: Bạn Đua Vui Vẻ (`badge-friend-racer.png`), Nhà Vô Địch (`badge-friend-champion.png`), Cuộc Đua Lớn (`badge-big-race.png`).
+   - **Vẽ và tích hợp huy hiệu 3D & sticker hiếm mới cho phòng đua (2026-11-21/22):**
+     - ĐÃ XONG 100% toàn bộ 4 huy hiệu 3D: Bạn Đua Vui Vẻ (`badge-friend-racer.png`), Nhà Vô Địch (`badge-friend-champion.png`), Cuộc Đua Lớn (`badge-big-race.png`), Cổ Vũ Nhiệt Tình (`badge-cheerleader.png`).
+     - Đã tạo và tách nền sticker hiếm viền vàng: Chíp ngủ say (`sticker-rare-chip-sleep.png`).
      - Cập nhật `AppImages`, `GameBadge`, xuất đủ 3 độ phân giải (1x/2x/3x) vào `assets/images/game/`.
-     - Cập nhật `tools/assets/build_app_images.sh`, `test/ui/assets_test.dart` (31 game assets), kiểm thử đạt 100%.
-     - Huy hiệu Cổ Vũ Nhiệt Tình (`cheerleader`) và 6 sticker hiếm tạm hoãn chờ quota model `gemini-3.1-flash-image` reset (khoảng 5 tiếng).
+     - Cập nhật `tools/assets/build_app_images.sh`, `test/ui/assets_test.dart` (33 game assets), kiểm thử đạt 100%.
+     - Còn 5 sticker hiếm còn lại (`rare_chip_write`, `rare_rocket_chip`, `rare_crown`, `rare_comet`, `rare_planet`) chờ tạo bổ sung.
    - Cách làm: kỹ sư trưởng (AI) lập kế hoạch và rà soát; một AI khác code theo kế hoạch.
 1. **Chủ dự án đang chạy thử bản `--profile` trên máy thật (2026-11-19):**
    - Đánh giá thực tế độ mượt 120fps ProMotion (các animation cho ăn, trang trí, vuốt ve Chíp, đua tên lửa Free-Flight, chuyển cảnh tab).

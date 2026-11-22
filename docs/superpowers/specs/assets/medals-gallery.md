@@ -103,4 +103,14 @@ Tổng hợp bộ 8 huy hiệu / huy chương 3D phong cách đồ chơi đất 
 
 ![Cuộc Đua Lớn](generated/medals/clay_space_medal_badge_png_1795278472125.jpg)
 
+---
+
+## 12. Cổ Vũ Nhiệt Tình (Cheerleader)
+- **Tập tin**: [clay_cheerleader_badge_1795319357390.jpg](generated/medals/clay_cheerleader_badge_1795319357390.jpg)
+- **Chủ đề**: `cheering flags and heart on a pink medal (Cổ Vũ Nhiệt Tình)`
+- **Mô tả**: Huy chương đất sét màu hồng tươi sáng đắp nổi hình hai lá cờ cổ vũ mini cùng một trái tim phồng đỏ ngọt ngào, ruy-băng ngắn màu hồng pastel.
+
+![Cổ Vũ Nhiệt Tình](generated/medals/clay_cheerleader_badge_1795319357390.jpg)
+
+
 

@@ -26,7 +26,7 @@ void main() {
 
   test('game art PNGs have an alpha channel', () async {
     final game = AppImages.all.where((p) => p.startsWith('assets/images/game/'));
-    expect(game.length, 31);
+    expect(game.length, 33);
     for (final path in game) {
       final bytes = (await rootBundle.load(path)).buffer.asUint8List();
       // PNG IHDR colour type is byte 25: 6 = RGBA, 4 = grey+alpha.

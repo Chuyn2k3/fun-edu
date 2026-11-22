@@ -66,11 +66,11 @@ Mỗi sticker một hình riêng, nền trắng, nhìn cùng phong cách với C
 | Bạn Đua Vui Vẻ (`friend_racer`) | `badge-friend-racer.png` (Đã vẽ 3D) | Hai tên lửa nhỏ bay song song, dải ruy băng cam |
 | Nhà Vô Địch (`friend_champion`) | `badge-friend-champion.png` (Đã vẽ 3D) | Cúp vàng có ngôi sao, ruy băng đỏ |
 | Cuộc Đua Lớn (`big_race`) | `badge-big-race.png` (Đã vẽ 3D) | Bốn tên lửa bốn màu quanh hành tinh |
-| Cổ Vũ Nhiệt Tình (`cheerleader`) | `ic-star.png` (Tạm - Chờ reset quota) | Cờ cổ vũ + trái tim |
+| Cổ Vũ Nhiệt Tình (`cheerleader`) | `badge-cheerleader.png` (Đã vẽ 3D) | Cờ cổ vũ + trái tim |
 
-| Sticker hiếm | Ảnh tạm | Gợi ý vẽ (Chíp 3D, viền vàng lấp lánh) |
+| Sticker hiếm | Ảnh thực tế / Ảnh tạm | Gợi ý vẽ (Chíp 3D, viền vàng lấp lánh) |
 |---|---|---|
-| `rare_chip_sleep` Chíp ngủ say | `chip-sleep.png` | Chíp ngủ trên mặt trăng |
+| `rare_chip_sleep` Chíp ngủ say | `sticker-rare-chip-sleep.png` (Đã vẽ 3D) | Chíp ngủ trên mặt trăng |
 | `rare_chip_write` Chíp tập viết | `chip-write.png` | Chíp viết chữ phát sáng |
 | `rare_rocket_chip` Chíp lái tên lửa | `game/rocket-chip.png` | Chíp đội mũ phi công vàng |
 | `rare_crown` Vương miện vàng | `ic-crown.png` | Chíp đội vương miện |

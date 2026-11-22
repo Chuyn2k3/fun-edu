@@ -39,6 +39,7 @@ abstract final class AppImages {
   static const badgeFriendRacer = 'assets/images/game/badge-friend-racer.png';
   static const badgeFriendChampion = 'assets/images/game/badge-friend-champion.png';
   static const badgeBigRace = 'assets/images/game/badge-big-race.png';
+  static const badgeCheerleader = 'assets/images/game/badge-cheerleader.png';
   static const stickerClap = 'assets/images/game/sticker-clap.png';
   static const stickerLaugh = 'assets/images/game/sticker-laugh.png';
   static const stickerPilotGoggles = 'assets/images/game/sticker-pilot-goggles.png';
@@ -49,6 +50,7 @@ abstract final class AppImages {
   static const stickerAbacus = 'assets/images/game/sticker-abacus.png';
   static const stickerCrayon = 'assets/images/game/sticker-crayon.png';
   static const stickerWaveRocket = 'assets/images/game/sticker-wave-rocket.png';
+  static const stickerRareChipSleep = 'assets/images/game/sticker-rare-chip-sleep.png';
 
   /// Album sticker art by sticker id (Chíp poses, cut from green).
   static const stickers = <String, String>{
@@ -68,7 +70,7 @@ abstract final class AppImages {
     'sticker_surprise': chipSurprise,
     'sticker_encourage': chipEncourage,
     // Rare stickers (gold frame), dropped after races with friends.
-    'rare_chip_sleep': chipSleep,
+    'rare_chip_sleep': stickerRareChipSleep,
     'rare_chip_write': chipWrite,
     'rare_rocket_chip': rocketChip,
     'rare_crown': icCrown,
@@ -113,6 +115,7 @@ abstract final class AppImages {
     badgeFriendRacer,
     badgeFriendChampion,
     badgeBigRace,
+    badgeCheerleader,
     stickerClap,
     stickerLaugh,
     stickerPilotGoggles,
@@ -123,5 +126,6 @@ abstract final class AppImages {
     stickerAbacus,
     stickerCrayon,
     stickerWaveRocket,
+    stickerRareChipSleep,
   ];
 }

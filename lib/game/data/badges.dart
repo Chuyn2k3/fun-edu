@@ -89,7 +89,7 @@ enum GameBadge {
     title: 'Cổ Vũ Nhiệt Tình',
     howTo: 'Gửi 20 sticker cổ vũ cho bạn',
     stickerId: 'sticker_encourage',
-    image: AppImages.icStar,
+    image: AppImages.badgeCheerleader,
     online: true,
   );
 
