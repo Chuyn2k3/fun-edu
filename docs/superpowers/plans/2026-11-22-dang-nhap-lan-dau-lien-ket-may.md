@@ -74,7 +74,7 @@
   - `relinkedDeviceIsLinked` — chèn tay `family_devices(F, D, 'fresh')`, đăng xuất, đăng nhập lại cùng D → `device.linked == true`; với D2 khác → `false`.
   - Sửa các test cũ đang gọi `/auth/google` để gửi `deviceId` (helper trong `TestIdTokens`/test).
 - [ ] **Step 2: Chạy** `./gradlew test --tests '*AuthFlowTest*'` → FAIL.
-- [ ] **Step 3: V5 migration**: bảng `family_devices` đúng spec §6.1; `DELETE FROM refresh_tokens;` rồi `ALTER TABLE refresh_tokens ADD COLUMN device_id UUID NOT NULL;` (chưa phát hành: xóa phiên cũ là quyết định của plan, ghi chú trong SQL). Ghi `device_id` khi tạo refresh token; refresh sao chép `device_id` sang token mới; access token thêm claim `dev`. Phản hồi đăng nhập/refresh là `Session` (JSON) + `device.linked` = tồn tại dòng `(familyId, deviceId)`.
+- [ ] **Step 3: V5 migration**: bảng `family_devices` đúng spec §6.1; chỉ mục `CREATE INDEX sync_records_family_kind_live_idx ON sync_records (family_id, kind) WHERE NOT deleted;` và `CREATE INDEX refresh_tokens_expires_at_idx ON refresh_tokens (expires_at);` (spec §11.3 mục 4, 6); `DELETE FROM refresh_tokens;` rồi `ALTER TABLE refresh_tokens ADD COLUMN device_id UUID NOT NULL;` (chưa phát hành: xóa phiên cũ là quyết định của plan, ghi chú trong SQL). Ghi `device_id` khi tạo refresh token; refresh sao chép `device_id` sang token mới; access token thêm claim `dev`. Phản hồi đăng nhập/refresh là `Session` (JSON) + `device.linked` = tồn tại dòng `(familyId, deviceId)`.
 - [ ] **Step 4: Chạy** toàn bộ `./gradlew test` → PASS (41 test cũ + test mới).
 - [ ] **Step 5: Commit** `feat(server): device id in sign-in and tokens`.
 
@@ -126,6 +126,25 @@
 - [ ] **Step 4: Chạy** `./gradlew test` → PASS; chạy riêng `DeviceLinkTest` 3 lần liền để chắc test song song ổn định.
 - [ ] **Step 5: Sửa `docs/online-setup.md`** (thêm mục API liên kết), **commit** `feat(server): device link gate for sync`.
 
+### Task 3b: Máy chủ — đẩy dữ liệu theo lô + dọn refresh token
+
+**Files:**
+- Modify: `sync/SyncService.java`, `auth/AuthService.java` (hoặc lớp mới `auth/RefreshTokenCleanup.java`), `src/main/resources/application.yml` (nếu thêm `reWriteBatchedInserts`)
+- Test: `SyncApiTest.java`, `server/src/test/java/com/ibme/funedu/server/auth/RefreshTokenCleanupTest.java` (mới)
+
+**Interfaces:**
+- Consumes: không đổi API (`SyncService.sync(UUID, long, List<Change>) -> Result` giữ nguyên chữ ký và kết quả).
+- Produces: `RefreshTokenCleanup.purge() -> int` (số dòng xóa), chạy `@Scheduled(cron = "0 15 3 * * *")`.
+
+- [ ] **Step 1: Viết test hỏng / bảo vệ hành vi**:
+  - `batchPushMixedConflicts` — 500 thay đổi, trong đó 3 khóa có `baseVersion` lệch: 497 được lưu với `version` tăng dần, `conflicts` đúng 3 khóa, `records` chứa bản thắng của cả 3 (kể cả khóa đã kéo trước đó).
+  - `pushTwoThousandIsFast` — 2000 thay đổi mới trong một lần < 3 giây trên DB test (in thời gian ra log).
+  - `purgeRemovesExpiredAndOldRevoked` — dòng hết hạn và dòng thu hồi > 7 ngày bị xóa; dòng thu hồi 1 ngày còn (vẫn phát hiện dùng lại).
+- [ ] **Step 2: Chạy** → `pushTwoThousandIsFast` FAIL hoặc chậm với vòng lặp hiện tại (ghi số đo trước khi sửa vào commit message), test khác đạt/hỏng tùy.
+- [ ] **Step 3: Cài** theo spec §11.3 mục 1 (một `SELECT … key = ANY(?)`, một lệnh ghi theo lô qua `unnest` hoặc `batchUpdate`, một `SELECT` bản thắng của xung đột) và mục 6 (xóa theo lô 5.000 trong vòng lặp tới khi < 5.000).
+- [ ] **Step 4: Chạy** `./gradlew test` → PASS; ghi số đo sau khi sửa.
+- [ ] **Step 5: Commit** `perf(server): batched sync push, nightly refresh-token purge`.
+
 ### Task 4: App — deviceId, phiên có `linked`, kết quả đăng nhập
 
 **Files:**
@@ -175,7 +194,7 @@
   - `v8 to v9 backfill skips attempts without points` (trong `migration_test.dart`) — DB v8 có attempts của "a" (có points) và "b" (points null) → sau nâng cấp có trang "a", không có "b", không ném lỗi.
   - Trong `sync_engine_test.dart` (hai máy, máy chủ giả): `notebook page travels to the other device`, `better page replaces, worse does not`, `deleting a kid deletes its pages`, `stroke attempts never leave the device` (không bản ghi đẩy lên nào chứa khóa bắt đầu khác các loại cho phép, và không có `points`).
 - [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài** bảng + migration (`from < 9`: `createTable(notebookPages)` rồi điền bằng `refreshNotebookPage` cho mọi `(kidId, glyphId)` trong `stroke_attempts` có glyph tải được), chạy build_runner; gọi `refreshNotebookPage` ngay sau `recordGlyphCompleted` ở hai màn (lỗi chỉ `debugPrint`, không chặn bé); `SyncStore.exportAll`/`_write`/`_deleteKid` cho `page`.
+- [ ] **Step 3: Cài** bảng + migration (`from < 9`: `createTable(notebookPages)`, tạo chỉ mục `stroke_attempts (kid_id, glyph_id)` (spec §11.4) rồi điền bằng `refreshNotebookPage` cho mọi `(kidId, glyphId)` trong `stroke_attempts` có glyph tải được), chạy build_runner; gọi `refreshNotebookPage` ngay sau `recordGlyphCompleted` ở hai màn (lỗi chỉ `debugPrint`, không chặn bé); `SyncStore.exportAll`/`_write`/`_deleteKid` cho `page`.
 - [ ] **Step 4: Chạy** `flutter analyze && flutter test test/collection test/data test/online test/features/collection` → PASS.
 - [ ] **Step 5: Commit** `feat(notebook): notebook_pages table (v9) synced as page records`.
 

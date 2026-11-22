@@ -1,6 +1,6 @@
 # Đăng nhập ngay lần đầu + liên kết máy (online/khách) — thiết kế
 
-> Ngày: 2026-11-22 · Trạng thái: **chờ chủ dự án duyệt** · Nhánh: `chipchip`
+> Ngày: 2026-11-22 · Trạng thái: **đã duyệt hướng (cách 2, A)**; §11 DB/API bổ sung theo yêu cầu chủ dự án · Nhánh: `chipchip`
 > Tiếp nối spec 2D: `docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md`.
 > Người code là AI khác, có người rà soát: tài liệu này phải đủ để lập plan mà không phải hỏi lại.
 
@@ -278,3 +278,67 @@ Dùng máy chủ giả trong `test/online/` (mở rộng `online_fakes.dart`):
 - Tài khoản chỉ có tombstone (đã xóa hết bé) coi như trống.
 - Máy liên kết `fresh` chưa đẩy gì không tính là "tài khoản có dữ liệu": nếu cùng lúc một máy khách `upload` thì hai bộ dữ liệu mới cùng vào tài khoản trống. Chấp nhận (không có dữ liệu cũ nào bị đè).
 - `deviceId` lưu trong drift `app_settings`, không trong secure storage (không phải bí mật).
+
+## 11. Cơ sở dữ liệu và API (toàn bộ, sau V5) + tối ưu truy vấn
+
+> Gom thiết kế DB/API đang rải ở spec 2D, `docs/online-setup.md` và code, cộng phần mới của spec này. Ước lượng tải để chọn chỉ mục: mỗi bé ~3.000 bản ghi/năm (chủ yếu `usage` theo ngày, `lesson`, `race`), gia đình 4 bé ~12.000 bản ghi/năm, payload trung bình < 300 byte (trang vở 1–4 KB). Một máy đồng bộ mỗi 5 phút khi mở app; một lần đẩy ≤ 500 thay đổi (máy chủ nhận ≤ 2000).
+
+### 11.1 Bảng (PostgreSQL 16)
+
+| Bảng | Cột chính | Khóa / chỉ mục | Dùng cho |
+|---|---|---|---|
+| `families` | `id UUID`, `created_at` | PK `id` | gốc của mọi dữ liệu; xóa → cascade |
+| `parent_accounts` | `id`, `family_id`, `provider ('google'\|'apple')`, `subject`, `email`, `apple_refresh_token` (niêm phong), `apple_client_id` | PK `id`; UNIQUE `(provider, subject)` (tìm khi đăng nhập); UNIQUE `family_id` (1 tài khoản/gia đình) | đăng nhập |
+| `refresh_tokens` | `id`, `parent_id`, `token_hash BYTEA(32)`, `device_id UUID` (**V5**), `created_at`, `expires_at`, `revoked_at` | PK `id`; UNIQUE `token_hash` (tìm khi refresh); idx `parent_id` (thu hồi mọi phiên) | phiên |
+| `sync_records` | `family_id`, `key TEXT`, `kind TEXT`, `payload JSONB`, `deleted`, `version BIGINT`, `updated_at` | PK `(family_id, key)`; idx `(family_id, version)` | dữ liệu của bé |
+| `family_devices` (**V5**) | `family_id`, `device_id`, `mode`, `linked_at` | PK `(family_id, device_id)` | liên kết máy |
+
+Không thêm cột vào `sync_records` cho từng loại dữ liệu: máy chủ chỉ lưu và sắp thứ tự, app gộp (đã chốt ở 2D). Chỉ `AccountSummary` đọc vào payload.
+
+### 11.2 API
+
+| Method + đường dẫn | Vào | Ra | Truy vấn chính (chỉ mục dùng) |
+|---|---|---|---|
+| `POST /api/v1/auth/{google\|apple}` | `idToken`, `authorizationCode?`, `deviceId` | token, `familyId`, `device.linked`, `account` | `parent_accounts` theo UNIQUE `(provider, subject)`; `family_devices` theo PK; tóm tắt (§11.3) |
+| `POST /api/v1/auth/refresh` | `refreshToken` | token mới | `refresh_tokens` theo UNIQUE `token_hash` `FOR UPDATE` |
+| `POST /api/v1/auth/logout` | `refreshToken` | 204 | UPDATE theo `token_hash` |
+| `GET /api/v1/me` | — | `familyId`, `provider`, `email` | PK |
+| `DELETE /api/v1/account` | — | 204 | DELETE `families` theo PK (cascade) |
+| `GET /api/v1/sync/link` | — | `linked`, `account` | PK `family_devices` + tóm tắt |
+| `POST /api/v1/sync/link` | `mode` | 200 / 409 `account_not_empty` | khóa dòng `families`; `EXISTS` (§11.3) |
+| `POST /api/v1/sync` | `since`, `changes[]` (≤ 2000) | `version`, `records` (≤ 1000), `conflicts`, `hasMore` | §11.3 |
+| `POST /api/v1/rooms`, `WS /ws/room` | — | — | không chạm DB (phòng trong bộ nhớ) |
+
+**Lấy dữ liệu** = `POST /api/v1/sync` với `changes: []` và `since` là con trỏ của máy (0 = lấy tất cả, theo trang 1000, `hasMore` báo còn). **Lưu** = cùng endpoint với `changes`. Một endpoint cho cả hai để mỗi lần đồng bộ chỉ một round trip và một khóa.
+
+### 11.3 Truy vấn và tối ưu
+
+1. **Đẩy thay đổi — đang chạy 2 lệnh SQL mỗi thay đổi** (`SELECT version` rồi `INSERT … ON CONFLICT` trong vòng lặp): 500 thay đổi = 1.000 round trip. **Sửa** (Task 3b):
+   - Đọc version hiện có **một lần**: `SELECT key, version FROM sync_records WHERE family_id = ? AND key = ANY(?)` (PK `(family_id, key)`).
+   - So `baseVersion` trong Java, rồi ghi mọi thay đổi hợp lệ bằng **một** lệnh: `INSERT … SELECT … FROM unnest(?::text[], ?::text[], ?::jsonb[], ?::bool[]) … ON CONFLICT (family_id, key) DO UPDATE …` (hoặc `jdbc.batchUpdate` với `reWriteBatchedInserts=true` trong URL JDBC). `version` vẫn lấy `nextval` từng dòng.
+   - Đọc lại bản thắng của các khóa bị xung đột bằng **một** `key = ANY(?)` thay vì từng khóa.
+   - Kết quả: ~4 lệnh SQL mỗi lần đồng bộ bất kể số thay đổi.
+2. **Kéo dữ liệu**: `WHERE family_id = ? AND version > ? ORDER BY version LIMIT 1001` → chỉ mục `(family_id, version)` cho quét theo khoảng, đã sắp sẵn, không sort. Giữ nguyên. Advisory lock theo gia đình giữ nguyên (đúng thứ tự con trỏ).
+3. **"Tài khoản có dữ liệu"**: `SELECT EXISTS (SELECT 1 FROM sync_records WHERE family_id = ? AND NOT deleted)` — dừng ở dòng đầu, không `COUNT(*)`. Cộng `EXISTS (… family_devices WHERE family_id = ? AND mode = 'upload')` (PK).
+4. **Tóm tắt tài khoản** (đăng nhập, link): một lệnh, chỉ đọc 6 loại cần thiết:
+   ```sql
+   SELECT split_part(key, ':', 2) AS kid, kind,
+          count(*) AS n,
+          sum(CASE WHEN kind = 'lesson' THEN (payload->>'stars')::bigint END) AS stars
+   FROM sync_records
+   WHERE family_id = ? AND NOT deleted
+     AND kind IN ('kid', 'lesson', 'glyph', 'page', 'item', 'badge')
+   GROUP BY 1, 2;
+   ```
+   cộng một lệnh lấy `payload->>'nickname'`, `'avatar'`, `'createdAt'` của `kind = 'kid'`. Thêm chỉ mục **`(family_id, kind) WHERE NOT deleted`** (V5) để bỏ qua `usage`/`race`/`setting` (phần lớn số dòng). Ước tính: 12.000 dòng/gia đình → quét ~3.000 dòng trong chỉ mục, < 10 ms.
+5. **Máy đã liên kết?** mỗi lần đẩy: PK `family_devices` — 1 lần tra chỉ mục; chỉ chạy khi `changes` không rỗng.
+6. **Dọn `refresh_tokens`**: mỗi lần refresh (15 phút) sinh một dòng mới, ~100 dòng/ngày/máy → **tác vụ hằng đêm** (`@Scheduled`, 03:15 giờ máy chủ): `DELETE FROM refresh_tokens WHERE expires_at < now() OR revoked_at < now() - interval '7 days'`, xóa theo lô 5.000. Thêm chỉ mục `(expires_at)` (V5). Giữ token đã thu hồi 7 ngày để vẫn phát hiện dùng lại token cũ.
+7. **Tombstone** (`deleted = true`) giữ lại để máy khác biết đã xóa; số lượng nhỏ (xóa bé, đổi phần thưởng). Không dọn ở đợt này; ghi lại là việc sau nếu một gia đình vượt 100.000 dòng.
+8. **Kết nối**: HikariCP mặc định 10 kết nối đủ cho máy Oracle 1 nhân/ vài trăm gia đình; mỗi lần đồng bộ là một transaction ngắn. Không thêm cache (Redis…): dữ liệu theo gia đình, ít đọc lặp.
+9. **Giới hạn đã có, giữ nguyên**: ≤ 2000 thay đổi/lần, payload ≤ 16 KB, khóa ≤ 200 ký tự, danh sách trắng `kind`, 20 lần đăng nhập/phút/IP.
+
+### 11.4 Phía app (drift)
+
+- `synced_records (key PK, version, payload_json)` nhớ bản đã đồng bộ; `pendingChanges()` so `exportAll()` với bảng này. `exportAll()` đọc toàn bộ dữ liệu mỗi lần đồng bộ: ~12.000 dòng/năm là nhỏ, giữ nguyên; nếu đo `--profile` thấy > 100 ms thì mới tối ưu (đánh dấu bẩn theo bảng).
+- `notebook_pages` PK `(kid_id, glyph_id)`: đọc vở là một truy vấn theo `kid_id` (prefix của PK), không còn dựng lại từ `stroke_attempts` mỗi lần mở.
+- `stroke_attempts` cần chỉ mục `(kid_id, glyph_id)` cho `refreshNotebookPage` (`attemptsFor`): kiểm xem đã có chưa; chưa có thì thêm trong migration v9.
