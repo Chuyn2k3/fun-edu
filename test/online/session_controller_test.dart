@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io' show SocketException;
 
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
@@ -185,4 +187,51 @@ void main() {
     expect(requests.where((r) => r.url.path == '/api/v1/sync'), hasLength(1));
     expect(c.read(syncControllerProvider).lastAt, isNotNull);
   });
+
+  group('why a Google sign-in failed', () {
+    Future<SignInException> failure(ProviderContainer c) async {
+      await c.read(sessionProvider.future);
+      try {
+        await c.read(sessionProvider.notifier).signIn('google');
+      } on SignInException catch (e) {
+        return e;
+      }
+      fail('sign-in should have failed');
+    }
+
+    test('app not registered in Google Cloud (ApiException 10) is a setup problem', () async {
+      ids.googleError = PlatformException(code: 'sign_in_failed', message: 'ApiException: 10: ');
+      final e = await failure(container());
+      expect(e.failure, SignInFailure.setup);
+      expect(e.detail, contains('ApiException: 10'));
+      expect(requests, isEmpty);
+    });
+
+    test('closing the Google sheet (12501) is a cancel, not an error', () async {
+      ids.googleError = PlatformException(code: 'sign_in_canceled', message: 'ApiException: 12501');
+      expect((await failure(container())).failure, SignInFailure.cancelled);
+    });
+
+    test('no id token (build without GOOGLE_SERVER_CLIENT_ID) is a setup problem', () async {
+      ids.googleError = const MissingIdTokenException('GOOGLE_SERVER_CLIENT_ID chưa được truyền khi build');
+      final e = await failure(container());
+      expect(e.failure, SignInFailure.setup);
+      expect(e.detail, contains('GOOGLE_SERVER_CLIENT_ID'));
+    });
+
+    test('server unreachable says which URL', () async {
+      handler = (_) => throw const SocketException('refused');
+      final e = await failure(container());
+      expect(e.failure, SignInFailure.network);
+      expect(e.detail, contains('https://api.test'));
+    });
+
+    test('server refusing the token says the status', () async {
+      handler = (_) => jsonResponse({'error': 'unauthorized'}, 401);
+      final e = await failure(container());
+      expect(e.failure, SignInFailure.rejected);
+      expect(e.detail, contains('401'));
+    });
+  });
 }
+

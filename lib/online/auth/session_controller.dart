@@ -1,17 +1,38 @@
 import 'package:drift/drift.dart' show StringExpressionOperators;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
 import '../api_client.dart';
+import '../online_config.dart';
 import 'identity_providers.dart';
 import 'token_store.dart';
 
 /// Why a sign-in did not finish.
-enum SignInFailure { cancelled, rejected, network }
+enum SignInFailure {
+  /// The parent closed the Google / Apple sheet.
+  cancelled,
+
+  /// Google / Apple refused or the build is not set up for it (client id,
+  /// SHA-1, Play services...). [SignInException.detail] has the code.
+  setup,
+
+  /// The FunEdu server could not be reached.
+  network,
+
+  /// The FunEdu server refused the id token (usually its client id list).
+  rejected,
+}
 
 class SignInException implements Exception {
-  const SignInException(this.failure);
+  const SignInException(this.failure, [this.detail]);
   final SignInFailure failure;
+
+  /// Technical reason, shown to developers in debug builds.
+  final String? detail;
+
+  @override
+  String toString() => 'SignInException($failure, $detail)';
 }
 
 /// The family session: null while signed out. Only a parent, inside Góc ba
@@ -36,8 +57,17 @@ class SessionController extends AsyncNotifier<StoredSession?> {
       } else {
         idToken = await ids.googleIdToken();
       }
-    } catch (_) {
-      throw const SignInException(SignInFailure.rejected);
+    } on PlatformException catch (e) {
+      // e.g. sign_in_failed + "ApiException: 10" = package name / SHA-1 not
+      // registered for this app in Google Cloud; 12501 = the sheet closed.
+      if ('${e.code} ${e.message}'.contains('12501')) {
+        throw const SignInException(SignInFailure.cancelled);
+      }
+      throw SignInException(SignInFailure.setup, '${e.code}: ${e.message}');
+    } on MissingIdTokenException catch (e) {
+      throw SignInException(SignInFailure.setup, e.detail);
+    } catch (e) {
+      throw SignInException(SignInFailure.setup, '$e');
     }
     if (idToken == null) throw const SignInException(SignInFailure.cancelled);
 
@@ -49,14 +79,16 @@ class SessionController extends AsyncNotifier<StoredSession?> {
         if (appleCode != null) 'authorizationCode': appleCode,
       });
     } on ApiException catch (e) {
-      throw SignInException(
-          e.status == 0 ? SignInFailure.network : SignInFailure.rejected);
+      throw e.status == 0
+          ? SignInException(SignInFailure.network,
+              'không tới được ${ref.read(onlineConfigProvider).apiUrl} (${e.code})')
+          : SignInException(SignInFailure.rejected, 'máy chủ trả ${e.status} ${e.code ?? ''}');
     }
     final access = res?['accessToken'] as String?;
     final refresh = res?['refreshToken'] as String?;
     final family = res?['familyId'] as String?;
     if (access == null || refresh == null || family == null) {
-      throw const SignInException(SignInFailure.rejected);
+      throw const SignInException(SignInFailure.rejected, 'máy chủ trả thiếu token');
     }
     String? email;
     try {

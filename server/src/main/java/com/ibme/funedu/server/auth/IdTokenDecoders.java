@@ -15,6 +15,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 /** Verifies Google / Apple id tokens: signature, issuer, audience, expiry. */
 public class IdTokenDecoders {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IdTokenDecoders.class);
+
     private final Map<String, NimbusJwtDecoder> byProvider;
 
     public IdTokenDecoders(Map<String, NimbusJwtDecoder> byProvider) {
@@ -35,6 +37,9 @@ public class IdTokenDecoders {
             }
             return jwt;
         } catch (JwtException e) {
+            // The reason only ("bad aud", "expired", "no matching key"),
+            // never the token: tells a developer which setting is wrong.
+            log.info("Rejected {} id token: {}", provider, e.getMessage());
             throw new AuthFailedException("bad id token");
         }
     }

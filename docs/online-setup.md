@@ -41,7 +41,8 @@ flutter run \
 ```
 
 - Máy ảo Android gọi máy dev qua `10.0.2.2`; máy thật dùng IP LAN của máy dev hoặc tên miền HTTPS.
-- Android chặn HTTP thường ở bản release; khi thử bằng `http://` dùng bản debug/profile, bản phát hành phải là `https://`.
+- Android 9+ chặn HTTP thường kể cả bản debug; repo đã mở `usesCleartextTraffic` **chỉ** ở `android/app/src/debug` và `profile`, nên thử `http://` bằng bản debug/profile. Bản release phải là `https://`.
+- Máy chủ phải nghe được từ máy ảo/điện thoại (mặc định Spring nghe mọi địa chỉ; kiểm tường lửa cổng 8080). Thử: mở `http://10.0.2.2:8080/actuator/health` bằng Chrome trong máy ảo.
 - Vào Góc ba mẹ → Cài đặt → "Lưu tiến độ online".
 
 ## 3. Google Sign-In
@@ -66,6 +67,25 @@ Google Cloud Console → APIs & Services → Credentials, tạo 3 OAuth client:
     <array><string>com.googleusercontent.apps.IOS_CLIENT_ID</string></array>
   </dict>
 </array>
+```
+
+### Đăng nhập Google không được — kiểm lần lượt
+
+Chạy bản **debug**: thông báo lỗi có thêm dòng `(...)` cho biết lý do.
+
+| Dòng `(...)` | Nguyên nhân | Sửa |
+|---|---|---|
+| `GOOGLE_SERVER_CLIENT_ID chưa được truyền khi build` | thiếu `--dart-define` | thêm `--dart-define=GOOGLE_SERVER_CLIENT_ID=<web client id>` (client **Web**, không phải Android) |
+| `sign_in_failed: ...ApiException: 10` | Google không nhận app: thiếu client **Android** đúng gói + SHA-1 | tạo client Android `com.ibme.funedu` + SHA-1 debug (lệnh dưới), đợi vài phút |
+| `ApiException: 7` / `network_error` | máy ảo không ra mạng | kiểm mạng máy ảo |
+| `ApiException: 12500` | máy thiếu Google Play services / màn đồng ý OAuth chưa xong | dùng image máy ảo **Google Play**, đăng nhập tài khoản Google trong máy; điền OAuth consent screen, thêm email vào **Test users** khi app ở chế độ Testing |
+| `không tới được http://...` | app không gọi được máy chủ | sai `FUNEDU_API_URL` (máy ảo `10.0.2.2`, máy thật IP LAN), máy chủ chưa chạy, tường lửa |
+| `máy chủ trả 401 ...` | máy chủ từ chối id token | `GOOGLE_CLIENT_IDS` của máy chủ phải chứa đúng **web client id** ở trên; log máy chủ ghi `Rejected google id token: <lý do>` (`bad aud`, `expired`...) |
+
+SHA-1 của khóa debug:
+
+```bash
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
 ```
 
 ## 4. Sign in with Apple

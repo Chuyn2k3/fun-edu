@@ -4,4 +4,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Local testing of the online features against a dev server on plain
+         http (http://10.0.2.2:8080 from the emulator, a LAN IP from a phone).
+         Android 9+ blocks plain http otherwise. Release builds stay https only. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

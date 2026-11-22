@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,13 +32,18 @@ class FamilyAccountCard extends ConsumerWidget {
       if (context.mounted) _say(context, 'Đã đăng nhập. Đang lưu tiến độ online…');
     } on SignInException catch (e) {
       if (!context.mounted) return;
+      // Debug builds add the technical reason, so setting up a build is
+      // not guesswork; parents only see the plain sentence.
+      final why = kDebugMode && e.detail != null ? '\n(${e.detail})' : '';
       switch (e.failure) {
         case SignInFailure.cancelled:
           break;
+        case SignInFailure.setup:
+          _say(context, 'Chưa đăng nhập được với Google/Apple trên máy này, ba mẹ thử lại sau nhé$why');
         case SignInFailure.network:
-          _say(context, 'Không kết nối được máy chủ, ba mẹ thử lại sau nhé');
+          _say(context, 'Không kết nối được máy chủ, ba mẹ thử lại sau nhé$why');
         case SignInFailure.rejected:
-          _say(context, 'Đăng nhập không thành công, ba mẹ thử lại nhé');
+          _say(context, 'Đăng nhập không thành công, ba mẹ thử lại nhé$why');
       }
     }
   }

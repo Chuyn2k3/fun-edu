@@ -9,6 +9,15 @@ import '../online_config.dart';
 /// server exchanges so that deleting the account can revoke Apple's access.
 typedef AppleSignIn = ({String idToken, String? authorizationCode});
 
+/// The platform signed the parent in but gave no id token: the build lacks
+/// its client id (GOOGLE_SERVER_CLIENT_ID on Android, GIDClientID on iOS).
+class MissingIdTokenException implements Exception {
+  const MissingIdTokenException(this.detail);
+  final String detail;
+  @override
+  String toString() => detail;
+}
+
 /// Gets an id token from Google or Apple; null when the parent cancels.
 abstract class IdentityProviders {
   bool get appleAvailable;
@@ -41,7 +50,14 @@ class PlatformIdentityProviders implements IdentityProviders {
     final account = await _google.signIn();
     if (account == null) return null;
     final auth = await account.authentication;
-    return auth.idToken;
+    final token = auth.idToken;
+    if (token == null) {
+      // Not a cancel: Google gives no id token without the web client id.
+      throw MissingIdTokenException(_config.googleServerClientId.isEmpty
+          ? 'GOOGLE_SERVER_CLIENT_ID chưa được truyền khi build'
+          : 'Google không trả id token');
+    }
+    return token;
   }
 
   @override
