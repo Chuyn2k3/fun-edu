@@ -1,5 +1,24 @@
 import 'dart:async';
 
+/// One racer in an online room, for the standings strip.
+class RacerStanding {
+  const RacerStanding({
+    required this.name,
+    required this.avatar,
+    required this.steps,
+    this.rank,
+    this.isYou = false,
+    this.connected = true,
+  });
+
+  final String name;
+  final String avatar;
+  final int steps;
+  final int? rank;
+  final bool isYou;
+  final bool connected;
+}
+
 /// The rocket racing the kid when it is not Chíp: a friend in an online
 /// room. The race screen and controller only see this interface; the
 /// network side lives in `lib/online/room/`.
@@ -12,7 +31,11 @@ class RivalView {
     this.myRank,
     this.roomOver = false,
     this.players = 2,
+    this.standings = const [],
   });
+
+  /// Everyone in the room (the kid included), in room order.
+  final List<RacerStanding> standings;
 
   /// Steps of the best-placed other racer (0..10).
   final int steps;

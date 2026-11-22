@@ -27,6 +27,17 @@ class OnlineRival implements RaceRival {
       myRank: me?.rank,
       roomOver: s.phase == RoomPhase.done || s.phase == RoomPhase.error,
       players: s.players.length,
+      standings: [
+        for (final p in s.players)
+          RacerStanding(
+            name: p.name,
+            avatar: p.avatar,
+            steps: p.steps,
+            rank: p.rank,
+            isYou: p.id == s.you,
+            connected: p.connected,
+          ),
+      ],
     );
   }
 

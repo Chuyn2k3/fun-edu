@@ -24,6 +24,7 @@ import 'answer_keys.dart';
 import 'glyph_view.dart';
 import 'race_controller.dart';
 import 'race_rival.dart';
+import 'race_standings_strip.dart';
 
 const _tryAgain = 'Thử lại nhé!';
 
@@ -260,12 +261,22 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     );
 
     final topBar = Consumer(
-      builder: (context, ref, _) =>
-          _topBar(ref.watch(raceControllerProvider.select((s) => (
-                phase: s.phase,
-                questionIndex: s.questionIndex,
-                count: s.questions.length,
-              )))),
+      builder: (context, ref, _) {
+        final bar = _topBar(ref.watch(raceControllerProvider.select((s) => (
+              phase: s.phase,
+              questionIndex: s.questionIndex,
+              count: s.questions.length,
+            ))));
+        // Online rooms of 3-4: everyone's progress under the top bar.
+        final standings = ref.watch(
+            raceControllerProvider.select((s) => s.rival?.standings));
+        if (!RaceStandingsStrip.shows(standings)) return bar;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [bar, RaceStandingsStrip(standings: standings!)],
+        );
+      },
     );
 
     final desk = AnswerDesk(

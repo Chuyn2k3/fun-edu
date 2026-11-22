@@ -234,6 +234,13 @@ void main() {
       expect(v.myRank, 2);
     });
 
+    test('lists every racer in room order, marking the kid', () {
+      final v = OnlineRival.viewOf(room([p('p1', 5), p('p2', 3), p('p3', 10, 1)]));
+      expect(v.standings.map((s) => s.name), ['p1', 'p2', 'p3']);
+      expect(v.standings.map((s) => s.isYou), [true, false, false]);
+      expect(v.standings.last.rank, 1);
+    });
+
     test('a finished room ends the kid\'s race', () {
       final s = RoomState(
         phase: RoomPhase.done,

@@ -257,5 +257,50 @@ void main() {
     expect(find.descendant(of: tile, matching: find.text('Hiếm')), findsOneWidget);
     expect(find.descendant(of: tile, matching: find.text('Sao chổi rực rỡ')), findsOneWidget);
   });
+
+  group('standings strip', () {
+    RoomState three({int? boRank}) => _room(RoomPhase.racing, players: [
+          _p('p1', steps: 2, name: 'Na'),
+          _p('p2', steps: boRank == null ? 6 : 10, rank: boRank, name: 'Bo'),
+          _p('p3', steps: 4, name: 'Mi'),
+        ]);
+
+    for (final size in const [Size(320, 568), Size(390, 844), Size(1024, 1366), Size(1366, 1024)]) {
+      testWidgets('3 kids: everyone shows, no overflow at $size', (t) async {
+        final room = FakeRoom(three());
+        await bootGame(t, size: size, extra: [roomControllerProvider.overrideWith(() => room)]);
+        appRouter.go('/game/room/race', extra: RaceSubject.toan);
+        await pumpReal(t, times: 8);
+
+        final strip = find.byKey(const ValueKey('race-standings'));
+        expect(strip, findsOneWidget);
+        expect(find.descendant(of: strip, matching: find.byType(LinearProgressIndicator)),
+            findsNWidgets(3));
+        expect(t.takeException(), isNull);
+
+        // Bo lands first: his bar becomes "Nhất".
+        room.set(three(boRank: 1));
+        await pumpReal(t);
+        expect(find.descendant(of: strip, matching: find.text('Nhất')), findsOneWidget);
+        expect(find.descendant(of: strip, matching: find.byType(LinearProgressIndicator)),
+            findsNWidgets(2));
+      });
+    }
+
+    testWidgets('2 kids: no strip, the scene already shows both', (t) async {
+      final room = FakeRoom(_room(RoomPhase.racing));
+      await bootGame(t, extra: [roomControllerProvider.overrideWith(() => room)]);
+      appRouter.go('/game/room/race', extra: RaceSubject.toan);
+      await pumpReal(t, times: 8);
+      expect(find.byKey(const ValueKey('race-standings')), findsNothing);
+    });
+
+    testWidgets('racing Chíp: no strip', (t) async {
+      await bootGame(t);
+      appRouter.go('/game/race/toan');
+      await pumpReal(t, times: 8);
+      expect(find.byKey(const ValueKey('race-standings')), findsNothing);
+    });
+  });
 }
 

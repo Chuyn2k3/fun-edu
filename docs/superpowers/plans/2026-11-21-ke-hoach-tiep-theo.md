@@ -34,7 +34,7 @@
 | Bước | Nội dung | Xong khi |
 |---|---|---|
 | 2B2-1 ✅ | Máy chủ phòng: `POST /api/v1/rooms`, WebSocket `/ws/room` (phòng trong bộ nhớ: phòng chờ, đếm ngược, bước +1/+2 tối thiểu 600 ms, thứ hạng do máy chủ quyết, sticker cố định, vào lại trong 20 s, đua lại, rời phòng; giới hạn tạo phòng / đoán mã) | **Xong:** 9 test WebSocket (chạy 3 lần ổn định), 34 test máy chủ |
-| 2B2-2 ✅ (rút gọn) | Cảnh đua: làn thứ hai là tên lửa + ảnh của bạn đang dẫn đầu (`RaceScene.rivalRocket/rivalAvatar/rivalName`); **chưa vẽ 4 làn** — 3–4 bạn thì xem đủ ở màn xếp hạng | **Xong** |
+| 2B2-2 ✅ (hướng A) | Cảnh đua: làn thứ hai là tên lửa + ảnh của bạn đang dẫn đầu (`RaceScene.rivalRocket/rivalAvatar/rivalName`); **chưa vẽ 4 làn** — 3–4 bạn thì xem đủ ở màn xếp hạng | **Xong** |
 | 2B2-3 ✅ | App: `RoomController` (`lib/online/room/`, kết nối lại 3 lần), `RaceRival` + `OnlineRival`, "Mời bạn đua"/"Nhập mã" qua cổng ba mẹ, phòng chờ (mã, chép mã, chọn môn, "Bắt đầu!", 3-2-1), trận đua dùng lại `RaceScreen`, màn xếp hạng + "Đua lại!"; trận online không lưu vào `race_results` | **Xong:** 18 test (bộ điều khiển phòng, đối thủ, luồng trên app) |
 | 2B2-4 ✅ | 6 sticker Chíp (ảnh sticker 3D có sẵn) ở phòng chờ + màn xếp hạng, biệt danh đua (`raceNickname.<kidId>`, đồng bộ, mặc định tên gọi ở nhà) | **Xong** |
 
