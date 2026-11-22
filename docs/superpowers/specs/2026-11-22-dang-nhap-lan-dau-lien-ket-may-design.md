@@ -28,7 +28,7 @@ Chỗ nguy hiểm cần chặn: máy đang có dữ liệu khách, ba mẹ đăn
 - Không gộp chọn lọc từng bé.
 - Không gửi dữ liệu khách lên máy chủ để "chọn sau".
 - Không đổi thiết kế đồng bộ (bản ghi theo khóa, `baseVersion`), không đổi cách chấm nét.
-- Nét vẽ (`stroke_attempts`) vẫn không rời máy: "Vở của bé" không theo sang máy mới (giữ quy tắc).
+- Không đồng bộ mọi lần tập (`stroke_attempts` vẫn ở trên máy). Chỉ **trang vở đẹp nhất của mỗi chữ** được lưu online (§7.6), để "Vở của bé" theo sang máy mới (chủ dự án chọn 2026-11-22, cách A).
 
 **Thất bại nếu** (dù chạy được)
 - Một bản app cũ/lỗi vẫn trộn được dữ liệu khách vào tài khoản có dữ liệu.
@@ -89,12 +89,12 @@ Xóa tài khoản → cascade xóa liên kết. Một máy có thể liên kết
   "device": { "linked": false },
   "account": {
     "hasData": true,
-    "kids": [ { "nickname": "Na", "avatar": "fox", "lessons": 42, "glyphs": 18, "items": 7, "badges": 3 } ]
+    "kids": [ { "nickname": "Na", "avatar": "fox", "stars": 540, "glyphs": 18, "pages": 16, "items": 7, "badges": 3 } ]
   }
 }
 ```
 
-`account.kids` đọc từ bản ghi `kid:<uuid>` (nickname, avatar) và đếm bản ghi `lesson:/glyph:/item:/badge:` không tombstone theo uuid bé. Tối đa 4 bé (giới hạn app). Đếm bằng một câu SQL nhóm theo `split_part(key, ':', 2)`, có chỉ mục sẵn theo `family_id`.
+`account.kids` đọc từ bản ghi `kid:<uuid>` (nickname, avatar); `stars` = tổng `payload->>'stars'` của bản ghi `lesson:<uuid>:*` (đúng công thức `ProgressRepository.totalStars()` của app: tổng sao các bài học xong); `glyphs`, `pages`, `items`, `badges` = số bản ghi `glyph:/page:/item:/badge:` không tombstone của bé. Tối đa 4 bé (giới hạn app). Đếm bằng một câu SQL nhóm theo `split_part(key, ':', 2)`, có chỉ mục sẵn theo `family_id`.
 
 ### 6.3 `POST /api/v1/sync/link` (cần access token)
 
@@ -127,6 +127,8 @@ Trong **một transaction**, khóa dòng `families` của F (`SELECT … FOR UPD
 - Đăng xuất rồi đăng nhập lại cùng `deviceId` → `device.linked = true`.
 - Xóa tài khoản → liên kết mất.
 - Phản hồi đăng nhập: `account.kids` đúng tên/ảnh/số đếm, bé đã xóa (tombstone) không hiện.
+- **Sao khớp app**: cùng một bộ bản ghi `lesson:` (lấy từ fixture dùng chung với test app, ví dụ `test/fixtures/summary_records.json` được test máy chủ đọc), số sao máy chủ tính = số app tính.
+- Bản ghi `page:` được nhận; payload > 16 KB bị từ chối như các loại khác.
 
 ## 7. App
 
@@ -207,8 +209,9 @@ Hiện khi máy có bé và tài khoản có dữ liệu. Là màn/hộp toàn m
 
   Trên máy này (dùng thử)        Tài khoản Google ...@gmail
   ┌──────────────────────┐       ┌──────────────────────┐
-  │ 🦊 Na · 12 bài · 8 chữ│       │ 🦊 Na · 42 bài · 18 chữ│
-  │                        │       │ 🐼 Bin · 5 bài · 2 chữ │
+  │ 🦊 Na · 120⭐ · 8 chữ  │       │ 🦊 Na · 540⭐ · 18 chữ │
+  │   5 trang vở · 2 sticker│      │   16 trang vở · 7 sticker│
+  │                        │       │ 🐼 Bin · 30⭐ · 2 chữ  │
   └──────────────────────┘       └──────────────────────┘
 
   Nếu tiếp tục, dữ liệu trên máy này (tiến độ, sao, sticker,
@@ -222,7 +225,8 @@ Hiện khi máy có bé và tài khoản có dữ liệu. Là màn/hộp toàn m
 - Điện thoại: hai khối xếp dọc; tablet: cạnh nhau.
 - Nút xóa cần **bấm giữ 2 giây** hoặc hộp xác nhận thứ hai ("Xóa dữ liệu của bé Na trên máy này?") — **người code chọn một**, có test.
 - Hủy → gọi đăng xuất (thu hồi refresh token, xóa phiên trên máy), dữ liệu khách nguyên vẹn, `dataOwnerFamilyId` không đổi.
-- Số liệu bên máy tính tại chỗ từ drift, cùng thước đo như máy chủ (số bài học xong, số chữ đã học, số món đồ, số huy hiệu).
+- Số liệu bên máy tính tại chỗ từ drift, cùng thước đo như máy chủ: sao (tổng sao bài học), số chữ đã học, số trang vở, số món đồ (sticker/đồ trò chơi), số huy hiệu. Tính bằng **một hàm Dart** từ các bản ghi `SyncStore.export()` theo đúng quy tắc §6.2, để hai bên chắc chắn cùng thước đo.
+- Câu cảnh báo ghi rõ vở: "Vở của bé trên máy này sẽ bị thay bằng vở trong tài khoản".
 - Nếu `upload` bị 409 khi app tưởng tài khoản trống (máy khác vừa mang lên) → hiện hộp này với số liệu trong phản hồi 409.
 - Có `Semantics` cho trình đọc màn hình; chữ ≥ 4.5:1.
 
@@ -241,11 +245,23 @@ Dùng máy chủ giả trong `test/online/` (mở rộng `online_fakes.dart`):
 - Build không có `FUNEDU_API_URL` → không có bước "Chọn cách dùng".
 - Kéo về lỗi khi khôi phục → màn chờ có "Thử lại", không nhảy sang `/setup`.
 
+### 7.6 Đồng bộ trang vở (cách A)
+
+- **Bảng drift mới `notebook_pages`** (schema **v9**, migration + test v8→v9 và v1→v9): `kid_id` (FK, xóa theo bé), `glyph_id`, `strokes` (JSON), `mistakes` int, `written_at`; khóa chính `(kid_id, glyph_id)`. Đây là nguồn của "Vở của bé" từ nay.
+- **Ghi**: mỗi khi bé viết xong một chữ, tính trang đẹp nhất của chữ đó bằng `bestWritings` hiện có và **upsert** nếu tốt hơn trang đang lưu (ít nét sai hơn; bằng nhau thì mới hơn). Migration v9 điền sẵn từ `stroke_attempts` hiện có.
+- **Đọc**: `notebookProvider` đọc `notebook_pages` thay vì dựng lại từ `stroke_attempts` mỗi lần (nhanh hơn).
+- **Rút gọn nét** trước khi lưu: tối đa 40 điểm mỗi nét (giữ điểm đầu, cuối, chia đều theo độ dài), tọa độ làm tròn 3 chữ số thập phân. Có test: trang 6 nét × 40 điểm < 4 KB JSON; vẽ lại trông giống bản gốc (sai lệch ≤ 0.01).
+- **Đồng bộ**: khóa `page:<kidUuid>:<glyphId>`, payload `{ "s": [[x0,y0,x1,y1,…], …], "m": mistakes, "at": ms }`. Gộp hai bên: ít nét sai hơn thắng, bằng nhau thì `at` mới hơn thắng. Máy chủ thêm `page` vào `SyncKinds.ALLOWED` (sửa chú thích "Stroke coordinates are not among them" thành "only the best notebook page per glyph").
+- In vở (PDF) dùng cùng `notebook_pages`, không đổi giao diện.
+- Test app: hai máy (máy chủ giả) — máy A viết chữ "a" đẹp → máy B kéo về có trang "a"; máy B viết "a" đẹp hơn → máy A nhận trang mới; trang kém hơn không ghi đè; xóa bé xóa trang; `stroke_attempts` **không** bao giờ nằm trong bản đẩy lên.
+
 ## 8. Tài liệu cần sửa khi làm
 
 - `AGENTS.md` dòng mạng: "chỉ gọi máy chủ FunEdu (và Google/Apple lúc đăng nhập), chỉ sau khi ba mẹ qua cổng ba mẹ, đồng ý và đăng nhập (ở màn đầu hoặc Góc ba mẹ). Chế độ khách không gọi mạng."
 - `docs/PROJECT_STATE.md` mục 6–8; `docs/online-setup.md` (API link, `deviceId`, mã lỗi 409).
-- Chính sách quyền riêng tư (`privacy_screen.dart`): thêm "mã ngẫu nhiên của máy, chỉ để biết máy nào đã liên kết với tài khoản".
+- Chính sách quyền riêng tư (`privacy_screen.dart`): thêm "mã ngẫu nhiên của máy, chỉ để biết máy nào đã liên kết với tài khoản" và "trang vở đẹp nhất của mỗi chữ (nét chữ bé viết), để giữ Vở của bé khi đổi máy; các lần tập khác chỉ ở trên máy".
+- Hộp đồng ý online (`_ConsentDialog`): bỏ "Không lưu nét vẽ của bé", thay bằng "Lưu trang vở đẹp nhất của mỗi chữ; các lần tập khác chỉ ở trên máy".
+- `AGENTS.md`: "nét vẽ (`stroke_attempts`) không rời máy" → "`stroke_attempts` không rời máy; chỉ trang vở đẹp nhất mỗi chữ (`notebook_pages`, đã rút gọn) được đồng bộ". Spec 2D §dữ liệu cập nhật tương ứng.
 
 ## 9. Để người code tự quyết (ghi lại trong plan/PR)
 
@@ -258,7 +274,7 @@ Dùng máy chủ giả trong `test/online/` (mở rộng `online_fakes.dart`):
 
 - Đăng xuất **giữ** dữ liệu trên máy (như hiện nay); nhờ `deviceId` đăng nhập lại cùng tài khoản không bị hỏi.
 - Máy từng thuộc gia đình này nhưng chưa liên kết trên máy chủ (hiếm: ví dụ tài khoản bị xóa rồi tạo lại) vẫn hiện cảnh báo, không tự xóa.
-- Thước đo trong hộp cảnh báo: số bài học xong, số chữ đã học, số món đồ, số huy hiệu (máy chủ đếm được mà không cần hiểu cách tính sao của app).
+- Thước đo trong hộp cảnh báo: sao, số chữ, số trang vở, số món đồ, số huy hiệu (chủ dự án muốn có sao; máy chủ tính sao đúng công thức app, có test đối chiếu).
 - Tài khoản chỉ có tombstone (đã xóa hết bé) coi như trống.
 - Máy liên kết `fresh` chưa đẩy gì không tính là "tài khoản có dữ liệu": nếu cùng lúc một máy khách `upload` thì hai bộ dữ liệu mới cùng vào tài khoản trống. Chấp nhận (không có dữ liệu cũ nào bị đè).
 - `deviceId` lưu trong drift `app_settings`, không trong secure storage (không phải bí mật).
