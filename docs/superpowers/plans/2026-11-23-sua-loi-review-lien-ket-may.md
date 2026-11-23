@@ -125,6 +125,6 @@
 
 ### Task 7: Tổng kiểm + tài liệu
 
-- [ ] `flutter analyze` → "No issues found!"; `flutter test` → "All tests passed!"; `cd server && ./gradlew test` → 0 failures.
-- [ ] Cập nhật `docs/PROJECT_STATE.md` mục 6–8 (ghi "đã sửa 12 lỗi review"), spec §7.1 (Task 3).
-- [ ] Commit `docs: review fixes for device link`, `git push -u origin chipchip`.
+- [x] `flutter analyze` → "No issues found!"; `flutter test` → "All tests passed!"; `cd server && ./gradlew test` → 0 failures.
+- [x] Cập nhật `docs/PROJECT_STATE.md` mục 6–8 (ghi "đã sửa 12 lỗi review"), spec §7.1 (Task 3).
+- [x] Commit `docs: review fixes for device link`, `git push -u origin chipchip`.
