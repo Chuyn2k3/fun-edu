@@ -118,10 +118,10 @@
 - Modify: `auth/AuthService.java` (xóa 2 overload `signIn` sinh `UUID.randomUUID()`; test dùng overload có `deviceId`), `auth/AuthService.refresh` (bỏ nhánh `deviceId != null ? … : randomUUID` — cột `NOT NULL`), `server/settings.gradle` (giữ plugin foojay **chỉ nếu** README ghi lý do; nếu không cần thì bỏ), `server/README.md`
 - Test: các test hiện có
 
-- [ ] **Step 1:** Sửa test đang gọi overload cũ sang `signIn(provider, idToken, code, deviceId)`.
-- [ ] **Step 2:** Xóa code thừa; quyết định foojay, ghi một dòng trong `server/README.md`. Kiểm `docker compose build` vẫn không cần tải JDK (Dockerfile dùng image JDK sẵn).
-- [ ] **Step 3: Chạy** `cd server && ./gradlew test` → PASS.
-- [ ] **Step 4: Commit** `chore(server): drop device-less sign-in overloads`.
+- [x] **Step 1:** Sửa test đang gọi overload cũ sang `signIn(provider, idToken, code, deviceId)`.
+- [x] **Step 2:** Xóa code thừa; quyết định foojay, ghi một dòng trong `server/README.md`. Kiểm `docker compose build` vẫn không cần tải JDK (Dockerfile dùng image JDK sẵn).
+- [x] **Step 3: Chạy** `cd server && ./gradlew test` → PASS.
+- [x] **Step 4: Commit** `chore(server): drop device-less sign-in overloads`.
 
 ### Task 7: Tổng kiểm + tài liệu
 

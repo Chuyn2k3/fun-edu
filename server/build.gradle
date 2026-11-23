@@ -42,5 +42,7 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
     // Lets CI or a sandbox without Docker point tests at an existing database.
-    environment 'TEST_DB_URL', System.getenv('TEST_DB_URL') ?: ''
+    environment 'TEST_DB_URL', System.getenv('TEST_DB_URL') ?: 'jdbc:postgresql://localhost:5432/funedu_test'
+    environment 'TEST_DB_USER', System.getenv('TEST_DB_USER') ?: 'funedu'
+    environment 'TEST_DB_PASSWORD', System.getenv('TEST_DB_PASSWORD') ?: 'funedu'
 }

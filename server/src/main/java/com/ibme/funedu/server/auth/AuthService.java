@@ -3,6 +3,7 @@ package com.ibme.funedu.server.auth;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.DuplicateKeyException;
@@ -58,14 +59,6 @@ public class AuthService {
         return idTokens.supports(provider);
     }
 
-    public Session signIn(String provider, String idToken) {
-        return signIn(provider, idToken, null, UUID.randomUUID());
-    }
-
-    public Session signIn(String provider, String idToken, String authorizationCode) {
-        return signIn(provider, idToken, authorizationCode, UUID.randomUUID());
-    }
-
     /**
      * [authorizationCode] (Apple only): exchanged for Apple's refresh token,
      * kept sealed so deleting the account can revoke it. Apple being down
@@ -86,7 +79,7 @@ public class AuthService {
                 && apple.configured()) {
             linkApple(parent, jwt, authorizationCode);
         }
-        return newSession(parent, deviceId != null ? deviceId : UUID.randomUUID());
+        return newSession(parent, Objects.requireNonNull(deviceId, "deviceId"));
     }
 
     private void linkApple(Parent parent, Jwt jwt, String code) {
@@ -127,7 +120,7 @@ public class AuthService {
         jdbc.update("UPDATE refresh_tokens SET revoked_at = now() WHERE id = ?", tokenId);
         Parent parent = findParent(parentId).orElseThrow(() -> new AuthFailedException("account gone"));
         UUID deviceId = (UUID) row[4];
-        return newSession(parent, deviceId != null ? deviceId : UUID.randomUUID());
+        return newSession(parent, deviceId);
     }
 
     public void logout(String refreshToken) {

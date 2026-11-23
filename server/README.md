@@ -4,6 +4,8 @@ Backend for Chíp Chíp: family accounts (Google sign-in), progress sync and
 online rocket race rooms. Design: `../docs/superpowers/specs/2026-11-21-giai-doan-2d-2b2-online-design.md`.
 
 Stack: Java 21, Spring Boot 3.3, PostgreSQL 16, Flyway (`src/main/resources/db/migration`).
+Requires JDK 21 installed locally (`JAVA_HOME` pointing to JDK 21) or Docker for containerized deployment.
+Foojay auto-download plugin was removed to prevent external network fetching during Gradle builds.
 
 ## API (v1)
 
