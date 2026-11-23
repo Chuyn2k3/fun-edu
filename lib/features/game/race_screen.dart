@@ -11,6 +11,7 @@ import '../../game/engine/race.dart';
 import '../../game/engine/race_question.dart';
 import '../../game/scene/race_scene.dart';
 import '../../math/math_question.dart';
+import '../../profile/avatars.dart';
 import '../../profile/kid_repository.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
@@ -55,6 +56,7 @@ class RaceScreen extends ConsumerStatefulWidget {
     required this.subject,
     this.retryAfterLoss = false,
     this.rival,
+    this.inputLocked = false,
   });
 
   final RaceSubject subject;
@@ -62,6 +64,10 @@ class RaceScreen extends ConsumerStatefulWidget {
 
   /// Online room: race this friend instead of Chíp.
   final RaceRival? rival;
+
+  /// True while self-reconnecting in an online race: scene stays visible but
+  /// answer keys ignore taps until reconnected.
+  final bool inputLocked;
 
   @override
   ConsumerState<RaceScreen> createState() => _RaceScreenState();
@@ -268,22 +274,48 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
               count: s.questions.length,
             ))));
         // Online rooms of 3-4: everyone's progress under the top bar.
-        final standings = ref.watch(
-            raceControllerProvider.select((s) => s.rival?.standings));
-        if (!RaceStandingsStrip.shows(standings)) return bar;
+        final rival = ref.watch(raceControllerProvider.select((s) => s.rival));
+        final standings = rival?.standings;
+        final showStandings = RaceStandingsStrip.shows(standings);
+        final showRivalWaiting =
+            !showStandings && (rival?.rivalAway ?? false) && rival != null;
+        if (!showStandings && !showRivalWaiting) return bar;
         return Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [bar, RaceStandingsStrip(standings: standings!)],
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            bar,
+            if (showStandings)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: RaceStandingsStrip(standings: standings!),
+              )
+            else if (showRivalWaiting)
+              Align(
+                alignment: Alignment.centerRight,
+                child: _RivalWaitingBadge(
+                  avatar: rival.avatar,
+                  name: rival.name,
+                ),
+              ),
+          ],
         );
       },
     );
 
-    final desk = AnswerDesk(
-      comboStreak: _comboStreak,
-      nitroActive: _isNitroActive,
-      onKey: (i) => _controller.answer(i),
-      onListen: _speakAgain,
+    final desk = IgnorePointer(
+      ignoring: widget.inputLocked,
+      child: Opacity(
+        opacity: widget.inputLocked ? 0.55 : 1.0,
+        child: AnswerDesk(
+          comboStreak: _comboStreak,
+          nitroActive: _isNitroActive,
+          onKey: (i) {
+            if (!widget.inputLocked) _controller.answer(i);
+          },
+          onListen: _speakAgain,
+        ),
+      ),
     );
 
     final Widget body = switch (form) {
@@ -409,6 +441,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       rivalRocket: rival?.rocket,
       rivalAvatar: rival?.avatar,
       rivalName: rival?.name,
+      rivalAway: rival?.rivalAway ?? false,
       stallSeq: s.wrongSeq,
       bottomInset: bottomInset,
     );
@@ -546,6 +579,59 @@ class _TryAgainBubble extends StatelessWidget {
               fontSize: tablet ? 24 : 18,
               fontWeight: FontWeight.w900,
               color: GameColors.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RivalWaitingBadge extends StatelessWidget {
+  const _RivalWaitingBadge({required this.avatar, required this.name});
+
+  final String avatar;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final tablet = context.isTablet;
+    final img = kidAvatars.contains(avatar) ? avatar : kidAvatars[1];
+    return Container(
+      key: const ValueKey('rival-waiting-badge'),
+      margin: EdgeInsets.only(right: tablet ? 28 : 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: tablet ? 12 : 10,
+        vertical: tablet ? 6 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        boxShadow: const [
+          BoxShadow(color: GameColors.hudEdge, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Opacity(
+            opacity: 0.4,
+            child: ClipOval(
+              child: Image.asset(
+                img,
+                width: tablet ? 32 : 24,
+                height: tablet ? 32 : 24,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Đang chờ',
+            style: TextStyle(
+              fontSize: tablet ? 15 : 13,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textMuted,
             ),
           ),
         ],

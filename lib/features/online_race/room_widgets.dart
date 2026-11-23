@@ -78,6 +78,17 @@ class RoomPlayerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tablet = context.isTablet;
     final avatar = kidAvatars.contains(player.avatar) ? player.avatar : kidAvatars[1];
+    final faded = !player.connected || player.away || player.left;
+    String? subtitle;
+    if (player.left) {
+      subtitle = 'Đã rời trận';
+    } else if (player.away || !player.connected) {
+      subtitle = player.awayMsLeft != null
+          ? 'Đang kết nối lại… (${(player.awayMsLeft! / 1000).ceil()}s)'
+          : 'Đang kết nối lại…';
+    } else if (isHost) {
+      subtitle = 'Chủ phòng';
+    }
     return Container(
       constraints: BoxConstraints(minHeight: tablet ? 88 : 72),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -85,7 +96,7 @@ class RoomPlayerTile extends StatelessWidget {
       child: Row(
         children: [
           Opacity(
-            opacity: player.connected ? 1 : 0.4,
+            opacity: faded ? 0.4 : 1,
             child: Image.asset(avatar, width: tablet ? 64 : 52, height: tablet ? 64 : 52),
           ),
           const SizedBox(width: 12),
@@ -104,9 +115,9 @@ class RoomPlayerTile extends StatelessWidget {
                     color: AppColors.text,
                   ),
                 ),
-                if (isHost || !player.connected)
+                if (subtitle != null)
                   Text(
-                    !player.connected ? 'Đang kết nối lại…' : 'Chủ phòng',
+                    subtitle,
                     style: TextStyle(
                       fontSize: tablet ? 17 : 14,
                       fontWeight: FontWeight.w800,

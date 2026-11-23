@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../online/auth/session_controller.dart';
+import '../../online/net/network_status.dart';
 import '../../online/online_config.dart';
 import '../../online/room/room_controller.dart';
 import '../../profile/kid_repository.dart';
@@ -58,6 +59,10 @@ class _RoomEntryScreenState extends ConsumerState<RoomEntryScreen> {
   }
 
   Future<void> _go() async {
+    if (ref.read(networkStatusProvider) == NetState.offline) {
+      setState(() => _error = 'Cần có mạng để đua với bạn nhé');
+      return;
+    }
     final code = _code.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
     if (widget.join && code.length != 6) {
       setState(() => _error = 'Mã phòng có 6 ký tự');

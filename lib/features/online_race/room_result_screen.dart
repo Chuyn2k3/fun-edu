@@ -31,9 +31,12 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(syncControllerProvider.notifier).requestSync();
-    });
+    final lost = widget.rewards?.networkLost ?? false;
+    if (!lost) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(syncControllerProvider.notifier).requestSync();
+      });
+    }
     final badges = widget.rewards?.onlineRecord?.newBadges ?? const [];
     if (badges.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -45,12 +48,12 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
     }
   }
 
-  String _rankLabel(int? rank) => switch (rank) {
+  String _rankLabel(RoomPlayer p) => switch (p.rank) {
         1 => 'Về nhất',
         2 => 'Về nhì',
         3 => 'Về ba',
         4 => 'Về tư',
-        _ => 'Đang bay…',
+        _ => p.left ? 'Rời trận' : 'Đang bay…',
       };
 
   Future<void> _leave(BuildContext context) async {
@@ -65,16 +68,81 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
     });
     final room = ref.watch(roomControllerProvider);
     final tablet = context.isTablet;
+    final networkLost = (widget.rewards?.networkLost ?? false) ||
+        (room.phase == RoomPhase.error && room.error == 'network');
+
+    if (networkLost) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _leave(context);
+        },
+        child: Scaffold(
+          body: DottedBackground(
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: tablet ? 560 : 420),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          AppImages.chipEncourage,
+                          width: tablet ? 180 : 140,
+                          height: tablet ? 180 : 140,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Mạng chập chờn mất rồi, mình đua lại sau nhé!',
+                          key: const ValueKey('room-network-lost'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: tablet ? 30 : 24,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        RoomBigButton(
+                          key: const ValueKey('room-leave'),
+                          label: 'Về Góc Chơi',
+                          onTap: () => _leave(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final ranked = [...room.players]..sort((a, b) {
         final ar = a.rank ?? 99, br = b.rank ?? 99;
         return ar != br ? ar - br : b.steps - a.steps;
       });
     final me = room.me;
-    final title = switch (me?.rank) {
-      1 => 'Bé về nhất!',
-      null => 'Cố lên nào!',
-      _ => 'Giỏi lắm!',
-    };
+    final myRank = me?.rank ?? widget.rewards?.rank;
+    final endReason = widget.rewards?.endReason ?? room.endReason;
+    final String title;
+    if (endReason == 'others_left') {
+      title = switch (myRank) {
+        2 => 'Các bạn đã rời trận, bé về nhì!',
+        3 => 'Các bạn đã rời trận, bé về ba!',
+        _ => 'Các bạn đã rời trận, con thắng rồi!',
+      };
+    } else {
+      title = switch (myRank) {
+        1 => 'Bé về nhất!',
+        null => 'Cố lên nào!',
+        _ => 'Giỏi lắm!',
+      };
+    }
 
     return PopScope(
       canPop: false,
@@ -129,7 +197,7 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
                             isYou: p.id == room.you,
                             isHost: false,
                             trailing: Text(
-                              _rankLabel(p.rank),
+                              _rankLabel(p),
                               style: TextStyle(
                                 fontSize: tablet ? 22 : 18,
                                 fontWeight: FontWeight.w900,

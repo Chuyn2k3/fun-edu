@@ -53,6 +53,8 @@ class RaceResultArgs {
     this.online = false,
     this.onlineRecord,
     this.rank,
+    this.endReason,
+    this.networkLost = false,
   });
 
   /// Online race rewards (null when saving failed).
@@ -60,6 +62,12 @@ class RaceResultArgs {
 
   /// Online race finish position, null when not finished or unknown.
   final int? rank;
+
+  /// Room completion reason (e.g. `'others_left'`), or null.
+  final String? endReason;
+
+  /// True when the kid lost network past the 20 s grace window.
+  final bool networkLost;
 
   final RaceSubject subject;
   final RaceOutcome outcome;
@@ -431,6 +439,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
 
   /// Waits (briefly) for the room to give the kid's place, then records the
   /// online race: stars, online badges, maybe a rare sticker.
+  /// If self dropped past the 20 s limit (`networkLost`), saves nothing.
   Future<void> _finishOnline(RaceRival rival, Race race, RaceOutcome o) async {
     var view = rival.view;
     if (view.myRank == null && !view.roomOver && race.kidSteps >= raceLength) {
@@ -443,6 +452,26 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       }
     }
     await _rivalSub?.cancel();
+    if (_disposed) return;
+
+    if (view.networkLost) {
+      state = state.copyWith(
+        phase: RacePhase.done,
+        result: RaceResultArgs(
+          subject: state.subject!,
+          outcome: o,
+          record: null,
+          kidSteps: race.kidSteps,
+          rocket: state.rocket,
+          trail: state.trail,
+          luckyStarsCollected: o.luckyStarsCollected,
+          online: true,
+          networkLost: true,
+        ),
+      );
+      return;
+    }
+
     OnlineRaceRecord? record;
     try {
       final repo = await ref.read(gameRepositoryProvider.future);
@@ -474,6 +503,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
         online: true,
         onlineRecord: record,
         rank: view.myRank,
+        endReason: view.endReason,
       ),
     );
   }

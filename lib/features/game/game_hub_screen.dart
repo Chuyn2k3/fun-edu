@@ -8,6 +8,7 @@ import '../../game/data/badges.dart';
 import '../../game/data/game_repository.dart';
 import '../../game/engine/race_question.dart';
 import '../../game/scene/rocket_sprite.dart';
+import '../../online/net/network_status.dart';
 import '../../online/online_config.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../ui/assets.dart';
@@ -484,6 +485,16 @@ class _SoonRow extends ConsumerWidget {
   Future<void> _open(BuildContext context, WidgetRef ref, String mode) async {
     if (!ref.read(onlineConfigProvider).enabled) {
       _soon(context);
+      return;
+    }
+    if (ref.read(networkStatusProvider) == NetState.offline) {
+      await showAppDialog<void>(
+        context,
+        title: 'Cần có mạng để đua với bạn nhé',
+        primaryLabel: 'Được rồi',
+        audience: AppAudience.kid,
+        image: AppImages.chipEncourage,
+      );
       return;
     }
     if (await showParentGate(context) && context.mounted) {

@@ -13,12 +13,15 @@ class OnlineRival implements RaceRival {
   RivalView _view;
 
   static RivalView viewOf(RoomState s) {
-    final others = [...s.others]..sort((a, b) {
+    final activeOthers = s.others.where((p) => !p.left).toList();
+    final pool = activeOthers.isNotEmpty ? activeOthers : s.others;
+    final others = [...pool]..sort((a, b) {
         final ar = a.rank ?? 99, br = b.rank ?? 99;
         return ar != br ? ar - br : b.steps - a.steps;
       });
     final me = s.me;
     final best = others.firstOrNull;
+    final networkLost = s.phase == RoomPhase.error && s.error == 'network';
     return RivalView(
       steps: best?.steps ?? 0,
       name: best?.name ?? '',
@@ -27,6 +30,9 @@ class OnlineRival implements RaceRival {
       myRank: me?.rank,
       roomOver: s.phase == RoomPhase.done || s.phase == RoomPhase.error,
       players: s.players.length,
+      rivalAway: best != null && !best.left && best.away,
+      endReason: s.endReason,
+      networkLost: networkLost,
       standings: [
         for (final p in s.players)
           RacerStanding(
@@ -36,6 +42,8 @@ class OnlineRival implements RaceRival {
             rank: p.rank,
             isYou: p.id == s.you,
             connected: p.connected,
+            away: p.away,
+            left: p.left,
           ),
       ],
     );

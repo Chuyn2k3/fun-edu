@@ -9,6 +9,8 @@ class RacerStanding {
     this.rank,
     this.isYou = false,
     this.connected = true,
+    this.away = false,
+    this.left = false,
   });
 
   final String name;
@@ -17,6 +19,8 @@ class RacerStanding {
   final int? rank;
   final bool isYou;
   final bool connected;
+  final bool away;
+  final bool left;
 }
 
 /// The rocket racing the kid when it is not Chíp: a friend in an online
@@ -32,6 +36,9 @@ class RivalView {
     this.roomOver = false,
     this.players = 2,
     this.standings = const [],
+    this.rivalAway = false,
+    this.endReason,
+    this.networkLost = false,
   });
 
   /// Everyone in the room (the kid included), in room order.
@@ -54,6 +61,15 @@ class RivalView {
 
   /// Kids who started the race (for the "Cuộc Đua Lớn" badge).
   final int players;
+
+  /// True when the leading rival is temporarily disconnected within grace.
+  final bool rivalAway;
+
+  /// Room completion reason (e.g. `'others_left'`), or null.
+  final String? endReason;
+
+  /// True when the local player dropped past the 20 s reconnect limit.
+  final bool networkLost;
 }
 
 abstract class RaceRival {

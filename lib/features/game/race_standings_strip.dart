@@ -66,56 +66,95 @@ class _Racer extends StatelessWidget {
       4 => 'Tư',
       _ => null,
     };
+    final faded = s.left || s.away;
+    final statusLabel = s.left
+        ? '${s.name}: đã rời trận'
+        : s.away
+            ? '${s.name}: đang chờ'
+            : place != null
+                ? '${s.name}: về ${place.toLowerCase()}'
+                : '${s.name}: ${s.steps} trên $raceLength nấc';
+
+    Widget trailing;
+    if (s.left && place == null) {
+      trailing = FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Rời trận',
+          style: TextStyle(
+            fontSize: tablet ? 14 : 11,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+    } else if (s.away && place == null) {
+      trailing = FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Đang chờ',
+          style: TextStyle(
+            fontSize: tablet ? 14 : 11,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+    } else if (place != null) {
+      trailing = FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          place,
+          style: TextStyle(
+            fontSize: tablet ? 18 : 14,
+            fontWeight: FontWeight.w900,
+            color: s.rank == 1 ? AppColors.primaryOnTint : AppColors.text,
+          ),
+        ),
+      );
+    } else {
+      trailing = ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        child: LinearProgressIndicator(
+          value: progress,
+          minHeight: tablet ? 8 : 6,
+          backgroundColor: AppColors.dot,
+          color: s.isYou ? AppColors.accent : GameColors.keyBlueEdge,
+        ),
+      );
+    }
+
     return Semantics(
-      label: place != null
-          ? '${s.name}: về ${place.toLowerCase()}'
-          : '${s.name}: ${s.steps} trên $raceLength nấc',
+      label: statusLabel,
       excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Row(
-          children: [
-            Container(
-              width: size,
-              height: size,
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.card,
-                border: Border.all(
-                  // The kid's own rocket stands out in the brand orange.
-                  color: s.isYou ? AppColors.primary : AppColors.dot,
-                  width: s.isYou ? 3 : 2,
+      child: Opacity(
+        opacity: faded ? 0.4 : 1.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: [
+              Container(
+                width: size,
+                height: size,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.card,
+                  border: Border.all(
+                    // The kid's own rocket stands out in the brand orange.
+                    color: s.isYou ? AppColors.primary : AppColors.dot,
+                    width: s.isYou ? 3 : 2,
+                  ),
                 ),
+                child: ClipOval(child: Image.asset(avatar, fit: BoxFit.contain)),
               ),
-              child: ClipOval(child: Image.asset(avatar, fit: BoxFit.contain)),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: place != null
-                  ? FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        place,
-                        style: TextStyle(
-                          fontSize: tablet ? 18 : 14,
-                          fontWeight: FontWeight.w900,
-                          color: s.rank == 1 ? AppColors.primaryOnTint : AppColors.text,
-                        ),
-                      ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: tablet ? 8 : 6,
-                        backgroundColor: AppColors.dot,
-                        color: s.isYou ? AppColors.accent : GameColors.keyBlueEdge,
-                      ),
-                    ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Expanded(child: trailing),
+            ],
+          ),
         ),
       ),
     );

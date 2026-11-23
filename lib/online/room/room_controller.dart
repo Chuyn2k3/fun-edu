@@ -21,6 +21,9 @@ class RoomPlayer {
     required this.steps,
     this.rank,
     this.connected = true,
+    this.away = false,
+    this.awayMsLeft,
+    this.left = false,
   });
 
   final String id;
@@ -32,6 +35,9 @@ class RoomPlayer {
   /// Finish position (1 = first), null while racing.
   final int? rank;
   final bool connected;
+  final bool away;
+  final int? awayMsLeft;
+  final bool left;
 
   static RoomPlayer fromJson(Map<String, Object?> j) => RoomPlayer(
         id: j['id'] as String,
@@ -41,6 +47,9 @@ class RoomPlayer {
         steps: (j['steps'] as num?)?.toInt() ?? 0,
         rank: (j['rank'] as num?)?.toInt(),
         connected: j['connected'] != false,
+        away: j['away'] == true,
+        awayMsLeft: (j['awayMsLeft'] as num?)?.toInt(),
+        left: j['left'] == true,
       );
 }
 
@@ -61,6 +70,8 @@ class RoomState {
     this.startsAt,
     this.error,
     this.sticker,
+    this.reconnecting = false,
+    this.endReason,
   });
 
   final RoomPhase phase;
@@ -74,6 +85,8 @@ class RoomState {
   /// `network`, `signed_out`.
   final String? error;
   final RoomSticker? sticker;
+  final bool reconnecting;
+  final String? endReason;
 
   bool get isHost => you != null && you == host;
   RoomPlayer? get me => players.where((p) => p.id == you).firstOrNull;
@@ -82,18 +95,23 @@ class RoomState {
 
   RoomState copyWith({
     RoomPhase? phase,
+    String? code,
     String? error,
     RoomSticker? sticker,
+    bool? reconnecting,
+    String? endReason,
   }) =>
       RoomState(
         phase: phase ?? this.phase,
-        code: code,
+        code: code ?? this.code,
         you: you,
         host: host,
         players: players,
         startsAt: startsAt,
         error: error,
         sticker: sticker ?? this.sticker,
+        reconnecting: reconnecting ?? this.reconnecting,
+        endReason: endReason ?? this.endReason,
       );
 }
 
@@ -119,6 +137,7 @@ class RoomController extends Notifier<RoomState> {
   StreamSubscription<Map<String, Object?>>? _sub;
   RoomKid? _kid;
   bool _leaving = false;
+  bool _disposed = false;
   int _retries = 0;
   int _stickerSeq = 0;
 
@@ -126,7 +145,11 @@ class RoomController extends Notifier<RoomState> {
 
   @override
   RoomState build() {
-    ref.onDispose(_closeSocket);
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+      _closeSocket();
+    });
     return const RoomState();
   }
 
@@ -183,6 +206,7 @@ class RoomController extends Notifier<RoomState> {
   }
 
   void _onMessage(Map<String, Object?> m) {
+    if (_disposed) return;
     switch (m['t']) {
       case 'room':
         _retries = 0;
@@ -203,6 +227,8 @@ class RoomController extends Notifier<RoomState> {
               .toList(),
           startsAt: startsAt == null ? null : DateTime.fromMillisecondsSinceEpoch(startsAt),
           sticker: state.sticker,
+          reconnecting: false,
+          endReason: m['endReason'] as String?,
         );
       case 'sticker':
         state = state.copyWith(
@@ -224,18 +250,28 @@ class RoomController extends Notifier<RoomState> {
 
   Future<void> _onClosed(String code) async {
     _socket = null;
-    if (_leaving || state.phase == RoomPhase.error || state.phase == RoomPhase.idle) return;
+    if (_disposed || _leaving || state.phase == RoomPhase.error || state.phase == RoomPhase.idle) {
+      return;
+    }
+    if (state.phase != RoomPhase.connecting) {
+      state = state.copyWith(reconnecting: true);
+    }
     await _retryOrFail(code);
   }
 
   Future<void> _retryOrFail(String code) async {
-    if (_leaving) return;
+    if (_disposed || _leaving) return;
     if (_retries >= _retryDelays.length) {
-      state = RoomState(phase: RoomPhase.error, code: code, error: 'network');
+      state = state.copyWith(
+        phase: RoomPhase.error,
+        code: code,
+        error: 'network',
+        reconnecting: false,
+      );
       return;
     }
     await Future<void>.delayed(_retryDelays[_retries++]);
-    if (_leaving) return;
+    if (_disposed || _leaving) return;
     await _connect(code);
   }
 
@@ -273,10 +309,13 @@ class RoomController extends Notifier<RoomState> {
 }
 
 /// Waits before each reconnect after a dropped connection (tests shorten it).
+/// Total = 20 s, matching the server's reconnect grace period.
 final roomRetryDelaysProvider = Provider<List<Duration>>((_) => const [
       Duration(seconds: 1),
       Duration(seconds: 3),
       Duration(seconds: 6),
+      Duration(seconds: 5),
+      Duration(seconds: 5),
     ]);
 
 final roomControllerProvider =

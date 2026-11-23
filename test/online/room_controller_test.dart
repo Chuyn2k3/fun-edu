@@ -249,5 +249,57 @@ void main() {
       );
       expect(OnlineRival.viewOf(s).roomOver, isTrue);
     });
+
+    test('parses away, awayMsLeft, left, and endReason', () {
+      final s = RoomState(
+        phase: RoomPhase.racing,
+        you: 'p1',
+        endReason: 'others_left',
+        players: [
+          RoomPlayer.fromJson({'id': 'p1', 'name': 'Na', 'steps': 3, 'connected': true}),
+          RoomPlayer.fromJson({
+            'id': 'p2',
+            'name': 'Bo',
+            'steps': 4,
+            'connected': false,
+            'away': true,
+            'awayMsLeft': 12300,
+            'left': false,
+          }),
+        ],
+      );
+      final v = OnlineRival.viewOf(s);
+      expect(v.rivalAway, isTrue);
+      expect(v.endReason, 'others_left');
+      expect(v.standings[1].away, isTrue);
+      expect(s.players[1].awayMsLeft, 12300);
+    });
+  });
+
+  test('default roomRetryDelays sum to at least 20 seconds', () {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final total = c
+        .read(roomRetryDelaysProvider)
+        .fold<Duration>(Duration.zero, (a, b) => a + b);
+    expect(total, greaterThanOrEqualTo(const Duration(seconds: 20)));
+  });
+
+  test('self drop marks reconnecting then clears on room snapshot', () async {
+    final c = container();
+    await c.read(roomControllerProvider.notifier).join('ABC234', kid);
+    sockets.single.push(roomMsg('racing'));
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(roomControllerProvider).reconnecting, isFalse);
+
+    await sockets.first.drop();
+    expect(c.read(roomControllerProvider).reconnecting, isTrue);
+    expect(c.read(roomControllerProvider).phase, RoomPhase.racing);
+
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(sockets, hasLength(2));
+    sockets.last.push(roomMsg('racing'));
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(roomControllerProvider).reconnecting, isFalse);
   });
 }

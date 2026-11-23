@@ -108,6 +108,14 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                         ),
                         const SizedBox(height: 12),
                         _CodeCard(code: room.code ?? ''),
+                        if (room.reconnecting) ...[
+                          const SizedBox(height: 12),
+                          const AppStatusBanner(
+                            key: ValueKey('room-reconnecting-banner'),
+                            kind: AppToastKind.offline,
+                            text: 'Đang kết nối lại…',
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         if (room.phase == RoomPhase.connecting)
                           const Text('Đang vào phòng…', textAlign: TextAlign.center, style: _muted),

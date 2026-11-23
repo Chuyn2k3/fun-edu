@@ -42,6 +42,7 @@ class RaceScene extends StatefulWidget {
     this.rivalRocket,
     this.rivalAvatar,
     this.rivalName,
+    this.rivalAway = false,
     this.stallSeq = 0,
     this.lanes = 2,
     this.bottomInset = 0,
@@ -71,6 +72,7 @@ class RaceScene extends StatefulWidget {
   final String? rivalRocket;
   final String? rivalAvatar;
   final String? rivalName;
+  final bool rivalAway;
 
   /// Sequence number incremented on wrong answers to trigger sputter dip.
   final int stallSeq;
@@ -974,6 +976,11 @@ class _RaceForegroundPainter extends CustomPainter {
   }
 
   void _paintRacer(Canvas canvas, _Racer r, double t, bool still) {
+    final dimmed = r.isChip && state.widget.rivalAway;
+    if (dimmed) {
+      canvas.saveLayer(
+          null, Paint()..color = const Color.fromRGBO(255, 255, 255, 0.4));
+    }
     r.smoke.paint(canvas, t);
     if (!still) {
       _paintStallPuffs(canvas, r);
@@ -994,8 +1001,8 @@ class _RaceForegroundPainter extends CustomPainter {
       nozzle: Offset(0, -r.height * (1 - r.sprite.nozzle)),
       width: r.flameWidth,
       length: r.flameLength,
-      time: still ? 0 : t,
-      intensity: r.intensity,
+      time: (still || dimmed) ? 0 : t,
+      intensity: dimmed ? 0.2 : r.intensity,
       palette: r.trail.palette,
       seed: r.seed,
     );
@@ -1024,6 +1031,7 @@ class _RaceForegroundPainter extends CustomPainter {
     }
 
     canvas.restore();
+    if (dimmed) canvas.restore();
   }
 
   void _paintSpeedStreaks(Canvas canvas, _Racer r) {
