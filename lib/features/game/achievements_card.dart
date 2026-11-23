@@ -39,12 +39,14 @@ class AchievementsCard extends StatelessWidget {
             children: [
               Image.asset(AppImages.icCrown, height: tablet ? 40 : 30),
               const SizedBox(width: 8),
-              Text(
-                'Thành tích',
-                style: TextStyle(
-                  fontSize: tablet ? 26 : 20,
-                  fontWeight: FontWeight.w900,
-                  color: GameColors.ink,
+              Expanded(
+                child: Text(
+                  'Thành tích',
+                  style: TextStyle(
+                    fontSize: tablet ? 26 : 20,
+                    fontWeight: FontWeight.w900,
+                    color: GameColors.ink,
+                  ),
                 ),
               ),
             ],

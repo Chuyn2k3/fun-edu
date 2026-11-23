@@ -21,6 +21,7 @@ import '../../ui/widgets/nav_rail.dart';
 import '../../ui/widgets/pressable.dart';
 import '../home/kid_nav.dart';
 import 'achievements_card.dart';
+import 'friends_row.dart';
 import 'game_widgets.dart';
 import 'sticker_album_screen.dart';
 
@@ -121,6 +122,7 @@ class _PhoneHub extends StatelessWidget {
                   const SizedBox(height: 280, child: _RaceHero()),
                   const SizedBox(height: 26),
                   const SizedBox(height: 138, child: _SoonRow()),
+                  const FriendsRow(bottomGap: 24, topGap: 24),
                   const SizedBox(height: 24),
                   SizedBox(
                     height: 100,
@@ -184,7 +186,8 @@ class _TabletHub extends StatelessWidget {
       // Fill the screen height when it is tall enough: the hero and the
       // entry cards take what is left; otherwise fixed sizes and scroll.
       Widget column(bool fill) => Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment:
+                fill ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
             children: [
               Expanded(
                 flex: 11,
@@ -196,6 +199,7 @@ class _TabletHub extends StatelessWidget {
                         : const SizedBox(height: 470, child: _RaceHero()),
                     const SizedBox(height: gap + 8),
                     const SizedBox(height: 176, child: _SoonRow()),
+                    const FriendsRow(topGap: gap + 8),
                   ],
                 ),
               ),
@@ -245,6 +249,7 @@ class _TabletHub extends StatelessWidget {
           const SizedBox(height: 420, child: _RaceHero()),
           const SizedBox(height: gap + 8),
           const SizedBox(height: 176, child: _SoonRow()),
+          const FriendsRow(topGap: gap + 4),
           const SizedBox(height: gap + 4),
           SizedBox(
             height: 196,

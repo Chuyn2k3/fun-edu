@@ -10,6 +10,9 @@ import '../../game/scene/online_race_painter.dart'
     show roomRocketForIndex, roomRocketIds, safeOnlineAvatar;
 import '../../game/scene/rocket_sprite.dart';
 import '../../game/scene/smoke_particles.dart' show ParticleSprites;
+import '../../online/auth/session_controller.dart';
+import '../../online/friends/friends_controller.dart';
+import '../../online/online_config.dart';
 import '../../online/room/room_controller.dart';
 import '../../profile/kid_repository.dart';
 import '../../ui/assets.dart';
@@ -19,6 +22,7 @@ import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/pressable.dart';
+import '../game/friends_row.dart';
 import 'room_widgets.dart';
 
 /// Which subject this kid answers in the online race (each kid picks their
@@ -157,18 +161,28 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
 
   Future<void> _showInviteCodeDialog(String code) async {
     final hasCode = code.isNotEmpty;
+    final canInvite = hasCode &&
+        ref.read(onlineConfigProvider).enabled &&
+        ref.read(sessionProvider).valueOrNull != null &&
+        (ref.read(friendsProvider).valueOrNull ?? const [])
+            .any((f) => f.kids.isNotEmpty);
+    final kidUuid = ref.read(roomControllerProvider).you;
     _inviteDialogOpen = true;
     final bool? confirmed;
     try {
       confirmed = await showAppDialog<bool>(
         context,
         audience: AppAudience.kid,
-        image: AppImages.chipMain,
+        image: canInvite ? null : AppImages.chipMain,
         title: 'Mời bạn vào đua!',
-        message: hasCode
-            ? 'Đưa mã phòng này cho ba mẹ của bạn nhé:'
-            : 'Đang lấy mã phòng…',
-        body: hasCode
+        message: canInvite
+            ? 'Chạm "Mời" để rủ bạn đang online:'
+            : (hasCode
+                ? 'Đưa mã phòng này cho ba mẹ của bạn nhé:'
+                : 'Đang lấy mã phòng…'),
+        body: canInvite
+            ? FriendsInviteList(roomCode: code, kidUuid: kidUuid)
+            : hasCode
             ? Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -183,7 +197,9 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
                 ),
               )
             : null,
-        primaryLabel: hasCode ? 'Chép mã' : 'Được rồi',
+        primaryLabel: hasCode
+            ? (canInvite ? 'Chép mã phòng' : 'Chép mã')
+            : 'Được rồi',
         secondaryLabel: hasCode ? 'Đóng' : null,
       );
     } finally {
@@ -196,6 +212,7 @@ class _RoomLobbyScreenState extends ConsumerState<RoomLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    listenInviteErrors(ref, context);
     ref.listen<RoomState>(roomControllerProvider, (prev, next) {
       _syncCountdownTick(next.phase == RoomPhase.countdown);
       if (next.phase == RoomPhase.racing && mounted) {
