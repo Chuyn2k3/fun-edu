@@ -10,6 +10,7 @@ import '../auth/session_controller.dart';
 import '../link/link_controller.dart';
 import '../net/network_status.dart';
 import 'refresh_after_sync.dart';
+import 'sync_health.dart';
 import 'sync_store.dart';
 
 /// Sends [body] to `/api/v1/sync` and returns the decoded answer.
@@ -19,11 +20,14 @@ typedef SyncTransport = Future<Map<String, Object?>?> Function(
 /// One sync: push local changes, pull page by page and merge in one transaction
 /// per page, repeat while changes remain (up to a cap).
 class SyncEngine {
-  SyncEngine(this._db, this._transport) : _store = SyncStore(_db);
+  SyncEngine(this._db, this._transport, {void Function(int)? onPendingChanged})
+      : _store = SyncStore(_db),
+        _onPendingChanged = onPendingChanged;
 
   final AppDatabase _db;
   final SyncTransport _transport;
   final SyncStore _store;
+  final void Function(int)? _onPendingChanged;
 
   static const cursorKey = 'sync.cursor';
   static const lastSyncKey = 'sync.lastAt';
@@ -44,6 +48,7 @@ class SyncEngine {
       for (var round = 0; round < _maxTotalRounds; round++) {
         final pending =
             pushLocal ? await _store.pendingChanges() : const <SyncChange>[];
+        _onPendingChanged?.call(countDisplayablePending(pending));
         final push = pending.take(batch).toList();
         final ownKeys = push.map((c) => c.key).toSet();
 
@@ -77,6 +82,7 @@ class SyncEngine {
         await _store.applyWaiting();
         if (!pushLocal) break;
         final left = await _store.pendingChanges();
+        _onPendingChanged?.call(countDisplayablePending(left));
         if (left.isEmpty) break;
         if (left.length >= pending.length) {
           stalledRounds++;
@@ -252,6 +258,7 @@ class SyncController extends Notifier<SyncStatus> {
     if (_disposed) return;
     final s = ref.read(sessionProvider).valueOrNull;
     if (s == null || !s.linked) return;
+    unawaited(ref.read(syncHealthProvider.notifier).refreshPending());
     _requestTimer ??= Timer(const Duration(seconds: 3), () {
       _requestTimer = null;
       syncNow();
@@ -306,22 +313,32 @@ class SyncController extends Notifier<SyncStatus> {
     _retryTimer = null;
 
     state = SyncStatus(running: true, lastAt: state.lastAt);
+    final health = ref.read(syncHealthProvider.notifier);
+    health.setRunning(true);
+    var lastPending = ref.read(syncHealthProvider).pending;
     final session = ref.read(sessionProvider.notifier);
     final api = ref.read(apiClientProvider);
     final engine = SyncEngine(
       ref.read(databaseProvider),
       (body) => session.authorized(
           (token) => api.post('/api/v1/sync', body, accessToken: token)),
+      onPendingChanged: (count) {
+        lastPending = count;
+        if (!_disposed) health.setPending(count);
+      },
     );
     try {
       final pulled = await engine.run();
       if (_disposed) return;
-      state = SyncStatus(lastAt: DateTime.now());
+      final now = ref.read(syncHealthClockProvider)();
+      state = SyncStatus(lastAt: now);
+      health.recordSyncSuccess(pending: lastPending, at: now);
       if (pulled) refreshAfterSync(ref);
       _retryStep = 0;
       _scheduleRegular();
     } on ApiException catch (e) {
       if (_disposed) return;
+      health.recordSyncFailure(pending: lastPending);
       if (e.status == 409 && e.code == 'link_required') {
         await ref.read(sessionProvider.notifier).markUnlinked();
         ref.read(linkControllerProvider.notifier).resumeIfPending();
@@ -332,6 +349,7 @@ class SyncController extends Notifier<SyncStatus> {
       _scheduleRetry();
     } catch (_) {
       if (_disposed) return;
+      health.recordSyncFailure(pending: lastPending);
       // Offline or server down: try again on the next trigger.
       state = SyncStatus(lastAt: state.lastAt, failed: true);
       _scheduleRetry();

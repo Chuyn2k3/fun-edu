@@ -24,9 +24,10 @@ void showAppToast(
   String text, {
   AppToastKind kind = AppToastKind.info,
   Duration duration = const Duration(seconds: 3),
+  OverlayState? overlayState,
 }) {
-  OverlayState? overlay;
-  if (context != null) {
+  OverlayState? overlay = overlayState;
+  if (overlay == null && context != null) {
     overlay = Overlay.maybeOf(context, rootOverlay: true);
   }
   overlay ??= rootNavigatorKey.currentState?.overlay;

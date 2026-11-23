@@ -11,6 +11,9 @@ import '../../data/app_database.dart';
 import '../../english/english_level.dart';
 import '../../math/math_level.dart';
 import '../../vietnamese/vietnamese_level.dart';
+import '../../online/auth/session_controller.dart';
+import '../../online/online_config.dart';
+import '../../online/sync/sync_health.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/progress_repository.dart';
@@ -29,6 +32,7 @@ import '../../ui/widgets/speech_bubble.dart';
 import 'home_tablet.dart';
 import 'kid_nav.dart';
 import 'kid_switcher.dart';
+import 'sync_chip.dart';
 import 'week_panel.dart';
 import '../../ui/widgets/subject_card.dart';
 
@@ -65,6 +69,14 @@ class HomeScreen extends ConsumerWidget {
     final currentId = ref.watch(currentKidIdProvider).valueOrNull;
     final kid = kids.where((k) => k.id == currentId).firstOrNull;
 
+    final config = ref.watch(onlineConfigProvider);
+    final session = ref.watch(sessionProvider).valueOrNull;
+    final health = ref.watch(syncHealthProvider);
+    final now = ref.watch(syncHealthClockProvider)();
+    final showSyncChip = config.enabled && session != null;
+    final showBanner =
+        showSyncChip && SyncReminderBanner.staleDays(health, now) != null;
+
     return Scaffold(
       body: DottedBackground(
         child: _HomeBody(
@@ -74,6 +86,8 @@ class HomeScreen extends ConsumerWidget {
           firstLabel: firstLabel,
           reward: ref.watch(pendingRewardProvider).valueOrNull,
           loading: loading,
+          showSyncChip: showSyncChip,
+          banner: showBanner ? const SyncReminderBanner() : null,
         ),
       ),
     );
@@ -97,9 +111,13 @@ class _HomeBody extends StatelessWidget {
     required this.firstLabel,
     required this.reward,
     this.loading = false,
+    this.showSyncChip = false,
+    this.banner,
   });
 
   final bool loading;
+  final bool showSyncChip;
+  final Widget? banner;
   final PendingReward? reward;
   final KidProfile? kid;
   final HomeSummary summary;
@@ -185,9 +203,14 @@ class _HomeBody extends StatelessWidget {
                     level: summary.level,
                     stars: summary.totalStars,
                     hideStars: loading,
+                    showSyncChip: showSyncChip,
                     onParents: () => _openParents(context),
                     onSwitchKid: () => showKidSwitcher(context),
                   ),
+                  if (banner != null) ...[
+                    SizedBox(height: compact ? 8 : 12),
+                    banner!,
+                  ],
                   SizedBox(height: compact ? 8 : 16),
                   _ChipBlock(
                     bubbleText: bubbleText,
@@ -283,9 +306,11 @@ class _HomeBody extends StatelessWidget {
         level: summary.level,
         stars: summary.totalStars,
         hideStars: loading,
+        showSyncChip: showSyncChip,
         onParents: () => _openParents(context),
         onSwitchKid: () => showKidSwitcher(context),
       ),
+      banner: banner,
       hero: HomeHeroCard(
         bubbleText: bubbleText,
         progressText: _progressText(summary.lessonsToday, lessonTotal),
@@ -356,6 +381,7 @@ class _TopRow extends StatelessWidget {
     required this.level,
     required this.stars,
     this.hideStars = false,
+    this.showSyncChip = false,
     required this.onParents,
     required this.onSwitchKid,
     this.wide = false,
@@ -367,6 +393,7 @@ class _TopRow extends StatelessWidget {
 
   /// While loading: the star pill keeps its place, empty.
   final bool hideStars;
+  final bool showSyncChip;
   final VoidCallback onParents;
   final VoidCallback onSwitchKid;
 
@@ -375,120 +402,133 @@ class _TopRow extends StatelessWidget {
   /// in half, leaving a gap on wide screens).
   final bool wide;
 
-  Widget _alignStart(Widget child) =>
-      wide ? Align(alignment: Alignment.centerLeft, child: child) : child;
-
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Flexible(
-          fit: wide ? FlexFit.tight : FlexFit.loose,
-          child: _alignStart(Semantics(
-            button: true,
-            label: 'Đổi bé',
-            excludeSemantics: true,
-            child: Material(
-              type: MaterialType.transparency,
-              child: Ink(
-                decoration: raisedDecoration(radius: AppRadii.pill),
-                child: InkWell(
-                  key: const ValueKey('greeting-pill'),
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  onTap: onSwitchKid,
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 64),
-                    padding: const EdgeInsets.fromLTRB(6, 6, 16, 6),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ClipOval(
-                            child: Image.asset(
-                              kid?.avatar ?? AppImages.chipMain,
-                              width: 44,
-                              height: 44,
-                              fit: BoxFit.contain,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxChipWidth = wide
+            ? 220.0
+            : (constraints.maxWidth * 0.38).clamp(48.0, 145.0);
+        return Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Semantics(
+                  button: true,
+                  label: 'Đổi bé',
+                  excludeSemantics: true,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Ink(
+                      decoration: raisedDecoration(radius: AppRadii.pill),
+                      child: InkWell(
+                        key: const ValueKey('greeting-pill'),
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                        onTap: onSwitchKid,
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 64),
+                          padding: const EdgeInsets.fromLTRB(6, 6, 16, 6),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ClipOval(
+                                  child: Image.asset(
+                                    kid?.avatar ?? AppImages.chipMain,
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      kid == null
+                                          ? 'Chào bé!'
+                                          : 'Chào ${kid!.nickname}!',
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.text,
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Image.asset(AppImages.icCrown,
+                                            width: 18,
+                                            height: 13,
+                                            fit: BoxFit.contain),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          'Cấp $level',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                kid == null
-                                    ? 'Chào bé!'
-                                    : 'Chào ${kid!.nickname}!',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.text,
-                                ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Image.asset(AppImages.icCrown,
-                                      width: 18,
-                                      height: 13,
-                                      fit: BoxFit.contain),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    'Cấp $level',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          )),
-        ),
-        if (wide) const SizedBox(width: 16) else const Spacer(),
-        _hiddenWhile(
-          hideStars,
-          InfoPill(
-            leading: Image.asset(AppImages.icStar,
-                width: 28, height: 28, fit: BoxFit.contain),
-            label: '$stars',
-          ),
-        ),
-        const SizedBox(width: 8),
-        Semantics(
-          button: true,
-          label: 'Góc ba mẹ',
-          excludeSemantics: true,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Ink(
-              width: 48,
-              height: 48,
-              decoration: raisedDecoration(radius: 24),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: onParents,
-                child: const Center(
-                  child: Icon(Icons.lock_outline_rounded,
-                      size: 22, color: AppColors.text),
+            const SizedBox(width: 8),
+            if (showSyncChip) ...[
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxChipWidth),
+                child: SyncChip(compact: !wide),
+              ),
+              const SizedBox(width: 6),
+            ],
+            _hiddenWhile(
+              hideStars,
+              InfoPill(
+                leading: Image.asset(AppImages.icStar,
+                    width: 28, height: 28, fit: BoxFit.contain),
+                label: '$stars',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Semantics(
+              button: true,
+              label: 'Góc ba mẹ',
+              excludeSemantics: true,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Ink(
+                  width: 48,
+                  height: 48,
+                  decoration: raisedDecoration(radius: 24),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onParents,
+                    child: const Center(
+                      child: Icon(Icons.lock_outline_rounded,
+                          size: 22, color: AppColors.text),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

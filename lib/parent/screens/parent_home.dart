@@ -29,14 +29,16 @@ const _contentMaxWidth = 640.0;
 /// Parent corner shell: kid chips, tab body and bottom navigation. Behind the
 /// parent gate: a deep link without a recent gate pass asks for it here.
 class ParentHome extends ConsumerStatefulWidget {
-  const ParentHome({super.key});
+  const ParentHome({super.key, this.focus});
+
+  final String? focus;
 
   @override
   ConsumerState<ParentHome> createState() => _ParentHomeState();
 }
 
 class _ParentHomeState extends ConsumerState<ParentHome> {
-  int _tab = 0;
+  late int _tab = widget.focus == 'account' ? 4 : 0;
 
   /// Kid shown in the corner; null until the user picks one (then the
   /// current kid is shown). Independent of the kid who is playing.
@@ -155,7 +157,10 @@ class _ParentHomeState extends ConsumerState<ParentHome> {
             ? const SizedBox.shrink()
             : RewardsTab(key: ValueKey(kidId), kidId: kidId);
       default:
-        return SettingsTab(kidId: kidId);
+        return SettingsTab(
+          kidId: kidId,
+          focusAccount: widget.focus == 'account',
+        );
     }
   }
 }

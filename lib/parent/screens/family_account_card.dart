@@ -7,8 +7,10 @@ import '../../features/online/replace_data_dialog.dart';
 import '../../online/auth/identity_providers.dart';
 import '../../online/auth/session_controller.dart';
 import '../../online/link/link_controller.dart';
+import '../../online/net/network_status.dart';
 import '../../online/online_config.dart';
 import '../../online/sync/sync_engine.dart';
+import '../../online/sync/sync_health.dart';
 import '../../ui/feedback/feedback.dart';
 import '../../ui/theme/tokens.dart';
 import 'parent_card.dart';
@@ -164,16 +166,20 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
     }
 
     final sync = ref.watch(syncControllerProvider);
+    final health = ref.watch(syncHealthProvider);
     final linkState = ref.watch(linkControllerProvider);
     final isUnlinkedWarning = !session.linked && linkState is LinkNeedsWarning;
     final who = session.email ?? (session.provider == 'apple' ? 'Apple' : 'Google');
-    final status = sync.running
+    final lastAt = health.lastOkAt ?? sync.lastAt;
+    final status = (sync.running || health.running)
         ? 'Đang lưu online…'
-        : sync.failed
-            ? 'Chưa lưu được, sẽ thử lại khi có mạng'
-            : sync.lastAt == null
-                ? 'Chưa lưu lần nào'
-                : 'Đã lưu online lúc ${_hhmm(sync.lastAt!)}';
+        : health.net == NetState.offline
+            ? 'Đang offline · ${health.pending} bài chưa lưu, sẽ tự lưu khi có mạng'
+            : sync.failed
+                ? 'Chưa lưu được, sẽ thử lại khi có mạng'
+                : lastAt == null
+                    ? 'Chưa lưu lần nào'
+                    : 'Đã lưu online lúc ${_hhmm(lastAt)}';
     return ParentCard(
       title: 'Tài khoản gia đình',
       child: Column(

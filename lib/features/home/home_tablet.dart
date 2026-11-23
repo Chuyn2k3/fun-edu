@@ -24,6 +24,7 @@ const _headingBox = 48.0;
 const _headingGap = 16.0;
 const _minAboveHeading = 28.0;
 const _rewardReserve = 110.0;
+const _bannerReserve = 96.0;
 const _bottomPad = 24.0;
 const _portraitHeroHeight = 360.0;
 const _playSize = 110.0;
@@ -39,6 +40,7 @@ class HomeTabletBody extends StatelessWidget {
     required this.sky,
     required this.navRail,
     required this.topBar,
+    this.banner,
     required this.hero,
     required this.weekPanel,
     required this.subjects,
@@ -51,6 +53,7 @@ class HomeTabletBody extends StatelessWidget {
   final Widget sky;
   final Widget navRail;
   final Widget topBar;
+  final Widget? banner;
   final Widget hero;
   final Widget weekPanel;
 
@@ -131,7 +134,10 @@ class HomeTabletBody extends StatelessWidget {
   /// system text ([textScale] > 1) needs proportionally more height, else
   /// the page falls back to the scrolling layout.
   bool _fits(double height, double textScale) =>
-      _rowsSpace(height - 120 - _bottomPad) >=
+      _rowsSpace(height -
+          120 -
+          _bottomPad -
+          (banner == null ? 0 : _bannerReserve)) >=
       (_fillHeroMin + _fillCardMin) * textScale;
 
   Widget _heading() => const SizedBox(
@@ -162,6 +168,10 @@ class HomeTabletBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           topBar,
+          if (banner != null) ...[
+            const SizedBox(height: 12),
+            banner!,
+          ],
           const SizedBox(height: _gap),
           Expanded(
             child: LayoutBuilder(builder: (context, c) {
@@ -219,6 +229,10 @@ class HomeTabletBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             topBar,
+            if (banner != null) ...[
+              const SizedBox(height: 12),
+              banner!,
+            ],
             const SizedBox(height: _gap),
             if (landscape)
               SizedBox(

@@ -20,18 +20,49 @@ const String _confirmWord = 'XÓA';
 /// "Cài đặt" tab: voice, family account (online), redo placement, privacy
 /// policy, delete all data.
 /// [kidId] is the kid selected in the parent corner, null when none exists.
-class SettingsTab extends ConsumerWidget {
-  const SettingsTab({super.key, required this.kidId});
+class SettingsTab extends ConsumerStatefulWidget {
+  const SettingsTab({
+    super.key,
+    required this.kidId,
+    this.focusAccount = false,
+  });
 
   final int? kidId;
+  final bool focusAccount;
 
-  Future<void> _setVoice(WidgetRef ref, bool on) async {
+  @override
+  ConsumerState<SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends ConsumerState<SettingsTab> {
+  final _accountKey = GlobalKey();
+  bool _scrolledToAccount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.focusAccount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _scrolledToAccount) return;
+        final ctx = _accountKey.currentContext;
+        if (ctx != null) {
+          _scrolledToAccount = true;
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 250),
+            alignment: 0.1,
+          );
+        }
+      });
+    }
+  }
+
+  Future<void> _setVoice(bool on) async {
     await ref.read(kidRepositoryProvider).setSetting(voiceEnabledKey, '$on');
     ref.invalidate(voiceEnabledProvider);
   }
 
-  Future<void> _redoPlacement(
-      BuildContext context, WidgetRef ref, int id) async {
+  Future<void> _redoPlacement(BuildContext context, int id) async {
     await LevelRepository(ref.read(databaseProvider), kidId: id)
         .clearLevels();
     refreshAfterKidChange(ref);
@@ -41,7 +72,7 @@ class SettingsTab extends ConsumerWidget {
     }
   }
 
-  Future<void> _deleteAll(BuildContext context, WidgetRef ref) async {
+  Future<void> _deleteAll(BuildContext context) async {
     final canDelete = ValueNotifier<bool>(false);
     final confirmed = await showAppDialog<bool>(
       context,
@@ -67,10 +98,10 @@ class SettingsTab extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final voice = ref.watch(voiceEnabledProvider).valueOrNull ?? true;
     final kids = ref.watch(kidsProvider).valueOrNull ?? const <KidProfile>[];
-    final kid = kids.where((k) => k.id == kidId).firstOrNull;
+    final kid = kids.where((k) => k.id == widget.kidId).firstOrNull;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: Column(
@@ -92,19 +123,19 @@ class SettingsTab extends ConsumerWidget {
                 Switch(
                   value: voice,
                   activeColor: AppColors.primary,
-                  onChanged: (v) => _setVoice(ref, v),
+                  onChanged: _setVoice,
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const FamilyAccountCard(),
+          FamilyAccountCard(key: _accountKey),
           if (kid != null) ...[
             const SizedBox(height: 12),
             _ActionCard(
               icon: Icons.restart_alt_rounded,
               label: 'Làm lại bài xếp cấp cho ${kid.nickname}',
-              onTap: () => _redoPlacement(context, ref, kid.id),
+              onTap: () => _redoPlacement(context, kid.id),
             ),
           ],
           const SizedBox(height: 12),
@@ -120,7 +151,7 @@ class SettingsTab extends ConsumerWidget {
             icon: Icons.delete_forever_rounded,
             label: 'Xóa toàn bộ dữ liệu',
             color: AppColors.primary,
-            onTap: () => _deleteAll(context, ref),
+            onTap: () => _deleteAll(context),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'parent_gate.dart';
 import 'parent_unlock.dart';
@@ -36,4 +37,16 @@ Future<bool> showParentGate(BuildContext context) async {
     }
   }
   return passed ?? false;
+}
+
+/// Shows the parent gate and pushes `/parent` on success (optionally focusing a
+/// section such as `account`).
+Future<void> openParentCorner(BuildContext context, {String? focus}) async {
+  final passed = await showParentGate(context);
+  if (!passed || !context.mounted) return;
+  final target = Uri(
+    path: '/parent',
+    queryParameters: focus == null ? null : {'focus': focus},
+  ).toString();
+  context.push(target);
 }

@@ -213,7 +213,7 @@ final GoRouter appRouter = GoRouter(
       path: '/parent',
       pageBuilder: (context, state) => buildSmoothTransitionPage(
         key: state.pageKey,
-        child: const ParentHome(),
+        child: ParentHome(focus: state.uri.queryParameters['focus']),
       ),
     ),
     GoRoute(
