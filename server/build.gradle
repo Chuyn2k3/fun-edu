@@ -40,8 +40,29 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'load'
+    }
     // Lets CI or a sandbox without Docker point tests at an existing database.
+    environment 'TEST_DB_URL', System.getenv('TEST_DB_URL') ?: 'jdbc:postgresql://localhost:5432/funedu_test'
+    environment 'TEST_DB_USER', System.getenv('TEST_DB_USER') ?: 'funedu'
+    environment 'TEST_DB_PASSWORD', System.getenv('TEST_DB_PASSWORD') ?: 'funedu'
+}
+
+tasks.register('loadTest', Test) {
+    description = 'Runs @Tag("load") server load and latency tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    shouldRunAfter tasks.named('test')
+    maxHeapSize = '2g'
+    jvmArgs '-Xms1536m'
+    useJUnitPlatform {
+        includeTags 'load'
+    }
+    testLogging {
+        showStandardStreams = true
+    }
     environment 'TEST_DB_URL', System.getenv('TEST_DB_URL') ?: 'jdbc:postgresql://localhost:5432/funedu_test'
     environment 'TEST_DB_USER', System.getenv('TEST_DB_USER') ?: 'funedu'
     environment 'TEST_DB_PASSWORD', System.getenv('TEST_DB_PASSWORD') ?: 'funedu'

@@ -141,3 +141,22 @@ Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` 
 - Cổng đồng bộ `POST /api/v1/sync`:
   - Nếu `changes` không rỗng: yêu cầu máy đã liên kết (`(family_id, device_id)` tồn tại trong `family_devices`). Nếu chưa liên kết hoặc thiếu claim `dev`, trả **409 `link_required`**.
   - Nếu `changes` rỗng (kéo dữ liệu): cho phép máy chưa liên kết để phục vụ kéo dữ liệu khôi phục.
+
+## 9. Sảnh `/ws/lobby`, Bạn đua và Tủ khoe (V6)
+
+- **Flyway V6:** Thêm 4 bảng cơ sở dữ liệu:
+  - `friend_codes`: mã kết bạn 6 ký tự không gây nhầm (bỏ `0 O 1 I`), hạn 24 giờ, tối đa 3 mã còn hạn / gia đình.
+  - `friendships`: lưu quan hệ bạn bè 2 chiều (khóa chính `(family_a, family_b)` với `family_a < family_b`).
+  - `showcases`: payload Tủ khoe của từng bé (≤ 4 KB), lưu ảnh, tên lửa, vệt, 3 ô ghim, thành tích đua, và tiến độ học (khi ba mẹ bật).
+  - `showcase_reactions`: thả cảm xúc (vỗ tay, tim, sao) theo khóa `(to_family, to_kid, from_family, kind)`.
+- **Sảnh WebSocket `/ws/lobby`:**
+  - Kết nối qua JWT token `ws://<HOST>/ws/lobby?token=<TOKEN>`.
+  - Quản lý trạng thái online/offline của bạn bè thời gian thực (0 <-> 1 presence transitions).
+  - Gửi và nhận lời mời đua trực tiếp 1-chạm giữa bạn bè.
+- **Kiểm thử tải máy chủ (`loadTest`):**
+  - Chạy toàn bộ tải sảnh và phòng đua (2.000 WS sảnh + 300 phòng 4 người):
+    ```bash
+    cd server
+    TEST_DB_URL=jdbc:postgresql://localhost:5432/funedu_test ./gradlew loadTest
+    ```
+
