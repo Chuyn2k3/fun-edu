@@ -277,13 +277,20 @@ class SyncStore {
     for (final c in await _db.select(_db.gameCounters).get()) {
       final u = ku(c.kidId);
       if (u == null) continue;
-      final cMap =
-          Map<String, int>.from(dcByKey['counter:$u:${c.key}'] ?? const {});
-      final cSum = cMap.values.fold(0, (a, b) => a + b);
-      if (cSum < c.value) {
-        cMap[deviceId] = (cMap[deviceId] ?? 0) + (c.value - cSum);
+      final cKey = 'counter:$u:${c.key}';
+      final cMap = Map<String, int>.from(dcByKey[cKey] ?? const {});
+      final dMap = Map<String, int>.from(
+          dcByKey[DeviceCounterStore.decKey(cKey)] ?? const {});
+      // Whatever the table says that the device rows do not explain is this
+      // device's own change (written before v11, or set directly).
+      final net = cMap.values.fold<int>(0, (a, b) => a + b) -
+          dMap.values.fold<int>(0, (a, b) => a + b);
+      if (net < c.value) {
+        cMap[deviceId] = (cMap[deviceId] ?? 0) + (c.value - net);
+      } else if (net > c.value) {
+        dMap[deviceId] = (dMap[deviceId] ?? 0) + (net - c.value);
       }
-      out['counter:$u:${c.key}'] = {'by': cMap};
+      out[cKey] = {'by': cMap, if (dMap.isNotEmpty) 'dec': dMap};
     }
     return out;
   }
@@ -505,12 +512,15 @@ class SyncStore {
           ),
         };
       case 'counter':
+        final dec = _mergeDeviceCounterMap(
+            _intMap(mine?['dec']), _intMap(theirs['dec']));
         return {
           'by': _mergeDeviceCounterMap(
             _intMap(mine?['by']),
             theirs.containsKey('by') ? _intMap(theirs['by']) : null,
             legacyScalar: theirs.containsKey('by') ? null : i(theirs, 'value'),
           ),
+          if (dec.isNotEmpty) 'dec': dec,
         };
       case 'badge':
         if (mine == null) return theirs;
@@ -842,11 +852,15 @@ class SyncStore {
           await (_db.delete(_db.gameCounters)
                 ..where((r) => r.kidId.equals(kidId) & r.key.equals(rest)))
               .go();
-          await (_db.delete(_db.deviceCounters)..where((r) => r.key.equals(cKey)))
+          await (_db.delete(_db.deviceCounters)
+                ..where((r) => r.key.isIn([cKey, DeviceCounterStore.decKey(cKey)])))
               .go();
         } else {
           final cMap = _intMap(p['by']);
-          final val = await counters.writeMerged(cKey, cMap);
+          final up = await counters.writeMerged(cKey, cMap);
+          final down = await counters.writeMerged(
+              DeviceCounterStore.decKey(cKey), _intMap(p['dec']));
+          final val = math.max(0, up - down);
           await _db.into(_db.gameCounters).insertOnConflictUpdate(
                 GameCountersCompanion.insert(
                     kidId: kidId, key: rest, value: Value(val)),

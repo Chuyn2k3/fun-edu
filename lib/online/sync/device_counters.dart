@@ -5,9 +5,14 @@ import 'package:drift/drift.dart';
 import '../../data/app_database.dart';
 import '../device_id.dart';
 
-/// Stores monotonic counter contributions broken down by `deviceId` in
+/// Stores counter contributions broken down by `deviceId` in
 /// `device_counters` so concurrent offline writes across devices always add up
 /// cleanly and resends remain idempotent.
+///
+/// Every device's share only ever grows, which is what makes "keep the larger
+/// value per device" a safe merge. A counter that can go down (the races since
+/// the last rare sticker reset to 0) records the decrease in a second,
+/// equally growing row under [decKey]: total = increases - decreases.
 class DeviceCounterStore {
   DeviceCounterStore(this._db, {String? deviceId}) : _deviceId = deviceId;
 
@@ -16,19 +21,25 @@ class DeviceCounterStore {
 
   Future<String> _id() async => _deviceId ?? await ensureDeviceId(_db);
 
-  /// Adds [delta] to this device's row for [counterKey]. Participates in the
-  /// caller's transaction when already inside one.
+  /// Where the decreases of [counterKey] are kept.
+  static String decKey(String counterKey) => '$counterKey|dec';
+
+  /// Adds [delta] to this device's share of [counterKey]; a negative delta
+  /// grows this device's decrease row instead, so no row ever shrinks.
+  /// Participates in the caller's transaction when already inside one.
   Future<void> add(String counterKey, int delta) async {
     if (delta == 0) return;
+    final rowKey = delta > 0 ? counterKey : decKey(counterKey);
+    final amount = delta.abs();
     await _db.transaction(() async {
       final did = await _id();
       final row = await (_db.select(_db.deviceCounters)
-            ..where((t) => t.key.equals(counterKey) & t.deviceId.equals(did)))
+            ..where((t) => t.key.equals(rowKey) & t.deviceId.equals(did)))
           .getSingleOrNull();
-      final next = (row?.value ?? 0) + delta;
+      final next = (row?.value ?? 0) + amount;
       await _db.into(_db.deviceCounters).insertOnConflictUpdate(
             DeviceCountersCompanion.insert(
-              key: counterKey,
+              key: rowKey,
               deviceId: did,
               value: next,
             ),
@@ -36,10 +47,13 @@ class DeviceCounterStore {
     });
   }
 
-  /// Sum across all devices for [counterKey].
-  Future<int> total(String counterKey) async {
+  /// Increases minus decreases, across all devices, for [counterKey].
+  Future<int> total(String counterKey) async =>
+      await _sum(counterKey) - await _sum(decKey(counterKey));
+
+  Future<int> _sum(String rowKey) async {
     final rows = await (_db.select(_db.deviceCounters)
-          ..where((t) => t.key.equals(counterKey)))
+          ..where((t) => t.key.equals(rowKey)))
         .get();
     var sum = 0;
     for (final r in rows) {

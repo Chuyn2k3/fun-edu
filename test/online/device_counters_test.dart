@@ -21,6 +21,17 @@ void main() {
     expect(await store.byDevice('glyph.c:k1:so-1'), {'dev-a': 5});
   });
 
+  test('a decrease grows a separate row; no row ever shrinks', () async {
+    const k = 'counter:k1:online_since_rare';
+    await store.add(k, 4);
+    await store.add(k, -4);
+    expect(await store.total(k), 0);
+    expect(await store.byDevice(k), {'dev-a': 4});
+    expect(await store.byDevice(DeviceCounterStore.decKey(k)), {'dev-a': 4});
+    await store.add(k, 1);
+    expect(await store.total(k), 1);
+  });
+
   test('add participates cleanly inside caller transaction', () async {
     await expectLater(
       db.transaction(() async {

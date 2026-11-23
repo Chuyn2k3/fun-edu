@@ -6,6 +6,7 @@ import 'package:funedu/game/data/game_repository.dart';
 import 'package:funedu/game/engine/race.dart';
 import 'package:funedu/game/engine/race_question.dart';
 import 'package:funedu/online/api_client.dart';
+import 'package:funedu/online/sync/device_counters.dart';
 import 'package:funedu/online/sync/sync_engine.dart';
 import 'package:funedu/online/sync/sync_store.dart';
 import 'package:funedu/profile/kid_repository.dart';
@@ -814,5 +815,83 @@ void main() {
 
     final g = await phone.select(phone.glyphProgress).getSingle();
     expect(g.completions, 2);
+  });
+
+  // A counter that goes back down (races since the last rare sticker resets
+  // to 0) must not be pulled back up by the other device's older copy.
+  group('counters that reset', () {
+    const k = 'online_since_rare';
+
+    Future<int> counter(AppDatabase db, int kid) async =>
+        (await (db.select(db.gameCounters)
+                  ..where((t) => t.kidId.equals(kid) & t.key.equals(k)))
+                .getSingleOrNull())
+            ?.value ??
+        0;
+
+    // Mirrors GameRepository: the kid-facing table and this device's share.
+    Future<void> change(AppDatabase db, int kid, int delta) async {
+      final uuid = (await (db.select(db.kidProfiles)
+                ..where((t) => t.id.equals(kid)))
+              .getSingle())
+          .uuid!;
+      final next = await counter(db, kid) + delta;
+      await DeviceCounterStore(db).add('counter:$uuid:$k', delta);
+      await db.into(db.gameCounters).insertOnConflictUpdate(
+          GameCountersCompanion.insert(kidId: kid, key: k, value: Value(next)));
+    }
+
+    test('a reset on one device survives the sync', () async {
+      final phoneKid = await KidRepository(phone)
+          .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+      await sync(phone);
+      await sync(ipad);
+      final ipadKid = await _onlyKid(ipad);
+
+      for (var i = 0; i < 4; i++) {
+        await change(phone, phoneKid, 1);
+      }
+      await sync(phone);
+      await sync(ipad);
+      expect(await counter(ipad, ipadKid), 4);
+
+      // Rare sticker on the phone: back to 0.
+      await change(phone, phoneKid, -4);
+      await sync(phone);
+      await sync(ipad);
+      await sync(phone);
+
+      expect(await counter(phone, phoneKid), 0);
+      expect(await counter(ipad, ipadKid), 0);
+      expect(await SyncStore(phone).pendingChanges(), isEmpty);
+      expect(await SyncStore(ipad).pendingChanges(), isEmpty);
+    });
+
+    test('a reset covering both devices does not go negative', () async {
+      final phoneKid = await KidRepository(phone)
+          .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+      await sync(phone);
+      await sync(ipad);
+      final ipadKid = await _onlyKid(ipad);
+
+      await change(phone, phoneKid, 1);
+      await change(ipad, ipadKid, 1);
+      await change(ipad, ipadKid, 1);
+      await sync(phone);
+      await sync(ipad);
+      await sync(phone);
+      expect(await counter(phone, phoneKid), 3);
+
+      // The phone resets the whole count (its own 1 and the iPad's 2).
+      await change(phone, phoneKid, -3);
+      // Meanwhile the iPad counts one more race, offline.
+      await change(ipad, ipadKid, 1);
+      await sync(phone);
+      await sync(ipad);
+      await sync(phone);
+
+      expect(await counter(phone, phoneKid), 1);
+      expect(await counter(ipad, ipadKid), 1);
+    });
   });
 }
