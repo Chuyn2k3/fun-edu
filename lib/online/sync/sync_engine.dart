@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,8 +16,8 @@ import 'sync_store.dart';
 typedef SyncTransport = Future<Map<String, Object?>?> Function(
     Map<String, Object?> body);
 
-/// One sync: push local changes, pull everything new, merge, repeat while
-/// merges produced changes (at most a few rounds).
+/// One sync: push local changes, pull page by page and merge in one transaction
+/// per page, repeat while changes remain (up to a cap).
 class SyncEngine {
   SyncEngine(this._db, this._transport) : _store = SyncStore(_db);
 
@@ -26,55 +27,106 @@ class SyncEngine {
 
   static const cursorKey = 'sync.cursor';
   static const lastSyncKey = 'sync.lastAt';
-  static const _batch = 500;
+  static const batchKey = 'sync.batch';
+  static const batchOkKey = 'sync.batchOk';
+  static const defaultBatch = 500;
+  static const minBatch = 50;
+  static const maxBatch = 500;
   static const _maxRounds = 5;
+  static const _maxTotalRounds = 100;
 
   /// Returns true when anything was pulled into the local database.
   Future<bool> run({bool pushLocal = true}) async {
     var pulledAny = false;
-    for (var round = 0; round < _maxRounds; round++) {
-      final pending =
-          pushLocal ? await _store.pendingChanges() : const <SyncChange>[];
-      final push = pending.take(_batch).toList();
-      final pulled = <SyncRecord>[];
+    final batch = await _currentBatch();
+    var stalledRounds = 0;
+    try {
+      for (var round = 0; round < _maxTotalRounds; round++) {
+        final pending =
+            pushLocal ? await _store.pendingChanges() : const <SyncChange>[];
+        final push = pending.take(batch).toList();
+        final ownKeys = push.map((c) => c.key).toSet();
 
-      var cursor = await _cursor();
-      var first = true;
-      while (true) {
-        final res = await _transport({
-          'since': cursor,
-          'changes':
-              first && pushLocal ? push.map((c) => c.toJson()).toList() : const [],
-        });
-        first = false;
-        final records = (res?['records'] as List? ?? const [])
-            .whereType<Map>()
-            .map((r) => SyncRecord(
-                  r['key'] as String,
-                  r['deleted'] == true
-                      ? null
-                      : (r['payload'] as Map).cast<String, Object?>(),
-                  version: (r['version'] as num).toInt(),
-                ))
-            .toList();
-        pulled.addAll(records);
-        final v = (res?['version'] as num?)?.toInt() ?? cursor;
-        if (v > cursor) cursor = v;
-        if (res?['hasMore'] != true) break;
+        var cursor = await _cursor();
+        var first = true;
+        while (true) {
+          final res = await _transport({
+            'since': cursor,
+            'changes': first && pushLocal
+                ? push.map((c) => c.toJson()).toList()
+                : const [],
+          });
+          first = false;
+          final records = (res?['records'] as List? ?? const [])
+              .whereType<Map>()
+              .map((r) => SyncRecord(
+                    r['key'] as String,
+                    r['deleted'] == true
+                        ? null
+                        : (r['payload'] as Map).cast<String, Object?>(),
+                    version: (r['version'] as num).toInt(),
+                  ))
+              .toList();
+          final v = (res?['version'] as num?)?.toInt() ?? cursor;
+          if (v > cursor) cursor = v;
+          await _store.applyPage(records, cursor);
+          if (records.any((r) => !ownKeys.contains(r.key))) pulledAny = true;
+          if (res?['hasMore'] != true) break;
+        }
+
+        await _store.applyWaiting();
+        if (!pushLocal) break;
+        final left = await _store.pendingChanges();
+        if (left.isEmpty) break;
+        if (left.length >= pending.length) {
+          stalledRounds++;
+          if (stalledRounds >= _maxRounds) break;
+        } else {
+          stalledRounds = 0;
+        }
       }
-
-      // Whole pull first, then one merge: kids before their progress.
-      await _store.applyRemote(pulled);
-      await _setSetting(cursorKey, '$cursor');
-      final ownKeys = push.map((c) => c.key).toSet();
-      if (pulled.any((r) => !ownKeys.contains(r.key))) pulledAny = true;
-
-      if (!pushLocal) break;
-      final left = await _store.pendingChanges();
-      if (left.isEmpty) break;
+      await _recordSuccess(batch);
+      await _setSetting(lastSyncKey, DateTime.now().toIso8601String());
+      return pulledAny;
+    } on ApiException catch (e) {
+      if (e.status == 0 && e.code == 'timeout') {
+        await _recordTimeout(batch);
+      }
+      rethrow;
+    } on TimeoutException {
+      await _recordTimeout(batch);
+      rethrow;
     }
-    await _setSetting(lastSyncKey, DateTime.now().toIso8601String());
-    return pulledAny;
+  }
+
+  Future<int> _currentBatch() async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((t) => t.key.equals(batchKey)))
+        .getSingleOrNull();
+    final v = int.tryParse(row?.value ?? '');
+    if (v == null) return defaultBatch;
+    return v.clamp(minBatch, maxBatch);
+  }
+
+  Future<void> _recordTimeout(int currentBatch) async {
+    final next = math.max(minBatch, currentBatch ~/ 2);
+    await _setSetting(batchKey, '$next');
+    await _setSetting(batchOkKey, '0');
+  }
+
+  Future<void> _recordSuccess(int currentBatch) async {
+    if (currentBatch >= maxBatch) return;
+    final row = await (_db.select(_db.appSettings)
+          ..where((t) => t.key.equals(batchOkKey)))
+        .getSingleOrNull();
+    final okCount = (int.tryParse(row?.value ?? '') ?? 0) + 1;
+    if (okCount >= 3) {
+      final next = math.min(maxBatch, currentBatch * 2);
+      await _setSetting(batchKey, '$next');
+      await _setSetting(batchOkKey, '0');
+    } else {
+      await _setSetting(batchOkKey, '$okCount');
+    }
   }
 
   Future<int> _cursor() async {

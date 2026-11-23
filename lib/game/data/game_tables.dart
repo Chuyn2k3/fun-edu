@@ -28,6 +28,7 @@ class GameProfile extends Table {
       boolean().withDefault(const Constant(false))();
   BoolColumn get retryAfterLossPending =>
       boolean().withDefault(const Constant(false))();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {kidId};

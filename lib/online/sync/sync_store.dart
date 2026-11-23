@@ -221,7 +221,13 @@ class SyncStore {
 
   /// Merges records pulled from the server. Kids are applied first so their
   /// progress can find them, whatever order the records came in.
-  Future<void> applyRemote(List<SyncRecord> records) => _db.transaction(() async {
+  Future<void> applyRemote(List<SyncRecord> records) => applyPage(records, 0);
+
+  /// Applies one page of records in a single transaction, saving [cursor]
+  /// to `app_settings` (key `sync.cursor`). Records for unknown kids are placed
+  /// in `sync_pending_remote` to be applied later when the kid arrives.
+  Future<void> applyPage(List<SyncRecord> records, int cursor) =>
+      _db.transaction(() async {
         final sorted = [...records]..sort((a, b) {
             final ak = a.kind == 'kid' ? 0 : 1;
             final bk = b.kind == 'kid' ? 0 : 1;
@@ -231,18 +237,94 @@ class SyncStore {
         final synced = {
           for (final r in await _db.select(_db.syncedRecords).get()) r.key: r,
         };
+        var hasNewKids = false;
         for (final r in sorted) {
+          final parts = r.key.split(':');
+          final kind = parts[0];
+          final ku = parts.length > 1 ? parts[1] : null;
+
+          if (kind != 'kid' && ku != null && await _kidIdOf(ku) == null) {
+            // Kid unknown: queue in syncPendingRemote without error
+            await _db.into(_db.syncPendingRemote).insertOnConflictUpdate(
+                  SyncPendingRemoteCompanion.insert(
+                    key: r.key,
+                    version: r.version,
+                    payloadJson: Value(
+                        r.payload == null ? null : canonicalJson(r.payload)),
+                  ),
+                );
+            continue;
+          }
+
           final mine = local[r.key];
           final s = synced[r.key];
           final dirty = mine != null &&
               (s == null || s.payloadJson != canonicalJson(mine));
-          final merged = r.deleted ? null : _merge(r.kind, mine, r.payload!, dirty);
+          final merged =
+              r.deleted ? null : _merge(r.kind, mine, r.payload!, dirty);
           final applied = await _write(r.key, merged, existed: mine != null);
-          // What the server holds: the next export sends `merged` back with
-          // this version as its base when it differs from the server's copy.
           await markSynced(r.key, r.version, applied ? r.payload : null);
+
+          // Clear from pending if it was there
+          await (_db.delete(_db.syncPendingRemote)
+                ..where((t) => t.key.equals(r.key)))
+              .go();
+
+          if (kind == 'kid') {
+            hasNewKids = true;
+          }
+        }
+
+        if (hasNewKids) {
+          await _applyWaitingInternal();
+        }
+
+        if (cursor > 0) {
+          await _db.into(_db.appSettings).insertOnConflictUpdate(
+                AppSettingsCompanion.insert(
+                    key: 'sync.cursor', value: '$cursor'),
+              );
         }
       });
+
+  /// Applies pending remote records whose kid is now known locally.
+  Future<void> applyWaiting() => _db.transaction(_applyWaitingInternal);
+
+  Future<void> _applyWaitingInternal() async {
+    final pending = await _db.select(_db.syncPendingRemote).get();
+    if (pending.isEmpty) return;
+
+    final local = await exportAll();
+    final synced = {
+      for (final r in await _db.select(_db.syncedRecords).get()) r.key: r,
+    };
+
+    for (final row in pending) {
+      final parts = row.key.split(':');
+      final ku = parts.length > 1 ? parts[1] : null;
+      if (ku == null || await _kidIdOf(ku) == null) continue;
+
+      final payload = row.payloadJson == null
+          ? null
+          : (jsonDecode(row.payloadJson!) as Map).cast<String, Object?>();
+      final record = SyncRecord(row.key, payload, version: row.version);
+
+      final mine = local[record.key];
+      final s = synced[record.key];
+      final dirty = mine != null &&
+          (s == null || s.payloadJson != canonicalJson(mine));
+      final merged = record.deleted
+          ? null
+          : _merge(record.kind, mine, record.payload!, dirty);
+      final applied = await _write(record.key, merged, existed: mine != null);
+      await markSynced(
+          record.key, record.version, applied ? record.payload : null);
+
+      await (_db.delete(_db.syncPendingRemote)
+            ..where((t) => t.key.equals(row.key)))
+          .go();
+    }
+  }
 
   Map<String, Object?> _merge(
     String kind,

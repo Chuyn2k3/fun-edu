@@ -1,18 +1,40 @@
 import 'dart:convert';
+import 'package:funedu/online/api_client.dart';
 
 /// In-memory copy of the server's /api/v1/sync rules (see
 /// server/src/main/java/.../sync/SyncService.java): versions, stale-base
 /// conflicts, tombstones and paging.
 class FakeSyncServer {
-  FakeSyncServer({this.page = 1000});
+  FakeSyncServer({
+    this.page = 1000,
+    this.dropResponseAfterSave = false,
+    this.delay,
+    this.failWith500 = false,
+    this.failOnPage,
+  });
 
   final int page;
+  bool dropResponseAfterSave;
+  Duration? delay;
+  bool failWith500;
+  int? failOnPage;
+
   int _seq = 0;
   final Map<String, ({Map<String, Object?>? payload, int version})> records = {};
   int calls = 0;
 
   Future<Map<String, Object?>?> handle(Map<String, Object?> body) async {
     calls++;
+    if (delay != null) {
+      await Future<void>.delayed(delay!);
+    }
+    if (failWith500) {
+      throw const ApiException(500, 'server_error');
+    }
+    if (failOnPage != null && calls == failOnPage) {
+      throw const ApiException(0, 'timeout');
+    }
+
     // Round-trip through JSON like the real HTTP call.
     body = jsonDecode(jsonEncode(body)) as Map<String, Object?>;
     final since = (body['since'] as num).toInt();
@@ -40,6 +62,11 @@ class FakeSyncServer {
     for (final k in conflicts) {
       if (!keys.contains(k)) out.add(MapEntry(k, records[k]!));
     }
+
+    if (dropResponseAfterSave) {
+      throw const ApiException(0, 'timeout');
+    }
+
     return jsonDecode(jsonEncode({
       'version': version,
       'hasMore': hasMore,

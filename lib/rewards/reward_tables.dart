@@ -9,4 +9,5 @@ class RealRewards extends Table {
   IntColumn get starsNeeded => integer()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get redeemedAt => dateTime().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
 }

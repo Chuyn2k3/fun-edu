@@ -5,6 +5,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../game/data/game_tables.dart';
+import '../online/device_id.dart';
 import '../online/uuid.dart';
 import '../profile/kid_tables.dart';
 import '../progress/progress_tables.dart';
@@ -61,6 +62,28 @@ class NotebookPages extends Table {
   Set<Column> get primaryKey => {kidId, glyphId};
 }
 
+/// Records pulled from the server whose local child is not yet known.
+/// Applied and deleted once the corresponding kid arrives.
+class SyncPendingRemote extends Table {
+  TextColumn get key => text()();
+  IntColumn get version => integer()();
+  TextColumn get payloadJson => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
+/// Counts per device (glyph completions, daily usage, game stars/counters).
+/// Synced via 'by' maps to ensure multi-device counts never overwrite each other.
+class DeviceCounters extends Table {
+  TextColumn get key => text()();
+  TextColumn get deviceId => text()();
+  IntColumn get value => integer()();
+
+  @override
+  Set<Column> get primaryKey => {key, deviceId};
+}
+
 @DriftDatabase(
   tables: [
     StrokeAttempts,
@@ -78,13 +101,15 @@ class NotebookPages extends Table {
     GameCounters,
     SyncedRecords,
     NotebookPages,
+    SyncPendingRemote,
+    DeviceCounters,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -109,8 +134,147 @@ class AppDatabase extends _$AppDatabase {
           if (from < 8) await _upgradeToV8(m, from);
           if (from < 9) await _upgradeToV9(m, from);
           if (from < 10) await _upgradeToV10(m, from);
+          if (from < 11) await _upgradeToV11(m, from);
         },
       );
+
+  Future<void> _upgradeToV11(Migrator m, int from) => transaction(() async {
+        await m.createTable(syncPendingRemote);
+        await m.createTable(deviceCounters);
+
+        final colsAppSettings =
+            await customSelect('PRAGMA table_info(app_settings)').get();
+        if (colsAppSettings.isNotEmpty &&
+            !colsAppSettings.any((c) => c.read<String>('name') == 'updated_at')) {
+          await m.addColumn(appSettings, appSettings.updatedAt);
+        }
+
+        final colsKidProfiles =
+            await customSelect('PRAGMA table_info(kid_profiles)').get();
+        if (colsKidProfiles.isNotEmpty &&
+            !colsKidProfiles.any((c) => c.read<String>('name') == 'updated_at')) {
+          await m.addColumn(kidProfiles, kidProfiles.updatedAt);
+        }
+
+        final colsRealRewards =
+            await customSelect('PRAGMA table_info(real_rewards)').get();
+        if (colsRealRewards.isNotEmpty &&
+            !colsRealRewards.any((c) => c.read<String>('name') == 'updated_at')) {
+          await m.addColumn(realRewards, realRewards.updatedAt);
+        }
+
+        final colsGameProfile =
+            await customSelect('PRAGMA table_info(game_profile)').get();
+        if (colsGameProfile.isNotEmpty &&
+            !colsGameProfile.any((c) => c.read<String>('name') == 'updated_at')) {
+          await m.addColumn(gameProfile, gameProfile.updatedAt);
+        }
+
+        final deviceId = await ensureDeviceId(this);
+
+        final tables = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table'",
+        ).get();
+        final tableNames = {for (final t in tables) t.read<String>('name')};
+
+        if (tableNames.contains('kid_profiles')) {
+          final kids = await select(kidProfiles).get();
+          final kidUuids = {
+            for (final k in kids)
+              if (k.uuid != null) k.id: k.uuid!
+          };
+
+          if (kidUuids.isNotEmpty) {
+            // 1. glyph_progress
+            if (tableNames.contains('glyph_progress')) {
+              final glyphRows = await select(glyphProgress).get();
+              for (final g in glyphRows) {
+                final uuid = kidUuids[g.kidId];
+                if (uuid == null) continue;
+                if (g.completions > 0) {
+                  await into(deviceCounters).insertOnConflictUpdate(
+                    DeviceCountersCompanion.insert(
+                      key: 'glyph.c:$uuid:${g.glyphId}',
+                      deviceId: deviceId,
+                      value: g.completions,
+                    ),
+                  );
+                }
+                if (g.cleanCompletions > 0) {
+                  await into(deviceCounters).insertOnConflictUpdate(
+                    DeviceCountersCompanion.insert(
+                      key: 'glyph.k:$uuid:${g.glyphId}',
+                      deviceId: deviceId,
+                      value: g.cleanCompletions,
+                    ),
+                  );
+                }
+              }
+            }
+
+            // 2. daily_usage
+            if (tableNames.contains('daily_usage')) {
+              final usageRows = await select(dailyUsage).get();
+              for (final u in usageRows) {
+                final uuid = kidUuids[u.kidId];
+                if (uuid == null) continue;
+                if (u.seconds > 0) {
+                  await into(deviceCounters).insertOnConflictUpdate(
+                    DeviceCountersCompanion.insert(
+                      key: 'usage:$uuid:${u.day}',
+                      deviceId: deviceId,
+                      value: u.seconds,
+                    ),
+                  );
+                }
+              }
+            }
+
+            // 3. game_counters
+            if (tableNames.contains('game_counters')) {
+              final counterRows = await select(gameCounters).get();
+              for (final c in counterRows) {
+                final uuid = kidUuids[c.kidId];
+                if (uuid == null) continue;
+                if (c.value > 0) {
+                  await into(deviceCounters).insertOnConflictUpdate(
+                    DeviceCountersCompanion.insert(
+                      key: 'counter:$uuid:${c.key}',
+                      deviceId: deviceId,
+                      value: c.value,
+                    ),
+                  );
+                }
+              }
+            }
+
+            // 4. game_profile (cosmic stars)
+            if (tableNames.contains('game_profile')) {
+              final gpRows = await select(gameProfile).get();
+              for (final gp in gpRows) {
+                final uuid = kidUuids[gp.kidId];
+                if (uuid == null) continue;
+                if (gp.cosmicStars > 0) {
+                  await into(deviceCounters).insertOnConflictUpdate(
+                    DeviceCountersCompanion.insert(
+                      key: 'stars.earned:$uuid',
+                      deviceId: deviceId,
+                      value: gp.cosmicStars,
+                    ),
+                  );
+                  await into(deviceCounters).insertOnConflictUpdate(
+                    DeviceCountersCompanion.insert(
+                      key: 'stars.spent:$uuid',
+                      deviceId: deviceId,
+                      value: 0,
+                    ),
+                  );
+                }
+              }
+            }
+          }
+        }
+      });
 
   Future<void> _upgradeToV10(Migrator m, int from) async {
     final tables = await customSelect(

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/online/api_client.dart';
 import 'package:funedu/online/sync/sync_engine.dart';
 import 'package:funedu/online/sync/sync_store.dart';
 import 'package:funedu/profile/kid_repository.dart';
@@ -290,5 +291,287 @@ void main() {
     expect(changesSent, isEmpty);
     final kids = await KidRepository(phone).kids();
     expect(kids.any((k) => k.nickname == 'CloudKid'), isTrue);
+  });
+
+  test('lost response after server saved does not double', () async {
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    final progress = ProgressRepository(phone, kidId: id);
+    for (var i = 0; i < 3; i++) {
+      await progress.recordGlyphCompleted('so-1', failedStrokes: 0);
+    }
+    for (var i = 0; i < 10; i++) {
+      await phone.into(phone.lessonCompletions).insert(
+          LessonCompletionsCompanion.insert(
+              kidId: id,
+              completedAt: DateTime(2026, 11, 20, 9, i),
+              starsEarned: 2));
+    }
+
+    server.dropResponseAfterSave = true;
+    await expectLater(sync(phone), throwsA(isA<ApiException>()));
+
+    server.dropResponseAfterSave = false;
+    await sync(phone);
+
+    // Server has exactly 10 lessons and glyph c=3.
+    expect(server.records.keys.where((k) => k.startsWith('lesson:')), hasLength(10));
+    final glyphRec = server.records.entries.singleWhere((e) => e.key.startsWith('glyph:'));
+    expect(glyphRec.value.payload!['completions'], 3);
+
+    // Local device matches and has no pending changes.
+    expect(await phone.select(phone.lessonCompletions).get(), hasLength(10));
+    expect((await phone.select(phone.glyphProgress).getSingle()).completions, 3);
+    expect(await SyncStore(phone).pendingChanges(), isEmpty);
+
+    // Second device syncs and matches.
+    await sync(ipad);
+    expect(await ipad.select(ipad.lessonCompletions).get(), hasLength(10));
+    expect((await ipad.select(ipad.glyphProgress).getSingle()).completions, 3);
+  });
+
+  test('pull resumes from the last applied page', () async {
+    server = FakeSyncServer(page: 1000);
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    for (var i = 0; i < 2500; i++) {
+      await phone.into(phone.lessonCompletions).insert(
+          LessonCompletionsCompanion.insert(
+              kidId: id,
+              completedAt: DateTime(2026, 1, 1).add(Duration(minutes: i)),
+              starsEarned: 1));
+    }
+    await sync(phone);
+    expect(server.records, hasLength(2501)); // 1 kid + 2500 lessons
+
+    // Pull page 1, fail on page 2.
+    server.failOnPage = 2;
+    server.calls = 0;
+    await expectLater(sync(ipad), throwsA(isA<ApiException>()));
+
+    // Page 1 applied & cursor persisted.
+    final afterPage1Count = (await ipad.select(ipad.lessonCompletions).get()).length;
+    expect(afterPage1Count, inInclusiveRange(999, 1000));
+    final cursorSetting = await KidRepository(ipad).setting(SyncEngine.cursorKey);
+    expect(cursorSetting, '1000');
+
+    // Resume: must NOT re-fetch page 1 (only page 2 & page 3 -> 2 calls).
+    server.failOnPage = null;
+    server.calls = 0;
+    await sync(ipad);
+    expect(server.calls, 2);
+    expect(await ipad.select(ipad.lessonCompletions).get(), hasLength(2500));
+    expect(await KidRepository(ipad).setting(SyncEngine.cursorKey), '2501');
+  });
+
+  test('progress before its kid waits and applies later', () async {
+    var call = 0;
+    final engine = SyncEngine(ipad, (body) async {
+      call++;
+      if (call == 1) {
+        return {
+          'version': 10,
+          'hasMore': true,
+          'conflicts': [],
+          'records': [
+            {
+              'key': 'glyph:uuid-late:so-1',
+              'payload': {
+                'completions': 4,
+                'clean': 2,
+                'last': 1700000100000,
+              },
+              'deleted': false,
+              'version': 10,
+            },
+          ],
+        };
+      }
+      return {
+        'version': 20,
+        'hasMore': false,
+        'conflicts': [],
+        'records': [
+          {
+            'key': 'kid:uuid-late',
+            'payload': {
+              'uuid': 'uuid-late',
+              'nickname': 'LateKid',
+              'avatar': AppImages.chipMain,
+              'age': 5,
+              'createdAt': 1700000000000,
+            },
+            'deleted': false,
+            'version': 20,
+          },
+        ],
+      };
+    });
+
+    await engine.run(pushLocal: false);
+
+    final kids = await KidRepository(ipad).kids();
+    expect(kids.single.nickname, 'LateKid');
+    final glyph = await ipad.select(ipad.glyphProgress).getSingle();
+    expect(glyph.glyphId, 'so-1');
+    expect(glyph.completions, 4);
+    expect(await ipad.select(ipad.syncPendingRemote).get(), isEmpty);
+  });
+
+  test('timeout halves the batch and 3 successes double it back', () async {
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    for (var i = 0; i < 1000; i++) {
+      await phone.into(phone.lessonCompletions).insert(
+          LessonCompletionsCompanion.insert(
+              kidId: id,
+              completedAt: DateTime(2026, 1, 1).add(Duration(minutes: i)),
+              starsEarned: 1));
+    }
+
+    final sentBatchSizes = <int>[];
+    final engine = SyncEngine(phone, (body) async {
+      final changes = body['changes'] as List<Object?>? ?? const [];
+      if (changes.isNotEmpty) sentBatchSizes.add(changes.length);
+      if (changes.length > 300) {
+        throw const ApiException(0, 'timeout');
+      }
+      return server.handle(body);
+    });
+
+    // First attempt sends 500 -> times out and halves batch to 250.
+    await expectLater(engine.run(), throwsA(isA<ApiException>()));
+    expect(sentBatchSizes, [500]);
+    expect(await KidRepository(phone).setting(SyncEngine.batchKey), '250');
+
+    // Second run pushes all remaining 1001 records in batches <= 250 cleanly.
+    sentBatchSizes.clear();
+    await engine.run();
+    expect(sentBatchSizes.every((s) => s <= 250), isTrue);
+    expect(server.records.keys.where((k) => k.startsWith('lesson:')), hasLength(1000));
+    expect(await SyncStore(phone).pendingChanges(), isEmpty);
+    expect(await KidRepository(phone).setting(SyncEngine.batchOkKey), '1');
+
+    // Two more consecutive successes -> doubles batch back to 500.
+    await engine.run();
+    expect(await KidRepository(phone).setting(SyncEngine.batchOkKey), '2');
+    await engine.run();
+    expect(await KidRepository(phone).setting(SyncEngine.batchKey), '500');
+    expect(await KidRepository(phone).setting(SyncEngine.batchOkKey), '0');
+  });
+
+  test('app killed mid-pull keeps data consistent', () async {
+    server = FakeSyncServer(page: 100);
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    for (var i = 0; i < 250; i++) {
+      await phone.into(phone.lessonCompletions).insert(
+          LessonCompletionsCompanion.insert(
+              kidId: id,
+              completedAt: DateTime(2026, 1, 1).add(Duration(minutes: i)),
+              starsEarned: 1));
+    }
+    await sync(phone);
+
+    // Crash/kill simulated by throwing mid-pull on page 2.
+    var calls = 0;
+    final crashingEngine = SyncEngine(ipad, (body) async {
+      calls++;
+      if (calls == 2) throw StateError('killed mid-pull');
+      return server.handle(body);
+    });
+    await expectLater(crashingEngine.run(), throwsStateError);
+
+    // Page 1 data and cursor were saved atomically.
+    final savedCursor =
+        int.tryParse(await KidRepository(ipad).setting(SyncEngine.cursorKey) ?? '') ?? 0;
+    expect(savedCursor, greaterThan(0));
+    final countAfterCrash = (await ipad.select(ipad.lessonCompletions).get()).length;
+    expect(countAfterCrash, inInclusiveRange(99, 100));
+
+    // Relaunch and resume -> gets the rest cleanly without duplicates.
+    await sync(ipad);
+    expect(await ipad.select(ipad.lessonCompletions).get(), hasLength(250));
+  });
+
+  test('switching kid during sync keeps data per kid', () async {
+    final kid1Uuid = 'kid-aaa';
+    final kid2Uuid = 'kid-bbb';
+    var page = 0;
+    final engine = SyncEngine(ipad, (body) async {
+      page++;
+      if (page == 1) {
+        return {
+          'version': 10,
+          'hasMore': true,
+          'conflicts': [],
+          'records': [
+            {
+              'key': 'kid:$kid1Uuid',
+              'payload': {
+                'uuid': kid1Uuid,
+                'nickname': 'Bé A',
+                'avatar': AppImages.chipMain,
+                'age': 5,
+                'createdAt': 1700000000000,
+              },
+              'deleted': false,
+              'version': 1,
+            },
+            {
+              'key': 'kid:$kid2Uuid',
+              'payload': {
+                'uuid': kid2Uuid,
+                'nickname': 'Bé B',
+                'avatar': AppImages.chipMain,
+                'age': 6,
+                'createdAt': 1700000001000,
+              },
+              'deleted': false,
+              'version': 2,
+            },
+            {
+              'key': 'glyph:$kid1Uuid:chu-a',
+              'payload': {'completions': 2, 'clean': 1, 'last': 1700000005000},
+              'deleted': false,
+              'version': 10,
+            },
+          ],
+        };
+      }
+      // Switch active kid on device right between page 1 and page 2!
+      final kids = await KidRepository(ipad).kids();
+      final kid1 = kids.firstWhere((k) => k.nickname == 'Bé A');
+      await KidRepository(ipad).setCurrentKid(kid1.id);
+
+      return {
+        'version': 20,
+        'hasMore': false,
+        'conflicts': [],
+        'records': [
+          {
+            'key': 'glyph:$kid2Uuid:chu-b',
+            'payload': {'completions': 5, 'clean': 5, 'last': 1700000010000},
+            'deleted': false,
+            'version': 20,
+          },
+        ],
+      };
+    });
+
+    await engine.run(pushLocal: false);
+
+    final kids = await KidRepository(ipad).kids();
+    final kid1 = kids.firstWhere((k) => k.nickname == 'Bé A');
+    final kid2 = kids.firstWhere((k) => k.nickname == 'Bé B');
+
+    final g1 = await (ipad.select(ipad.glyphProgress)
+          ..where((t) => t.kidId.equals(kid1.id)))
+        .get();
+    final g2 = await (ipad.select(ipad.glyphProgress)
+          ..where((t) => t.kidId.equals(kid2.id)))
+        .get();
+    expect(g1.map((e) => e.glyphId).toList(), ['chu-a']);
+    expect(g2.map((e) => e.glyphId).toList(), ['chu-b']);
   });
 }

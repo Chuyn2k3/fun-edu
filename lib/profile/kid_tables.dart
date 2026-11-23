@@ -11,12 +11,14 @@ class KidProfiles extends Table {
   /// Stable id across devices for online sync (v8). Set for every kid; null
   /// only in the instant between the v8 column add and its backfill.
   TextColumn get uuid => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
 }
 
 /// Plain key/value store for app-wide settings (current kid, voice, ...).
 class AppSettings extends Table {
   TextColumn get key => text()();
   TextColumn get value => text()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {key};
