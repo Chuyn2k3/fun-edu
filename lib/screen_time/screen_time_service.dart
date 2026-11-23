@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
+import '../online/sync/device_counters.dart';
+import '../online/uuid.dart';
 import '../profile/kid_repository.dart';
 import '../progress/progress_repository.dart' show Clock;
 
@@ -36,14 +38,34 @@ class ScreenTimeService {
     if (seconds <= 0) return;
     final day = dayKey(_now());
     await _db.transaction(() async {
+      final kidRow = await (_db.select(_db.kidProfiles)
+            ..where((t) => t.id.equals(kidId)))
+          .getSingleOrNull();
+      var uuid = kidRow?.uuid;
+      if (uuid == null && kidRow != null) {
+        uuid = newUuid();
+        await (_db.update(_db.kidProfiles)..where((t) => t.id.equals(kidId)))
+            .write(KidProfilesCompanion(uuid: Value(uuid)));
+      }
       final row = await (_db.select(_db.dailyUsage)
             ..where((t) => t.kidId.equals(kidId) & t.day.equals(day)))
           .getSingleOrNull();
+      var totalSec = (row?.seconds ?? 0) + seconds;
+      if (uuid != null) {
+        final counters = DeviceCounterStore(_db);
+        final key = 'usage:$uuid:$day';
+        final dcTotal = await counters.total(key);
+        if (dcTotal < (row?.seconds ?? 0)) {
+          await counters.add(key, (row?.seconds ?? 0) - dcTotal);
+        }
+        await counters.add(key, seconds);
+        totalSec = await counters.total(key);
+      }
       await _db.into(_db.dailyUsage).insertOnConflictUpdate(
             DailyUsageCompanion.insert(
               kidId: kidId,
               day: day,
-              seconds: Value((row?.seconds ?? 0) + seconds),
+              seconds: Value(totalSec),
             ),
           );
     });

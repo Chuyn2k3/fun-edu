@@ -25,12 +25,14 @@ class RewardRepository {
     if (starsNeeded < minRewardStars || starsNeeded > maxRewardStars) {
       throw ArgumentError.value(starsNeeded, 'starsNeeded', 'Must be 10..200');
     }
+    final now = _now();
     return _db.into(_db.realRewards).insert(
           RealRewardsCompanion.insert(
             kidId: kidId,
             title: t,
             starsNeeded: starsNeeded,
-            createdAt: _now(),
+            createdAt: now,
+            updatedAt: Value(now),
           ),
         );
   }
@@ -49,9 +51,12 @@ class RewardRepository {
       .getSingleOrNull();
 
   /// Marks the reward as given. Does not touch the kid's stars.
-  Future<void> redeem(int id) =>
-      (_db.update(_db.realRewards)..where((t) => t.id.equals(id)))
-          .write(RealRewardsCompanion(redeemedAt: Value(_now())));
+  Future<void> redeem(int id) {
+    final now = _now();
+    return (_db.update(_db.realRewards)..where((t) => t.id.equals(id))).write(
+      RealRewardsCompanion(redeemedAt: Value(now), updatedAt: Value(now)),
+    );
+  }
 
   Future<int> totalStars(int kidId) =>
       ProgressRepository(_db, kidId: kidId).totalStars();

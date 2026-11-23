@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../collection/notebook_pages.dart';
 import '../data/app_database.dart';
 import '../learning/writing_ladder.dart';
+import '../online/sync/device_counters.dart';
+import '../online/uuid.dart';
 import '../profile/kid_repository.dart';
 import 'level_repository.dart';
 
@@ -39,18 +41,49 @@ class ProgressRepository {
     final clean = failedStrokes <= 1 ? 1 : 0;
     final at = _now();
     await _db.transaction(() async {
+      final kidRow = await (_db.select(_db.kidProfiles)
+            ..where((t) => t.id.equals(kid)))
+          .getSingleOrNull();
+      var uuid = kidRow?.uuid;
+      if (uuid == null && kidRow != null) {
+        uuid = newUuid();
+        await (_db.update(_db.kidProfiles)..where((t) => t.id.equals(kid)))
+            .write(KidProfilesCompanion(uuid: Value(uuid)));
+      }
       final existing = await (_db.select(
         _db.glyphProgress,
       )..where((t) => t.kidId.equals(kid) & t.glyphId.equals(glyphId)))
           .getSingleOrNull();
+
+      var nextC = (existing?.completions ?? 0) + 1;
+      var nextK = (existing?.cleanCompletions ?? 0) + clean;
+      if (uuid != null) {
+        final counters = DeviceCounterStore(_db);
+        final cKey = 'glyph.c:$uuid:$glyphId';
+        final kKey = 'glyph.k:$uuid:$glyphId';
+        final dcTotal = await counters.total(cKey);
+        if (dcTotal < (existing?.completions ?? 0)) {
+          await counters.add(cKey, (existing?.completions ?? 0) - dcTotal);
+        }
+        await counters.add(cKey, 1);
+        nextC = await counters.total(cKey);
+
+        final dkTotal = await counters.total(kKey);
+        if (dkTotal < (existing?.cleanCompletions ?? 0)) {
+          await counters.add(kKey, (existing?.cleanCompletions ?? 0) - dkTotal);
+        }
+        if (clean > 0) {
+          await counters.add(kKey, clean);
+        }
+        nextK = await counters.total(kKey);
+      }
+
       await _db.into(_db.glyphProgress).insertOnConflictUpdate(
             GlyphProgressCompanion.insert(
               kidId: kid,
               glyphId: glyphId,
-              completions: Value((existing?.completions ?? 0) + 1),
-              cleanCompletions: Value(
-                (existing?.cleanCompletions ?? 0) + clean,
-              ),
+              completions: Value(nextC),
+              cleanCompletions: Value(nextK),
               lastPracticedAt: at,
             ),
           );

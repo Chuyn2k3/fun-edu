@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 
 import '../../data/app_database.dart';
+import '../device_id.dart';
 import '../uuid.dart';
+import 'device_counters.dart';
 
 /// One record as the server stores it: `kind:...` key, JSON object payload,
 /// `null` payload for a deletion.
@@ -75,28 +78,96 @@ class SyncStore {
 
   final AppDatabase _db;
 
+  /// Every record kind explicitly handled by [_merge]. Tested against
+  /// `exportAll()` and `SyncKinds.ALLOWED`.
+  static const Set<String> mergeKinds = {
+    'kid',
+    'glyph',
+    'lesson',
+    'level',
+    'usage',
+    'reward',
+    'setting',
+    'race',
+    'game',
+    'item',
+    'badge',
+    'counter',
+    'page',
+  };
+
   // ---------------------------------------------------------------- export
 
   /// Every syncable record on this device, by key.
   Future<Map<String, Map<String, Object?>>> exportAll() async {
     final out = <String, Map<String, Object?>>{};
     final uuidOf = await _kidUuids();
+    final deviceId = await ensureDeviceId(_db);
     String? ku(int kidId) => uuidOf[kidId];
 
+    final allDc = await _db.select(_db.deviceCounters).get();
+    final dcByKey = <String, Map<String, int>>{};
+    for (final r in allDc) {
+      if (r.value > 0) {
+        (dcByKey[r.key] ??= {})[r.deviceId] = r.value;
+      }
+    }
+
+    final syncedRows = await _db.select(_db.syncedRecords).get();
+    final syncedPayloads = <String, Map<String, Object?>>{};
+    for (final s in syncedRows) {
+      if (s.payloadJson != null) {
+        syncedPayloads[s.key] =
+            (jsonDecode(s.payloadJson!) as Map).cast<String, Object?>();
+      }
+    }
+
+    String pickLwwDevice(String key, Map<String, Object?> fields) {
+      final prev = syncedPayloads[key];
+      if (prev != null && prev['d'] is String) {
+        final prevWithoutD = Map<String, Object?>.from(prev)..remove('d');
+        if (canonicalJson(prevWithoutD) == canonicalJson(fields)) {
+          return prev['d'] as String;
+        }
+      }
+      return deviceId;
+    }
+
     for (final k in await _db.select(_db.kidProfiles).get()) {
-      out['kid:${uuidOf[k.id]}'] = {
+      final key = 'kid:${uuidOf[k.id]}';
+      final fields = <String, Object?>{
         'nickname': k.nickname,
         'avatar': k.avatar,
         'age': k.age,
         'createdAt': _ms(k.createdAt),
+        'u': _u(k.updatedAt),
       };
+      out[key] = {...fields, 'd': pickLwwDevice(key, fields)};
     }
     for (final g in await _db.select(_db.glyphProgress).get()) {
       final u = ku(g.kidId);
       if (u == null) continue;
+      final cMap =
+          Map<String, int>.from(dcByKey['glyph.c:$u:${g.glyphId}'] ?? const {});
+      final kMap =
+          Map<String, int>.from(dcByKey['glyph.k:$u:${g.glyphId}'] ?? const {});
+      final cSum = cMap.values.fold(0, (a, b) => a + b);
+      if (cSum < g.completions) {
+        cMap[deviceId] = (cMap[deviceId] ?? 0) + (g.completions - cSum);
+      }
+      final kSum = kMap.values.fold(0, (a, b) => a + b);
+      if (kSum < g.cleanCompletions) {
+        kMap[deviceId] = (kMap[deviceId] ?? 0) + (g.cleanCompletions - kSum);
+      }
+      final devs = {...cMap.keys, ...kMap.keys}.toList()..sort();
       out['glyph:$u:${g.glyphId}'] = {
-        'completions': g.completions,
-        'clean': g.cleanCompletions,
+        'by': {
+          for (final d in devs)
+            d: {
+              'c': cMap[d] ?? 0,
+              'k': kMap[d] ?? 0,
+            },
+        },
         'last': _ms(g.lastPracticedAt),
       };
     }
@@ -125,23 +196,37 @@ class SyncStore {
     for (final d in await _db.select(_db.dailyUsage).get()) {
       final u = ku(d.kidId);
       if (u == null) continue;
-      out['usage:$u:${d.day}'] = {'seconds': d.seconds};
+      final uMap =
+          Map<String, int>.from(dcByKey['usage:$u:${d.day}'] ?? const {});
+      final uSum = uMap.values.fold(0, (a, b) => a + b);
+      if (uSum < d.seconds) {
+        uMap[deviceId] = (uMap[deviceId] ?? 0) + (d.seconds - uSum);
+      }
+      out['usage:$u:${d.day}'] = {'by': uMap};
     }
     for (final r in await _db.select(_db.realRewards).get()) {
       final u = ku(r.kidId);
       if (u == null) continue;
-      out['reward:$u:${_ms(r.createdAt)}'] = {
+      final key = 'reward:$u:${_ms(r.createdAt)}';
+      final fields = <String, Object?>{
         'title': r.title,
         'starsNeeded': r.starsNeeded,
         'redeemedAt': r.redeemedAt == null ? null : _ms(r.redeemedAt!),
+        'u': _u(r.updatedAt),
       };
+      out[key] = {...fields, 'd': pickLwwDevice(key, fields)};
     }
     for (final s in await _db.select(_db.appSettings).get()) {
       final parsed = _kidSetting(s.key);
       if (parsed == null) continue;
       final u = ku(parsed.$1);
       if (u == null) continue;
-      out['setting:$u:${parsed.$2}'] = {'value': s.value};
+      final key = 'setting:$u:${parsed.$2}';
+      final fields = <String, Object?>{
+        'value': s.value,
+        'u': _u(s.updatedAt),
+      };
+      out[key] = {...fields, 'd': pickLwwDevice(key, fields)};
     }
     for (final r in await _db.select(_db.raceResults).get()) {
       final u = ku(r.kidId);
@@ -158,14 +243,26 @@ class SyncStore {
     for (final g in await _db.select(_db.gameProfile).get()) {
       final u = ku(g.kidId);
       if (u == null) continue;
-      out['game:$u'] = {
-        'cosmicStars': g.cosmicStars,
+      final key = 'game:$u';
+      final eMap =
+          Map<String, int>.from(dcByKey['stars.earned:$u'] ?? const {});
+      final sMap = Map<String, int>.from(dcByKey['stars.spent:$u'] ?? const {});
+      final net = eMap.values.fold<int>(0, (a, b) => a + b) -
+          sMap.values.fold<int>(0, (a, b) => a + b);
+      if (net < g.cosmicStars) {
+        eMap[deviceId] = (eMap[deviceId] ?? 0) + (g.cosmicStars - net);
+      }
+      final fields = <String, Object?>{
+        'earned': eMap,
+        'spent': sMap,
         'rocket': g.selectedRocket,
         'trail': g.selectedTrail,
         'meanAnswerMs': g.meanAnswerMs,
         'slowNextRace': g.slowNextRace,
         'retryAfterLossPending': g.retryAfterLossPending,
+        'u': _u(g.updatedAt),
       };
+      out[key] = {...fields, 'd': pickLwwDevice(key, fields)};
     }
     for (final i in await _db.select(_db.gameItems).get()) {
       final u = ku(i.kidId);
@@ -180,7 +277,13 @@ class SyncStore {
     for (final c in await _db.select(_db.gameCounters).get()) {
       final u = ku(c.kidId);
       if (u == null) continue;
-      out['counter:$u:${c.key}'] = {'value': c.value};
+      final cMap =
+          Map<String, int>.from(dcByKey['counter:$u:${c.key}'] ?? const {});
+      final cSum = cMap.values.fold(0, (a, b) => a + b);
+      if (cSum < c.value) {
+        cMap[deviceId] = (cMap[deviceId] ?? 0) + (c.value - cSum);
+      }
+      out['counter:$u:${c.key}'] = {'by': cMap};
     }
     return out;
   }
@@ -332,20 +435,60 @@ class SyncStore {
     Map<String, Object?> theirs,
     bool dirty,
   ) {
-    if (mine == null) return theirs;
+    assert(mergeKinds.contains(kind), 'Unhandled sync kind: $kind');
     int i(Map<String, Object?> m, String k) => (m[k] as num?)?.toInt() ?? 0;
+
     switch (kind) {
       case 'lesson':
       case 'race':
       case 'item':
-        return mine; // Same key = same event: nothing to merge.
+        return mine ?? theirs; // Same key = same event: nothing to merge.
+      case 'level':
+        if (mine == null) return theirs;
+        return dirty ? mine : theirs;
+      case 'kid':
+      case 'reward':
+      case 'setting':
+        if (mine == null) return theirs;
+        return _theirsWinsLww(mine, theirs, dirty) ? theirs : mine;
       case 'glyph':
+        final myBy = _glyphBy(mine);
+        final merged = <String, Map<String, int>>{
+          for (final e in myBy.entries) e.key: Map<String, int>.from(e.value),
+        };
+        if (theirs.containsKey('by')) {
+          final theirBy = _glyphBy(theirs);
+          for (final e in theirBy.entries) {
+            final cur = merged[e.key];
+            final c = _max(cur?['c'] ?? 0, e.value['c'] ?? 0);
+            final k = _max(cur?['k'] ?? 0, e.value['k'] ?? 0);
+            if (c > 0 || k > 0) merged[e.key] = {'c': c, 'k': k};
+          }
+        } else {
+          final theirC = i(theirs, 'completions');
+          final theirK = i(theirs, 'clean');
+          var nonLegacyC = 0;
+          var nonLegacyK = 0;
+          for (final e in merged.entries) {
+            if (e.key == 'legacy') continue;
+            nonLegacyC += e.value['c'] ?? 0;
+            nonLegacyK += e.value['k'] ?? 0;
+          }
+          final neededC = math.max(0, theirC - nonLegacyC);
+          final neededK = math.max(0, theirK - nonLegacyK);
+          final legacyC = _max(merged['legacy']?['c'] ?? 0, neededC);
+          final legacyK = _max(merged['legacy']?['k'] ?? 0, neededK);
+          if (legacyC > 0 || legacyK > 0) {
+            merged['legacy'] = {'c': legacyC, 'k': legacyK};
+          }
+        }
+        final sortedKeys = merged.keys.toList()..sort();
         return {
-          'completions': _max(i(mine, 'completions'), i(theirs, 'completions')),
-          'clean': _max(i(mine, 'clean'), i(theirs, 'clean')),
-          'last': _max(i(mine, 'last'), i(theirs, 'last')),
+          'by': {for (final d in sortedKeys) d: merged[d]!},
+          'last': _max(mine != null ? i(mine, 'last') : 0, i(theirs, 'last')),
         };
       case 'page':
+        if (mine == null) return theirs;
         final myMistakes = i(mine, 'm');
         final theirMistakes = i(theirs, 'm');
         if (myMistakes < theirMistakes) return mine;
@@ -354,22 +497,138 @@ class SyncStore {
         final theirAt = i(theirs, 'at');
         return myAt >= theirAt ? mine : theirs;
       case 'usage':
-        return {'seconds': _max(i(mine, 'seconds'), i(theirs, 'seconds'))};
+        return {
+          'by': _mergeDeviceCounterMap(
+            _intMap(mine?['by']),
+            theirs.containsKey('by') ? _intMap(theirs['by']) : null,
+            legacyScalar: theirs.containsKey('by') ? null : i(theirs, 'seconds'),
+          ),
+        };
       case 'counter':
-        return {'value': _max(i(mine, 'value'), i(theirs, 'value'))};
+        return {
+          'by': _mergeDeviceCounterMap(
+            _intMap(mine?['by']),
+            theirs.containsKey('by') ? _intMap(theirs['by']) : null,
+            legacyScalar: theirs.containsKey('by') ? null : i(theirs, 'value'),
+          ),
+        };
       case 'badge':
+        if (mine == null) return theirs;
         final a = i(mine, 'earnedAt');
         final b = i(theirs, 'earnedAt');
         return {'earnedAt': a < b ? a : b};
       case 'game':
-        final base = dirty ? mine : theirs;
+        final myEarned = _intMap(mine?['earned']);
+        final mySpent = _intMap(mine?['spent']);
+        Map<String, int> mergedEarned;
+        Map<String, int> mergedSpent;
+        if (theirs.containsKey('earned')) {
+          mergedEarned = _mergeDeviceCounterMap(
+            myEarned,
+            _intMap(theirs['earned']),
+          );
+          mergedSpent = _mergeDeviceCounterMap(
+            mySpent,
+            _intMap(theirs['spent']),
+          );
+        } else {
+          final theirStars = i(theirs, 'cosmicStars');
+          var nonLegacyNet = 0;
+          for (final e in myEarned.entries) {
+            if (e.key != 'legacy') nonLegacyNet += e.value;
+          }
+          for (final e in mySpent.entries) {
+            if (e.key != 'legacy') nonLegacyNet -= e.value;
+          }
+          final needed = math.max(0, theirStars - nonLegacyNet);
+          mergedEarned = Map<String, int>.from(myEarned);
+          if (needed > (mergedEarned['legacy'] ?? 0)) {
+            mergedEarned['legacy'] = needed;
+          }
+          mergedSpent = Map<String, int>.from(mySpent);
+        }
+        final base = (mine == null || _theirsWinsLww(mine, theirs, dirty))
+            ? theirs
+            : mine;
         return {
-          ...base,
-          'cosmicStars': _max(i(mine, 'cosmicStars'), i(theirs, 'cosmicStars')),
+          'earned': mergedEarned,
+          'spent': mergedSpent,
+          'rocket': base['rocket'] ?? 'rocket_orange',
+          'trail': base['trail'] ?? 'trail_flame',
+          'meanAnswerMs': base['meanAnswerMs'] ?? 6000,
+          'slowNextRace': base['slowNextRace'] ?? false,
+          'retryAfterLossPending': base['retryAfterLossPending'] ?? false,
+          'u': (base['u'] as num?)?.toInt() ?? 0,
+          if (base['d'] != null) 'd': base['d'],
         };
       default:
-        return dirty ? mine : theirs;
+        throw StateError('Unknown sync kind: $kind');
     }
+  }
+
+  static bool _theirsWinsLww(
+    Map<String, Object?> mine,
+    Map<String, Object?> theirs,
+    bool dirty,
+  ) {
+    final myU = (mine['u'] as num?)?.toInt() ?? 0;
+    final theirU = (theirs['u'] as num?)?.toInt() ?? 0;
+    if (myU == 0 && theirU == 0) {
+      // Un-timestamped edits fall back to keeping dirty local changes.
+      return !dirty;
+    }
+    if (theirU != myU) return theirU > myU;
+    final myD = mine['d'] as String? ?? '';
+    final theirD = theirs['d'] as String? ?? '';
+    if (theirD != myD) return theirD.compareTo(myD) > 0;
+    return !dirty;
+  }
+
+  static Map<String, Map<String, int>> _glyphBy(Map<String, Object?>? p) {
+    final raw = p?['by'];
+    if (raw is! Map) return const {};
+    final out = <String, Map<String, int>>{};
+    for (final e in raw.entries) {
+      if (e.value is! Map) continue;
+      final v = e.value as Map;
+      out['${e.key}'] = {
+        'c': (v['c'] as num?)?.toInt() ?? 0,
+        'k': (v['k'] as num?)?.toInt() ?? 0,
+      };
+    }
+    return out;
+  }
+
+  static Map<String, int> _intMap(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final e in raw.entries)
+        if (e.value is num && (e.value as num).toInt() > 0)
+          '${e.key}': (e.value as num).toInt(),
+    };
+  }
+
+  static Map<String, int> _mergeDeviceCounterMap(
+    Map<String, int> myBy,
+    Map<String, int>? theirBy, {
+    int? legacyScalar,
+  }) {
+    final out = Map<String, int>.from(myBy);
+    if (theirBy != null) {
+      for (final e in theirBy.entries) {
+        final v = _max(out[e.key] ?? 0, e.value);
+        if (v > 0) out[e.key] = v;
+      }
+    } else if (legacyScalar != null) {
+      var nonLegacy = 0;
+      for (final e in out.entries) {
+        if (e.key != 'legacy') nonLegacy += e.value;
+      }
+      final needed = math.max(0, legacyScalar - nonLegacy);
+      final legacy = _max(out['legacy'] ?? 0, needed);
+      if (legacy > 0) out['legacy'] = legacy;
+    }
+    return out;
   }
 
   static int _max(int a, int b) => a > b ? a : b;
@@ -385,22 +644,33 @@ class SyncStore {
     final kidId = await _kidIdOf(ku);
     if (kidId == null) return false;
     final rest = parts.sublist(2).join(':');
+    final counters = DeviceCounterStore(_db);
     int i(String k) => (p![k] as num).toInt();
     DateTime t(String k) => DateTime.fromMillisecondsSinceEpoch(i(k));
 
     switch (kind) {
       case 'glyph':
+        final cKey = 'glyph.c:$ku:$rest';
+        final kKey = 'glyph.k:$ku:$rest';
         if (p == null) {
           await (_db.delete(_db.glyphProgress)
                 ..where((r) => r.kidId.equals(kidId) & r.glyphId.equals(rest)))
               .go();
+          await (_db.delete(_db.deviceCounters)
+                ..where((r) => r.key.equals(cKey) | r.key.equals(kKey)))
+              .go();
         } else {
+          final by = _glyphBy(p);
+          final cMap = {for (final e in by.entries) e.key: e.value['c'] ?? 0};
+          final kMap = {for (final e in by.entries) e.key: e.value['k'] ?? 0};
+          final totalC = await counters.writeMerged(cKey, cMap);
+          final totalK = await counters.writeMerged(kKey, kMap);
           await _db.into(_db.glyphProgress).insertOnConflictUpdate(
                 GlyphProgressCompanion.insert(
                   kidId: kidId,
                   glyphId: rest,
-                  completions: Value(i('completions')),
-                  cleanCompletions: Value(i('clean')),
+                  completions: Value(totalC),
+                  cleanCompletions: Value(totalK),
                   lastPracticedAt: t('last'),
                 ),
               );
@@ -449,14 +719,19 @@ class SyncStore {
               );
         }
       case 'usage':
+        final uKey = 'usage:$ku:$rest';
         if (p == null) {
           await (_db.delete(_db.dailyUsage)
                 ..where((r) => r.kidId.equals(kidId) & r.day.equals(rest)))
               .go();
+          await (_db.delete(_db.deviceCounters)..where((r) => r.key.equals(uKey)))
+              .go();
         } else {
+          final uMap = _intMap(p['by']);
+          final totalSec = await counters.writeMerged(uKey, uMap);
           await _db.into(_db.dailyUsage).insertOnConflictUpdate(
                 DailyUsageCompanion.insert(
-                    kidId: kidId, day: rest, seconds: Value(i('seconds'))),
+                    kidId: kidId, day: rest, seconds: Value(totalSec)),
               );
         }
       case 'reward':
@@ -475,6 +750,7 @@ class SyncStore {
                   redeemedAt: Value(redeemed == null
                       ? null
                       : DateTime.fromMillisecondsSinceEpoch(redeemed.toInt())),
+                  updatedAt: Value(_optTime(p['u'])),
                 ),
               );
         }
@@ -486,7 +762,11 @@ class SyncStore {
               .go();
         } else {
           await _db.into(_db.appSettings).insertOnConflictUpdate(
-                AppSettingsCompanion.insert(key: localKey, value: p['value']! as String),
+                AppSettingsCompanion.insert(
+                  key: localKey,
+                  value: p['value']! as String,
+                  updatedAt: Value(_optTime(p['u'])),
+                ),
               );
         }
       case 'race':
@@ -509,19 +789,29 @@ class SyncStore {
               );
         }
       case 'game':
+        final eKey = 'stars.earned:$ku';
+        final sKey = 'stars.spent:$ku';
         if (p == null) {
           await (_db.delete(_db.gameProfile)..where((r) => r.kidId.equals(kidId)))
               .go();
+          await (_db.delete(_db.deviceCounters)
+                ..where((r) => r.key.equals(eKey) | r.key.equals(sKey)))
+              .go();
         } else {
+          final eMap = _intMap(p['earned']);
+          final sMap = _intMap(p['spent']);
+          final earned = await counters.writeMerged(eKey, eMap);
+          final spent = await counters.writeMerged(sKey, sMap);
           await _db.into(_db.gameProfile).insertOnConflictUpdate(
                 GameProfileCompanion.insert(
                   kidId: Value(kidId),
-                  cosmicStars: Value(i('cosmicStars')),
+                  cosmicStars: Value(earned - spent),
                   selectedRocket: Value(p['rocket']! as String),
                   selectedTrail: Value(p['trail']! as String),
                   meanAnswerMs: Value(i('meanAnswerMs')),
                   slowNextRace: Value(p['slowNextRace']! as bool),
                   retryAfterLossPending: Value(p['retryAfterLossPending']! as bool),
+                  updatedAt: Value(_optTime(p['u'])),
                 ),
               );
         }
@@ -547,14 +837,19 @@ class SyncStore {
               );
         }
       case 'counter':
+        final cKey = 'counter:$ku:$rest';
         if (p == null) {
           await (_db.delete(_db.gameCounters)
                 ..where((r) => r.kidId.equals(kidId) & r.key.equals(rest)))
               .go();
+          await (_db.delete(_db.deviceCounters)..where((r) => r.key.equals(cKey)))
+              .go();
         } else {
+          final cMap = _intMap(p['by']);
+          final val = await counters.writeMerged(cKey, cMap);
           await _db.into(_db.gameCounters).insertOnConflictUpdate(
                 GameCountersCompanion.insert(
-                    kidId: kidId, key: rest, value: Value(i('value'))),
+                    kidId: kidId, key: rest, value: Value(val)),
               );
         }
       default:
@@ -566,7 +861,7 @@ class SyncStore {
   Future<bool> _writeKid(String ku, Map<String, Object?>? p) async {
     final id = await _kidIdOf(ku);
     if (p == null) {
-      if (id != null) await _deleteKid(id);
+      if (id != null) await _deleteKid(id, ku: ku);
       return false;
     }
     final row = KidProfilesCompanion(
@@ -575,6 +870,7 @@ class SyncStore {
       age: Value((p['age']! as num).toInt()),
       createdAt: Value(DateTime.fromMillisecondsSinceEpoch((p['createdAt']! as num).toInt())),
       uuid: Value(ku),
+      updatedAt: Value(_optTime(p['u'])),
     );
     if (id == null) {
       final newId = await _db.into(_db.kidProfiles).insert(row);
@@ -594,7 +890,7 @@ class SyncStore {
   }
 
   /// Same cleanup as deleting a kid in Góc ba mẹ.
-  Future<void> _deleteKid(int id) async {
+  Future<void> _deleteKid(int id, {String? ku}) async {
     for (final t in <TableInfo>[
       _db.strokeAttempts,
       _db.notebookPages,
@@ -610,6 +906,12 @@ class SyncStore {
       _db.gameCounters,
     ]) {
       await _db.customStatement('DELETE FROM ${t.actualTableName} WHERE kid_id = ?', [id]);
+    }
+    if (ku != null) {
+      await _db.customStatement(
+        'DELETE FROM device_counters WHERE key LIKE ? OR key LIKE ?',
+        ['%:$ku', '%:$ku:%'],
+      );
     }
     await _db.customStatement(
       "DELETE FROM app_settings WHERE key IN (?, ?, ?, ?, ?) OR key LIKE ?",
@@ -684,4 +986,11 @@ class SyncStore {
   }
 
   static int _ms(DateTime t) => t.millisecondsSinceEpoch;
+  static int _u(DateTime? t) => t?.millisecondsSinceEpoch ?? 0;
+  static DateTime? _optTime(Object? v) {
+    if (v is num && v.toInt() > 0) {
+      return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+    }
+    return null;
+  }
 }

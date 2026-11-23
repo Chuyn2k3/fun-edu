@@ -33,13 +33,15 @@ class KidRepository {
         if (count >= maxKids) {
           throw StateError('At most $maxKids kid profiles are allowed');
         }
+        final now = _now();
         final id = await _db.into(_db.kidProfiles).insert(
               KidProfilesCompanion.insert(
                 nickname: nickname,
                 avatar: avatar,
                 age: age,
-                createdAt: _now(),
+                createdAt: now,
                 uuid: Value(newUuid()),
+                updatedAt: Value(now),
               ),
             );
         if (await currentKidId() == null) await setCurrentKid(id);
@@ -57,6 +59,7 @@ class KidRepository {
         nickname: Value.absentIfNull(nickname),
         avatar: Value.absentIfNull(avatar),
         age: Value.absentIfNull(age),
+        updatedAt: Value(_now()),
       ),
     );
   }
@@ -64,8 +67,11 @@ class KidRepository {
   /// Deletes the kid and all of their progress. Deleting the current kid
   /// selects the first remaining one (or none).
   Future<void> deleteKid(int id) => _db.transaction(() async {
+        final kidRow = await (_db.select(_db.kidProfiles)
+              ..where((t) => t.id.equals(id)))
+            .getSingleOrNull();
         final wasCurrent = await currentKidId() == id;
-        await _deleteProgressOf(id);
+        await _deleteProgressOf(id, uuid: kidRow?.uuid);
         await (_db.delete(_db.kidProfiles)..where((t) => t.id.equals(id))).go();
         if (wasCurrent) {
           final rest = await kids();
@@ -79,7 +85,7 @@ class KidRepository {
         }
       });
 
-  Future<void> _deleteProgressOf(int id) async {
+  Future<void> _deleteProgressOf(int id, {String? uuid}) async {
     await (_db.delete(_db.strokeAttempts)..where((t) => t.kidId.equals(id)))
         .go();
     await (_db.delete(_db.notebookPages)..where((t) => t.kidId.equals(id)))
@@ -98,6 +104,12 @@ class KidRepository {
     await (_db.delete(_db.gameItems)..where((t) => t.kidId.equals(id))).go();
     await (_db.delete(_db.gameBadges)..where((t) => t.kidId.equals(id))).go();
     await (_db.delete(_db.gameCounters)..where((t) => t.kidId.equals(id))).go();
+    if (uuid != null) {
+      await _db.customStatement(
+        'DELETE FROM device_counters WHERE key LIKE ? OR key LIKE ?',
+        ['%:$uuid', '%:$uuid:%'],
+      );
+    }
     // Screen-time, Nhà Chíp and race-nickname settings of this kid.
     await (_db.delete(_db.appSettings)
           ..where((t) =>
@@ -135,7 +147,11 @@ class KidRepository {
 
   Future<void> setSetting(String key, String value) =>
       _db.into(_db.appSettings).insertOnConflictUpdate(
-            AppSettingsCompanion.insert(key: key, value: value),
+            AppSettingsCompanion.insert(
+              key: key,
+              value: value,
+              updatedAt: Value(_now()),
+            ),
           );
 
   Future<void> removeSetting(String key) =>

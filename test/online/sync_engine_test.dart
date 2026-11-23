@@ -1,7 +1,10 @@
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show BooleanExpressionOperators, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/game/data/game_repository.dart';
+import 'package:funedu/game/engine/race.dart';
+import 'package:funedu/game/engine/race_question.dart';
 import 'package:funedu/online/api_client.dart';
 import 'package:funedu/online/sync/sync_engine.dart';
 import 'package:funedu/online/sync/sync_store.dart';
@@ -85,7 +88,7 @@ void main() {
     expect(await phone.select(phone.lessonCompletions).get(), hasLength(2));
   });
 
-  test('practice counters merge to the larger value after a conflict', () async {
+  test('practice counters add up across devices after a conflict', () async {
     final id = await KidRepository(phone)
         .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
     await ProgressRepository(phone, kidId: id).recordGlyphCompleted('so-1', failedStrokes: 0);
@@ -105,9 +108,10 @@ void main() {
 
     final p = await phone.select(phone.glyphProgress).getSingle();
     final q = await ipad.select(ipad.glyphProgress).getSingle();
-    expect(p.completions, 3);
-    expect(q.completions, 3);
-    expect(p.cleanCompletions, q.cleanCompletions);
+    expect(p.completions, 4);
+    expect(q.completions, 4);
+    expect(p.cleanCompletions, 3);
+    expect(q.cleanCompletions, 3);
     expect(await SyncStore(phone).pendingChanges(), isEmpty);
     expect(await SyncStore(ipad).pendingChanges(), isEmpty);
   });
@@ -317,7 +321,11 @@ void main() {
     // Server has exactly 10 lessons and glyph c=3.
     expect(server.records.keys.where((k) => k.startsWith('lesson:')), hasLength(10));
     final glyphRec = server.records.entries.singleWhere((e) => e.key.startsWith('glyph:'));
-    expect(glyphRec.value.payload!['completions'], 3);
+    final by = (glyphRec.value.payload!['by'] as Map).cast<String, Object?>();
+    final totalC = by.values
+        .map((v) => ((v as Map)['c'] as num).toInt())
+        .fold<int>(0, (a, b) => a + b);
+    expect(totalC, 3);
 
     // Local device matches and has no pending changes.
     expect(await phone.select(phone.lessonCompletions).get(), hasLength(10));
@@ -573,5 +581,238 @@ void main() {
         .get();
     expect(g1.map((e) => e.glyphId).toList(), ['chu-a']);
     expect(g2.map((e) => e.glyphId).toList(), ['chu-b']);
+  });
+
+  test('two devices offline both count', () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await sync(phone);
+    await sync(ipad);
+    final ipadKid = await _onlyKid(ipad);
+
+    // Offline on both devices: phone writes 'a' 3 times, ipad writes 'a' 2 times.
+    final phoneProg = ProgressRepository(phone, kidId: phoneKid);
+    final ipadProg = ProgressRepository(ipad, kidId: ipadKid);
+    for (var i = 0; i < 3; i++) {
+      await phoneProg.recordGlyphCompleted('chu-a', failedStrokes: 0);
+    }
+    for (var i = 0; i < 2; i++) {
+      await ipadProg.recordGlyphCompleted('chu-a', failedStrokes: 0);
+    }
+
+    await sync(phone);
+    await sync(ipad);
+    await sync(phone);
+
+    final p = await (phone.select(phone.glyphProgress)
+          ..where((t) => t.kidId.equals(phoneKid) & t.glyphId.equals('chu-a')))
+        .getSingle();
+    final q = await (ipad.select(ipad.glyphProgress)
+          ..where((t) => t.kidId.equals(ipadKid) & t.glyphId.equals('chu-a')))
+        .getSingle();
+    expect(p.completions, 5);
+    expect(q.completions, 5);
+    expect(await SyncStore(phone).pendingChanges(), isEmpty);
+    expect(await SyncStore(ipad).pendingChanges(), isEmpty);
+  });
+
+  test('cosmic stars earned on two devices add up', () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await sync(phone);
+    await sync(ipad);
+    final ipadKid = await _onlyKid(ipad);
+
+    // Phone wins a race with 5 comets (+5 win + 5 comets = +10 stars)
+    final phoneGame = GameRepository(phone,
+        kidId: phoneKid, now: () => DateTime(2026, 11, 20, 10));
+    final res1 = await phoneGame.recordRace(
+      RaceSubject.toan,
+      const RaceOutcome(
+        won: true,
+        kidTime: Duration(seconds: 30),
+        firstTryCorrect: 8,
+        cometsFirstTry: 5,
+        answered: 8,
+        missed: [],
+      ),
+      wasRetryAfterLoss: false,
+    );
+    expect(res1.starsEarned, 10);
+
+    // iPad wins a race with 0 comets (+5 stars)
+    final ipadGame = GameRepository(ipad,
+        kidId: ipadKid, now: () => DateTime(2026, 11, 20, 11));
+    final res2 = await ipadGame.recordRace(
+      RaceSubject.tiengViet,
+      const RaceOutcome(
+        won: true,
+        kidTime: Duration(seconds: 35),
+        firstTryCorrect: 8,
+        cometsFirstTry: 0,
+        answered: 8,
+        missed: [],
+      ),
+      wasRetryAfterLoss: false,
+    );
+    expect(res2.starsEarned, 5);
+
+    await sync(phone);
+    await sync(ipad);
+    await sync(phone);
+
+    expect(await phoneGame.totalStars(), 15);
+    expect(await ipadGame.totalStars(), 15);
+  });
+
+  test('settings last edit wins on both devices', () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await sync(phone);
+    await sync(ipad);
+    final ipadKid = await _onlyKid(ipad);
+
+    final t1 = DateTime(2026, 11, 20, 10, 0);
+    final t2 = DateTime(2026, 11, 20, 10, 5);
+    await KidRepository(phone, now: () => t1)
+        .setSetting('dailyLimitMinutes.$phoneKid', '20');
+    await KidRepository(ipad, now: () => t2)
+        .setSetting('dailyLimitMinutes.$ipadKid', '30');
+
+    await sync(phone);
+    await sync(ipad);
+    await sync(phone);
+
+    expect(await KidRepository(phone).setting('dailyLimitMinutes.$phoneKid'), '30');
+    expect(await KidRepository(ipad).setting('dailyLimitMinutes.$ipadKid'), '30');
+    expect(await SyncStore(phone).pendingChanges(), isEmpty);
+    expect(await SyncStore(ipad).pendingChanges(), isEmpty);
+  });
+
+  test('clock skew still converges', () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await sync(phone);
+    await sync(ipad);
+    final ipadKid = await _onlyKid(ipad);
+
+    // Exact same timestamp on both clocks (tie-breaker uses deviceId comparison).
+    final sameTime = DateTime(2026, 11, 20, 12, 0, 0);
+    await KidRepository(phone, now: () => sameTime)
+        .setSetting('dailyLimitMinutes.$phoneKid', '20');
+    await KidRepository(ipad, now: () => sameTime)
+        .setSetting('dailyLimitMinutes.$ipadKid', '40');
+
+    await sync(phone);
+    await sync(ipad);
+    await sync(phone);
+
+    final pVal = await KidRepository(phone).setting('dailyLimitMinutes.$phoneKid');
+    final qVal = await KidRepository(ipad).setting('dailyLimitMinutes.$ipadKid');
+    expect(pVal, anyOf('20', '40'));
+    expect(pVal, qVal);
+    expect(await SyncStore(phone).pendingChanges(), isEmpty);
+    expect(await SyncStore(ipad).pendingChanges(), isEmpty);
+  });
+
+  test('legacy counters keep their value', () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await sync(phone);
+    final ku = (await KidRepository(phone).kids()).single.uuid!;
+
+    // Inject an old-format glyph record directly on server.
+    await server.handle({
+      'since': 0,
+      'changes': [
+        {
+          'key': 'glyph:$ku:so-1',
+          'payload': {
+            'completions': 4,
+            'clean': 2,
+            'last': 1700000000000,
+          },
+          'deleted': false,
+          'baseVersion': null,
+        }
+      ],
+    });
+
+    // Phone pulls legacy record first, then practises +1 and pushes new format.
+    await sync(phone);
+    expect((await phone.select(phone.glyphProgress).getSingle()).completions, 4);
+
+    await ProgressRepository(phone, kidId: phoneKid)
+        .recordGlyphCompleted('so-1', failedStrokes: 0);
+    await sync(phone);
+
+    final g = await phone.select(phone.glyphProgress).getSingle();
+    expect(g.completions, 5);
+    expect(g.cleanCompletions, 3);
+
+    // Second device syncs and gets the exact total 5 (no doubling, not < 4).
+    await sync(ipad);
+    final ig = await ipad.select(ipad.glyphProgress).getSingle();
+    expect(ig.completions, 5);
+    expect(ig.cleanCompletions, 3);
+  });
+
+  test('old server record from not-yet-updated device does not double count',
+      () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    final prog = ProgressRepository(phone, kidId: phoneKid);
+    for (var i = 0; i < 4; i++) {
+      await prog.recordGlyphCompleted('so-1', failedStrokes: 0);
+    }
+    await sync(phone);
+    final ku = (await KidRepository(phone).kids()).single.uuid!;
+    final currentVer = server.records['glyph:$ku:so-1']!.version;
+
+    // An old-version device B pushes old format c=6 (meaning it saw A's 4 + added 2).
+    await server.handle({
+      'since': 0,
+      'changes': [
+        {
+          'key': 'glyph:$ku:so-1',
+          'payload': {
+            'completions': 6,
+            'clean': 4,
+            'last': 1700000100000,
+          },
+          'deleted': false,
+          'baseVersion': currentVer,
+        }
+      ],
+    });
+
+    await sync(phone);
+    final g = await phone.select(phone.glyphProgress).getSingle();
+    // Total is 6 (NOT 4 + 6 = 10, and NOT < 6).
+    expect(g.completions, 6);
+    expect(g.cleanCompletions, 4);
+  });
+
+  test('resend is idempotent', () async {
+    final phoneKid = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    final prog = ProgressRepository(phone, kidId: phoneKid);
+    await prog.recordGlyphCompleted('so-1', failedStrokes: 0);
+    await prog.recordGlyphCompleted('so-1', failedStrokes: 0);
+    await sync(phone);
+
+    final ku = (await KidRepository(phone).kids()).single.uuid!;
+    final rec = server.records['glyph:$ku:so-1']!;
+    final store = SyncStore(phone);
+    // Apply exact same remote payload 3 times.
+    for (var i = 0; i < 3; i++) {
+      await store.applyPage(
+        [SyncRecord('glyph:$ku:so-1', rec.payload, version: rec.version)],
+        rec.version,
+      );
+    }
+
+    final g = await phone.select(phone.glyphProgress).getSingle();
+    expect(g.completions, 2);
   });
 }

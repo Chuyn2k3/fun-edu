@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
+import '../../online/sync/device_counters.dart';
+import '../../online/uuid.dart';
 import '../../profile/kid_repository.dart';
 import '../engine/race.dart';
 import '../engine/race_question.dart';
@@ -131,6 +133,50 @@ class GameRepository {
     return row?.value ?? 0;
   }
 
+  Future<String?> _kidUuid(int kid) async {
+    final row = await (_db.select(_db.kidProfiles)
+          ..where((t) => t.id.equals(kid)))
+        .getSingleOrNull();
+    if (row == null) return null;
+    if (row.uuid != null) return row.uuid;
+    final u = newUuid();
+    await (_db.update(_db.kidProfiles)..where((t) => t.id.equals(kid)))
+        .write(KidProfilesCompanion(uuid: Value(u)));
+    return u;
+  }
+
+  Future<int> _addCosmicStars(
+      int kid, String? uuid, int before, int delta) async {
+    if (uuid == null || delta <= 0) return before + delta;
+    final counters = DeviceCounterStore(_db);
+    final earnedKey = 'stars.earned:$uuid';
+    final spentKey = 'stars.spent:$uuid';
+    final net =
+        (await counters.total(earnedKey)) - (await counters.total(spentKey));
+    if (net < before) {
+      await counters.add(earnedKey, before - net);
+    }
+    await counters.add(earnedKey, delta);
+    return (await counters.total(earnedKey)) - (await counters.total(spentKey));
+  }
+
+  Future<int> _bumpCounter(int kid, String? uuid, String k, int by) async {
+    final existing = await _counter(kid, k);
+    var next = existing + by;
+    if (uuid != null && by != 0) {
+      final counters = DeviceCounterStore(_db);
+      final dcKey = 'counter:$uuid:$k';
+      final dcTotal = await counters.total(dcKey);
+      if (dcTotal < existing) {
+        await counters.add(dcKey, existing - dcTotal);
+      }
+      await counters.add(dcKey, by);
+      next = await counters.total(dcKey);
+    }
+    await _setCounter(kid, k, next);
+    return next;
+  }
+
   Future<void> _setCounter(int kid, String key, int value) =>
       _db.into(_db.gameCounters).insertOnConflictUpdate(
             GameCountersCompanion.insert(
@@ -154,6 +200,7 @@ class GameRepository {
   }) async {
     final kid = _requireKid();
     return _db.transaction(() async {
+      final uuid = await _kidUuid(kid);
       final key = _subjectKey(subject);
       final profile = await _profile(kid);
       final before = profile?.cosmicStars ?? 0;
@@ -171,13 +218,14 @@ class GameRepository {
           o.won && previousBest != null && o.kidTime < previousBest;
       final baseStars = cosmicStarsFor(o, beatRecord: beatRecord);
       final stars = baseStars + o.luckyStarsCollected;
-      final total = before + stars;
+      final total = await _addCosmicStars(kid, uuid, before, stars);
 
+      final now = _now();
       await _db.into(_db.raceResults).insert(
             RaceResultsCompanion.insert(
               kidId: kid,
               subject: key,
-              finishedAt: _now(),
+              finishedAt: now,
               won: o.won,
               kidTimeMs: o.kidTime.inMilliseconds,
               firstTryCorrect: o.firstTryCorrect,
@@ -206,14 +254,11 @@ class GameRepository {
               meanAnswerMs: Value(newMean.round()),
               slowNextRace: Value(!o.won),
               retryAfterLossPending: Value(!o.won),
+              updatedAt: Value(now),
             ),
           );
 
-      Future<int> bump(String k, int by) async {
-        final v = await _counter(kid, k) + by;
-        await _setCounter(kid, k, v);
-        return v;
-      }
+      Future<int> bump(String k, int by) => _bumpCounter(kid, uuid, k, by);
 
       final races = await bump(_kRaces, 1);
       final wins = await bump(_kWins, o.won ? 1 : 0);
@@ -277,15 +322,17 @@ class GameRepository {
   }) async {
     final kid = _requireKid();
     return _db.transaction(() async {
+      final uuid = await _kidUuid(kid);
       final profile = await _profile(kid);
       final before = profile?.cosmicStars ?? 0;
       final stars = onlineCosmicStarsFor(o, rank: rank) + o.luckyStarsCollected;
-      final total = before + stars;
+      final total = await _addCosmicStars(kid, uuid, before, stars);
+      final now = _now();
       await _db.into(_db.raceResults).insert(
             RaceResultsCompanion.insert(
               kidId: kid,
               subject: 'online:${_subjectKey(subject)}',
-              finishedAt: _now(),
+              finishedAt: now,
               won: rank == 1,
               kidTimeMs: o.kidTime.inMilliseconds,
               firstTryCorrect: o.firstTryCorrect,
@@ -302,14 +349,11 @@ class GameRepository {
               meanAnswerMs: Value(profile?.meanAnswerMs ?? _defaultMeanMs),
               slowNextRace: Value(profile?.slowNextRace ?? false),
               retryAfterLossPending: Value(profile?.retryAfterLossPending ?? false),
+              updatedAt: Value(now),
             ),
           );
 
-      Future<int> bump(String k, int by) async {
-        final v = await _counter(kid, k) + by;
-        await _setCounter(kid, k, v);
-        return v;
-      }
+      Future<int> bump(String k, int by) => _bumpCounter(kid, uuid, k, by);
 
       final races = await bump(_kOnlineRaces, 1);
       final wins = await bump(_kOnlineWins, rank == 1 ? 1 : 0);
@@ -342,6 +386,14 @@ class GameRepository {
             );
       }
       await _setCounter(kid, _kSinceRare, rare == null ? since + 1 : 0);
+      if (uuid != null) {
+        final target = rare == null ? since + 1 : 0;
+        if (rare != null && since > 0) {
+          await DeviceCounterStore(_db).add('counter:$uuid:$_kSinceRare', -since);
+        } else if (target > since) {
+          await DeviceCounterStore(_db).add('counter:$uuid:$_kSinceRare', 1);
+        }
+      }
 
       return OnlineRaceRecord(
         starsEarned: stars,
@@ -357,7 +409,10 @@ class GameRepository {
   Future<void> countStickerSent() async {
     final kid = kidId;
     if (kid == null) return;
-    await _setCounter(kid, _kStickersSent, await _counter(kid, _kStickersSent) + 1);
+    await _db.transaction(() async {
+      final uuid = await _kidUuid(kid);
+      await _bumpCounter(kid, uuid, _kStickersSent, 1);
+    });
   }
 
   Future<int> totalStars() async {
@@ -426,6 +481,7 @@ class GameRepository {
               meanAnswerMs: Value(p?.meanAnswerMs ?? _defaultMeanMs),
               slowNextRace: Value(p?.slowNextRace ?? false),
               retryAfterLossPending: Value(p?.retryAfterLossPending ?? false),
+              updatedAt: Value(_now()),
             ),
           );
     });
@@ -524,8 +580,13 @@ class GameRepository {
     final ids = itemIds.toList();
     if (ids.isEmpty) return;
     await _db.transaction(() async {
+      final uuid = await _kidUuid(kid);
       for (final id in ids) {
-        await _setCounter(kid, _seenKey(id), 1);
+        final key = _seenKey(id);
+        final existing = await _counter(kid, key);
+        if (existing < 1) {
+          await _bumpCounter(kid, uuid, key, 1 - existing);
+        }
       }
     });
   }
@@ -550,7 +611,8 @@ class GameRepository {
     final v = await nextSlowdown();
     if (v != 1.0) {
       await (_db.update(_db.gameProfile)..where((t) => t.kidId.equals(kid)))
-          .write(const GameProfileCompanion(slowNextRace: Value(false)));
+          .write(GameProfileCompanion(
+              slowNextRace: const Value(false), updatedAt: Value(_now())));
     }
     return v;
   }
