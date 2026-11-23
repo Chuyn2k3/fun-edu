@@ -62,6 +62,7 @@ public class SyncService {
                     familyId, keys);
 
             List<Object[]> batch = new ArrayList<>();
+            List<String> deletedKids = new ArrayList<>();
             for (Change c : changes) {
                 Long serverVersion = serverVersions.get(c.key());
                 boolean fresh = serverVersion == null ? c.baseVersion() == null : serverVersion.equals(c.baseVersion());
@@ -70,6 +71,9 @@ public class SyncService {
                     continue;
                 }
                 String payload = c.deleted() ? null : write(c.payload());
+                if (c.deleted() && "kid".equals(SyncKinds.kindOf(c.key()))) {
+                    deletedKids.add(c.key().substring("kid:".length()));
+                }
                 batch.add(new Object[] {
                         familyId, c.key(), SyncKinds.kindOf(c.key()), payload, c.deleted()
                 });
@@ -83,6 +87,12 @@ public class SyncService {
                         SET payload = EXCLUDED.payload, deleted = EXCLUDED.deleted,
                             version = EXCLUDED.version, updated_at = now()
                         """, batch);
+            }
+            // A deleted kid must not stay visible to friends: drop its showcase
+            // (reactions cascade) in the same transaction.
+            if (!deletedKids.isEmpty()) {
+                jdbc.update("DELETE FROM showcases WHERE family_id = ? AND kid_uuid = ANY(?)",
+                        familyId, deletedKids.toArray(String[]::new));
             }
         }
 

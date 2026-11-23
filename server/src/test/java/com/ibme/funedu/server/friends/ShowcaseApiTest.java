@@ -221,6 +221,37 @@ class ShowcaseApiTest {
         assertThat(reactions).containsEntry("star", 0);
     }
 
+    /** Deleting a kid (a kid tombstone synced up) also removes that kid's showcase. */
+    @Test
+    void deletingAKidTakesItsShowcaseDown() {
+        FamilySession owner = newFamily();
+        FamilySession friend = newFamily();
+        makeFriends(owner, friend);
+        syncRecords(owner.token(), List.of(Map.of(
+                "key", "kid:kid-1", "payload", Map.of("nickname", "Na", "avatar", "fox"), "deleted", false)));
+        assertThat(putShowcase(owner.token(), "kid-1", Map.of("nickname", "Na")).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+
+        Map<String, Object> tombstone = new java.util.HashMap<>();
+        tombstone.put("key", "kid:kid-1");
+        tombstone.put("deleted", true);
+        tombstone.put("baseVersion", currentVersion(owner.token(), "kid:kid-1"));
+        syncRecords(owner.token(), List.of(tombstone));
+
+        assertThat(getShowcase(friend.token(), owner.familyId(), "kid-1").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Number currentVersion(String token, String key) {
+        var res = http.exchange("/api/v1/sync", HttpMethod.POST,
+                new HttpEntity<>(Map.of("since", 0, "changes", List.of()), bearer(token)), MAP);
+        for (Map<String, Object> r : (List<Map<String, Object>>) res.getBody().get("records")) {
+            if (key.equals(r.get("key"))) return (Number) r.get("version");
+        }
+        return null;
+    }
+
     @Test
     void strangerGets404() {
         FamilySession owner = newFamily();
