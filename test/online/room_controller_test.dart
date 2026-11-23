@@ -302,4 +302,44 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(c.read(roomControllerProvider).reconnecting, isFalse);
   });
+
+  test('you from joined message is preserved across room snapshots without you', () async {
+    final c = container();
+    await c.read(roomControllerProvider.notifier).join('ABC234', kid);
+    sockets.single.push({'t': 'joined', 'you': 'p1'});
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(roomControllerProvider).you, 'p1');
+
+    sockets.single.push({
+      't': 'room',
+      'code': 'ABC234',
+      'state': 'lobby',
+      'host': 'p1',
+      'players': [
+        {'id': 'p1', 'name': 'Na', 'avatar': '', 'rocket': 'rocket_blue', 'steps': 0},
+        {'id': 'p2', 'name': 'Bo', 'avatar': '', 'rocket': 'rocket_green', 'steps': 0},
+      ],
+    });
+    await Future<void>.delayed(Duration.zero);
+    var s = c.read(roomControllerProvider);
+    expect(s.you, 'p1');
+    expect(s.isHost, isTrue);
+    expect(s.me?.id, 'p1');
+
+    sockets.single.push({
+      't': 'room',
+      'code': 'ABC234',
+      'state': 'racing',
+      'host': 'p1',
+      'players': [
+        {'id': 'p1', 'name': 'Na', 'avatar': '', 'rocket': 'rocket_blue', 'steps': 3},
+        {'id': 'p2', 'name': 'Bo', 'avatar': '', 'rocket': 'rocket_green', 'steps': 2},
+      ],
+    });
+    await Future<void>.delayed(Duration.zero);
+    s = c.read(roomControllerProvider);
+    expect(s.you, 'p1');
+    expect(s.me?.steps, 3);
+    expect(s.others.single.id, 'p2');
+  });
 }

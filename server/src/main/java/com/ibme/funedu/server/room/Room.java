@@ -4,30 +4,54 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.SessionLimitExceededException;
 
 /**
  * One race room: 2-4 kids from families who know its code. The server keeps
- * the authoritative state (who is in, steps, finish order); every change is
- * pushed to every player as a full snapshot. All methods lock the room.
+ * the authoritative state (who is in, steps, finish order); state mutations and
+ * JSON snapshot building happen under the room lock, while all WebSocket I/O
+ * happens outside the lock via {@link #deliver(Outbox)}.
  */
 class Room {
 
     enum State { lobby, countdown, racing, done }
 
-    static final int RACE_LENGTH = 10;
+    record Send(WebSocketSession session, String text) {}
+
+    record Outbox(List<Send> sends, List<WebSocketSession> closes) {
+        static final Outbox EMPTY = new Outbox(List.of(), List.of());
+
+        boolean isEmpty() {
+            return sends.isEmpty() && closes.isEmpty();
+        }
+    }
+
+    record JoinResult(String error, Outbox outbox) {}
+
+    record TickResult(boolean alive, Outbox outbox) {}
+
+    static final int RACE_LENGTH = 18;
     static final Set<String> STICKERS = Set.of("cheer", "wow", "love", "fast", "hi", "gg");
     private static final Pattern AVATAR = Pattern.compile("assets/images/[a-z0-9_\\-/]{1,80}\\.(png|webp)");
     private static final Pattern ROCKET = Pattern.compile("rocket_[a-z]{1,20}");
+    private static final long BLOCKED_SEND_THRESHOLD_NS = 25_000_000L;
+    private static final Map<WebSocketSession, SessionQueue> SESSION_QUEUES =
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     static final class Player {
         final String id;
@@ -70,6 +94,7 @@ class Room {
     private String endReason;
     private int nextId = 1;
     private int finished;
+    private boolean dirty;
 
     Room(String code, UUID hostFamily, Instant now, RoomProperties props, Function<Object, String> json) {
         this.code = code;
@@ -87,24 +112,28 @@ class Room {
         return createdAt.plus(props.lobbyTtl());
     }
 
-    /** Returns an error code, or null when [session] is now in the room. */
-    synchronized String join(WebSocketSession session, UUID family, String kid,
+    /** Returns an error code or an outbox of messages to deliver outside the lock. */
+    synchronized JoinResult join(WebSocketSession session, UUID family, String kid,
             String name, String avatar, String rocket, Instant now) {
-        if (kid == null || kid.isBlank() || kid.length() > 64) return "bad_message";
+        if (kid == null || kid.isBlank() || kid.length() > 64) {
+            return new JoinResult("bad_message", Outbox.EMPTY);
+        }
         for (Player p : players.values()) {
             if (p.familyId.equals(family) && p.kid.equals(kid) && !p.left) {
                 // Same kid again (reconnect, or a second tab): take over.
                 WebSocketSession old = p.session;
                 p.session = session;
                 p.disconnectedAt = null;
-                if (old != null && old != session && old.isOpen()) closeQuietly(old);
-                broadcast(now);
-                return null;
+                List<WebSocketSession> closes = (old != null && old != session && old.isOpen())
+                        ? List.of(old)
+                        : List.of();
+                dirty = false;
+                return new JoinResult(null, joinOutbox(p, now, closes));
             }
         }
-        if (state != State.lobby) return "started";
+        if (state != State.lobby) return new JoinResult("started", Outbox.EMPTY);
         long active = players.values().stream().filter(p -> !p.left).count();
-        if (active >= props.maxPlayers()) return "room_full";
+        if (active >= props.maxPlayers()) return new JoinResult("room_full", Outbox.EMPTY);
         Player p = new Player("p" + nextId++, family, kid);
         p.name = cleanName(name);
         p.avatar = avatar != null && AVATAR.matcher(avatar).matches() ? avatar : "";
@@ -113,35 +142,34 @@ class Room {
         players.put(p.id, p);
         if (hostId == null && family.equals(hostFamily)) hostId = p.id;
         if (hostId == null) hostId = p.id;
-        broadcast(now);
-        return null;
+        dirty = false;
+        return new JoinResult(null, joinOutbox(p, now, List.of()));
     }
 
-    synchronized void start(WebSocketSession from, Instant now) {
+    synchronized Outbox start(WebSocketSession from, Instant now) {
         Player p = bySession(from);
-        if (p == null) return;
+        if (p == null) return Outbox.EMPTY;
         if (!p.id.equals(hostId)) {
-            send(p, Map.of("t", "error", "code", "not_host"));
-            return;
+            return singleSend(p, Map.of("t", "error", "code", "not_host"));
         }
-        if (state != State.lobby) return;
+        if (state != State.lobby) return Outbox.EMPTY;
         long ready = players.values().stream().filter(x -> x.connected() && !x.left).count();
         if (ready < 2) {
-            send(p, Map.of("t", "error", "code", "need_two"));
-            return;
+            return singleSend(p, Map.of("t", "error", "code", "need_two"));
         }
         // Drop anyone who is not here right now.
         players.values().removeIf(x -> !x.connected() || x.left);
         state = State.countdown;
         endReason = null;
         startsAt = now.plus(props.countdown());
-        broadcast(now);
+        dirty = false;
+        return broadcastOutbox(now);
     }
 
     /** "Đua lại!": the host brings everyone still here back to the lobby. */
-    synchronized void again(WebSocketSession from, Instant now) {
+    synchronized Outbox again(WebSocketSession from, Instant now) {
         Player p = bySession(from);
-        if (p == null || !p.id.equals(hostId) || state != State.done) return;
+        if (p == null || !p.id.equals(hostId) || state != State.done) return Outbox.EMPTY;
         players.values().removeIf(x -> !x.connected() || x.left);
         for (Player x : players.values()) {
             x.steps = 0;
@@ -154,34 +182,55 @@ class Room {
         startsAt = null;
         raceStartedAt = null;
         doneAt = null;
-        broadcast(now);
+        dirty = false;
+        return broadcastOutbox(now);
     }
 
-    synchronized void step(WebSocketSession from, int n, Instant now) {
+    /**
+     * Records a progress step and marks the room dirty for the next coalesced
+     * flush; if the step ends the race, sends the final snapshot immediately.
+     */
+    synchronized Outbox step(WebSocketSession from, int n, Instant now) {
         Player p = bySession(from);
-        if (p == null || state != State.racing || p.rank != null) return;
+        if (p == null || state != State.racing || p.rank != null) return Outbox.EMPTY;
         int gain = n - p.steps;
-        if (gain < 1 || gain > 2 || n > RACE_LENGTH) return;
-        if (now.isBefore(p.lastStep.plus(props.minStepInterval()))) return;
+        if (gain < 1 || gain > 2 || n > RACE_LENGTH) return Outbox.EMPTY;
+        if (now.isBefore(p.lastStep.plus(props.minStepInterval()))) return Outbox.EMPTY;
         p.steps = n;
         p.lastStep = now;
         if (n == RACE_LENGTH) p.rank = ++finished;
-        checkDone(now);
-        broadcast(now);
+        boolean ended = checkDone(now);
+        if (ended) {
+            dirty = false;
+            return broadcastOutbox(now);
+        }
+        dirty = true;
+        return Outbox.EMPTY;
     }
 
-    synchronized void sticker(WebSocketSession from, String id, Instant now) {
+    /** Builds one shared snapshot if dirty and resets the dirty flag. */
+    synchronized Outbox flush(Instant now) {
+        if (!dirty) return Outbox.EMPTY;
+        dirty = false;
+        return broadcastOutbox(now);
+    }
+
+    synchronized Outbox sticker(WebSocketSession from, String id, Instant now) {
         Player p = bySession(from);
-        if (p == null || !STICKERS.contains(id)) return;
-        if (now.isBefore(p.lastSticker.plusMillis(1500))) return;
+        if (p == null || !STICKERS.contains(id)) return Outbox.EMPTY;
+        if (now.isBefore(p.lastSticker.plusMillis(1500))) return Outbox.EMPTY;
         p.lastSticker = now;
         String msg = json.apply(Map.of("t", "sticker", "from", p.id, "id", id));
-        for (Player x : players.values()) send(x, msg);
+        List<Send> sends = new ArrayList<>();
+        for (Player x : players.values()) {
+            if (x.connected()) sends.add(new Send(x.session, msg));
+        }
+        return sends.isEmpty() ? Outbox.EMPTY : new Outbox(sends, List.of());
     }
 
-    synchronized void leave(WebSocketSession from, Instant now) {
+    synchronized Outbox leave(WebSocketSession from, Instant now) {
         Player p = bySession(from);
-        if (p == null) return;
+        if (p == null) return Outbox.EMPTY;
         if (state == State.lobby) {
             players.remove(p.id);
             if (p.id.equals(hostId)) hostId = players.keySet().stream().findFirst().orElse(null);
@@ -190,21 +239,23 @@ class Room {
             p.disconnectedAt = now;
         }
         p.session = null;
-        closeQuietly(from);
         checkDone(now);
-        broadcast(now);
+        dirty = false;
+        Outbox b = broadcastOutbox(now);
+        return new Outbox(b.sends(), List.of(from));
     }
 
-    synchronized void disconnected(WebSocketSession session, Instant now) {
+    synchronized Outbox disconnected(WebSocketSession session, Instant now) {
         Player p = bySession(session);
-        if (p == null) return;
+        if (p == null) return Outbox.EMPTY;
         p.session = null;
         p.disconnectedAt = now;
-        broadcast(now);
+        dirty = false;
+        return broadcastOutbox(now);
     }
 
-    /** Time-driven changes; returns false when the room should be removed. */
-    synchronized boolean tick(Instant now) {
+    /** Time-driven changes; returns alive=false when the room should be removed. */
+    synchronized TickResult tick(Instant now) {
         boolean changed = false;
         Instant cutoff = now.minus(props.reconnectGrace());
         if (state == State.lobby) {
@@ -212,8 +263,7 @@ class Room {
             if (players.values().removeIf(p -> gone(p, cutoff))) changed = true;
             if (hostGone) hostId = players.keySet().stream().findFirst().orElse(null);
             if (now.isAfter(expiresAt())) {
-                closeAll("expired");
-                return false;
+                return new TickResult(false, closeAllOutbox("expired"));
             }
         } else if (state == State.countdown) {
             for (Player p : players.values()) {
@@ -237,11 +287,13 @@ class Room {
             }
             changed |= checkDone(now);
         } else if (state == State.done && now.isAfter(doneAt.plus(props.keepDone()))) {
-            closeAll(null);
-            return false;
+            return new TickResult(false, closeAllOutbox(null));
         }
-        if (changed) broadcast(now);
-        return true;
+        if (changed) {
+            dirty = false;
+            return new TickResult(true, broadcastOutbox(now));
+        }
+        return new TickResult(true, Outbox.EMPTY);
     }
 
     private boolean gone(Player p, Instant cutoff) {
@@ -276,13 +328,32 @@ class Room {
         return null;
     }
 
-    private void broadcast(Instant now) {
-        for (Player p : players.values()) {
-            if (p.connected()) send(p, snapshot(p.id, now));
+    private Outbox joinOutbox(Player joined, Instant now, List<WebSocketSession> closes) {
+        String joinedMsg = json.apply(Map.of("t", "joined", "you", joined.id));
+        String roomMsg = json.apply(snapshot(now));
+        List<Send> sends = new ArrayList<>();
+        if (joined.connected()) sends.add(new Send(joined.session, joinedMsg));
+        for (Player x : players.values()) {
+            if (x.connected()) sends.add(new Send(x.session, roomMsg));
         }
+        return new Outbox(sends, closes);
     }
 
-    Map<String, Object> snapshot(String you, Instant now) {
+    private Outbox singleSend(Player p, Map<String, Object> msg) {
+        if (!p.connected()) return Outbox.EMPTY;
+        return new Outbox(List.of(new Send(p.session, json.apply(msg))), List.of());
+    }
+
+    private Outbox broadcastOutbox(Instant now) {
+        String payload = json.apply(snapshot(now));
+        List<Send> sends = new ArrayList<>();
+        for (Player p : players.values()) {
+            if (p.connected()) sends.add(new Send(p.session, payload));
+        }
+        return sends.isEmpty() ? Outbox.EMPTY : new Outbox(sends, List.of());
+    }
+
+    Map<String, Object> snapshot(Instant now) {
         List<Map<String, Object>> list = new ArrayList<>();
         for (Player p : players.values()) {
             boolean connected = p.connected() && !p.left;
@@ -297,38 +368,120 @@ class Room {
             m.put("rocket", p.rocket);
             m.put("steps", p.steps);
             m.put("rank", p.rank);
-            m.put("connected", connected);
-            m.put("away", away);
+            // Omit default flags (connected=true, away=false, left=false) to keep 4-player snapshots <= 600 bytes.
+            if (!connected) m.put("connected", false);
+            if (away) m.put("away", true);
             m.put("awayMsLeft", awayMsLeft);
-            m.put("left", p.left);
+            if (p.left) m.put("left", true);
             list.add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("t", "room");
         out.put("code", code);
         out.put("state", state.name());
-        out.put("you", you);
         out.put("host", hostId);
         out.put("endReason", endReason);
-        if (startsAt != null) out.put("startsAt", startsAt.toEpochMilli());
+        if (state == State.countdown && startsAt != null) out.put("startsAt", startsAt.toEpochMilli());
         out.put("players", list);
         return out;
     }
 
-    private void send(Player p, Object msg) {
-        if (!p.connected()) return;
-        try {
-            p.session.sendMessage(new TextMessage(msg instanceof String s ? s : json.apply(msg)));
-        } catch (IOException | IllegalStateException e) {
-            // A broken socket: the close callback marks the player disconnected.
+    private Outbox closeAllOutbox(String error) {
+        String errPayload = error == null ? null : json.apply(Map.of("t", "error", "code", error));
+        List<Send> sends = new ArrayList<>();
+        List<WebSocketSession> closes = new ArrayList<>();
+        for (Player p : players.values()) {
+            if (!p.connected()) continue;
+            if (errPayload != null) sends.add(new Send(p.session, errPayload));
+            closes.add(p.session);
+        }
+        return sends.isEmpty() && closes.isEmpty() ? Outbox.EMPTY : new Outbox(sends, closes);
+    }
+
+    /**
+     * Dispatches all WebSocket sends and closes outside any room lock on
+     * virtual threads so one slow/blocked client never stalls the room or tick.
+     */
+    static void deliver(Outbox outbox) {
+        if (outbox == null || outbox.isEmpty()) return;
+        for (Send s : outbox.sends()) {
+            queueFor(s.session()).submit(new Action.Send(s.session(), s.text()));
+        }
+        for (WebSocketSession c : outbox.closes()) {
+            queueFor(c).submit(new Action.Close(c));
         }
     }
 
-    private void closeAll(String error) {
-        for (Player p : players.values()) {
-            if (!p.connected()) continue;
-            if (error != null) send(p, Map.of("t", "error", "code", error));
-            closeQuietly(p.session);
+    private static SessionQueue queueFor(WebSocketSession session) {
+        synchronized (SESSION_QUEUES) {
+            return SESSION_QUEUES.computeIfAbsent(session, k -> new SessionQueue());
+        }
+    }
+
+    private sealed interface Action permits Action.Send, Action.Close {
+        record Send(WebSocketSession session, String text) implements Action {}
+        record Close(WebSocketSession session) implements Action {}
+    }
+
+    private static final class SessionQueue {
+        private final Queue<Action> queue = new ConcurrentLinkedQueue<>();
+        private final AtomicBoolean workerRunning = new AtomicBoolean(false);
+        private volatile long sendStartedAtNanos;
+
+        void submit(Action action) {
+            long started = sendStartedAtNanos;
+            if (started != 0 && System.nanoTime() - started > BLOCKED_SEND_THRESHOLD_NS) {
+                // An earlier send is stuck in the underlying socket; invoke the decorator
+                // directly on a virtual thread so its time/buffer limits trigger immediately.
+                Thread.startVirtualThread(() -> execute(action));
+                return;
+            }
+            queue.add(action);
+            if (workerRunning.compareAndSet(false, true)) {
+                Thread.startVirtualThread(this::drain);
+            }
+        }
+
+        private void drain() {
+            try {
+                while (true) {
+                    Action a;
+                    while ((a = queue.poll()) != null) {
+                        if (a instanceof Action.Send) {
+                            sendStartedAtNanos = System.nanoTime();
+                            try {
+                                execute(a);
+                            } finally {
+                                sendStartedAtNanos = 0;
+                            }
+                        } else {
+                            execute(a);
+                        }
+                    }
+                    workerRunning.set(false);
+                    if (queue.isEmpty() || !workerRunning.compareAndSet(false, true)) {
+                        return;
+                    }
+                }
+            } catch (Throwable t) {
+                sendStartedAtNanos = 0;
+                workerRunning.set(false);
+            }
+        }
+
+        private static void execute(Action action) {
+            if (action instanceof Action.Send s) {
+                if (!s.session().isOpen()) return;
+                try {
+                    s.session().sendMessage(new TextMessage(s.text()));
+                } catch (SessionLimitExceededException e) {
+                    closeQuietly(s.session());
+                } catch (IOException | IllegalStateException e) {
+                    // A broken or closed socket: the close callback marks the player disconnected.
+                }
+            } else if (action instanceof Action.Close c) {
+                closeQuietly(c.session());
+            }
         }
     }
 

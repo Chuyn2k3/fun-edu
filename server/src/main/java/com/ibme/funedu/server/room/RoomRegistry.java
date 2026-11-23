@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,7 +78,22 @@ public class RoomRegistry {
     @Scheduled(fixedDelay = 100)
     void tick() {
         Instant now = now();
-        rooms.values().removeIf(r -> !r.tick(now));
+        List<Room.Outbox> outboxes = new ArrayList<>();
+        var it = rooms.values().iterator();
+        while (it.hasNext()) {
+            Room r = it.next();
+            Room.TickResult res = r.tick(now);
+            if (!res.outbox().isEmpty()) outboxes.add(res.outbox());
+            if (!res.alive()) {
+                it.remove();
+            } else {
+                Room.Outbox flushed = r.flush(now);
+                if (!flushed.isEmpty()) outboxes.add(flushed);
+            }
+        }
+        for (Room.Outbox outbox : outboxes) {
+            Room.deliver(outbox);
+        }
         long hour = System.currentTimeMillis() / 3_600_000;
         creates.values().removeIf(c -> c.window() != hour);
         long minute = System.currentTimeMillis() / 60_000;

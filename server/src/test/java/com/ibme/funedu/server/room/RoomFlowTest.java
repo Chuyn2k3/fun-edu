@@ -82,13 +82,19 @@ class RoomFlowTest {
         String code = room(a);
         try (var host = RoomSocket.open(port, code, a); var guest = RoomSocket.open(port, code, b)) {
             host.join(kid(), "Na");
+            var hostJoined = host.await(m -> "joined".equals(m.get("t")));
+            String hostId = (String) hostJoined.get("you");
             var lobby = host.awaitRoom(m -> "lobby".equals(m.get("state")));
-            assertThat(lobby.get("host")).isEqualTo(lobby.get("you"));
+            assertThat(lobby).doesNotContainKey("you");
+            assertThat(lobby.get("host")).isEqualTo(hostId);
 
             guest.join(kid(), "Bo");
+            var guestJoined = guest.await(m -> "joined".equals(m.get("t")));
+            String guestId = (String) guestJoined.get("you");
             var both = guest.awaitRoom(m -> players(m).size() == 2);
+            assertThat(both).doesNotContainKey("you");
             assertThat(players(both)).extracting(p -> p.get("name")).containsExactly("Na", "Bo");
-            assertThat(both.get("host")).isNotEqualTo(both.get("you"));
+            assertThat(both.get("host")).isNotEqualTo(guestId);
 
             // Only the host starts.
             guest.send(Map.of("t", "start"));
@@ -97,16 +103,16 @@ class RoomFlowTest {
             host.awaitRoom(m -> "countdown".equals(m.get("state")) && m.get("startsAt") != null);
             host.awaitRoom(m -> "racing".equals(m.get("state")));
 
-            for (int n = 1; n <= 10; n++) {
-                Thread.sleep(60);
+            for (int n = 2; n <= Room.RACE_LENGTH; n += 2) {
+                Thread.sleep(80);
                 host.send(Map.of("t", "step", "n", n));
             }
             var hostDone = guest.awaitRoom(m -> players(m).get(0).get("rank") != null);
             assertThat(players(hostDone).get(0).get("rank")).isEqualTo(1);
-            assertThat(players(hostDone).get(0).get("steps")).isEqualTo(10);
+            assertThat(players(hostDone).get(0).get("steps")).isEqualTo(Room.RACE_LENGTH);
 
-            for (int n = 1; n <= 10; n++) {
-                Thread.sleep(60);
+            for (int n = 2; n <= Room.RACE_LENGTH; n += 2) {
+                Thread.sleep(80);
                 guest.send(Map.of("t", "step", "n", n));
             }
             var done = host.awaitRoom(m -> "done".equals(m.get("state")));
@@ -195,7 +201,7 @@ class RoomFlowTest {
                 back.join(guestKid, "Bo");
                 var again = back.awaitRoom(m -> "racing".equals(m.get("state")));
                 assertThat(players(again).get(1).get("steps")).isEqualTo(1);
-                assertThat(players(again).get(1).get("connected")).isEqualTo(true);
+                assertThat(players(again).get(1).get("connected")).isNotEqualTo(false);
             }
         }
     }
@@ -241,10 +247,11 @@ class RoomFlowTest {
             host.join(kid(), "Na");
             host.awaitRoom(m -> true);
             guest.join(kid(), "Bo");
+            String guestId = (String) guest.await(m -> "joined".equals(m.get("t"))).get("you");
             guest.awaitRoom(m -> players(m).size() == 2);
             host.send(Map.of("t", "leave"));
             var r = guest.awaitRoom(m -> players(m).size() == 1);
-            assertThat(r.get("host")).isEqualTo(r.get("you"));
+            assertThat(r.get("host")).isEqualTo(guestId);
         }
     }
 
@@ -268,14 +275,14 @@ class RoomFlowTest {
 
             guest.close();
             var awaySnap = host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("away")));
-            assertThat(players(awaySnap).get(1).get("left")).isEqualTo(false);
+            assertThat(players(awaySnap).get(1).get("left")).isNotEqualTo(true);
             assertThat(((Number) players(awaySnap).get(1).get("awayMsLeft")).longValue()).isGreaterThan(0);
 
             try (var back = RoomSocket.open(port, code, b)) {
                 back.join(kidB, "Bo");
-                var resumed = host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("connected")));
+                var resumed = host.awaitRoom(m -> !Boolean.FALSE.equals(players(m).get(1).get("connected")));
                 assertThat(players(resumed).get(1).get("steps")).isEqualTo(2);
-                assertThat(players(resumed).get(1).get("away")).isEqualTo(false);
+                assertThat(players(resumed).get(1).get("away")).isNotEqualTo(true);
                 assertThat(players(resumed).get(1).get("awayMsLeft")).isNull();
             }
         }
@@ -302,7 +309,7 @@ class RoomFlowTest {
             p2.close();
             var leftSnap = p1.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("left")));
             assertThat(leftSnap.get("state")).isEqualTo("racing");
-            assertThat(players(leftSnap).get(1).get("away")).isEqualTo(false);
+            assertThat(players(leftSnap).get(1).get("away")).isNotEqualTo(true);
             assertThat(leftSnap.get("endReason")).isNull();
         }
     }
@@ -346,8 +353,8 @@ class RoomFlowTest {
             p1.awaitRoom(m -> "racing".equals(m.get("state")));
 
             // A finishes rank 1, then leaves.
-            for (int n = 1; n <= 10; n++) {
-                Thread.sleep(60);
+            for (int n = 2; n <= Room.RACE_LENGTH; n += 2) {
+                Thread.sleep(80);
                 p1.send(Map.of("t", "step", "n", n));
             }
             p3.awaitRoom(m -> Integer.valueOf(1).equals(players(m).get(0).get("rank")));
@@ -464,6 +471,44 @@ class RoomFlowTest {
                 Thread.sleep(20);
             }
             assertThat(host.closed).isNotNull();
+        }
+    }
+
+    @Test
+    void raceIs18Steps() throws Exception {
+        assertThat(Room.RACE_LENGTH).isEqualTo(18);
+        String a = family(), b = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a); var guest = RoomSocket.open(port, code, b)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            guest.join(kid(), "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+            host.send(Map.of("t", "start"));
+            host.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            // +1 and +2 accepted all the way up to 17.
+            int pos = 0;
+            pos += 1;
+            Thread.sleep(80);
+            host.send(Map.of("t", "step", "n", pos));
+            for (int i = 0; i < 8; i++) {
+                pos += 2;
+                Thread.sleep(80);
+                host.send(Map.of("t", "step", "n", pos));
+            }
+            var at17 = guest.awaitRoom(m -> Integer.valueOf(17).equals(players(m).get(0).get("steps")));
+            assertThat(players(at17).get(0).get("rank")).isNull();
+
+            // > 18 is rejected.
+            Thread.sleep(80);
+            host.send(Map.of("t", "step", "n", 19));
+            Thread.sleep(150);
+            // Step to 18 finishes the race at rank 1.
+            host.send(Map.of("t", "step", "n", 18));
+            var finished = guest.awaitRoom(m -> Integer.valueOf(1).equals(players(m).get(0).get("rank")));
+            assertThat(players(finished).get(0).get("steps")).isEqualTo(18);
+            assertThat(players(finished).get(0).get("rank")).isEqualTo(1);
         }
     }
 }

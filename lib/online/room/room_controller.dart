@@ -97,6 +97,7 @@ class RoomState {
   RoomState copyWith({
     RoomPhase? phase,
     String? code,
+    String? you,
     String? error,
     RoomSticker? sticker,
     bool? reconnecting,
@@ -105,7 +106,7 @@ class RoomState {
       RoomState(
         phase: phase ?? this.phase,
         code: code ?? this.code,
-        you: you,
+        you: you ?? this.you,
         host: host,
         players: players,
         startsAt: startsAt,
@@ -137,6 +138,7 @@ class RoomController extends Notifier<RoomState> {
   RoomTransport? _socket;
   StreamSubscription<Map<String, Object?>>? _sub;
   RoomKid? _kid;
+  String? _you;
   bool _leaving = false;
   bool _disposed = false;
   int _retries = 0;
@@ -156,6 +158,7 @@ class RoomController extends Notifier<RoomState> {
 
   /// A parent opens a new room and the kid joins it as host.
   Future<void> create(RoomKid kid) async {
+    _you = null;
     state = const RoomState(phase: RoomPhase.connecting);
     final Map<String, Object?>? res;
     try {
@@ -188,6 +191,7 @@ class RoomController extends Notifier<RoomState> {
   Future<void> join(String code, RoomKid kid) async {
     await _closeSocket();
     _kid = kid;
+    _you = null;
     _leaving = false;
     _retries = 0;
     final clean = code.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
@@ -218,6 +222,11 @@ class RoomController extends Notifier<RoomState> {
   void _onMessage(Map<String, Object?> m) {
     if (_disposed) return;
     switch (m['t']) {
+      case 'joined':
+        _you = m['you'] as String?;
+        if (_you != null) {
+          state = state.copyWith(you: _you, error: state.error);
+        }
       case 'room':
         _retries = 0;
         final startsAt = (m['startsAt'] as num?)?.toInt();
@@ -229,7 +238,7 @@ class RoomController extends Notifier<RoomState> {
             _ => RoomPhase.lobby,
           },
           code: m['code'] as String? ?? state.code,
-          you: m['you'] as String?,
+          you: m['you'] as String? ?? _you ?? state.you,
           host: m['host'] as String?,
           players: (m['players'] as List? ?? const [])
               .whereType<Map>()
@@ -289,7 +298,7 @@ class RoomController extends Notifier<RoomState> {
   void start() => _socket?.send(const {'t': 'start'});
   void again() => _socket?.send(const {'t': 'again'});
 
-  /// The kid's rocket climbed to [steps] (0..10).
+  /// The kid's rocket climbed to [steps] (0..18).
   void step(int steps) => _socket?.send({'t': 'step', 'n': steps});
 
   void sticker(String id) {
@@ -305,6 +314,7 @@ class RoomController extends Notifier<RoomState> {
 
   Future<void> leave() async {
     _leaving = true;
+    _you = null;
     _socket?.send(const {'t': 'leave'});
     await _closeSocket();
     state = const RoomState();
