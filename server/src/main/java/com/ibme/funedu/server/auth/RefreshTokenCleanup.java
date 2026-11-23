@@ -20,24 +20,37 @@ public class RefreshTokenCleanup {
 
     @Scheduled(cron = "0 15 3 * * *")
     public int purge() {
+        int tokens = purgeBatch("""
+                DELETE FROM refresh_tokens
+                WHERE id IN (
+                    SELECT id FROM refresh_tokens
+                    WHERE expires_at < now()
+                       OR (revoked_at IS NOT NULL AND revoked_at < now() - interval '7 days')
+                    LIMIT ?
+                )
+                """);
+        int codes = purgeBatch("""
+                DELETE FROM friend_codes
+                WHERE code IN (
+                    SELECT code FROM friend_codes
+                    WHERE expires_at < now()
+                    LIMIT ?
+                )
+                """);
+        if (tokens > 0 || codes > 0) {
+            log.info("Purged {} expired/revoked refresh tokens and {} expired friend codes", tokens, codes);
+        }
+        return tokens + codes;
+    }
+
+    private int purgeBatch(String sql) {
         int total = 0;
         while (true) {
-            int deleted = jdbc.update("""
-                    DELETE FROM refresh_tokens
-                    WHERE id IN (
-                        SELECT id FROM refresh_tokens
-                        WHERE expires_at < now()
-                           OR (revoked_at IS NOT NULL AND revoked_at < now() - interval '7 days')
-                        LIMIT ?
-                    )
-                    """, BATCH_SIZE);
+            int deleted = jdbc.update(sql, BATCH_SIZE);
             total += deleted;
             if (deleted < BATCH_SIZE) {
                 break;
             }
-        }
-        if (total > 0) {
-            log.info("Purged {} expired/revoked refresh tokens", total);
         }
         return total;
     }

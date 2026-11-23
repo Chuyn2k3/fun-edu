@@ -1,6 +1,7 @@
 package com.ibme.funedu.server.web;
 
 import com.ibme.funedu.server.auth.AuthProperties;
+import com.ibme.funedu.server.auth.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,20 +27,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     static final long WINDOW_MS = 60_000L;
+    static final long HOUR_WINDOW_MS = 3_600_000L;
     static final int SYNC_PER_FAMILY = 60;
     static final int SYNC_PER_IP = 120;
     static final int ROOMS_PER_FAMILY = 10;
+    static final int FRIEND_CODE_PER_FAMILY = 10;
+    static final int FRIEND_REDEEM_PER_FAMILY = 20;
 
     private static final class Bucket {
         private final Deque<Long> hits = new ArrayDeque<>();
 
-        synchronized long retryAfterSeconds(long nowMs, int limit, boolean consumeIfAllowed) {
-            long cutoff = nowMs - WINDOW_MS;
+        synchronized long retryAfterSeconds(long nowMs, long windowMs, int limit, boolean consumeIfAllowed) {
+            long cutoff = nowMs - windowMs;
             while (!hits.isEmpty() && hits.peekFirst() <= cutoff) {
                 hits.removeFirst();
             }
             if (hits.size() >= limit) {
-                long waitMs = (hits.peekFirst() + WINDOW_MS) - nowMs;
+                long waitMs = (hits.peekFirst() + windowMs) - nowMs;
                 return Math.max(1L, (waitMs + 999L) / 1000L);
             }
             if (consumeIfAllowed) {
@@ -48,8 +52,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return 0L;
         }
 
-        synchronized boolean isEmptyAt(long nowMs) {
-            long cutoff = nowMs - WINDOW_MS;
+        synchronized boolean isEmptyAt(long nowMs, long windowMs) {
+            long cutoff = nowMs - windowMs;
             while (!hits.isEmpty() && hits.peekFirst() <= cutoff) {
                 hits.removeFirst();
             }
@@ -63,6 +67,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final ConcurrentHashMap<String, Bucket> syncFamilyBuckets = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Bucket> syncIpBuckets = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Bucket> roomsFamilyBuckets = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Bucket> friendCodeBuckets = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Bucket> friendRedeemBuckets = new ConcurrentHashMap<>();
 
     @Autowired
     public RateLimitFilter(AuthProperties props) {
@@ -81,7 +87,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         long now = clock.millis();
 
         if (uri.startsWith("/api/v1/auth/")) {
-            long retry = tryAcquire(authIpBuckets, req.getRemoteAddr(), authPerIp, now);
+            long retry = tryAcquire(authIpBuckets, req.getRemoteAddr(), WINDOW_MS, authPerIp, now);
             if (retry > 0) {
                 reject(res, retry);
                 return;
@@ -89,19 +95,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if ("/api/v1/sync".equals(uri)) {
             String family = authenticatedFamily();
             if (family != null) {
-                long famWait = checkOnly(syncFamilyBuckets, family, SYNC_PER_FAMILY, now);
+                long famWait = checkOnly(syncFamilyBuckets, family, WINDOW_MS, SYNC_PER_FAMILY, now);
                 if (famWait > 0) {
                     reject(res, famWait);
                     return;
                 }
-                long ipWait = checkOnly(syncIpBuckets, req.getRemoteAddr(), SYNC_PER_IP, now);
+                long ipWait = checkOnly(syncIpBuckets, req.getRemoteAddr(), WINDOW_MS, SYNC_PER_IP, now);
                 if (ipWait > 0) {
                     reject(res, ipWait);
                     return;
                 }
                 long retry = Math.max(
-                        tryAcquire(syncFamilyBuckets, family, SYNC_PER_FAMILY, now),
-                        tryAcquire(syncIpBuckets, req.getRemoteAddr(), SYNC_PER_IP, now));
+                        tryAcquire(syncFamilyBuckets, family, WINDOW_MS, SYNC_PER_FAMILY, now),
+                        tryAcquire(syncIpBuckets, req.getRemoteAddr(), WINDOW_MS, SYNC_PER_IP, now));
                 if (retry > 0) {
                     reject(res, retry);
                     return;
@@ -110,7 +116,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if ("POST".equalsIgnoreCase(req.getMethod()) && "/api/v1/rooms".equals(uri)) {
             String family = authenticatedFamily();
             if (family != null) {
-                long retry = tryAcquire(roomsFamilyBuckets, family, ROOMS_PER_FAMILY, now);
+                long retry = tryAcquire(roomsFamilyBuckets, family, WINDOW_MS, ROOMS_PER_FAMILY, now);
+                if (retry > 0) {
+                    reject(res, retry);
+                    return;
+                }
+            }
+        } else if ("POST".equalsIgnoreCase(req.getMethod()) && "/api/v1/friends/code".equals(uri)) {
+            String family = authenticatedFamily();
+            if (family != null) {
+                long retry = tryAcquire(friendCodeBuckets, family, HOUR_WINDOW_MS, FRIEND_CODE_PER_FAMILY, now);
+                if (retry > 0) {
+                    reject(res, retry);
+                    return;
+                }
+            }
+        } else if ("POST".equalsIgnoreCase(req.getMethod()) && "/api/v1/friends/redeem".equals(uri)) {
+            String family = authenticatedFamily();
+            if (family != null) {
+                long retry = tryAcquire(friendRedeemBuckets, family, HOUR_WINDOW_MS, FRIEND_REDEEM_PER_FAMILY, now);
                 if (retry > 0) {
                     reject(res, retry);
                     return;
@@ -124,10 +148,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Scheduled(fixedDelay = 60_000L)
     void purgeStale() {
         long now = clock.millis();
-        purgeMap(authIpBuckets, now);
-        purgeMap(syncFamilyBuckets, now);
-        purgeMap(syncIpBuckets, now);
-        purgeMap(roomsFamilyBuckets, now);
+        purgeMap(authIpBuckets, now, WINDOW_MS);
+        purgeMap(syncFamilyBuckets, now, WINDOW_MS);
+        purgeMap(syncIpBuckets, now, WINDOW_MS);
+        purgeMap(roomsFamilyBuckets, now, WINDOW_MS);
+        purgeMap(friendCodeBuckets, now, HOUR_WINDOW_MS);
+        purgeMap(friendRedeemBuckets, now, HOUR_WINDOW_MS);
     }
 
     public void reset() {
@@ -135,25 +161,30 @@ public class RateLimitFilter extends OncePerRequestFilter {
         syncFamilyBuckets.clear();
         syncIpBuckets.clear();
         roomsFamilyBuckets.clear();
+        friendCodeBuckets.clear();
+        friendRedeemBuckets.clear();
     }
 
-    private static void purgeMap(ConcurrentHashMap<String, Bucket> map, long now) {
-        map.entrySet().removeIf(e -> e.getValue().isEmptyAt(now));
+    private static void purgeMap(ConcurrentHashMap<String, Bucket> map, long now, long windowMs) {
+        map.entrySet().removeIf(e -> e.getValue().isEmptyAt(now, windowMs));
     }
 
-    private static long checkOnly(ConcurrentHashMap<String, Bucket> map, String key, int limit, long now) {
+    private static long checkOnly(
+            ConcurrentHashMap<String, Bucket> map, String key, long windowMs, int limit, long now) {
         Bucket b = map.get(key);
-        return b == null ? 0L : b.retryAfterSeconds(now, limit, false);
+        return b == null ? 0L : b.retryAfterSeconds(now, windowMs, limit, false);
     }
 
-    private static long tryAcquire(ConcurrentHashMap<String, Bucket> map, String key, int limit, long now) {
-        return map.computeIfAbsent(key, k -> new Bucket()).retryAfterSeconds(now, limit, true);
+    private static long tryAcquire(
+            ConcurrentHashMap<String, Bucket> map, String key, long windowMs, int limit, long now) {
+        return map.computeIfAbsent(key, k -> new Bucket()).retryAfterSeconds(now, windowMs, limit, true);
     }
 
     private static String authenticatedFamily() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth instanceof JwtAuthenticationToken jwt) {
-            return jwt.getToken().getSubject();
+            String fam = jwt.getToken().getClaimAsString(TokenService.FAMILY_CLAIM);
+            return fam != null ? fam : jwt.getToken().getSubject();
         }
         return null;
     }
