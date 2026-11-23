@@ -76,6 +76,8 @@ class KidRepository {
   Future<void> _deleteProgressOf(int id) async {
     await (_db.delete(_db.strokeAttempts)..where((t) => t.kidId.equals(id)))
         .go();
+    await (_db.delete(_db.notebookPages)..where((t) => t.kidId.equals(id)))
+        .go();
     await (_db.delete(_db.glyphProgress)..where((t) => t.kidId.equals(id)))
         .go();
     await (_db.delete(_db.lessonCompletions)..where((t) => t.kidId.equals(id)))

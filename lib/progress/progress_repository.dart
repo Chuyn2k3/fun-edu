@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../collection/notebook_pages.dart';
 import '../data/app_database.dart';
 import '../learning/writing_ladder.dart';
 import '../profile/kid_repository.dart';
@@ -52,6 +53,7 @@ class ProgressRepository {
               lastPracticedAt: at,
             ),
           );
+      await refreshNotebookPage(_db, kid, glyphId);
     });
   }
 

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
@@ -9,6 +8,7 @@ import '../profile/kid_repository.dart';
 import '../stroke/geometry.dart';
 import '../stroke/glyph.dart';
 import '../stroke/glyph_repository.dart';
+import 'notebook_pages.dart';
 
 /// "Vở của bé": the kid's own best writing of every glyph, rebuilt from the
 /// logged strokes (stroke_attempts keeps each stroke's points in the
@@ -121,31 +121,27 @@ final notebookProvider =
   final kidId = await ref.watch(currentKidIdProvider.future);
   if (kidId == null) return const [];
   final db = ref.watch(databaseProvider);
-  final rows = await (db.select(db.strokeAttempts)
-        ..where((t) => t.kidId.equals(kidId))
-        ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+  final rows = await (db.select(db.notebookPages)
+        ..where((t) => t.kidId.equals(kidId)))
       .get();
-  final byGlyph = <String, List<NotebookAttempt>>{};
-  for (final r in rows) {
-    byGlyph.putIfAbsent(r.glyphId, () => []).add(NotebookAttempt(
-          strokeIndex: r.strokeIndex,
-          ok: r.ok,
-          points: decodePoints(r.points),
-          at: r.createdAt,
-        ));
-  }
+  final byGlyph = {for (final r in rows) r.glyphId: r};
   final pages = <NotebookPage>[];
   for (final id in writingLadder) {
-    final attempts = byGlyph[id];
-    if (attempts == null) continue;
+    final row = byGlyph[id];
+    if (row == null) continue;
     final Glyph glyph;
     try {
       glyph = await ref.watch(glyphProvider(id).future);
     } catch (_) {
       continue;
     }
-    final page = bestWritings(attempts, strokeCount: glyph.strokes.length);
-    if (page != null) pages.add(page.withGlyph(glyph));
+    final strokes = decodeStrokes(row.strokes);
+    pages.add(NotebookPage(
+      strokes: strokes,
+      mistakes: row.mistakes,
+      writtenAt: row.writtenAt,
+      glyph: glyph,
+    ));
   }
   return pages;
 });

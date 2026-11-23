@@ -346,5 +346,78 @@ CREATE TABLE subject_levels (
     expect(added.uuid, isNotNull);
     expect(added.uuid, isNot(kids.single.uuid));
   });
+
+  test('upgrading from v8 creates notebook_pages and backfills best attempt', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
+CREATE TABLE kid_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uuid TEXT,
+  nickname TEXT NOT NULL,
+  avatar TEXT NOT NULL,
+  age INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+)''');
+          raw.execute('''
+CREATE TABLE stroke_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kid_id INTEGER NOT NULL,
+  glyph_id TEXT NOT NULL,
+  stroke_index INTEGER NOT NULL,
+  ok INTEGER NOT NULL,
+  error TEXT,
+  deviation REAL NOT NULL,
+  points TEXT,
+  created_at INTEGER NOT NULL
+)''');
+          raw.execute('''
+CREATE TABLE synced_records (
+  key TEXT PRIMARY KEY,
+  version INTEGER NOT NULL,
+  payload_json TEXT
+)''');
+          raw.execute(
+            "INSERT INTO kid_profiles (id, uuid, nickname, avatar, age, created_at) VALUES (1, 'k-1', 'Na', 'chip', 5, 1700000000)",
+          );
+          // Insert a 1-stroke attempt for net-ngang: ok = 1
+          raw.execute(
+            "INSERT INTO stroke_attempts (id, kid_id, glyph_id, stroke_index, ok, deviation, points, created_at) VALUES (1, 1, 'net-ngang', 0, 1, 0.1, '[[0.1, 0.5], [0.9, 0.5]]', 1700000000)",
+          );
+          raw.execute('PRAGMA user_version = 8');
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    final pages = await db.select(db.notebookPages).get();
+    expect(pages, hasLength(1));
+    expect(pages.single.glyphId, 'net-ngang');
+    expect(pages.single.mistakes, 0);
+
+    // Verify index exists
+    final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
+    expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
+  });
+
+  test('upgrading from v1 reaches v9 with notebook_pages', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute(v2Tables);
+          raw.execute(
+            "INSERT INTO stroke_attempts (glyph_id, stroke_index, ok, deviation, created_at) VALUES ('so-1', 0, 1, 0.1, 1700000000)",
+          );
+          raw.execute('PRAGMA user_version = 1');
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    expect(db.schemaVersion, 9);
+    final pages = await db.select(db.notebookPages).get();
+    expect(pages, isEmpty);
+  });
 }
 

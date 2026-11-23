@@ -184,4 +184,74 @@ void main() {
     final r = await phone.select(phone.realRewards).getSingle();
     expect(r.redeemedAt, DateTime(2026, 11, 21));
   });
+
+  test('notebook pages sync, better page wins, and stroke_attempts never leave device', () async {
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+
+    // Phone writes net-ngang with 1 mistake
+    await phone.into(phone.notebookPages).insert(
+          NotebookPagesCompanion.insert(
+            kidId: id,
+            glyphId: 'net-ngang',
+            strokes: '[[0.1, 0.5, 0.9, 0.5]]',
+            mistakes: 1,
+            writtenAt: DateTime(2026, 11, 22, 10, 0),
+          ),
+        );
+    // Also add a stroke attempt on phone
+    await phone.into(phone.strokeAttempts).insert(
+          StrokeAttemptsCompanion.insert(
+            kidId: id,
+            glyphId: 'net-ngang',
+            strokeIndex: 0,
+            ok: true,
+            deviation: 0.1,
+            points: Value('[[0.1, 0.5], [0.9, 0.5]]'),
+            createdAt: DateTime(2026, 11, 22, 10, 0),
+          ),
+        );
+
+    await sync(phone);
+
+    // Verify stroke_attempts was NOT sent to server
+    expect(server.records.keys.any((k) => k.startsWith('stroke:')), isFalse);
+    expect(server.records.keys.any((k) => k.startsWith('page:')), isTrue);
+
+    await sync(ipad);
+    final ipadKid = await _onlyKid(ipad);
+
+    var ipadPages = await (ipad.select(ipad.notebookPages)
+          ..where((t) => t.kidId.equals(ipadKid)))
+        .get();
+    expect(ipadPages, hasLength(1));
+    expect(ipadPages.single.glyphId, 'net-ngang');
+    expect(ipadPages.single.mistakes, 1);
+
+    // iPad writes a better version (0 mistakes)
+    await ipad.into(ipad.notebookPages).insertOnConflictUpdate(
+          NotebookPagesCompanion.insert(
+            kidId: ipadKid,
+            glyphId: 'net-ngang',
+            strokes: '[[0.1, 0.5, 0.9, 0.5]]',
+            mistakes: 0,
+            writtenAt: DateTime(2026, 11, 22, 11, 0),
+          ),
+        );
+
+    await sync(ipad);
+    await sync(phone);
+
+    var phonePages = await (phone.select(phone.notebookPages)
+          ..where((t) => t.kidId.equals(id)))
+        .get();
+    expect(phonePages.single.mistakes, 0);
+
+    // Deleting kid removes pages
+    await KidRepository(ipad).deleteKid(ipadKid);
+    await sync(ipad);
+    await sync(phone);
+
+    expect(await phone.select(phone.notebookPages).get(), isEmpty);
+  });
 }

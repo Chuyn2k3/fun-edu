@@ -4190,6 +4190,316 @@ class SyncedRecordsCompanion extends UpdateCompanion<SyncedRecord> {
   }
 }
 
+class $NotebookPagesTable extends NotebookPages
+    with TableInfo<$NotebookPagesTable, NotebookPage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotebookPagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kidIdMeta = const VerificationMeta('kidId');
+  @override
+  late final GeneratedColumn<int> kidId = GeneratedColumn<int>(
+      'kid_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _glyphIdMeta =
+      const VerificationMeta('glyphId');
+  @override
+  late final GeneratedColumn<String> glyphId = GeneratedColumn<String>(
+      'glyph_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _strokesMeta =
+      const VerificationMeta('strokes');
+  @override
+  late final GeneratedColumn<String> strokes = GeneratedColumn<String>(
+      'strokes', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _mistakesMeta =
+      const VerificationMeta('mistakes');
+  @override
+  late final GeneratedColumn<int> mistakes = GeneratedColumn<int>(
+      'mistakes', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _writtenAtMeta =
+      const VerificationMeta('writtenAt');
+  @override
+  late final GeneratedColumn<DateTime> writtenAt = GeneratedColumn<DateTime>(
+      'written_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [kidId, glyphId, strokes, mistakes, writtenAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notebook_pages';
+  @override
+  VerificationContext validateIntegrity(Insertable<NotebookPage> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kid_id')) {
+      context.handle(
+          _kidIdMeta, kidId.isAcceptableOrUnknown(data['kid_id']!, _kidIdMeta));
+    } else if (isInserting) {
+      context.missing(_kidIdMeta);
+    }
+    if (data.containsKey('glyph_id')) {
+      context.handle(_glyphIdMeta,
+          glyphId.isAcceptableOrUnknown(data['glyph_id']!, _glyphIdMeta));
+    } else if (isInserting) {
+      context.missing(_glyphIdMeta);
+    }
+    if (data.containsKey('strokes')) {
+      context.handle(_strokesMeta,
+          strokes.isAcceptableOrUnknown(data['strokes']!, _strokesMeta));
+    } else if (isInserting) {
+      context.missing(_strokesMeta);
+    }
+    if (data.containsKey('mistakes')) {
+      context.handle(_mistakesMeta,
+          mistakes.isAcceptableOrUnknown(data['mistakes']!, _mistakesMeta));
+    } else if (isInserting) {
+      context.missing(_mistakesMeta);
+    }
+    if (data.containsKey('written_at')) {
+      context.handle(_writtenAtMeta,
+          writtenAt.isAcceptableOrUnknown(data['written_at']!, _writtenAtMeta));
+    } else if (isInserting) {
+      context.missing(_writtenAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kidId, glyphId};
+  @override
+  NotebookPage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotebookPage(
+      kidId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}kid_id'])!,
+      glyphId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}glyph_id'])!,
+      strokes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}strokes'])!,
+      mistakes: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}mistakes'])!,
+      writtenAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}written_at'])!,
+    );
+  }
+
+  @override
+  $NotebookPagesTable createAlias(String alias) {
+    return $NotebookPagesTable(attachedDatabase, alias);
+  }
+}
+
+class NotebookPage extends DataClass implements Insertable<NotebookPage> {
+  final int kidId;
+  final String glyphId;
+  final String strokes;
+  final int mistakes;
+  final DateTime writtenAt;
+  const NotebookPage(
+      {required this.kidId,
+      required this.glyphId,
+      required this.strokes,
+      required this.mistakes,
+      required this.writtenAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kid_id'] = Variable<int>(kidId);
+    map['glyph_id'] = Variable<String>(glyphId);
+    map['strokes'] = Variable<String>(strokes);
+    map['mistakes'] = Variable<int>(mistakes);
+    map['written_at'] = Variable<DateTime>(writtenAt);
+    return map;
+  }
+
+  NotebookPagesCompanion toCompanion(bool nullToAbsent) {
+    return NotebookPagesCompanion(
+      kidId: Value(kidId),
+      glyphId: Value(glyphId),
+      strokes: Value(strokes),
+      mistakes: Value(mistakes),
+      writtenAt: Value(writtenAt),
+    );
+  }
+
+  factory NotebookPage.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotebookPage(
+      kidId: serializer.fromJson<int>(json['kidId']),
+      glyphId: serializer.fromJson<String>(json['glyphId']),
+      strokes: serializer.fromJson<String>(json['strokes']),
+      mistakes: serializer.fromJson<int>(json['mistakes']),
+      writtenAt: serializer.fromJson<DateTime>(json['writtenAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kidId': serializer.toJson<int>(kidId),
+      'glyphId': serializer.toJson<String>(glyphId),
+      'strokes': serializer.toJson<String>(strokes),
+      'mistakes': serializer.toJson<int>(mistakes),
+      'writtenAt': serializer.toJson<DateTime>(writtenAt),
+    };
+  }
+
+  NotebookPage copyWith(
+          {int? kidId,
+          String? glyphId,
+          String? strokes,
+          int? mistakes,
+          DateTime? writtenAt}) =>
+      NotebookPage(
+        kidId: kidId ?? this.kidId,
+        glyphId: glyphId ?? this.glyphId,
+        strokes: strokes ?? this.strokes,
+        mistakes: mistakes ?? this.mistakes,
+        writtenAt: writtenAt ?? this.writtenAt,
+      );
+  NotebookPage copyWithCompanion(NotebookPagesCompanion data) {
+    return NotebookPage(
+      kidId: data.kidId.present ? data.kidId.value : this.kidId,
+      glyphId: data.glyphId.present ? data.glyphId.value : this.glyphId,
+      strokes: data.strokes.present ? data.strokes.value : this.strokes,
+      mistakes: data.mistakes.present ? data.mistakes.value : this.mistakes,
+      writtenAt: data.writtenAt.present ? data.writtenAt.value : this.writtenAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotebookPage(')
+          ..write('kidId: $kidId, ')
+          ..write('glyphId: $glyphId, ')
+          ..write('strokes: $strokes, ')
+          ..write('mistakes: $mistakes, ')
+          ..write('writtenAt: $writtenAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kidId, glyphId, strokes, mistakes, writtenAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotebookPage &&
+          other.kidId == this.kidId &&
+          other.glyphId == this.glyphId &&
+          other.strokes == this.strokes &&
+          other.mistakes == this.mistakes &&
+          other.writtenAt == this.writtenAt);
+}
+
+class NotebookPagesCompanion extends UpdateCompanion<NotebookPage> {
+  final Value<int> kidId;
+  final Value<String> glyphId;
+  final Value<String> strokes;
+  final Value<int> mistakes;
+  final Value<DateTime> writtenAt;
+  final Value<int> rowid;
+  const NotebookPagesCompanion({
+    this.kidId = const Value.absent(),
+    this.glyphId = const Value.absent(),
+    this.strokes = const Value.absent(),
+    this.mistakes = const Value.absent(),
+    this.writtenAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NotebookPagesCompanion.insert({
+    required int kidId,
+    required String glyphId,
+    required String strokes,
+    required int mistakes,
+    required DateTime writtenAt,
+    this.rowid = const Value.absent(),
+  })  : kidId = Value(kidId),
+        glyphId = Value(glyphId),
+        strokes = Value(strokes),
+        mistakes = Value(mistakes),
+        writtenAt = Value(writtenAt);
+  static Insertable<NotebookPage> custom({
+    Expression<int>? kidId,
+    Expression<String>? glyphId,
+    Expression<String>? strokes,
+    Expression<int>? mistakes,
+    Expression<DateTime>? writtenAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (kidId != null) 'kid_id': kidId,
+      if (glyphId != null) 'glyph_id': glyphId,
+      if (strokes != null) 'strokes': strokes,
+      if (mistakes != null) 'mistakes': mistakes,
+      if (writtenAt != null) 'written_at': writtenAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NotebookPagesCompanion copyWith(
+      {Value<int>? kidId,
+      Value<String>? glyphId,
+      Value<String>? strokes,
+      Value<int>? mistakes,
+      Value<DateTime>? writtenAt,
+      Value<int>? rowid}) {
+    return NotebookPagesCompanion(
+      kidId: kidId ?? this.kidId,
+      glyphId: glyphId ?? this.glyphId,
+      strokes: strokes ?? this.strokes,
+      mistakes: mistakes ?? this.mistakes,
+      writtenAt: writtenAt ?? this.writtenAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kidId.present) {
+      map['kid_id'] = Variable<int>(kidId.value);
+    }
+    if (glyphId.present) {
+      map['glyph_id'] = Variable<String>(glyphId.value);
+    }
+    if (strokes.present) {
+      map['strokes'] = Variable<String>(strokes.value);
+    }
+    if (mistakes.present) {
+      map['mistakes'] = Variable<int>(mistakes.value);
+    }
+    if (writtenAt.present) {
+      map['written_at'] = Variable<DateTime>(writtenAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotebookPagesCompanion(')
+          ..write('kidId: $kidId, ')
+          ..write('glyphId: $glyphId, ')
+          ..write('strokes: $strokes, ')
+          ..write('mistakes: $mistakes, ')
+          ..write('writtenAt: $writtenAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4208,6 +4518,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GameBadgesTable gameBadges = $GameBadgesTable(this);
   late final $GameCountersTable gameCounters = $GameCountersTable(this);
   late final $SyncedRecordsTable syncedRecords = $SyncedRecordsTable(this);
+  late final $NotebookPagesTable notebookPages = $NotebookPagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4226,7 +4537,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         gameItems,
         gameBadges,
         gameCounters,
-        syncedRecords
+        syncedRecords,
+        notebookPages
       ];
 }
 
@@ -6538,6 +6850,179 @@ typedef $$SyncedRecordsTableProcessedTableManager = ProcessedTableManager<
     ),
     SyncedRecord,
     PrefetchHooks Function()>;
+typedef $$NotebookPagesTableCreateCompanionBuilder = NotebookPagesCompanion
+    Function({
+  required int kidId,
+  required String glyphId,
+  required String strokes,
+  required int mistakes,
+  required DateTime writtenAt,
+  Value<int> rowid,
+});
+typedef $$NotebookPagesTableUpdateCompanionBuilder = NotebookPagesCompanion
+    Function({
+  Value<int> kidId,
+  Value<String> glyphId,
+  Value<String> strokes,
+  Value<int> mistakes,
+  Value<DateTime> writtenAt,
+  Value<int> rowid,
+});
+
+class $$NotebookPagesTableFilterComposer
+    extends Composer<_$AppDatabase, $NotebookPagesTable> {
+  $$NotebookPagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get glyphId => $composableBuilder(
+      column: $table.glyphId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get strokes => $composableBuilder(
+      column: $table.strokes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get mistakes => $composableBuilder(
+      column: $table.mistakes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get writtenAt => $composableBuilder(
+      column: $table.writtenAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$NotebookPagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotebookPagesTable> {
+  $$NotebookPagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get kidId => $composableBuilder(
+      column: $table.kidId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get glyphId => $composableBuilder(
+      column: $table.glyphId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get strokes => $composableBuilder(
+      column: $table.strokes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get mistakes => $composableBuilder(
+      column: $table.mistakes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get writtenAt => $composableBuilder(
+      column: $table.writtenAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NotebookPagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotebookPagesTable> {
+  $$NotebookPagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get kidId =>
+      $composableBuilder(column: $table.kidId, builder: (column) => column);
+
+  GeneratedColumn<String> get glyphId =>
+      $composableBuilder(column: $table.glyphId, builder: (column) => column);
+
+  GeneratedColumn<String> get strokes =>
+      $composableBuilder(column: $table.strokes, builder: (column) => column);
+
+  GeneratedColumn<int> get mistakes =>
+      $composableBuilder(column: $table.mistakes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get writtenAt =>
+      $composableBuilder(column: $table.writtenAt, builder: (column) => column);
+}
+
+class $$NotebookPagesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $NotebookPagesTable,
+    NotebookPage,
+    $$NotebookPagesTableFilterComposer,
+    $$NotebookPagesTableOrderingComposer,
+    $$NotebookPagesTableAnnotationComposer,
+    $$NotebookPagesTableCreateCompanionBuilder,
+    $$NotebookPagesTableUpdateCompanionBuilder,
+    (
+      NotebookPage,
+      BaseReferences<_$AppDatabase, $NotebookPagesTable, NotebookPage>
+    ),
+    NotebookPage,
+    PrefetchHooks Function()> {
+  $$NotebookPagesTableTableManager(_$AppDatabase db, $NotebookPagesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotebookPagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NotebookPagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NotebookPagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> kidId = const Value.absent(),
+            Value<String> glyphId = const Value.absent(),
+            Value<String> strokes = const Value.absent(),
+            Value<int> mistakes = const Value.absent(),
+            Value<DateTime> writtenAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NotebookPagesCompanion(
+            kidId: kidId,
+            glyphId: glyphId,
+            strokes: strokes,
+            mistakes: mistakes,
+            writtenAt: writtenAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required int kidId,
+            required String glyphId,
+            required String strokes,
+            required int mistakes,
+            required DateTime writtenAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NotebookPagesCompanion.insert(
+            kidId: kidId,
+            glyphId: glyphId,
+            strokes: strokes,
+            mistakes: mistakes,
+            writtenAt: writtenAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$NotebookPagesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $NotebookPagesTable,
+    NotebookPage,
+    $$NotebookPagesTableFilterComposer,
+    $$NotebookPagesTableOrderingComposer,
+    $$NotebookPagesTableAnnotationComposer,
+    $$NotebookPagesTableCreateCompanionBuilder,
+    $$NotebookPagesTableUpdateCompanionBuilder,
+    (
+      NotebookPage,
+      BaseReferences<_$AppDatabase, $NotebookPagesTable, NotebookPage>
+    ),
+    NotebookPage,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6570,4 +7055,6 @@ class $AppDatabaseManager {
       $$GameCountersTableTableManager(_db, _db.gameCounters);
   $$SyncedRecordsTableTableManager get syncedRecords =>
       $$SyncedRecordsTableTableManager(_db, _db.syncedRecords);
+  $$NotebookPagesTableTableManager get notebookPages =>
+      $$NotebookPagesTableTableManager(_db, _db.notebookPages);
 }

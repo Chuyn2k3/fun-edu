@@ -12,6 +12,7 @@ import '../rewards/reward_tables.dart';
 import '../screen_time/screen_time_tables.dart';
 import '../stroke/glyph.dart';
 import '../ui/assets.dart';
+import '../collection/notebook_pages.dart';
 
 part 'app_database.g.dart';
 
@@ -47,6 +48,18 @@ class SyncedRecords extends Table {
   Set<Column> get primaryKey => {key};
 }
 
+/// The best handwriting attempt per (kid, glyph), synced online as notebook pages.
+class NotebookPages extends Table {
+  IntColumn get kidId => integer()();
+  TextColumn get glyphId => text()();
+  TextColumn get strokes => text()();
+  IntColumn get mistakes => integer()();
+  DateTimeColumn get writtenAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {kidId, glyphId};
+}
+
 @DriftDatabase(
   tables: [
     StrokeAttempts,
@@ -63,13 +76,14 @@ class SyncedRecords extends Table {
     GameBadges,
     GameCounters,
     SyncedRecords,
+    NotebookPages,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -92,8 +106,34 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(gameCounters);
           }
           if (from < 8) await _upgradeToV8(m, from);
+          if (from < 9) await _upgradeToV9(m, from);
         },
       );
+
+  Future<void> _upgradeToV9(Migrator m, int from) => transaction(() async {
+        await m.createTable(notebookPages);
+        final tables = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='stroke_attempts'",
+        ).get();
+        if (tables.isEmpty) return;
+
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS stroke_attempts_kid_glyph_idx ON stroke_attempts (kid_id, glyph_id)',
+        );
+        final cols = await customSelect('PRAGMA table_info(stroke_attempts)').get();
+        final hasKidId = cols.any((c) => c.read<String>('name') == 'kid_id');
+        if (!hasKidId) return;
+
+        final distinctKidsAndGlyphs = await customSelect(
+          'SELECT DISTINCT kid_id, glyph_id FROM stroke_attempts ORDER BY kid_id, glyph_id',
+        ).get();
+
+        for (final row in distinctKidsAndGlyphs) {
+          final kidId = row.read<int>('kid_id');
+          final glyphId = row.read<String>('glyph_id');
+          await refreshNotebookPage(this, kidId, glyphId);
+        }
+      });
 
   /// v7 -> v8: online sync. Kids get a stable uuid; a table remembers what
   /// was last synced. The column is added only when missing: databases older
@@ -209,6 +249,9 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now(),
       ),
     );
+    if (ok) {
+      await refreshNotebookPage(this, kidId, glyphId);
+    }
   }
 
   Future<List<StrokeAttempt>> attemptsFor(int kidId, String glyphId) =>

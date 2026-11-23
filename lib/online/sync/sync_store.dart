@@ -100,6 +100,15 @@ class SyncStore {
         'last': _ms(g.lastPracticedAt),
       };
     }
+    for (final p in await _db.select(_db.notebookPages).get()) {
+      final u = ku(p.kidId);
+      if (u == null) continue;
+      out['page:$u:${p.glyphId}'] = {
+        's': jsonDecode(p.strokes),
+        'm': p.mistakes,
+        'at': _ms(p.writtenAt),
+      };
+    }
     for (final l in await _db.select(_db.lessonCompletions).get()) {
       final u = ku(l.kidId);
       if (u == null) continue;
@@ -254,6 +263,14 @@ class SyncStore {
           'clean': _max(i(mine, 'clean'), i(theirs, 'clean')),
           'last': _max(i(mine, 'last'), i(theirs, 'last')),
         };
+      case 'page':
+        final myMistakes = i(mine, 'm');
+        final theirMistakes = i(theirs, 'm');
+        if (myMistakes < theirMistakes) return mine;
+        if (theirMistakes < myMistakes) return theirs;
+        final myAt = i(mine, 'at');
+        final theirAt = i(theirs, 'at');
+        return myAt >= theirAt ? mine : theirs;
       case 'usage':
         return {'seconds': _max(i(mine, 'seconds'), i(theirs, 'seconds'))};
       case 'counter':
@@ -303,6 +320,23 @@ class SyncStore {
                   completions: Value(i('completions')),
                   cleanCompletions: Value(i('clean')),
                   lastPracticedAt: t('last'),
+                ),
+              );
+        }
+      case 'page':
+        if (p == null) {
+          await (_db.delete(_db.notebookPages)
+                ..where((r) => r.kidId.equals(kidId) & r.glyphId.equals(rest)))
+              .go();
+        } else {
+          final strokes = p['s'];
+          await _db.into(_db.notebookPages).insertOnConflictUpdate(
+                NotebookPagesCompanion.insert(
+                  kidId: kidId,
+                  glyphId: rest,
+                  strokes: jsonEncode(strokes),
+                  mistakes: i('m'),
+                  writtenAt: t('at'),
                 ),
               );
         }
@@ -481,6 +515,7 @@ class SyncStore {
   Future<void> _deleteKid(int id) async {
     for (final t in <TableInfo>[
       _db.strokeAttempts,
+      _db.notebookPages,
       _db.glyphProgress,
       _db.lessonCompletions,
       _db.subjectLevels,
