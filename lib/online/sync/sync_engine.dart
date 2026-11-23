@@ -95,7 +95,7 @@ class SyncEngine {
       await _setSetting(lastSyncKey, DateTime.now().toIso8601String());
       return pulledAny;
     } on ApiException catch (e) {
-      if (e.status == 0 && e.code == 'timeout') {
+      if ((e.status == 0 && e.code == 'timeout') || e.status == 413) {
         await _recordTimeout(batch);
       }
       rethrow;

@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
+import 'package:funedu/ui/assets.dart';
 import 'package:funedu/online/api_client.dart';
 import 'package:funedu/online/auth/session_controller.dart';
 import 'package:funedu/online/auth/token_store.dart';
@@ -309,6 +312,78 @@ void main() {
 
     expect(container.read(syncControllerProvider).failed, isTrue);
     expect(controller.retryStep, equals(1));
+
+    controller.stop();
+    sub.close();
+    container.dispose();
+    await tester.pump(const Duration(milliseconds: 50));
+  });
+
+  testWidgets('413 stops the batch and halves it', (tester) async {
+    final kidId = await KidRepository(db)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    for (var i = 0; i < 120; i++) {
+      await db.into(db.lessonCompletions).insert(
+            LessonCompletionsCompanion.insert(
+              kidId: kidId,
+              completedAt: DateTime.utc(2026, 11, 20, 8, 0).add(Duration(minutes: i)),
+              starsEarned: 2,
+            ),
+          );
+    }
+    await db.into(db.appSettings).insertOnConflictUpdate(
+          AppSettingsCompanion.insert(key: SyncEngine.batchKey, value: '200'),
+        );
+
+    final sentSizes = <int>[];
+    var fail413 = true;
+    var nextVer = 1;
+    responseHandler = (req) async {
+      final decoded = jsonDecode(req.body) as Map<String, Object?>;
+      final changes = (decoded['changes'] as List).cast<Map<String, Object?>>();
+      sentSizes.add(changes.length);
+      if (fail413) {
+        return http.Response('{"error": "too_large"}', 413);
+      }
+      final echoed = [
+        for (final c in changes)
+          {
+            'key': c['key'],
+            'payload': c['payload'],
+            'deleted': c['deleted'] ?? false,
+            'version': nextVer++,
+          }
+      ];
+      return http.Response(
+        jsonEncode({
+          'records': echoed,
+          'version': nextVer - 1,
+          'hasMore': false,
+          'conflicts': const [],
+        }),
+        200,
+      );
+    };
+
+    final container = makeContainer();
+    final sub = container.listen(syncControllerProvider, (_, __) {});
+    final controller = container.read(syncControllerProvider.notifier);
+    await container.read(sessionProvider.future);
+    await tester.pump();
+
+    // Stops after 1 failed attempt (no infinite retry loop on 413) and halves batch to 100.
+    expect(syncCalls, equals(1));
+    expect(sentSizes, equals([121])); // 1 kid + 120 lessons
+    final halved = await (db.select(db.appSettings)
+          ..where((t) => t.key.equals(SyncEngine.batchKey)))
+        .getSingle();
+    expect(halved.value, equals('100'));
+
+    // Next sync uses batch size 100 (< 121) and uploads cleanly.
+    fail413 = false;
+    await controller.syncNow();
+    await tester.pump();
+    expect(sentSizes, equals([121, 100, 21]));
 
     controller.stop();
     sub.close();

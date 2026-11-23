@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -70,15 +71,19 @@ abstract class TokenStore {
   Future<void> clear();
 }
 
+/// Android keystore options shared with tests so encrypted prefs stay enforced.
+AndroidOptions secureStorageOptions() =>
+    const AndroidOptions(encryptedSharedPreferences: true);
+
 class SecureTokenStore implements TokenStore {
   SecureTokenStore([FlutterSecureStorage? storage])
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            );
+      : _storage = storage ?? FlutterSecureStorage(aOptions: secureStorageOptions());
 
   static const _key = 'funedu.session';
   final FlutterSecureStorage _storage;
+
+  @visibleForTesting
+  FlutterSecureStorage get storage => _storage;
 
   @override
   Future<StoredSession?> read() async {

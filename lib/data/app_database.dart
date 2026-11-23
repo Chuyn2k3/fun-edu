@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../game/data/game_tables.dart';
@@ -454,6 +456,13 @@ String encodePoints(Stroke s) => jsonEncode([
 /// Opened lazily, so screens that never read it never touch the database.
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase(driftDatabase(name: 'funedu'));
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      const MethodChannel('com.ibme.funedu/security')
+          .invokeMethod<void>('excludeDbFromBackup')
+          .catchError((_) {});
+    } catch (_) {}
+  }
   ref.onDispose(db.close);
   return db;
 });
