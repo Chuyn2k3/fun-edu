@@ -12,6 +12,8 @@ void main() {
         greaterThanOrEqualTo(4.5));
     expect(contrastRatio(AppColors.primary, AppColors.card),
         greaterThanOrEqualTo(4.5));
+    expect(contrastRatio(AppColors.danger, AppColors.card),
+        greaterThanOrEqualTo(4.5));
     expect(contrastRatio(AppColors.textMuted, AppColors.card),
         greaterThanOrEqualTo(4.5));
   });

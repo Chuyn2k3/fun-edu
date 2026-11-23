@@ -10,6 +10,7 @@ abstract final class AppColors {
   static const background = Color(0xFFFBF5EC);
   static const dot = Color(0xFFEADFCF);
   static const card = Color(0xFFFFFFFF);
+  static const danger = Color(0xFFC5221F);
   static const text = Color(0xFF22284A);
   static const textMuted = Color(0xFF5B6385);
 }
