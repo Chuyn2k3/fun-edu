@@ -1,0 +1,101 @@
+{
+  "records": [
+    {
+      "key": "kid:00000000-0000-0000-0000-000000000001",
+      "kind": "kid",
+      "payload": {
+        "nickname": "Na",
+        "avatar": "fox",
+        "createdAt": "2026-11-20T10:00:00Z"
+      },
+      "deleted": false
+    },
+    {
+      "key": "lesson:00000000-0000-0000-0000-000000000001:l1",
+      "kind": "lesson",
+      "payload": {
+        "stars": 2
+      },
+      "deleted": false
+    },
+    {
+      "key": "lesson:00000000-0000-0000-0000-000000000001:l2",
+      "kind": "lesson",
+      "payload": {
+        "stars": 2
+      },
+      "deleted": false
+    },
+    {
+      "key": "lesson:00000000-0000-0000-0000-000000000001:l3",
+      "kind": "lesson",
+      "payload": {
+        "stars": 3
+      },
+      "deleted": false
+    },
+    {
+      "key": "glyph:00000000-0000-0000-0000-000000000001:chu-a",
+      "kind": "glyph",
+      "payload": {
+        "status": "mastered"
+      },
+      "deleted": false
+    },
+    {
+      "key": "glyph:00000000-0000-0000-0000-000000000001:chu-b",
+      "kind": "glyph",
+      "payload": {
+        "status": "mastered"
+      },
+      "deleted": false
+    },
+    {
+      "key": "page:00000000-0000-0000-0000-000000000001:chu-a",
+      "kind": "page",
+      "payload": {
+        "mistakes": 0
+      },
+      "deleted": false
+    },
+    {
+      "key": "item:00000000-0000-0000-0000-000000000001:rocket_orange",
+      "kind": "item",
+      "payload": {
+        "owned": true
+      },
+      "deleted": false
+    },
+    {
+      "key": "badge:00000000-0000-0000-0000-000000000001:pilot",
+      "kind": "badge",
+      "payload": {
+        "unlocked": true
+      },
+      "deleted": false
+    },
+    {
+      "key": "kid:00000000-0000-0000-0000-000000000002",
+      "kind": "kid",
+      "payload": null,
+      "deleted": true
+    },
+    {
+      "key": "lesson:00000000-0000-0000-0000-000000000002:l1",
+      "kind": "lesson",
+      "payload": null,
+      "deleted": true
+    }
+  ],
+  "expected": [
+    {
+      "nickname": "Na",
+      "avatar": "fox",
+      "stars": 7,
+      "glyphs": 2,
+      "pages": 1,
+      "items": 1,
+      "badges": 1
+    }
+  ]
+}

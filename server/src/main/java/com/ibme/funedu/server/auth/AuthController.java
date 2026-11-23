@@ -1,9 +1,10 @@
 package com.ibme.funedu.server.auth;
 
+import com.ibme.funedu.server.sync.AccountSummary;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -22,14 +23,24 @@ public class AuthController {
             @Size(max = 2048) String authorizationCode,
             @NotNull UUID deviceId) {}
 
+    public record SignInResponse(
+            String accessToken,
+            String refreshToken,
+            long expiresIn,
+            UUID familyId,
+            AuthService.Device device,
+            AccountSummary.Result account) {}
+
     public record RefreshRequest(@NotBlank @Size(max = 256) String refreshToken) {}
 
     public record MeResponse(UUID familyId, String provider, String email) {}
 
     private final AuthService auth;
+    private final AccountSummary accountSummary;
 
-    public AuthController(AuthService auth) {
+    public AuthController(AuthService auth, AccountSummary accountSummary) {
         this.auth = auth;
+        this.accountSummary = accountSummary;
     }
 
     @PostMapping("/auth/{provider}")
@@ -37,7 +48,11 @@ public class AuthController {
         if (!auth.supports(provider)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
         }
-        return ResponseEntity.ok(auth.signIn(provider, req.idToken(), req.authorizationCode(), req.deviceId()));
+        AuthService.Session session = auth.signIn(provider, req.idToken(), req.authorizationCode(), req.deviceId());
+        AccountSummary.Result account = accountSummary.of(session.familyId());
+        return ResponseEntity.ok(new SignInResponse(
+                session.accessToken(), session.refreshToken(), session.expiresIn(),
+                session.familyId(), session.device(), account));
     }
 
     @PostMapping("/auth/refresh")
