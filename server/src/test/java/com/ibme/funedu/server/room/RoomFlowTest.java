@@ -221,6 +221,151 @@ class RoomFlowTest {
             var s = host.await(m -> "sticker".equals(m.get("t")));
             assertThat(s.get("id")).isEqualTo("cheer");
             assertThat(s.get("from")).isNotNull();
+            assertThat(s).doesNotContainKey("to");
+        }
+    }
+
+    @Test
+    void targetedStickerReachesEveryoneWithTo() throws Exception {
+        String a = family(), b = family(), c = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a);
+                var guest1 = RoomSocket.open(port, code, b);
+                var guest2 = RoomSocket.open(port, code, c)) {
+            host.join(kid(), "Na");
+            String hostId = (String) host.await(m -> "joined".equals(m.get("t"))).get("you");
+            guest1.join(kid(), "Bo");
+            String guest1Id = (String) guest1.await(m -> "joined".equals(m.get("t"))).get("you");
+            guest2.join(kid(), "Bi");
+            host.awaitRoom(m -> players(m).size() == 3);
+
+            host.send(Map.of("t", "sticker", "id", "bubble", "to", guest1Id));
+            for (var s : java.util.List.of(host, guest1, guest2)) {
+                var msg = s.await(m -> "sticker".equals(m.get("t")));
+                assertThat(msg.get("from")).isEqualTo(hostId);
+                assertThat(msg.get("id")).isEqualTo("bubble");
+                assertThat(msg.get("to")).isEqualTo(guest1Id);
+            }
+        }
+    }
+
+    @Test
+    void unknownTargetIsDroppedToUntargeted() throws Exception {
+        String a = family(), b = family(), c = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a);
+                var guest = RoomSocket.open(port, code, b);
+                var leaver = RoomSocket.open(port, code, c)) {
+            host.join(kid(), "Na");
+            host.await(m -> "joined".equals(m.get("t")));
+            guest.join(kid(), "Bo");
+            String guestId = (String) guest.await(m -> "joined".equals(m.get("t"))).get("you");
+            leaver.join(kid(), "Bi");
+            String leaverId = (String) leaver.await(m -> "joined".equals(m.get("t"))).get("you");
+            host.awaitRoom(m -> players(m).size() == 3);
+
+            host.send(Map.of("t", "start"));
+            host.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            // Unknown id is dropped.
+            guest.send(Map.of("t", "sticker", "id", "turtle", "to", "p999"));
+            for (var sock : java.util.List.of(host, guest)) {
+                var s1 = sock.await(m -> "sticker".equals(m.get("t")));
+                assertThat(s1.get("from")).isEqualTo(guestId);
+                assertThat(s1.get("id")).isEqualTo("turtle");
+                assertThat(s1).doesNotContainKey("to");
+            }
+
+            // Target who already left the race is also dropped.
+            leaver.send(Map.of("t", "leave"));
+            host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(2).get("left")));
+            host.send(Map.of("t", "sticker", "id", "smoke", "to", leaverId));
+            var s2 = guest.await(m -> "sticker".equals(m.get("t")));
+            assertThat(s2.get("id")).isEqualTo("smoke");
+            assertThat(s2).doesNotContainKey("to");
+        }
+    }
+
+    @Test
+    void unknownIdIsIgnored() throws Exception {
+        String a = family(), b = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a); var guest = RoomSocket.open(port, code, b)) {
+            host.join(kid(), "Na");
+            String hostId = (String) host.await(m -> "joined".equals(m.get("t"))).get("you");
+            guest.join(kid(), "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+
+            guest.send(Map.of("t", "sticker", "id", "unknown_sticker", "to", hostId));
+            // Not rate-limited by the ignored sticker, so a valid one immediately succeeds.
+            guest.send(Map.of("t", "sticker", "id", "sleepy", "to", hostId));
+            var s = host.await(m -> "sticker".equals(m.get("t")));
+            assertThat(s.get("id")).isEqualTo("sleepy");
+            assertThat(s.get("to")).isEqualTo(hostId);
+        }
+    }
+
+    @Test
+    void secondStickerWithin3sIsIgnored() throws Exception {
+        String a = family(), b = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a); var guest = RoomSocket.open(port, code, b)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            guest.join(kid(), "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+
+            guest.send(Map.of("t", "sticker", "id", "cheer"));
+            var first = host.await(m -> "sticker".equals(m.get("t")));
+            assertThat(first.get("id")).isEqualTo("cheer");
+
+            Thread.sleep(1600);
+            guest.send(Map.of("t", "sticker", "id", "tongue")); // < 3 s: silently ignored
+
+            Thread.sleep(1600);
+            guest.send(Map.of("t", "sticker", "id", "party")); // >= 3 s: accepted
+            var next = host.await(m -> "sticker".equals(m.get("t")));
+            assertThat(next.get("id")).isEqualTo("party");
+        }
+    }
+
+    @Test
+    void quickPhraseIdsAreAccepted() throws Exception {
+        String a = family(), b = family(), c = family(), d = family();
+        String code1 = room(a);
+        try (var p1 = RoomSocket.open(port, code1, a);
+                var p2 = RoomSocket.open(port, code1, b);
+                var p3 = RoomSocket.open(port, code1, c);
+                var p4 = RoomSocket.open(port, code1, d)) {
+            p1.join(kid(), "An");
+            p1.awaitRoom(m -> true);
+            p2.join(kid(), "Bo");
+            p3.join(kid(), "Chi");
+            p4.join(kid(), "Dung");
+            p1.awaitRoom(m -> players(m).size() == 4);
+
+            p1.send(Map.of("t", "sticker", "id", "q_almost"));
+            p2.send(Map.of("t", "sticker", "id", "q_fast"));
+            p3.send(Map.of("t", "sticker", "id", "q_oops"));
+            p4.send(Map.of("t", "sticker", "id", "q_chase"));
+
+            var received = new java.util.HashSet<String>();
+            for (int i = 0; i < 4; i++) {
+                received.add((String) p1.await(m -> "sticker".equals(m.get("t"))).get("id"));
+            }
+            assertThat(received).containsExactlyInAnyOrder("q_almost", "q_fast", "q_oops", "q_chase");
+        }
+
+        String code2 = room(a);
+        try (var p1 = RoomSocket.open(port, code2, a); var p2 = RoomSocket.open(port, code2, b)) {
+            p1.join(kid(), "An");
+            p1.awaitRoom(m -> true);
+            p2.join(kid(), "Bo");
+            p1.awaitRoom(m -> players(m).size() == 2);
+
+            p2.send(Map.of("t", "sticker", "id", "q_again"));
+            var s = p1.await(m -> "sticker".equals(m.get("t")));
+            assertThat(s.get("id")).isEqualTo("q_again");
         }
     }
 

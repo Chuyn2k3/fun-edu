@@ -109,7 +109,10 @@ public class RoomSocketHandler extends TextWebSocketHandler {
         switch (type) {
             case "start" -> Room.deliver(room.start(session, now));
             case "step" -> Room.deliver(room.step(session, m.path("n").asInt(-1), now));
-            case "sticker" -> Room.deliver(room.sticker(session, m.path("id").asText(""), now));
+            case "sticker" -> {
+                String to = m.path("to").isTextual() ? m.path("to").asText() : null;
+                Room.deliver(room.sticker(session, m.path("id").asText(""), to, now));
+            }
             case "again" -> Room.deliver(room.again(session, now));
             case "leave" -> Room.deliver(room.leave(session, now));
             default -> error(session, "bad_message");

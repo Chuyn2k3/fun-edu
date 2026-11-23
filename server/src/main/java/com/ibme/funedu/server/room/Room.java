@@ -46,7 +46,10 @@ class Room {
     record TickResult(boolean alive, Outbox outbox) {}
 
     static final int RACE_LENGTH = 18;
-    static final Set<String> STICKERS = Set.of("cheer", "wow", "love", "fast", "hi", "gg");
+    static final Set<String> STICKERS = Set.of(
+            "cheer", "love", "party", "bubble", "tongue", "byebye", "rain",
+            "sleepy", "turtle", "smoke", "wow", "fast", "hi", "gg",
+            "q_almost", "q_fast", "q_oops", "q_chase", "q_again");
     private static final Pattern AVATAR = Pattern.compile("assets/images/[a-z0-9_\\-/]{1,80}\\.(png|webp)");
     private static final Pattern ROCKET = Pattern.compile("rocket_[a-z]{1,20}");
     private static final long BLOCKED_SEND_THRESHOLD_NS = 25_000_000L;
@@ -215,15 +218,29 @@ class Room {
         return broadcastOutbox(now);
     }
 
-    synchronized Outbox sticker(WebSocketSession from, String id, Instant now) {
+    synchronized Outbox sticker(WebSocketSession from, String id, String to, Instant now) {
         Player p = bySession(from);
-        if (p == null || !STICKERS.contains(id)) return Outbox.EMPTY;
-        if (now.isBefore(p.lastSticker.plusMillis(1500))) return Outbox.EMPTY;
+        if (p == null || p.left || id == null || !STICKERS.contains(id)) return Outbox.EMPTY;
+        if (now.isBefore(p.lastSticker.plusSeconds(3))) return Outbox.EMPTY;
         p.lastSticker = now;
-        String msg = json.apply(Map.of("t", "sticker", "from", p.id, "id", id));
+        String validTo = null;
+        if (to != null && !to.isBlank()) {
+            Player target = players.get(to);
+            if (target != null && !target.left) {
+                validTo = to;
+            }
+        }
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("t", "sticker");
+        payload.put("from", p.id);
+        payload.put("id", id);
+        if (validTo != null) {
+            payload.put("to", validTo);
+        }
+        String msg = json.apply(payload);
         List<Send> sends = new ArrayList<>();
         for (Player x : players.values()) {
-            if (x.connected()) sends.add(new Send(x.session, msg));
+            if (x.connected() && !x.left) sends.add(new Send(x.session, msg));
         }
         return sends.isEmpty() ? Outbox.EMPTY : new Outbox(sends, List.of());
     }
