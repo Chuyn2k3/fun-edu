@@ -13,10 +13,12 @@ import '../../ui/widgets/primary_button.dart';
 class ChooseModeStep extends ConsumerWidget {
   const ChooseModeStep({
     super.key,
+    this.busy = false,
     required this.onGuest,
     required this.onSignIn,
   });
 
+  final bool busy;
   final VoidCallback onGuest;
   final Future<void> Function(String provider) onSignIn;
 
@@ -59,14 +61,14 @@ class ChooseModeStep extends ConsumerWidget {
         PrimaryButton(
           key: const ValueKey('sign-in-google'),
           label: 'Đăng nhập với Google',
-          onPressed: () => onSignIn('google'),
+          onPressed: busy ? null : () => onSignIn('google'),
         ),
         if (ids.appleAvailable) ...[
           const SizedBox(height: 12),
           PrimaryButton(
             key: const ValueKey('sign-in-apple'),
             label: 'Đăng nhập với Apple',
-            onPressed: () => onSignIn('apple'),
+            onPressed: busy ? null : () => onSignIn('apple'),
           ),
         ],
         const SizedBox(height: 16),
@@ -76,7 +78,7 @@ class ChooseModeStep extends ConsumerWidget {
             minimumSize: const Size(double.infinity, 48),
             foregroundColor: AppColors.text,
           ),
-          onPressed: onGuest,
+          onPressed: busy ? null : onGuest,
           child: const Text(
             'Dùng thử không cần tài khoản',
             style: TextStyle(

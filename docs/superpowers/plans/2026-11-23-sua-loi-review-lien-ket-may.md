@@ -108,9 +108,9 @@
 - Modify: `lib/features/setup/first_run_screen.dart`
 - Test: `test/features/first_run_test.dart`
 
-- [ ] **Step 1: Test hỏng**: `privacy link is at least 48 tall`; `second tap on sign-in is ignored` (bấm "Đăng nhập với Google" hai lần nhanh → 1 request `/auth/google`; nút tắt hoặc hiện vòng chờ trong lúc đăng nhập).
-- [ ] **Step 2–4:** hỏng → trả `minimumSize: Size(48, 48)`; thêm cờ `_signingIn` như `FamilyAccountCard` → đạt (kiểm không tràn ở 320×568).
-- [ ] **Step 5: Commit** `fix(setup): parent-size privacy link, single sign-in at a time`.
+- [x] **Step 1: Test hỏng**: `privacy link is at least 48 tall`; `second tap on sign-in is ignored` (bấm "Đăng nhập với Google" hai lần nhanh → 1 request `/auth/google`; nút tắt hoặc hiện vòng chờ trong lúc đăng nhập).
+- [x] **Step 2–4:** hỏng → trả `minimumSize: Size(48, 48)`; thêm cờ `_signingIn` như `FamilyAccountCard` → đạt (kiểm không tràn ở 320×568).
+- [x] **Step 5: Commit** `fix(setup): parent-size privacy link, single sign-in at a time`.
 
 ### Task 6: Dọn máy chủ (lỗi 12)
 

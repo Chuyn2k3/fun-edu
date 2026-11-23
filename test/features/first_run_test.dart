@@ -1,8 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:funedu/online/api_client.dart';
+import 'package:funedu/online/auth/identity_providers.dart';
+import 'package:funedu/online/auth/token_store.dart';
+import 'package:funedu/online/online_config.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/ui/widgets/primary_button.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
+import '../online/online_fakes.dart';
 import 'setup_helpers.dart';
 
 PrimaryButton _button(WidgetTester t, String label) =>
@@ -95,5 +104,81 @@ void main() {
     await t.enterText(find.byType(TextField), 'a' * 20);
     await t.pump();
     expect(find.text(error), findsNothing);
+  });
+
+  testWidgets('privacy link is at least 48 tall', (t) async {
+    await pumpRealApp(t, size: const Size(320, 568));
+    await _toConsent(t);
+    final buttonFinder = find.widgetWithText(TextButton, 'Xem chính sách quyền riêng tư');
+    expect(buttonFinder, findsOneWidget);
+    final button = t.widget<TextButton>(buttonFinder);
+    final minSize = button.style?.minimumSize?.resolve({});
+    expect(minSize?.height, greaterThanOrEqualTo(48.0));
+  });
+
+  testWidgets('second tap on sign-in is ignored', (t) async {
+    final requests = <http.Request>[];
+    final ids = FakeIds();
+    final store = MemoryTokenStore();
+
+    var delayCompleter = Completer<void>();
+
+    final client = MockClient((req) async {
+      requests.add(req);
+      if (req.url.path == '/api/v1/auth/google') {
+        await delayCompleter.future;
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': false},
+          'account': {'hasData': false, 'kids': []},
+        });
+      }
+      return fakeServer(req);
+    });
+
+    await pumpRealApp(
+      t,
+      size: const Size(320, 568),
+      overrides: [
+        onlineConfigProvider.overrideWithValue(const OnlineConfig(apiUrl: 'https://api.test')),
+        httpClientProvider.overrideWithValue(client),
+        identityProvidersProvider.overrideWithValue(ids),
+        tokenStoreProvider.overrideWithValue(store),
+      ],
+    );
+
+    await _toConsent(t);
+    await t.tap(find.text('Tôi đồng ý'));
+    await t.pump();
+    await t.tap(find.text('Tiếp tục'));
+    await t.pumpAndSettle();
+
+    expect(find.text('Lưu tiến độ của bé'), findsOneWidget);
+    final googleBtn = find.byKey(const ValueKey('sign-in-google'));
+    expect(googleBtn, findsOneWidget);
+
+    // First tap -> opens online consent dialog
+    await t.tap(googleBtn);
+    await t.pumpAndSettle();
+    final consentBtn = find.byKey(const ValueKey('consent-online'));
+    expect(consentBtn, findsOneWidget);
+    await t.tap(consentBtn);
+    await t.pump(); // starts sign in
+
+    // Button should be disabled while sign in is in flight
+    expect(t.widget<PrimaryButton>(googleBtn).onPressed, isNull);
+
+    // Tap again while busy
+    await t.tap(googleBtn, warnIfMissed: false);
+    await t.pump();
+
+    // Release delay
+    delayCompleter.complete();
+    await settle(t);
+
+    final googleAuthRequests = requests.where((r) => r.url.path == '/api/v1/auth/google').toList();
+    expect(googleAuthRequests, hasLength(1));
   });
 }

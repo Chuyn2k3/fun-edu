@@ -30,6 +30,7 @@ Future<AppDatabase> pumpRealApp(
   WidgetTester t, {
   Future<void> Function(AppDatabase db)? seed,
   Size size = const Size(375, 667),
+  List<Override> overrides = const [],
 }) async {
   setSize(t, size.width, size.height);
   final db = AppDatabase(NativeDatabase.memory());
@@ -38,7 +39,7 @@ Future<AppDatabase> pumpRealApp(
   if (seed != null) await t.runAsync(() => seed(db));
   await t.pumpWidget(
     ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db)],
+      overrides: [databaseProvider.overrideWithValue(db), ...overrides],
       child: const App(),
     ),
   );

@@ -36,6 +36,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   _Step _step = _Step.gate;
   bool _agreed = false;
   bool _opening = false;
+  bool _signingIn = false;
 
   @override
   void initState() {
@@ -73,8 +74,10 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   }
 
   Future<void> _signIn(String provider) async {
+    if (_signingIn) return;
     final agreed = await showOnlineConsentDialog(context);
     if (!agreed || !mounted) return;
+    setState(() => _signingIn = true);
     try {
       final res = await ref.read(sessionProvider.notifier).signIn(provider);
       if (!mounted) return;
@@ -98,6 +101,12 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
           _say('Không kết nối được máy chủ, ba mẹ thử lại sau nhé$why');
         case SignInFailure.rejected:
           _say('Đăng nhập không thành công, ba mẹ thử lại nhé$why');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _signingIn = false);
+      } else {
+        _signingIn = false;
       }
     }
   }
@@ -154,6 +163,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
           },
         ),
       _Step.chooseMode => ChooseModeStep(
+          busy: _signingIn,
           onGuest: () => setState(() => _step = _Step.profile),
           onSignIn: _signIn,
         ),
@@ -266,7 +276,7 @@ class _ConsentStep extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: TextButton(
             style: TextButton.styleFrom(
-              minimumSize: const Size(48, 40),
+              minimumSize: const Size(48, 48),
               foregroundColor: AppColors.primary,
             ),
             onPressed: () => Navigator.of(context).push<void>(
