@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +33,27 @@ void main() {
     final apiEx = error as ApiException;
     expect(apiEx.status, equals(0));
     expect(apiEx.code, equals('timeout'));
+    expect(lastNetResult, isFalse);
+  });
+
+  test('a body that stalls after the headers also times out', () async {
+    bool? lastNetResult;
+    // Headers arrive at once, then the body never finishes (weak network).
+    final stalled = MockClient.streaming((req, body) async =>
+        http.StreamedResponse(StreamController<List<int>>().stream, 200));
+    final client = ApiClient(
+      const OnlineConfig(apiUrl: 'https://api.test'),
+      stalled,
+      onNetResult: (ok) => lastNetResult = ok,
+      timeout: const Duration(milliseconds: 50),
+    );
+
+    await expectLater(
+      client.post('/api/v1/sync', const {}),
+      throwsA(isA<ApiException>()
+          .having((e) => e.status, 'status', 0)
+          .having((e) => e.code, 'code', 'timeout')),
+    );
     expect(lastNetResult, isFalse);
   });
 

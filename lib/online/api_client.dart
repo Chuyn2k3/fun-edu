@@ -64,7 +64,12 @@ class ApiClient {
     }
     http.Response res;
     try {
-      res = await http.Response.fromStream(await _http.send(req).timeout(_timeout));
+      // One deadline for the whole exchange: a weak network can deliver the
+      // headers and then stall in the middle of a 1000-record page.
+      res = await _http
+          .send(req)
+          .then(http.Response.fromStream)
+          .timeout(_timeout);
     } on TimeoutException {
       _onNetResult?.call(false);
       throw const ApiException(0, 'timeout');
