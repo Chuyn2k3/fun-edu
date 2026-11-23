@@ -193,4 +193,48 @@ class SyncApiTest {
         http.exchange("/api/v1/account", HttpMethod.DELETE, new HttpEntity<>(h), String.class);
         assertThat(sync(access, 0, List.of()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
+    @Test
+    void batchPushMixedConflicts() {
+        String access = newFamily();
+        sync(access, 0, List.of(
+                change("lesson:k1:c1", Map.of("stars", 1), null),
+                change("lesson:k1:c2", Map.of("stars", 2), null),
+                change("lesson:k1:c3", Map.of("stars", 3), null)));
+
+        var changes = new ArrayList<Map<String, Object>>();
+        changes.add(change("lesson:k1:c1", Map.of("stars", 10), 999999L));
+        changes.add(change("lesson:k1:c2", Map.of("stars", 20), 999999L));
+        changes.add(change("lesson:k1:c3", Map.of("stars", 30), 999999L));
+        for (int i = 0; i < 497; i++) {
+            changes.add(change("lesson:k1:new_" + i, Map.of("stars", 1), null));
+        }
+
+        var res = sync(access, 0, changes);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        var conflicts = (List<String>) res.getBody().get("conflicts");
+        assertThat(conflicts).containsExactlyInAnyOrder("lesson:k1:c1", "lesson:k1:c2", "lesson:k1:c3");
+
+        var recs = records(res);
+        assertThat(recs).extracting(r -> r.get("key"))
+                .contains("lesson:k1:c1", "lesson:k1:c2", "lesson:k1:c3");
+    }
+
+    @Test
+    void pushTwoThousandIsFast() {
+        String access = newFamily();
+        var changes = new ArrayList<Map<String, Object>>();
+        for (int i = 0; i < 2000; i++) {
+            changes.add(change("lesson:k1:" + i, Map.of("stars", 2), null));
+        }
+
+        long start = System.currentTimeMillis();
+        var res = sync(access, 0, changes);
+        long elapsed = System.currentTimeMillis() - start;
+
+        System.out.printf("pushTwoThousandIsFast took %d ms%n", elapsed);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(elapsed).isLessThan(3000);
+    }
 }

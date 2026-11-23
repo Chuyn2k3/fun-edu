@@ -5,6 +5,9 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/funedu}
     username: ${DB_USER:funedu}
     password: ${DB_PASSWORD:funedu}
+    hikari:
+      data-source-properties:
+        reWriteBatchedInserts: true
   flyway:
     enabled: true
   jackson:

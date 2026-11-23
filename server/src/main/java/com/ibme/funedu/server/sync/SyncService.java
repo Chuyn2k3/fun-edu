@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,23 +49,39 @@ public class SyncService {
         jdbc.query("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", rs -> null, familyId.toString());
 
         List<String> conflicts = new ArrayList<>();
-        for (Change c : changes) {
-            List<Long> current = jdbc.queryForList(
-                    "SELECT version FROM sync_records WHERE family_id = ? AND key = ?", Long.class, familyId, c.key());
-            Long serverVersion = current.isEmpty() ? null : current.get(0);
-            boolean fresh = serverVersion == null ? c.baseVersion() == null : serverVersion.equals(c.baseVersion());
-            if (!fresh) {
-                conflicts.add(c.key());
-                continue;
+        if (!changes.isEmpty()) {
+            String[] keys = changes.stream().map(Change::key).toArray(String[]::new);
+            Map<String, Long> serverVersions = new HashMap<>();
+            jdbc.query(
+                    "SELECT key, version FROM sync_records WHERE family_id = ? AND key = ANY(?)",
+                    rs -> {
+                        serverVersions.put(rs.getString(1), rs.getLong(2));
+                    },
+                    familyId, keys);
+
+            List<Object[]> batch = new ArrayList<>();
+            for (Change c : changes) {
+                Long serverVersion = serverVersions.get(c.key());
+                boolean fresh = serverVersion == null ? c.baseVersion() == null : serverVersion.equals(c.baseVersion());
+                if (!fresh) {
+                    conflicts.add(c.key());
+                    continue;
+                }
+                String payload = c.deleted() ? null : write(c.payload());
+                batch.add(new Object[] {
+                        familyId, c.key(), SyncKinds.kindOf(c.key()), payload, c.deleted()
+                });
             }
-            String payload = c.deleted() ? null : write(c.payload());
-            jdbc.update("""
-                    INSERT INTO sync_records (family_id, key, kind, payload, deleted, version)
-                    VALUES (?, ?, ?, ?::jsonb, ?, nextval('sync_version_seq'))
-                    ON CONFLICT (family_id, key) DO UPDATE
-                    SET payload = EXCLUDED.payload, deleted = EXCLUDED.deleted,
-                        version = EXCLUDED.version, updated_at = now()
-                    """, familyId, c.key(), SyncKinds.kindOf(c.key()), payload, c.deleted());
+
+            if (!batch.isEmpty()) {
+                jdbc.batchUpdate("""
+                        INSERT INTO sync_records (family_id, key, kind, payload, deleted, version)
+                        VALUES (?, ?, ?, ?::jsonb, ?, nextval('sync_version_seq'))
+                        ON CONFLICT (family_id, key) DO UPDATE
+                        SET payload = EXCLUDED.payload, deleted = EXCLUDED.deleted,
+                            version = EXCLUDED.version, updated_at = now()
+                        """, batch);
+            }
         }
 
         List<Record> page = jdbc.query("""
@@ -80,13 +97,17 @@ public class SyncService {
         // even one it had already pulled.
         Map<String, Record> out = new LinkedHashMap<>();
         page.forEach(r -> out.put(r.key(), r));
-        for (String key : conflicts) {
-            if (out.containsKey(key)) continue;
-            jdbc.query("SELECT key, payload::text, deleted, version FROM sync_records WHERE family_id = ? AND key = ?",
+        List<String> missingConflicts = conflicts.stream()
+                .filter(k -> !out.containsKey(k))
+                .toList();
+        if (!missingConflicts.isEmpty()) {
+            String[] missingKeys = missingConflicts.toArray(String[]::new);
+            jdbc.query(
+                    "SELECT key, payload::text, deleted, version FROM sync_records WHERE family_id = ? AND key = ANY(?)",
                     rs -> {
-                        out.put(key, new Record(rs.getString(1), read(rs.getString(2)), rs.getBoolean(3),
-                                rs.getLong(4)));
-                    }, familyId, key);
+                        out.put(rs.getString(1), new Record(rs.getString(1), read(rs.getString(2)), rs.getBoolean(3), rs.getLong(4)));
+                    },
+                    familyId, missingKeys);
         }
         return new Result(version, List.copyOf(out.values()), conflicts, hasMore);
     }

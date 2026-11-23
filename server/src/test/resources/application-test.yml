@@ -5,6 +5,9 @@ spring:
     url: ${TEST_DB_URL:}
     username: ${TEST_DB_USER:funedu}
     password: ${TEST_DB_PASSWORD:funedu}
+    hikari:
+      data-source-properties:
+        reWriteBatchedInserts: true
   flyway:
     clean-disabled: false
 funedu:
