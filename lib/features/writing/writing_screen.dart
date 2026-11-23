@@ -133,9 +133,11 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
       })()
           .catchError((Object e, StackTrace st) {
         debugPrint('logAttempt failed: $e\n$st');
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Không lưu được kết quả')),
-        );
+        if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Không lưu được kết quả')),
+          );
+        }
       }),
     );
     setState(() {
