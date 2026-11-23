@@ -47,6 +47,11 @@ class PlatformIdentityProviders implements IdentityProviders {
 
   @override
   Future<String?> googleIdToken() async {
+    // Sign out locally first so the Google Account Picker sheet is always shown,
+    // allowing the parent to pick or switch accounts.
+    try {
+      await _google.signOut();
+    } catch (_) {}
     final account = await _google.signIn();
     if (account == null) return null;
     final auth = await account.authentication;

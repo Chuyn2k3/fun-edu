@@ -39,6 +39,15 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   bool _agreed = false;
   bool _opening = false;
 
+  @override
+  void initState() {
+    super.initState();
+    final session = ref.read(sessionProvider).valueOrNull;
+    if (session?.linked == true) {
+      _step = _Step.profile;
+    }
+  }
+
   void _say(String text) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -112,6 +121,11 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(sessionProvider, (_, next) {
+      if (_step == _Step.gate && next.valueOrNull?.linked == true) {
+        setState(() => _step = _Step.profile);
+      }
+    });
     final onlineEnabled = ref.watch(onlineConfigProvider).enabled;
     final body = switch (_step) {
       _Step.gate => _GateStep(onOpen: _openGate),
