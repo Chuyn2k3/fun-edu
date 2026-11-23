@@ -11,7 +11,9 @@ Future<bool> showOnlineConsentDialog(BuildContext context) async {
         '• Tên gọi ở nhà, ảnh đại diện và tuổi của bé\n'
         '• Tiến độ học, sao, cấp độ, kết quả trò chơi\n'
         '• Phần thưởng và cài đặt giờ chơi ba mẹ đặt\n'
-        '• Trang vở đẹp nhất của mỗi chữ; các lần tập khác chỉ ở trên máy\n\n'
+        '• Trang vở đẹp nhất của mỗi chữ; các lần tập khác chỉ ở trên máy\n'
+        '• Tủ khoe của bé (nếu ba mẹ bật) và kết nối bạn đua qua mã do ba mẹ '
+        'tạo hoặc nhập (không chữ tự do)\n\n'
         'Không chia sẻ với ai, không quảng cáo. '
         'Ba mẹ có thể xóa tài khoản online bất cứ lúc nào.',
     primaryLabel: 'Đồng ý',

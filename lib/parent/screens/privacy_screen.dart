@@ -31,8 +31,19 @@ const _sections = <(String, List<String>)>[
           'viết), để giữ Vở của bé khi đổi máy; các lần tập khác chỉ ở trên '
           'máy. Từ tài khoản Google/Apple, chúng tôi chỉ giữ mã định danh và '
           'email của ba mẹ.',
-      'Ba mẹ có thể đăng xuất hoặc xóa tài khoản online bất cứ lúc nào; xóa '
-          'tài khoản sẽ xóa vĩnh viễn mọi dữ liệu của gia đình trên máy chủ.',
+      'Khi kết bạn qua mã kết bạn theo gia đình do ba mẹ tạo hoặc nhập, gia '
+          'đình bạn thấy biệt danh đua, ảnh đại diện, tên lửa và Tủ khoe của '
+          'bé (nếu ba mẹ bật); thấy bé đang mở ứng dụng hay không (chỉ giữ '
+          'trong bộ nhớ khi mở app, không lưu lịch sử). Không thấy tên thật, '
+          'email hay ảnh thật.',
+      'Ba mẹ bật hoặc tắt Tủ khoe và mục tiến độ học trong Tủ khoe riêng cho '
+          'từng bé (mục tiến độ học mặc định tắt). Trong phòng đua và Tủ khoe '
+          'chỉ có sticker, câu nói nhanh có sẵn và biểu tượng cảm xúc '
+          '(vỗ tay, trái tim, ngôi sao), hoàn toàn không có chữ tự do.',
+      'Ba mẹ có thể xóa bạn, đăng xuất hoặc xóa tài khoản online bất cứ lúc '
+          'nào; xóa bạn xóa liên kết giữa hai gia đình ngay lập tức, và xóa '
+          'tài khoản sẽ xóa vĩnh viễn mọi dữ liệu, mã kết bạn, liên kết bạn '
+          'bè và Tủ khoe của gia đình trên máy chủ.',
     ],
   ),
   (

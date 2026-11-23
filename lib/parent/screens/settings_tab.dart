@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/app_database.dart';
+import '../../online/auth/session_controller.dart';
+import '../../online/online_config.dart';
 import '../../online/sync/sync_engine.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
@@ -12,6 +14,7 @@ import '../../ui/feedback/feedback.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../parent_unlock.dart';
+import '../widgets/race_friends_card.dart';
 import 'family_account_card.dart';
 import 'parent_card.dart';
 import 'privacy_screen.dart';
@@ -45,17 +48,20 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
     if (widget.focusAccount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _scrolledToAccount) return;
-        final ctx = _accountKey.currentContext;
-        if (ctx != null) {
-          _scrolledToAccount = true;
-          Scrollable.ensureVisible(
-            ctx,
-            duration: const Duration(milliseconds: 250),
-            alignment: 0.1,
-          );
-        }
+        _scrolledToAccount = true;
+        _scrollToAccount();
       });
     }
+  }
+
+  void _scrollToAccount() {
+    final ctx = _accountKey.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 250),
+      alignment: 0.1,
+    );
   }
 
   Future<void> _setVoice(bool on) async {
@@ -110,6 +116,8 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
   @override
   Widget build(BuildContext context) {
     final voice = ref.watch(voiceEnabledProvider).valueOrNull ?? true;
+    final onlineEnabled = ref.watch(onlineConfigProvider).enabled;
+    final signedIn = ref.watch(sessionProvider).valueOrNull != null;
     final kids = ref.watch(kidsProvider).valueOrNull ?? const <KidProfile>[];
     final kid = kids.where((k) => k.id == widget.kidId).firstOrNull;
     return SingleChildScrollView(
@@ -139,7 +147,7 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
               ],
             ),
           ),
-          if (kid != null) ...[
+          if ((!onlineEnabled || !signedIn) && kid != null) ...[
             const SizedBox(height: 12),
             ParentCard(
               child: Row(
@@ -181,6 +189,13 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
           ],
           const SizedBox(height: 12),
           FamilyAccountCard(key: _accountKey),
+          if (onlineEnabled) ...[
+            const SizedBox(height: 12),
+            RaceFriendsCard(
+              kidId: kid?.id,
+              onSignInTap: _scrollToAccount,
+            ),
+          ],
           if (kid != null) ...[
             const SizedBox(height: 12),
             _ActionCard(

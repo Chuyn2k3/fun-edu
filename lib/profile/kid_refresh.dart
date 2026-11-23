@@ -21,4 +21,10 @@ void invalidateKidData(void Function(ProviderOrFamily) invalidate) {
   invalidate(mathLevelIndexProvider);
   invalidate(isPlacedProvider);
   invalidate(pendingRewardProvider);
+  invalidate(kidTeaseStickersProvider);
+  invalidate(teaseStickersProvider);
+  invalidate(kidShowcaseOnProvider);
+  invalidate(showcaseOnProvider);
+  invalidate(kidShowcaseLearningProvider);
+  invalidate(showcaseLearningProvider);
 }

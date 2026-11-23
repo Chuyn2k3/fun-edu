@@ -41,7 +41,7 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 - **Xóa tài khoản** ngay trong app (App Store và Google Play đều bắt buộc): xóa toàn bộ dữ liệu gia đình trên máy chủ; dữ liệu trên máy giữ hoặc xóa theo lựa chọn của ba mẹ.
 - **Đăng xuất**: app quay về chế độ chỉ trên máy, dữ liệu trên máy giữ nguyên.
 
-**Dữ liệu máy chủ giữ về ba mẹ:** nhà cung cấp + mã định danh (`sub`) và email (Apple có thể là email ẩn danh `privaterelay`), mã ngẫu nhiên của thiết bị (`deviceId` trong `family_devices`). **Về bé:** tên gọi ở nhà, biệt danh đua, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy; chỉ trang vở đẹp nhất mỗi chữ (`notebook_pages`, đã rút gọn) được đồng bộ để giữ Vở của bé khi đổi máy (dữ liệu tối thiểu).
+**Dữ liệu máy chủ giữ về ba mẹ:** nhà cung cấp + mã định danh (`sub`) và email (Apple có thể là email ẩn danh `privaterelay`), mã ngẫu nhiên của thiết bị (`deviceId` trong `family_devices`). **Về bé:** tên gọi ở nhà, biệt danh đua, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy; chỉ trang vở đẹp nhất mỗi chữ (`notebook_pages`, đã rút gọn) được đồng bộ để giữ Vở của bé khi đổi máy (dữ liệu tối thiểu). Ngoài ra, khi ba mẹ bật, tóm tắt Tủ khoe (biệt danh, ảnh đại diện, tên lửa, vệt, 3 ô khoe, thành tích đua và thành tích học cộng dồn nếu ba mẹ bật riêng) và liên kết bạn đua theo gia đình (qua mã kết bạn và sảnh `/ws/lobby`) chỉ được trao đổi giữa các gia đình đã kết bạn.
 
 ## 5. Đồng bộ dữ liệu (2D)
 

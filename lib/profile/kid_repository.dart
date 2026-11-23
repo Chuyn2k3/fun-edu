@@ -110,7 +110,7 @@ class KidRepository {
         ['%:$uuid', '%:$uuid:%'],
       );
     }
-    // Screen-time, Nhà Chíp, race-nickname and tease-stickers settings of this kid.
+    // Screen-time, Nhà Chíp, race-nickname, tease-stickers and showcase settings of this kid.
     await (_db.delete(_db.appSettings)
           ..where((t) =>
               t.key.equals('dailyLimitMinutes.$id') |
@@ -119,6 +119,8 @@ class KidRepository {
               t.key.equals('chipHouse.$id') |
               t.key.equals('raceNickname.$id') |
               t.key.equals('teaseStickers.$id') |
+              t.key.equals('showcaseOn.$id') |
+              t.key.equals('showcaseLearning.$id') |
               t.key.like('extraMinutes.$id.%')))
         .go();
   }
@@ -214,6 +216,38 @@ final teaseStickersProvider = FutureProvider<bool>((ref) async {
   final kidId = await ref.watch(currentKidIdProvider.future);
   if (kidId == null) return true;
   return ref.watch(kidTeaseStickersProvider(kidId).future);
+});
+
+/// Per-kid setting key for showing the kid's Tủ khoe to connected friends.
+String showcaseOnKey(int kidId) => 'showcaseOn.$kidId';
+
+/// Whether Tủ khoe is visible to friends for [kidId] (defaults to `true`).
+final kidShowcaseOnProvider = FutureProvider.family<bool, int>((ref, kidId) async {
+  final raw = await ref.watch(kidRepositoryProvider).setting(showcaseOnKey(kidId));
+  return raw != 'false';
+});
+
+/// Whether Tủ khoe is visible to friends for the currently selected kid (defaults to `true`).
+final showcaseOnProvider = FutureProvider<bool>((ref) async {
+  final kidId = await ref.watch(currentKidIdProvider.future);
+  if (kidId == null) return true;
+  return ref.watch(kidShowcaseOnProvider(kidId).future);
+});
+
+/// Per-kid setting key for including learning progress in Tủ khoe (strict opt-in).
+String showcaseLearningKey(int kidId) => 'showcaseLearning.$kidId';
+
+/// Whether learning progress is included in Tủ khoe for [kidId] (defaults to `false`).
+final kidShowcaseLearningProvider = FutureProvider.family<bool, int>((ref, kidId) async {
+  final raw = await ref.watch(kidRepositoryProvider).setting(showcaseLearningKey(kidId));
+  return raw == 'true';
+});
+
+/// Whether learning progress is included in Tủ khoe for the currently selected kid (defaults to `false`).
+final showcaseLearningProvider = FutureProvider<bool>((ref) async {
+  final kidId = await ref.watch(currentKidIdProvider.future);
+  if (kidId == null) return false;
+  return ref.watch(kidShowcaseLearningProvider(kidId).future);
 });
 
 /// Whether Chip speaks aloud; defaults to true.

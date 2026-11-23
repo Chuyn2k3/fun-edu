@@ -118,4 +118,20 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(lastNetResult, isTrue);
   });
+
+  test('getList decodes JSON array responses', () async {
+    final mockClient = MockClient((req) async {
+      expect(req.method, 'GET');
+      return http.Response('[{"familyId":"f1","online":true}]', 200);
+    });
+
+    final client = ApiClient(
+      const OnlineConfig(apiUrl: 'https://api.test'),
+      mockClient,
+    );
+
+    final res = await client.getList('/api/v1/friends');
+    expect(res, hasLength(1));
+    expect((res!.first as Map)['familyId'], 'f1');
+  });
 }

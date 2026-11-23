@@ -160,14 +160,23 @@ void main() {
       await kids.setSetting('bedtimeStart.$id', '20:00');
       await kids.setSetting('bedtimeEnd.$id', '06:00');
       await kids.setSetting('extraMinutes.$id.2026-11-13', '15');
+      await kids.setSetting(teaseStickersKey(id), 'false');
+      await kids.setSetting(showcaseOnKey(id), 'false');
+      await kids.setSetting(showcaseLearningKey(id), 'true');
     }
     await kids.deleteKid(a);
     expect(await kids.setting('dailyLimitMinutes.$a'), isNull);
     expect(await kids.setting('bedtimeStart.$a'), isNull);
     expect(await kids.setting('bedtimeEnd.$a'), isNull);
     expect(await kids.setting('extraMinutes.$a.2026-11-13'), isNull);
+    expect(await kids.setting(teaseStickersKey(a)), isNull);
+    expect(await kids.setting(showcaseOnKey(a)), isNull);
+    expect(await kids.setting(showcaseLearningKey(a)), isNull);
     expect(await kids.setting('dailyLimitMinutes.$b'), '30');
     expect(await kids.setting('extraMinutes.$b.2026-11-13'), '15');
+    expect(await kids.setting(teaseStickersKey(b)), 'false');
+    expect(await kids.setting(showcaseOnKey(b)), 'false');
+    expect(await kids.setting(showcaseLearningKey(b)), 'true');
   });
 
   test('wipeKidData keeps device keys and removes kid progress', () async {

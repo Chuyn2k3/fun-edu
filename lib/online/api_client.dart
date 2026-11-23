@@ -45,10 +45,32 @@ class ApiClient {
   Future<Map<String, Object?>?> get(String path, {String? accessToken}) =>
       _send('GET', path, accessToken: accessToken);
 
+  Future<List<Object?>?> getList(String path, {String? accessToken}) async {
+    final decoded = await _sendRaw('GET', path, accessToken: accessToken);
+    if (decoded is List<Object?>) return decoded;
+    return null;
+  }
+
   Future<Map<String, Object?>?> delete(String path, {String? accessToken}) =>
       _send('DELETE', path, accessToken: accessToken);
 
   Future<Map<String, Object?>?> _send(
+    String method,
+    String path, {
+    Map<String, Object?>? body,
+    String? accessToken,
+  }) async {
+    final decoded = await _sendRaw(
+      method,
+      path,
+      body: body,
+      accessToken: accessToken,
+    );
+    if (decoded is Map<String, Object?>) return decoded;
+    return null;
+  }
+
+  Future<Object?> _sendRaw(
     String method,
     String path, {
     Map<String, Object?>? body,
@@ -79,17 +101,17 @@ class ApiClient {
     }
     _onNetResult?.call(true);
 
-    Map<String, Object?>? json;
+    Object? decoded;
     if (res.body.isNotEmpty) {
       try {
-        final decoded = jsonDecode(utf8.decode(res.bodyBytes));
-        if (decoded is Map<String, Object?>) json = decoded;
+        decoded = jsonDecode(utf8.decode(res.bodyBytes));
       } catch (_) {}
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw ApiException(res.statusCode, json?['error'] as String?);
+      final errMap = decoded is Map<String, Object?> ? decoded : null;
+      throw ApiException(res.statusCode, errMap?['error'] as String?);
     }
-    return json;
+    return decoded;
   }
 }
 
