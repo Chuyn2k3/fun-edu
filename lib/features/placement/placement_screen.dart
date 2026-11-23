@@ -10,6 +10,7 @@ import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
@@ -148,7 +149,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   Future<void> _save() async {
     if (_saving) return;
     setState(() => _saving = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final repo = await ref.read(levelRepositoryProvider.future);
       await repo.setLevel('viet', _writingStart);
@@ -160,9 +160,10 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       if (mounted) setState(() => _saved = true);
     } catch (e, st) {
       debugPrint('placement save failed: $e\n$st');
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Không lưu được kết quả')),
-      );
+      if (mounted) {
+        showAppToast(context, 'Không lưu được kết quả',
+            kind: AppToastKind.warning);
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

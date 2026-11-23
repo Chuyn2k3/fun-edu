@@ -6,6 +6,7 @@ import '../../online/auth/identity_providers.dart';
 import '../../online/auth/session_controller.dart';
 import '../../online/link/link_controller.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
@@ -79,9 +80,7 @@ class RestoreScreen extends ConsumerWidget {
         case SignInFailure.rejected:
           msg = 'Đăng nhập không thành công, ba mẹ thử lại nhé$why';
       }
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(msg)));
+      showAppToast(context, msg, kind: AppToastKind.warning);
     }
   }
 

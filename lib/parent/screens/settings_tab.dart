@@ -7,6 +7,7 @@ import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/level_repository.dart';
 import '../../screen_time/screen_time_service.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../parent_unlock.dart';
@@ -31,23 +32,30 @@ class SettingsTab extends ConsumerWidget {
 
   Future<void> _redoPlacement(
       BuildContext context, WidgetRef ref, int id) async {
-    final messenger = ScaffoldMessenger.of(context);
     await LevelRepository(ref.read(databaseProvider), kidId: id)
         .clearLevels();
     refreshAfterKidChange(ref);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('Bé sẽ làm lại bài xếp cấp lần sau')),
-      );
+    if (context.mounted) {
+      showAppToast(context, 'Bé sẽ làm lại bài xếp cấp lần sau',
+          kind: AppToastKind.info);
+    }
   }
 
   Future<void> _deleteAll(BuildContext context, WidgetRef ref) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => const _DeleteAllDialog(),
+    final canDelete = ValueNotifier<bool>(false);
+    final confirmed = await showAppDialog<bool>(
+      context,
+      title: 'Xóa toàn bộ dữ liệu?',
+      primaryLabel: 'Hủy',
+      secondaryLabel: 'Xóa hết',
+      tone: AppDialogTone.danger,
+      audience: AppAudience.parent,
+      secondaryEnabled: canDelete,
+      body: _DeleteAllBody(canDelete: canDelete),
     );
-    if (ok != true || !context.mounted) return;
+    canDelete.dispose();
+
+    if (confirmed != false || !context.mounted) return;
     final router = GoRouter.of(context);
     await ref.read(kidRepositoryProvider).deleteAllData();
     // Leave the corner first: its rebuild must not ask for the gate again.
@@ -168,15 +176,15 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-/// Asks to type [_confirmWord]; pops true only when it matches exactly.
-class _DeleteAllDialog extends StatefulWidget {
-  const _DeleteAllDialog();
+class _DeleteAllBody extends StatefulWidget {
+  final ValueNotifier<bool> canDelete;
+  const _DeleteAllBody({required this.canDelete});
 
   @override
-  State<_DeleteAllDialog> createState() => _DeleteAllDialogState();
+  State<_DeleteAllBody> createState() => _DeleteAllBodyState();
 }
 
-class _DeleteAllDialogState extends State<_DeleteAllDialog> {
+class _DeleteAllBodyState extends State<_DeleteAllBody> {
   final _controller = TextEditingController();
 
   @override
@@ -187,40 +195,29 @@ class _DeleteAllDialogState extends State<_DeleteAllDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Xóa toàn bộ dữ liệu?'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Mọi hồ sơ, tiến độ và cài đặt sẽ bị xóa khỏi máy này và '
-              'không khôi phục được. Gõ $_confirmWord để xác nhận.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(hintText: _confirmWord),
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Mọi hồ sơ, tiến độ và cài đặt sẽ bị xóa khỏi máy này và '
+          'không khôi phục được. Gõ $_confirmWord để xác nhận.',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textMuted,
+            height: 1.35,
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Hủy'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-          onPressed: _controller.text == _confirmWord
-              ? () => Navigator.of(context).pop(true)
-              : null,
-          child: const Text('Xóa hết'),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          onChanged: (text) => widget.canDelete.value = (text == _confirmWord),
+          decoration: const InputDecoration(hintText: _confirmWord),
         ),
       ],
     );
   }
 }
+
+

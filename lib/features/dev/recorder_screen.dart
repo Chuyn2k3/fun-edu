@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 
+import '../../ui/feedback/feedback.dart';
 import '../trace/trace_pad.dart';
 import 'recorder_controller.dart';
 
@@ -28,9 +29,8 @@ class _RecorderScreenState extends ConsumerState<RecorderScreen> {
     final id = _id.text.trim();
     final label = _label.text.trim();
     if (id.isEmpty || label.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Nhập id trước khi xuất')));
+      showAppToast(context, 'Nhập id trước khi xuất',
+          kind: AppToastKind.warning);
       return;
     }
     final json = ref.read(recorderProvider.notifier).exportJson(id, label);

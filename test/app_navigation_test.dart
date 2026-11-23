@@ -131,7 +131,8 @@ void main() {
       await settle(t);
       await t.tap(find.text('Xóa').first);
       await settle(t);
-      await t.tap(find.widgetWithText(FilledButton, 'Xóa'));
+      await t.tap(find.descendant(
+          of: find.byType(Dialog), matching: find.text('Xóa')));
       await settle(t);
       await t.tap(find.text('Về màn bé'));
       await _drain(t);

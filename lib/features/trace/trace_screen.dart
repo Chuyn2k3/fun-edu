@@ -9,6 +9,7 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
+import '../../ui/feedback/feedback.dart';
 import '../writing/ruled_paper.dart';
 import 'trace_pad.dart';
 
@@ -80,7 +81,6 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
     if (_session.isComplete) return;
     final index = _session.currentIndex;
     final result = _session.submit(drawn);
-    final messenger = ScaffoldMessenger.of(context);
     final db = ref.read(databaseProvider);
     final kidIdFuture = ref.read(currentKidIdProvider.future);
     unawaited(
@@ -99,9 +99,10 @@ class _TraceBodyState extends ConsumerState<_TraceBody> {
       })()
           .catchError((Object e, StackTrace st) {
         debugPrint('logAttempt failed: $e\n$st');
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Không lưu được kết quả')),
-        );
+        if (mounted) {
+          showAppToast(context, 'Không lưu được kết quả',
+              kind: AppToastKind.warning);
+        }
       }),
     );
     setState(() {

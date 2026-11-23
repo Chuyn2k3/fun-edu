@@ -9,6 +9,7 @@ import '../../online/auth/session_controller.dart';
 import '../../online/link/link_controller.dart';
 import '../../online/online_config.dart';
 import '../../online/sync/sync_engine.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/theme/tokens.dart';
 import 'parent_card.dart';
 
@@ -26,9 +27,7 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
   bool _signingIn = false;
 
   static void _say(BuildContext context, String text) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+    showAppToast(context, text, kind: AppToastKind.info);
   }
 
   Future<void> _signIn(BuildContext context, String provider) async {
@@ -72,28 +71,18 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
   }
 
   Future<void> _delete(BuildContext context) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Xóa tài khoản online?'),
-        content: const Text(
-          'Mọi dữ liệu online của gia đình sẽ bị xóa vĩnh viễn khỏi máy chủ. '
+    final ok = await showAppDialog<bool>(
+      context,
+      title: 'Xóa tài khoản online?',
+      message: 'Mọi dữ liệu online của gia đình sẽ bị xóa vĩnh viễn khỏi máy chủ. '
           'Dữ liệu trên máy này vẫn giữ nguyên.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Giữ lại'),
-          ),
-          TextButton(
-            key: const ValueKey('confirm-delete-account'),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xóa'),
-          ),
-        ],
-      ),
+      primaryLabel: 'Giữ lại',
+      secondaryLabel: 'Xóa',
+      secondaryKey: const ValueKey('confirm-delete-account'),
+      tone: AppDialogTone.danger,
+      audience: AppAudience.parent,
     );
-    if (ok != true || !context.mounted) return;
+    if (ok != false || !context.mounted) return;
     try {
       await ref.read(sessionProvider.notifier).deleteAccount();
       if (context.mounted) _say(context, 'Đã xóa tài khoản online');

@@ -12,6 +12,7 @@ import '../../parent/screens/privacy_screen.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
@@ -57,9 +58,7 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   }
 
   void _say(String text) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+    showAppToast(context, text, kind: AppToastKind.info);
   }
 
   Future<void> _openGate() async {
@@ -112,7 +111,6 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   }
 
   Future<void> _create(String nickname, String avatar, int age) async {
-    final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
     try {
       final repo = ref.read(kidRepositoryProvider);
@@ -131,9 +129,10 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
       router.go('/placement');
     } catch (e, st) {
       debugPrint('create first kid failed: $e\n$st');
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Không lưu được hồ sơ')),
-      );
+      if (mounted) {
+        showAppToast(context, 'Không lưu được hồ sơ',
+            kind: AppToastKind.warning);
+      }
     }
   }
 

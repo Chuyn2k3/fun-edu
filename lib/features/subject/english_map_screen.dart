@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../english/english_level.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/layout/scale_down_to_fit.dart';
 import '../../ui/theme/depth.dart';
@@ -376,7 +377,6 @@ class _PracticeEnglishScreenState extends ConsumerState<PracticeEnglishScreen> {
   Future<void> _onCompleted(int firstTryCorrect, int total) async {
     if (_busy) return;
     _busy = true;
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final repo = await ref.read(levelRepositoryProvider.future);
       final current = await repo.levelOf('tieng-anh') ?? 0;
@@ -390,9 +390,10 @@ class _PracticeEnglishScreenState extends ConsumerState<PracticeEnglishScreen> {
       }
     } catch (e, st) {
       debugPrint('english practice progress failed: $e\n$st');
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Không lưu được kết quả')),
-      );
+      if (mounted) {
+        showAppToast(context, 'Không lưu được kết quả',
+            kind: AppToastKind.warning);
+      }
     } finally {
       _busy = false;
     }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../online/link/account_summary.dart';
 import '../../online/link/link_controller.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 
@@ -44,31 +45,20 @@ class _ReplaceDataDialogState extends ConsumerState<ReplaceDataDialog> {
     final kidsNames = widget.local.map((k) => k.nickname).where((n) => n.isNotEmpty).join(', ');
     final target = kidsNames.isNotEmpty ? kidsNames : 'các bé';
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Xóa dữ liệu của $target trên máy này?'),
-        content: const Text(
-          'Dữ liệu trên máy này sẽ bị xóa và thay bằng dữ liệu của tài khoản. '
+    final confirmed = await showAppDialog<bool>(
+      context,
+      title: 'Xóa dữ liệu của $target trên máy này?',
+      message: 'Dữ liệu trên máy này sẽ bị xóa và thay bằng dữ liệu của tài khoản. '
           'Hành động này không thể hoàn tác.',
-        ),
-        actions: [
-          TextButton(
-            key: const ValueKey('cancel-second-delete'),
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Giữ lại'),
-          ),
-          TextButton(
-            key: const ValueKey('confirm-second-delete'),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-            child: const Text('Xóa'),
-          ),
-        ],
-      ),
+      primaryLabel: 'Giữ lại',
+      primaryKey: const ValueKey('cancel-second-delete'),
+      secondaryLabel: 'Xóa',
+      secondaryKey: const ValueKey('confirm-second-delete'),
+      tone: AppDialogTone.danger,
+      audience: AppAudience.parent,
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed == false && context.mounted) {
       await ref.read(linkControllerProvider.notifier).confirmReplace();
       if (context.mounted) Navigator.of(context).pop();
     }

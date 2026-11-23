@@ -113,15 +113,15 @@ void main() {
       await _openTab(t, 'Hồ sơ');
       await t.tap(find.byKey(ValueKey('delete-$bo')));
       await settle(t);
-      expect(find.text('Xóa hồ sơ Bo? Toàn bộ tiến độ của bé sẽ mất.'),
-          findsOneWidget);
+      expect(find.text('Xóa hồ sơ Bo?'), findsOneWidget);
+      expect(find.text('Toàn bộ tiến độ của bé sẽ mất.'), findsOneWidget);
       await t.tap(find.text('Hủy'));
       await settle(t);
       expect(await t.runAsync(() => KidRepository(db).kids()), hasLength(2));
       await t.tap(find.byKey(ValueKey('delete-$bo')));
       await settle(t);
       await t.tap(find.descendant(
-          of: find.byType(AlertDialog), matching: find.text('Xóa')));
+          of: find.byType(Dialog), matching: find.text('Xóa')));
       await settle(t);
       final kids = await t.runAsync(() => KidRepository(db).kids());
       expect(kids!.map((k) => k.nickname), ['Na']);
@@ -136,7 +136,7 @@ void main() {
       await t.tap(find.byKey(ValueKey('delete-$na')));
       await settle(t);
       await t.tap(find.descendant(
-          of: find.byType(AlertDialog), matching: find.text('Xóa')));
+          of: find.byType(Dialog), matching: find.text('Xóa')));
       await settle(t);
       expect(find.text('thiết lập'), findsOneWidget);
     });
@@ -310,9 +310,7 @@ void main() {
       await _openTab(t, 'Cài đặt');
       await t.tap(find.text('Xóa toàn bộ dữ liệu'));
       await settle(t);
-      FilledButton confirm() => t.widget<FilledButton>(find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.widgetWithText(FilledButton, 'Xóa hết')));
+      TextButton confirm() => t.widget<TextButton>(find.widgetWithText(TextButton, 'Xóa hết'));
       expect(confirm().onPressed, isNull);
       await t.enterText(find.byType(TextField), 'xóa');
       await t.pump();
@@ -320,7 +318,7 @@ void main() {
       await t.enterText(find.byType(TextField), 'XÓA');
       await t.pump();
       expect(confirm().onPressed, isNotNull);
-      await t.tap(find.widgetWithText(FilledButton, 'Xóa hết'));
+      await t.tap(find.widgetWithText(TextButton, 'Xóa hết'));
       await settle(t);
       // The fresh-install flow starts with the parent gate, then consent.
       expect(find.text('Dành cho ba mẹ'), findsOneWidget);

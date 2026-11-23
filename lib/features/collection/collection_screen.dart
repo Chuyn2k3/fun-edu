@@ -8,6 +8,7 @@ import '../../collection/certificate_pdf.dart';
 import '../../collection/collection_model.dart';
 import '../../collection/collection_provider.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
@@ -109,9 +110,27 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         ? sticker.praise
         : '${sticker.title}. ${sticker.hint} để mở sticker này nhé!';
     unawaited(speaker.speak(line));
-    showDialog<void>(
-      context: context,
-      builder: (_) => _StickerDetailDialog(sticker: sticker),
+    showAppDialog<void>(
+      context,
+      title: sticker.title,
+      message: sticker.unlocked
+          ? sticker.praise
+          : '${sticker.hint} (${sticker.clampedCurrent}/${sticker.target}) để mở khóa sticker này nhé!',
+      primaryLabel: 'Đóng',
+      audience: AppAudience.kid,
+      image: null,
+      body: SizedBox(
+        height: 130,
+        child: Center(
+          child: sticker.unlocked
+              ? Image.asset(sticker.image, fit: BoxFit.contain)
+              : ColorFiltered(
+                  colorFilter:
+                      const ColorFilter.matrix(_lockedGreyscaleMatrix),
+                  child: Image.asset(sticker.image, fit: BoxFit.contain),
+                ),
+        ),
+      ),
     );
   }
 
@@ -121,9 +140,14 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       unawaited(speaker.speak(
         'Giấy khen ${cert.title}. ${cert.requirement} để nhận giấy khen nhé!',
       ));
-      showDialog<void>(
-        context: context,
-        builder: (_) => _LockedCertificateDialog(certificate: cert),
+      showAppDialog<void>(
+        context,
+        title: 'Giấy khen ${cert.title}',
+        message:
+            '${cert.requirement} (${cert.clampedCurrent}/${cert.target}) để mở khóa giấy khen mang tên bé nhé!',
+        primaryLabel: 'Cố lên nhé!',
+        audience: AppAudience.kid,
+        image: AppImages.chipEncourage,
       );
       return;
     }
@@ -1485,151 +1509,6 @@ class _CertificateCard extends StatelessWidget {
                     ),
                   ],
                 ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StickerDetailDialog extends StatelessWidget {
-  const _StickerDetailDialog({required this.sticker});
-
-  final LearningSticker sticker;
-
-  @override
-  Widget build(BuildContext context) {
-    final unlocked = sticker.unlocked;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: raisedDecoration(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                height: 130,
-                child: unlocked
-                    ? Image.asset(sticker.image, fit: BoxFit.contain)
-                    : ColorFiltered(
-                        colorFilter:
-                            const ColorFilter.matrix(_lockedGreyscaleMatrix),
-                        child: Image.asset(sticker.image, fit: BoxFit.contain),
-                      ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                sticker.title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.text,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                unlocked
-                    ? sticker.praise
-                    : '${sticker.hint} (${sticker.clampedCurrent}/${sticker.target}) để mở khóa sticker này nhé!',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Pressable(
-                onTap: () => Navigator.of(context).pop(),
-                builder: (pressed) => Container(
-                  constraints: const BoxConstraints(minHeight: 56),
-                  alignment: Alignment.center,
-                  decoration: _primaryButtonDecoration(pressed: pressed),
-                  child: const Text(
-                    'Đóng',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LockedCertificateDialog extends StatelessWidget {
-  const _LockedCertificateDialog({required this.certificate});
-
-  final LearningCertificate certificate;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: raisedDecoration(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                AppImages.chipEncourage,
-                width: 96,
-                height: 96,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Giấy khen ${certificate.title}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.text,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${certificate.requirement} (${certificate.clampedCurrent}/${certificate.target}) để mở khóa giấy khen mang tên bé nhé!',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Pressable(
-                onTap: () => Navigator.of(context).pop(),
-                builder: (pressed) => Container(
-                  constraints: const BoxConstraints(minHeight: 56),
-                  alignment: Alignment.center,
-                  decoration: _primaryButtonDecoration(pressed: pressed),
-                  child: const Text(
-                    'Cố lên nhé!',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

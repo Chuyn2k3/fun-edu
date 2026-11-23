@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/layout/scale_down_to_fit.dart';
 import '../../ui/theme/depth.dart';
@@ -379,7 +380,6 @@ class _PracticeVietnameseScreenState
   Future<void> _onCompleted(int firstTryCorrect, int total) async {
     if (_busy) return;
     _busy = true;
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final repo = await ref.read(levelRepositoryProvider.future);
       final current = await repo.levelOf('tieng-viet') ?? 0;
@@ -394,9 +394,10 @@ class _PracticeVietnameseScreenState
       }
     } catch (e, st) {
       debugPrint('vietnamese practice progress failed: $e\n$st');
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Không lưu được kết quả')),
-      );
+      if (mounted) {
+        showAppToast(context, 'Không lưu được kết quả',
+            kind: AppToastKind.warning);
+      }
     } finally {
       _busy = false;
     }

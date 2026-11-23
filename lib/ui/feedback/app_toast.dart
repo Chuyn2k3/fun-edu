@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../../router.dart';
 import '../layout/form_factor.dart';
 import '../theme/tokens.dart';
 
@@ -19,12 +20,17 @@ Timer? _currentToastTimer;
 ///
 /// If a toast is currently displayed, it is immediately dismissed and replaced.
 void showAppToast(
-  BuildContext context,
+  BuildContext? context,
   String text, {
   AppToastKind kind = AppToastKind.info,
   Duration duration = const Duration(seconds: 3),
 }) {
-  final overlay = Overlay.of(context, rootOverlay: true);
+  OverlayState? overlay;
+  if (context != null) {
+    overlay = Overlay.maybeOf(context, rootOverlay: true);
+  }
+  overlay ??= rootNavigatorKey.currentState?.overlay;
+  if (overlay == null) return;
 
   _currentToastTimer?.cancel();
   _currentToastTimer = null;
@@ -148,18 +154,19 @@ class _ToastWidgetState extends State<_ToastWidget>
       top: topPadding + 12,
       left: 16,
       right: 16,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: isTablet ? 540 : 420,
-          ),
-          child: SlideTransition(
-            position: _offsetAnim,
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
+      child: IgnorePointer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 540 : 420,
+            ),
+            child: SlideTransition(
+              position: _offsetAnim,
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
@@ -208,6 +215,7 @@ class _ToastWidgetState extends State<_ToastWidget>
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

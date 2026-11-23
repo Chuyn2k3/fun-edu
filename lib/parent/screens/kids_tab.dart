@@ -7,6 +7,7 @@ import '../../features/home/kid_switcher.dart';
 import '../../features/setup/kid_profile_form.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import 'parent_card.dart';
@@ -17,25 +18,16 @@ class KidsTab extends ConsumerWidget {
 
   Future<void> _delete(
       BuildContext context, WidgetRef ref, KidProfile kid) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        title: Text('Xóa hồ sơ ${kid.nickname}? '
-            'Toàn bộ tiến độ của bé sẽ mất.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialog).pop(false),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () => Navigator.of(dialog).pop(true),
-            child: const Text('Xóa'),
-          ),
-        ],
-      ),
+    final ok = await showAppDialog<bool>(
+      context,
+      title: 'Xóa hồ sơ ${kid.nickname}?',
+      message: 'Toàn bộ tiến độ của bé sẽ mất.',
+      primaryLabel: 'Hủy',
+      secondaryLabel: 'Xóa',
+      tone: AppDialogTone.danger,
+      audience: AppAudience.parent,
     );
-    if (ok != true) return;
+    if (ok != false) return;
     final repo = ref.read(kidRepositoryProvider);
     await repo.deleteKid(kid.id);
     refreshAfterKidChange(ref);
@@ -162,7 +154,6 @@ class EditKidScreen extends ConsumerWidget {
                   initialAvatar: kid.avatar,
                   initialAge: kid.age,
                   onSubmit: (nickname, avatar, age) async {
-                    final messenger = ScaffoldMessenger.of(context);
                     final navigator = Navigator.of(context);
                     try {
                       await ref.read(kidRepositoryProvider).updateKid(
@@ -175,9 +166,10 @@ class EditKidScreen extends ConsumerWidget {
                       navigator.pop();
                     } catch (e, st) {
                       debugPrint('edit kid failed: $e\n$st');
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Không lưu được hồ sơ')),
-                      );
+                      if (context.mounted) {
+                        showAppToast(context, 'Không lưu được hồ sơ',
+                            kind: AppToastKind.warning);
+                      }
                     }
                   },
                 ),

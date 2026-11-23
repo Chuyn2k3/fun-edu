@@ -11,6 +11,7 @@ import '../../stroke/glyph_repository.dart';
 import '../../stroke/glyph_session.dart';
 import '../../stroke/grader.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
@@ -114,7 +115,6 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
     if (_completed || _session.isComplete) return;
     final index = _session.currentIndex;
     final result = _session.submit(drawn);
-    final messenger = ScaffoldMessenger.of(context);
     final db = ref.read(databaseProvider);
     final kidIdFuture = ref.read(currentKidIdProvider.future);
     unawaited(
@@ -134,9 +134,8 @@ class _WritingScreenState extends ConsumerState<WritingScreen>
           .catchError((Object e, StackTrace st) {
         debugPrint('logAttempt failed: $e\n$st');
         if (mounted) {
-          messenger.showSnackBar(
-            const SnackBar(content: Text('Không lưu được kết quả')),
-          );
+          showAppToast(context, 'Không lưu được kết quả',
+              kind: AppToastKind.warning);
         }
       }),
     );

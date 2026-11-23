@@ -6,6 +6,7 @@ import '../../learning/writing_sections.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
@@ -81,13 +82,11 @@ class _WorksheetScreenState extends ConsumerState<WorksheetScreen> {
       } else if (_customIds.length < WorksheetConfig.maxSelectableGlyphs) {
         _customIds.add(id);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Tối đa ${WorksheetConfig.maxSelectableGlyphs} mục mỗi lần in '
-              '(5 trang A4).',
-            ),
-          ),
+        showAppToast(
+          context,
+          'Tối đa ${WorksheetConfig.maxSelectableGlyphs} mục mỗi lần in '
+          '(5 trang A4).',
+          kind: AppToastKind.warning,
         );
       }
       _page = 0;
@@ -119,10 +118,10 @@ class _WorksheetScreenState extends ConsumerState<WorksheetScreen> {
       }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không tạo được file PDF lúc này, ba mẹ thử lại nhé.'),
-        ),
+      showAppToast(
+        context,
+        'Không tạo được file PDF lúc này, ba mẹ thử lại nhé.',
+        kind: AppToastKind.warning,
       );
     } finally {
       if (mounted) setState(() => _busy = false);

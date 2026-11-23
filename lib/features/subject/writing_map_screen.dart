@@ -8,6 +8,7 @@ import '../../learning/writing_sections.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/widgets/pressable.dart';
@@ -265,7 +266,6 @@ class PracticeScreen extends ConsumerWidget {
       data: (g) => WritingScreen(
         glyph: g,
         onCompleted: (failed) async {
-          final messenger = ScaffoldMessenger.of(context);
           try {
             final repo = await ref.read(progressRepositoryProvider.future);
             await repo.recordGlyphCompleted(g.id, failedStrokes: failed);
@@ -274,9 +274,10 @@ class PracticeScreen extends ConsumerWidget {
             ref.invalidate(writingStatsProvider);
           } catch (e, st) {
             debugPrint('practice progress failed: $e\n$st');
-            messenger.showSnackBar(
-              const SnackBar(content: Text('Không lưu được kết quả')),
-            );
+            if (context.mounted) {
+              showAppToast(context, 'Không lưu được kết quả',
+                  kind: AppToastKind.warning);
+            }
           }
           if (!context.mounted) return;
           if (context.canPop()) {

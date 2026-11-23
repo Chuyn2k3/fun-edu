@@ -7,6 +7,7 @@ import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../stroke/glyph.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
@@ -187,9 +188,32 @@ class _PageTile extends ConsumerWidget {
         ref
             .read(speakerProvider)
             .speak('${page.glyph?.spokenName ?? label} bé viết đẹp quá!');
-        showDialog<void>(
-          context: context,
-          builder: (_) => _PageDialog(page: page),
+        final d = page.writtenAt;
+        final date =
+            '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+        showAppDialog<void>(
+          context,
+          title: page.glyph?.label ?? '',
+          primaryLabel: 'Đóng',
+          audience: AppAudience.kid,
+          image: null,
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              NotebookPageView(page: page),
+              const SizedBox(height: 10),
+              Text(
+                page.mistakes == 0
+                    ? 'Viết đúng hết các nét! · $date'
+                    : 'Viết ngày $date',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         );
       },
       builder: (pressed) => Container(
@@ -214,60 +238,6 @@ class _PageTile extends ConsumerWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PageDialog extends StatelessWidget {
-  const _PageDialog({required this.page});
-
-  final NotebookPage page;
-
-  @override
-  Widget build(BuildContext context) {
-    final d = page.writtenAt;
-    final date =
-        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                page.glyph?.label ?? '',
-                style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.text),
-              ),
-              const SizedBox(height: 10),
-              NotebookPageView(page: page),
-              const SizedBox(height: 10),
-              Text(
-                page.mistakes == 0
-                    ? 'Viết đúng hết các nét! · $date'
-                    : 'Viết ngày $date',
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                style: TextButton.styleFrom(minimumSize: const Size(64, 64)),
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Đóng',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              ),
-            ],
-          ),
         ),
       ),
     );

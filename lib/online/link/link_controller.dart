@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/app_database.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
-import '../../router.dart';
+import '../../ui/feedback/feedback.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
 import '../sync/sync_engine.dart';
@@ -271,11 +271,10 @@ class LinkController extends Notifier<LinkState> {
           ref.invalidate(restorePendingSettingProvider);
           state = const LinkIdle();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            rootScaffoldMessengerKey.currentState?.showSnackBar(
-              const SnackBar(
-                content:
-                    Text('Phiên đăng nhập đã hết, ba mẹ đăng nhập lại nhé'),
-              ),
+            showAppToast(
+              null,
+              'Phiên đăng nhập đã hết, ba mẹ đăng nhập lại nhé',
+              kind: AppToastKind.warning,
             );
           });
           return;

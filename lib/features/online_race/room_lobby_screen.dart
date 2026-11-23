@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../game/engine/race_question.dart';
 import '../../online/room/room_controller.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
@@ -222,9 +223,8 @@ class _CodeCard extends StatelessWidget {
                 ? null
                 : () {
                     Clipboard.setData(ClipboardData(text: code));
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(const SnackBar(content: Text('Đã chép mã phòng')));
+                    showAppToast(context, 'Đã chép mã phòng',
+                        kind: AppToastKind.success);
                   },
             icon: const Icon(Icons.copy_rounded, color: AppColors.primaryOnTint),
             label: const Text(

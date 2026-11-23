@@ -5,6 +5,7 @@ import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_repository.dart';
 import '../../screen_time/screen_time_service.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
@@ -66,31 +67,47 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
     try {
       final passed = await showParentGate(context);
       if (!passed || !mounted) return;
-      final choice = await showDialog<_Choice>(
-        context: context,
-        builder: (_) => SimpleDialog(
-          title: const Text('Dành cho ba mẹ'),
+      final choice = await showAppDialog<_Choice>(
+        context,
+        title: 'Dành cho ba mẹ',
+        primaryLabel: 'Đóng',
+        audience: AppAudience.parent,
+        body: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Extra minutes do not lift bedtime, so offer them only for the limit.
             if (widget.status == ScreenTimeStatus.limitReached) ...[
-              SimpleDialogOption(
-                onPressed: () => Navigator.of(context).pop(_Choice.fifteen),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: () => Navigator.of(context, rootNavigator: true).pop(_Choice.fifteen),
                 child: const Text('15 phút'),
               ),
-              SimpleDialogOption(
-                onPressed: () => Navigator.of(context).pop(_Choice.thirty),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: () => Navigator.of(context, rootNavigator: true).pop(_Choice.thirty),
                 child: const Text('30 phút'),
               ),
+              const SizedBox(height: 8),
             ],
-            if (widget.onOpenParentCorner != null)
-              SimpleDialogOption(
-                onPressed: () => Navigator.of(context).pop(_Choice.corner),
+            if (widget.onOpenParentCorner != null) ...[
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.text,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: () => Navigator.of(context, rootNavigator: true).pop(_Choice.corner),
                 child: const Text('Góc ba mẹ'),
               ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Đóng'),
-            ),
+            ],
           ],
         ),
       );

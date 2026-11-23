@@ -11,6 +11,7 @@ import '../../game/scene/rocket_sprite.dart';
 import '../../online/online_config.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../ui/assets.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
@@ -93,9 +94,7 @@ class GameHubScreen extends ConsumerWidget {
 }
 
 void _soon(BuildContext context) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(const SnackBar(content: Text('Sắp có')));
+  showAppToast(context, 'Sắp có', kind: AppToastKind.info);
 }
 
 class _PhoneHub extends StatelessWidget {

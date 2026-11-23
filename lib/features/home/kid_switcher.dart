@@ -5,6 +5,7 @@ import '../../data/app_database.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
+import '../../ui/feedback/feedback.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../setup/kid_profile_form.dart';
@@ -198,7 +199,6 @@ class AddKidScreen extends ConsumerWidget {
                 constraints: const BoxConstraints(maxWidth: 560),
                 child: KidProfileForm(
                   onSubmit: (nickname, avatar, age) async {
-                    final messenger = ScaffoldMessenger.of(context);
                     final navigator = Navigator.of(context);
                     try {
                       await ref.read(kidRepositoryProvider).addKid(
@@ -210,9 +210,10 @@ class AddKidScreen extends ConsumerWidget {
                       navigator.pop();
                     } catch (e, st) {
                       debugPrint('add kid failed: $e\n$st');
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Không lưu được hồ sơ')),
-                      );
+                      if (context.mounted) {
+                        showAppToast(context, 'Không lưu được hồ sơ',
+                            kind: AppToastKind.warning);
+                      }
                     }
                   },
                 ),

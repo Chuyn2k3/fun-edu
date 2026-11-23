@@ -117,10 +117,7 @@ void main() {
     for (final label in ['Mời bạn đua', 'Nhập mã']) {
       await t.tap(find.text(label));
       await t.pump();
-      expect(
-          find.descendant(
-              of: find.byType(SnackBar), matching: find.text('Sắp có')),
-          findsOneWidget);
+      expect(find.text('Sắp có'), findsOneWidget);
       expect(find.byType(GameHubScreen), findsOneWidget);
       await t.pump(const Duration(seconds: 5));
     }

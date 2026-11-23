@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../assets.dart';
@@ -18,7 +19,7 @@ enum AppAudience {
 ///
 /// Returns `true` if the primary action was tapped, `false` if the secondary
 /// action was tapped, or `null` if dismissed via outside tap / back.
-Future<bool?> showAppDialog(
+Future<T?> showAppDialog<T>(
   BuildContext context, {
   required String title,
   String? message,
@@ -31,8 +32,11 @@ Future<bool?> showAppDialog(
   AppAudience audience = AppAudience.parent,
   Key? primaryKey,
   Key? secondaryKey,
+  VoidCallback? onPrimaryPressed,
+  VoidCallback? onSecondaryPressed,
+  ValueListenable<bool>? secondaryEnabled,
 }) {
-  return showDialog<bool>(
+  return showDialog<T>(
     context: context,
     barrierDismissible: dismissible,
     barrierColor: Colors.black.withOpacity(0.45),
@@ -71,11 +75,11 @@ Future<bool?> showAppDialog(
                 child: Center(
                   child: Image.asset(
                     image,
-                    height: isKid ? (isTablet ? 140 : 110) : 84,
+                    height: isKid ? (isTablet ? 120 : 96) : 64,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
             Text(
               title,
@@ -86,22 +90,32 @@ Future<bool?> showAppDialog(
                 color: AppColors.text,
               ),
             ),
-            if (message != null) ...[
+            if (message != null || body != null) ...[
               const SizedBox(height: 10),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isKid ? 17 : 15,
-                  fontWeight: FontWeight.w700,
-                  height: 1.35,
-                  color: AppColors.textMuted,
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (message != null)
+                        Text(
+                          message,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: isKid ? 17 : 15,
+                            fontWeight: FontWeight.w700,
+                            height: 1.35,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      if (body != null) ...[
+                        if (message != null) const SizedBox(height: 14),
+                        body,
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            ],
-            if (body != null) ...[
-              const SizedBox(height: 14),
-              Flexible(child: SingleChildScrollView(child: body)),
             ],
             const SizedBox(height: 24),
             ElevatedButton(
@@ -119,29 +133,41 @@ Future<bool?> showAppDialog(
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
+              onPressed: onPrimaryPressed ??
+                  () => Navigator.of(dialogContext).pop(true as T?),
               child: Text(primaryLabel),
             ),
             if (secondaryLabel != null) ...[
               const SizedBox(height: 8),
-              TextButton(
-                key: secondaryKey,
-                style: TextButton.styleFrom(
-                  foregroundColor: tone == AppDialogTone.danger
-                      ? AppColors.danger
-                      : AppColors.textMuted,
-                  minimumSize: Size(double.infinity, btnHeight),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
+              if (secondaryEnabled != null)
+                ValueListenableBuilder<bool>(
+                  valueListenable: secondaryEnabled,
+                  builder: (_, enabled, __) => _buildSecondaryButton(
+                    context: dialogContext,
+                    label: secondaryLabel,
+                    key: secondaryKey,
+                    tone: tone,
+                    btnHeight: btnHeight,
+                    isKid: isKid,
+                    isTablet: isTablet,
+                    onPressed: enabled
+                        ? (onSecondaryPressed ??
+                            () => Navigator.of(dialogContext).pop(false as T?))
+                        : null,
                   ),
-                  textStyle: TextStyle(
-                    fontSize: isKid ? (isTablet ? 20 : 17) : 15,
-                    fontWeight: FontWeight.w800,
-                  ),
+                )
+              else
+                _buildSecondaryButton(
+                  context: dialogContext,
+                  label: secondaryLabel,
+                  key: secondaryKey,
+                  tone: tone,
+                  btnHeight: btnHeight,
+                  isKid: isKid,
+                  isTablet: isTablet,
+                  onPressed: onSecondaryPressed ??
+                      () => Navigator.of(dialogContext).pop(false as T?),
                 ),
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(secondaryLabel),
-              ),
             ],
           ],
         ),
@@ -152,7 +178,8 @@ Future<bool?> showAppDialog(
         child: Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: isTablet ? TabletSizes.messageMaxWidth : 460,
@@ -162,5 +189,38 @@ Future<bool?> showAppDialog(
         ),
       );
     },
+  );
+}
+
+Widget _buildSecondaryButton({
+  required BuildContext context,
+  required String label,
+  Key? key,
+  required AppDialogTone tone,
+  required double btnHeight,
+  required bool isKid,
+  required bool isTablet,
+  VoidCallback? onPressed,
+}) {
+  return TextButton(
+    key: key,
+    style: TextButton.styleFrom(
+      foregroundColor: tone == AppDialogTone.danger
+          ? AppColors.danger
+          : AppColors.textMuted,
+      disabledForegroundColor: tone == AppDialogTone.danger
+          ? AppColors.danger.withOpacity(0.38)
+          : AppColors.textMuted.withOpacity(0.38),
+      minimumSize: Size(double.infinity, btnHeight),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      textStyle: TextStyle(
+        fontSize: isKid ? (isTablet ? 20 : 17) : 15,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+    onPressed: onPressed,
+    child: Text(label),
   );
 }
