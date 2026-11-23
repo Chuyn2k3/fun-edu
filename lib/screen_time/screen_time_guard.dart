@@ -47,6 +47,9 @@ class _GatedSpeaker implements Speaker {
 
 const Duration usageTick = Duration(seconds: 15);
 
+/// True while [ScreenTimeGuard] is hiding the kid stack behind [SleepScreen].
+final screenTimeBlockedProvider = StateProvider<bool>((_) => false);
+
 /// Parent corner, setup and dev screens are not kid time.
 bool isKidRoute(String path) =>
     path != '/setup' &&
@@ -233,6 +236,12 @@ class _ScreenTimeGuardState extends ConsumerState<ScreenTimeGuard>
     _update(() {
       _pending = false;
       _blocked = s;
+    });
+    final blocked = s != ScreenTimeStatus.ok;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(screenTimeBlockedProvider.notifier).state = blocked;
+      }
     });
     screenTimeBackDispatcher.intercept =
         s == ScreenTimeStatus.ok ? null : _handleBack;

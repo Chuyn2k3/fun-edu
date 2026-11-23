@@ -4,6 +4,7 @@ import 'online/sync/sync_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/online/invite_listener.dart';
 import 'features/online/link_warning_listener.dart';
 import 'features/online/sync_toast_listener.dart';
 import 'features/splash/splash_view.dart';
@@ -180,10 +181,12 @@ class _AppState extends ConsumerState<App> {
                   ? const SplashView()
                   : SyncToastListener(
                       child: LinkWarningListener(
-                        child: ScreenTimeGuard(
-                          key: const ValueKey('app'),
-                          router: appRouter,
-                          child: child ?? const SizedBox.shrink(),
+                        child: InviteListener(
+                          child: ScreenTimeGuard(
+                            key: const ValueKey('app'),
+                            router: appRouter,
+                            child: child ?? const SizedBox.shrink(),
+                          ),
                         ),
                       ),
                     ),
