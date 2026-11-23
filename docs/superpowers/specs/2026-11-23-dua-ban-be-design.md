@@ -200,7 +200,7 @@ App dựng và `PUT` khi: đăng nhập xong, bé đổi ô khoe, sau mỗi tr�
 
 ### 9.2 Máy chủ — mục tiêu và cách làm
 
-**Mục tiêu trên một máy Oracle Ampere A1 (4 OCPU, 24 GB, Java 21):** **5.000 kết nối sảnh đồng thời + 1.000 phòng đua đồng thời (4 người, 5 bước/giây/người)**; độ trễ tin trong phòng (nhận bước → gửi snapshot) **p99 ≤ 100 ms**; lời mời tới bạn **p99 ≤ 300 ms**; REST bạn bè/tủ **p99 ≤ 150 ms**; CPU ≤ 60 %; heap ≤ 2 GB.
+**Mục tiêu trên một máy Oracle Ampere A1 (4 OCPU, 24 GB, Java 21):** **5.000 kết nối sảnh đồng thời + 1.000 phòng đua đồng thời (4 người, 5 bước/giây/người)**; độ trễ tin trong phòng (nhận bước → gửi snapshot) **p99 ≤ 150 ms** (sửa 2026-11-23: bản đầu ghi 100 ms, không đạt được vì gộp gửi mỗi 100 ms đã chiếm tới 100 ms; chủ dự án chọn giữ 10 lần/giây và nới mục tiêu — với bé 3–6 tuổi 150 ms không nhận ra, tên lửa vốn được nội suy); lời mời tới bạn **p99 ≤ 300 ms**; REST bạn bè/tủ **p99 ≤ 150 ms**; CPU ≤ 60 %; heap ≤ 2 GB.
 
 **Quy tắc code:**
 1. **Virtual threads** cho Tomcat/WebSocket (`spring.threads.virtual.enabled: true`, Spring Boot 3.2+ có sẵn) — kiểm không có `synchronized` giữ khóa khi làm I/O (gửi WebSocket trong `synchronized` gây pin thread): tách "tính snapshot" (trong khóa) và "gửi" (ngoài khóa) ở `Room`.
@@ -232,4 +232,4 @@ App dựng và `PUT` khi: đăng nhập xong, bé đổi ô khoe, sau mỗi tr�
 - 12 ảnh đại diện con vật mới (giữ 6 ảnh cũ).
 - Mã kết bạn 6 ký tự, hạn 24 giờ; tối đa 50 bạn/gia đình; lời mời hết hạn 30 s.
 - Sticker: 1 cái / 3 giây / bé; ba mẹ tắt được sticker trêu (mặc định bật).
-- Mục tiêu hiệu năng §9 (≥ 58 fps máy tầm trung; 5.000 kết nối sảnh + 1.000 phòng trên một máy Oracle A1).
+- Mục tiêu hiệu năng §9 (≥ 58 fps máy tầm trung; 5.000 kết nối sảnh + 1.000 phòng trên một máy Oracle A1; độ trễ phòng p99 ≤ 150 ms).

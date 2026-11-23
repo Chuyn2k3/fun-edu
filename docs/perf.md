@@ -54,7 +54,7 @@ Kiểm thử chạy trên môi trường thực tế (Java 21, Spring Boot 3.3.5
 
 | Thao tác | Số mẫu (n) | p50 | p95 | p99 | Tiêu chí Spec §9.2 | Kết luận |
 |---|---|---|---|---|---|---|
-| **Room Broadcast (bước → snapshot)** | 1.371.773 | 59.21 ms | 122.72 ms | **131.66 ms** | p99 ≤ 150 ms | **ĐẠT** |
+| **Room Broadcast (bước → snapshot)** | 1.371.773 | 59.21 ms | 122.72 ms | **131.66 ms** | p99 ≤ 150 ms (cả máy dev lẫn Oracle — spec §9.2 đã chốt 150 ms, vì gộp gửi 100 ms nên p50 ≈ 50–60 ms là đúng thiết kế) | **ĐẠT** |
 | **Room 0 Fast Peers (cùng phòng peer bị nghẽn)** | 1.944 | 59.16 ms | 110.43 ms | **119.67 ms** | p99 ≤ 150 ms | **ĐẠT** (cô lập hoàn toàn) |
 | **Lobby Invite (lời mời sảnh qua socket)** | 4.776 | 21.32 ms | 57.46 ms | **71.73 ms** | p99 ≤ 300 ms | **ĐẠT** |
 | **REST `GET /api/v1/friends`** | 4.442 | 2.78 ms | 35.13 ms | **65.00 ms** | p99 ≤ 100 ms | **ĐẠT** |
