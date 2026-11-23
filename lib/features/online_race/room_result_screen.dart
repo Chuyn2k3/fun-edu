@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../game/data/reward_pool.dart';
 import '../../online/room/room_controller.dart';
+import '../../online/sync/sync_engine.dart';
 import '../../ui/assets.dart';
 import '../../ui/theme/depth.dart';
 import '../game/badge_popup.dart';
@@ -30,6 +31,9 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(syncControllerProvider.notifier).requestSync();
+    });
     final badges = widget.rewards?.onlineRecord?.newBadges ?? const [];
     if (badges.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {

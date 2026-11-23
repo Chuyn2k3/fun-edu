@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../math/math_level.dart';
+import '../../online/sync/sync_engine.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
@@ -82,6 +83,7 @@ class _LessonFlowScreenState extends ConsumerState<LessonFlowScreen> {
       );
       ref.invalidate(homeSummaryProvider);
       ref.invalidate(todayLessonProvider);
+      ref.read(syncControllerProvider.notifier).requestSync();
       if (!mounted) return;
       context.go('/lesson/done', extra: stars);
     } catch (e, st) {

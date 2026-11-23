@@ -7,6 +7,7 @@ import '../../data/app_database.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
 import '../link/link_controller.dart';
+import '../net/network_status.dart';
 import 'refresh_after_sync.dart';
 import 'sync_store.dart';
 
@@ -98,19 +99,39 @@ class SyncStatus {
   final bool failed;
 }
 
+const syncRetryDelays = [
+  Duration(seconds: 30),
+  Duration(seconds: 60),
+  Duration(seconds: 120),
+  Duration(seconds: 240),
+  Duration(seconds: 480),
+];
+const syncRetryMaxDelay = Duration(seconds: 600);
+const syncRegularInterval = Duration(minutes: 5);
+
 /// Runs a sync when the parent signs in, when the app comes back to the
-/// front, every 5 minutes while it is open, and on demand. Signed out:
-/// does nothing.
+/// front, every 5 minutes while it is open, on reconnect, and on demand.
+/// Signed out: does nothing.
 class SyncController extends Notifier<SyncStatus> {
   Timer? _timer;
+  Timer? _retryTimer;
+  Timer? _reconnectTimer;
+  Timer? _requestTimer;
+  StreamSubscription<void>? _maybeBackSub;
   AppLifecycleListener? _lifecycle;
   Future<void>? _running;
+  bool _again = false;
+  bool _disposed = false;
+  int _retryStep = 0;
+
+  int get retryStep => _retryStep;
 
   @override
   SyncStatus build() {
+    _disposed = false;
     ref.onDispose(() {
-      _timer?.cancel();
-      _lifecycle?.dispose();
+      _disposed = true;
+      stop();
     });
     ref.listen(sessionProvider, (prev, next) {
       final was = prev?.valueOrNull != null;
@@ -122,29 +143,116 @@ class SyncController extends Notifier<SyncStatus> {
         Future.microtask(syncNow);
       } else if (!now && was) {
         stop();
-        state = const SyncStatus();
+        if (!_disposed) state = const SyncStatus();
       }
     }, fireImmediately: true);
     return const SyncStatus();
   }
 
   void _start() {
-    _timer ??= Timer.periodic(const Duration(minutes: 5), (_) => syncNow());
-    _lifecycle ??= AppLifecycleListener(onResume: () => unawaited(syncNow()));
+    _scheduleRegular();
+    _lifecycle ??= AppLifecycleListener(
+      onResume: () => unawaited(syncNow()),
+      onHide: _onBackground,
+      onPause: _onBackground,
+    );
+    _maybeBackSub?.cancel();
+    _maybeBackSub =
+        ref.read(networkStatusProvider.notifier).maybeBack.listen((_) {
+      _onMaybeBack();
+    });
+  }
+
+  void _onBackground() {
+    _timer?.cancel();
+    _timer = null;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _requestTimer?.cancel();
+    _requestTimer = null;
   }
 
   void stop() {
-    _timer?.cancel();
-    _timer = null;
+    _again = false;
+    _onBackground();
+    _maybeBackSub?.cancel();
+    _maybeBackSub = null;
     _lifecycle?.dispose();
     _lifecycle = null;
+    _retryStep = 0;
   }
 
-  Future<void> syncNow() => _running ??= _sync().whenComplete(() => _running = null);
-
-  Future<void> _sync() async {
+  void _onMaybeBack() {
+    if (_disposed) return;
     final s = ref.read(sessionProvider).valueOrNull;
     if (s == null || !s.linked) return;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 2), () {
+      _reconnectTimer = null;
+      syncNow();
+    });
+  }
+
+  /// Non-blocking trigger that coalesces requests in a 3-second window.
+  void requestSync() {
+    if (_disposed) return;
+    final s = ref.read(sessionProvider).valueOrNull;
+    if (s == null || !s.linked) return;
+    _requestTimer ??= Timer(const Duration(seconds: 3), () {
+      _requestTimer = null;
+      syncNow();
+    });
+  }
+
+  void _scheduleRegular() {
+    _timer?.cancel();
+    _timer = Timer(syncRegularInterval, () => syncNow());
+  }
+
+  void _scheduleRetry() {
+    _retryTimer?.cancel();
+    final delay = _retryStep < syncRetryDelays.length
+        ? syncRetryDelays[_retryStep]
+        : syncRetryMaxDelay;
+    _retryStep++;
+    _retryTimer = Timer(delay, () => syncNow());
+  }
+
+  Future<void> syncNow() {
+    if (_disposed) return Future.value();
+    if (_running != null) {
+      _again = true;
+      return _running!;
+    }
+    final future = _runLoop();
+    _running = future;
+    return future;
+  }
+
+  Future<void> _runLoop() async {
+    try {
+      do {
+        _again = false;
+        await _sync();
+        if (_disposed) return;
+      } while (_again);
+    } finally {
+      _running = null;
+    }
+  }
+
+  Future<void> _sync() async {
+    if (_disposed) return;
+    final s = ref.read(sessionProvider).valueOrNull;
+    if (s == null || !s.linked) return;
+
+    _timer?.cancel();
+    _timer = null;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+
     state = SyncStatus(running: true, lastAt: state.lastAt);
     final session = ref.read(sessionProvider.notifier);
     final api = ref.read(apiClientProvider);
@@ -155,17 +263,26 @@ class SyncController extends Notifier<SyncStatus> {
     );
     try {
       final pulled = await engine.run();
+      if (_disposed) return;
       state = SyncStatus(lastAt: DateTime.now());
       if (pulled) refreshAfterSync(ref);
+      _retryStep = 0;
+      _scheduleRegular();
     } on ApiException catch (e) {
+      if (_disposed) return;
       if (e.status == 409 && e.code == 'link_required') {
         await ref.read(sessionProvider.notifier).markUnlinked();
         ref.read(linkControllerProvider.notifier).resumeIfPending();
+        state = SyncStatus(lastAt: state.lastAt, failed: true);
+        return;
       }
       state = SyncStatus(lastAt: state.lastAt, failed: true);
+      _scheduleRetry();
     } catch (_) {
+      if (_disposed) return;
       // Offline or server down: try again on the next trigger.
       state = SyncStatus(lastAt: state.lastAt, failed: true);
+      _scheduleRetry();
     }
   }
 }

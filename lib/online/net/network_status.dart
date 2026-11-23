@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,20 +24,36 @@ class PluginConnectivitySource implements ConnectivitySource {
       : _connectivity = connectivity ?? Connectivity();
 
   @override
-  Stream<bool> get hasConnection =>
-      _connectivity.onConnectivityChanged.map((results) =>
-          results.isNotEmpty && !results.contains(ConnectivityResult.none));
+  Stream<bool> get hasConnection => _connectivity.onConnectivityChanged
+      .map((results) =>
+          results.isNotEmpty && !results.contains(ConnectivityResult.none))
+      .handleError((Object _) {});
 
   @override
   Future<bool> check() async {
-    final results = await _connectivity.checkConnectivity();
-    return results.isNotEmpty && !results.contains(ConnectivityResult.none);
+    try {
+      final results = await _connectivity.checkConnectivity();
+      return results.isNotEmpty && !results.contains(ConnectivityResult.none);
+    } catch (_) {
+      return false;
+    }
   }
 }
 
-final connectivitySourceProvider = Provider<ConnectivitySource>(
-  (ref) => PluginConnectivitySource(),
-);
+class _NoopConnectivitySource implements ConnectivitySource {
+  const _NoopConnectivitySource();
+  @override
+  Stream<bool> get hasConnection => const Stream.empty();
+  @override
+  Future<bool> check() async => true;
+}
+
+final connectivitySourceProvider = Provider<ConnectivitySource>((ref) {
+  if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    return const _NoopConnectivitySource();
+  }
+  return PluginConnectivitySource();
+});
 
 class NetworkStatus extends Notifier<NetState> {
   final _maybeBackController = StreamController<void>.broadcast();
@@ -48,7 +65,6 @@ class NetworkStatus extends Notifier<NetState> {
   NetState build() {
     ref.onDispose(() {
       _connectivitySub?.cancel();
-      _maybeBackController.close();
     });
 
     final session = ref.watch(sessionProvider).valueOrNull;
@@ -70,9 +86,11 @@ class NetworkStatus extends Notifier<NetState> {
       if (!hasConn) {
         state = NetState.offline;
       } else {
-        _maybeBackController.add(null);
+        if (!_maybeBackController.isClosed) {
+          _maybeBackController.add(null);
+        }
       }
-    });
+    }, onError: (_) {});
   }
 
   void _stopListening() {

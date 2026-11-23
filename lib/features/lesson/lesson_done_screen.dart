@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../online/sync/sync_engine.dart';
 import '../../progress/progress_repository.dart';
 import '../../ui/assets.dart';
 import '../../ui/layout/form_factor.dart';
@@ -20,13 +21,28 @@ final learnedWeekdaysProvider = FutureProvider.autoDispose<Set<int>>(
 );
 
 /// "Xong bài hôm nay!" celebration with this lesson's stars and the week.
-class LessonDoneScreen extends ConsumerWidget {
+class LessonDoneScreen extends ConsumerStatefulWidget {
   const LessonDoneScreen({this.starsEarned = 0, super.key});
 
   final int starsEarned;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LessonDoneScreen> createState() => _LessonDoneScreenState();
+}
+
+class _LessonDoneScreenState extends ConsumerState<LessonDoneScreen> {
+  int get starsEarned => widget.starsEarned;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(syncControllerProvider.notifier).requestSync();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final days = ref.watch(learnedWeekdaysProvider).valueOrNull ?? const {};
     final level = ref.watch(homeSummaryProvider).valueOrNull?.level ?? 1;
     final tablet = context.isTablet;

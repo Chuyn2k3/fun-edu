@@ -12,6 +12,7 @@ import '../../game/engine/question_source.dart';
 import '../../game/engine/race.dart';
 import '../../game/engine/race_question.dart';
 import '../../learning/writing_ladder.dart';
+import '../../online/sync/sync_engine.dart';
 import '../../progress/level_repository.dart';
 import '../../progress/progress_repository.dart';
 import '../../stroke/glyph_repository.dart';
@@ -410,7 +411,10 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     if (_disposed) return;
     // Stars, stats and badges changed: refresh every game screen (the hub
     // stays mounted under the race).
-    if (record != null) ref.read(gameDataRevisionProvider.notifier).state++;
+    if (record != null) {
+      ref.read(gameDataRevisionProvider.notifier).state++;
+      ref.read(syncControllerProvider.notifier).requestSync();
+    }
     state = state.copyWith(
       phase: RacePhase.done,
       result: RaceResultArgs(
@@ -453,7 +457,10 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       debugPrint('Saving the online race failed: $e');
     }
     if (_disposed) return;
-    if (record != null) ref.read(gameDataRevisionProvider.notifier).state++;
+    if (record != null) {
+      ref.read(gameDataRevisionProvider.notifier).state++;
+      ref.read(syncControllerProvider.notifier).requestSync();
+    }
     state = state.copyWith(
       phase: RacePhase.done,
       result: RaceResultArgs(

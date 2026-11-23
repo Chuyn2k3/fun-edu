@@ -12,6 +12,7 @@ import '../../game/scene/flame_painter.dart';
 import '../../game/scene/rocket_sprite.dart';
 import '../../game/scene/trails.dart';
 import '../../math/math_question.dart';
+import '../../online/sync/sync_engine.dart';
 import '../../ui/assets.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
@@ -90,6 +91,9 @@ class _RaceResultScreenState extends ConsumerState<RaceResultScreen> {
   void initState() {
     super.initState();
     _speaker = ref.read(speakerProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(syncControllerProvider.notifier).requestSync();
+    });
     if (!_intro) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _celebrate());
     }
