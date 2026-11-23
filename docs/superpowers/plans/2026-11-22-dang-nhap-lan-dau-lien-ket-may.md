@@ -66,17 +66,17 @@
 **Interfaces:**
 - Produces: claim JWT `TokenService.DEVICE_CLAIM = "dev"`; `AuthService.signIn(String provider, String idToken, String authorizationCode, UUID deviceId)`; `AuthService.Session` thêm `UUID deviceId`; `SignInRequest` thêm `@NotNull UUID deviceId`; phản hồi đăng nhập thêm `"device": {"linked": bool}` (Task 2 thêm `"account"`). Bảng `family_devices(family_id, device_id, mode, linked_at)` như spec §6.1.
 
-- [ ] **Step 1: Viết test hỏng** trong `AuthFlowTest`:
+- [x] **Step 1: Viết test hỏng** trong `AuthFlowTest`:
   - `signInWithoutDeviceIdIs400` — body không có `deviceId` → 400; `deviceId: "abc"` → 400.
   - `accessTokenCarriesDeviceClaim` — đăng nhập với `deviceId` D → giải mã access token, claim `dev == D`.
   - `refreshKeepsDevice` — refresh → access token mới vẫn `dev == D`.
   - `newDeviceIsNotLinked` — phản hồi đăng nhập có `device.linked == false`.
   - `relinkedDeviceIsLinked` — chèn tay `family_devices(F, D, 'fresh')`, đăng xuất, đăng nhập lại cùng D → `device.linked == true`; với D2 khác → `false`.
   - Sửa các test cũ đang gọi `/auth/google` để gửi `deviceId` (helper trong `TestIdTokens`/test).
-- [ ] **Step 2: Chạy** `./gradlew test --tests '*AuthFlowTest*'` → FAIL.
-- [ ] **Step 3: V5 migration**: bảng `family_devices` đúng spec §6.1; chỉ mục `CREATE INDEX sync_records_family_kind_live_idx ON sync_records (family_id, kind) WHERE NOT deleted;` và `CREATE INDEX refresh_tokens_expires_at_idx ON refresh_tokens (expires_at);` (spec §11.3 mục 4, 6); `DELETE FROM refresh_tokens;` rồi `ALTER TABLE refresh_tokens ADD COLUMN device_id UUID NOT NULL;` (chưa phát hành: xóa phiên cũ là quyết định của plan, ghi chú trong SQL). Ghi `device_id` khi tạo refresh token; refresh sao chép `device_id` sang token mới; access token thêm claim `dev`. Phản hồi đăng nhập/refresh là `Session` (JSON) + `device.linked` = tồn tại dòng `(familyId, deviceId)`.
-- [ ] **Step 4: Chạy** toàn bộ `./gradlew test` → PASS (41 test cũ + test mới).
-- [ ] **Step 5: Commit** `feat(server): device id in sign-in and tokens`.
+- [x] **Step 2: Chạy** `./gradlew test --tests '*AuthFlowTest*'` → FAIL.
+- [x] **Step 3: V5 migration**: bảng `family_devices` đúng spec §6.1; chỉ mục `CREATE INDEX sync_records_family_kind_live_idx ON sync_records (family_id, kind) WHERE NOT deleted;` và `CREATE INDEX refresh_tokens_expires_at_idx ON refresh_tokens (expires_at);` (spec §11.3 mục 4, 6); `DELETE FROM refresh_tokens;` rồi `ALTER TABLE refresh_tokens ADD COLUMN device_id UUID NOT NULL;` (chưa phát hành: xóa phiên cũ là quyết định của plan, ghi chú trong SQL). Ghi `device_id` khi tạo refresh token; refresh sao chép `device_id` sang token mới; access token thêm claim `dev`. Phản hồi đăng nhập/refresh là `Session` (JSON) + `device.linked` = tồn tại dòng `(familyId, deviceId)`.
+- [x] **Step 4: Chạy** toàn bộ `./gradlew test` → PASS (41 test cũ + test mới).
+- [x] **Step 5: Commit** `feat(server): device id in sign-in and tokens`.
 
 ### Task 2: Máy chủ — tóm tắt tài khoản + loại bản ghi `page`
 
@@ -89,15 +89,15 @@
 - Produces: `AccountSummary.of(UUID familyId) -> AccountSummary.Result`, `record Result(boolean hasData, List<Kid> kids)`, `record Kid(String nickname, String avatar, long stars, long glyphs, long pages, long items, long badges)`. JSON đúng spec §6.2. `hasData` = có bản ghi không tombstone **hoặc** có dòng `family_devices` với `mode = 'upload'`.
 - Fixture `test/fixtures/summary_records.json`: `{"records": [{"key": "...", "payload": {...}}...], "expected": [{"nickname": "Na", "stars": 7, "glyphs": 2, "pages": 1, "items": 1, "badges": 1}]}` — gồm 2 bé, 1 bé bị tombstone (không có trong `expected`), 3 bản ghi `lesson:` có `stars` 2, 2, 3.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `matchesSharedFixture` — nạp `Path.of("../test/fixtures/summary_records.json")` vào `sync_records` của một gia đình, `AccountSummary.of` khớp `expected` (thứ tự theo `createdAt` của bé).
   - `onlyTombstonesIsEmpty` — gia đình chỉ có tombstone → `hasData == false`, `kids` rỗng.
   - `uploadLinkCountsAsData` — không bản ghi nhưng có `family_devices(mode='upload')` → `hasData == true`.
   - `pageKindAccepted` — đẩy `page:<uuid>:a` qua `/api/v1/sync` (máy đã liên kết bằng chèn tay) → không bị loại; payload 17 KB → 400 như loại khác.
-- [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài**: một câu SQL nhóm theo `split_part(key, ':', 2)` cho `lesson/glyph/page/item/badge`, `SUM((payload->>'stars')::bigint)` cho `lesson`; đọc `kid:` lấy `nickname`, `avatar`, sắp theo `payload->>'createdAt'`; tối đa 4 bé. Thêm `"page"` vào `SyncKinds.ALLOWED`, sửa chú thích lớp thành "Stroke attempts are not among them; only the best notebook page per glyph". Phản hồi đăng nhập thêm `"account": AccountSummary.Result`.
-- [ ] **Step 4: Chạy** `./gradlew test` → PASS.
-- [ ] **Step 5: Commit** `feat(server): account summary and notebook page records`.
+- [x] **Step 2: Chạy** → FAIL.
+- [x] **Step 3: Cài**: một câu SQL nhóm theo `split_part(key, ':', 2)` cho `lesson/glyph/page/item/badge`, `SUM((payload->>'stars')::bigint)` cho `lesson`; đọc `kid:` lấy `nickname`, `avatar`, sắp theo `payload->>'createdAt'`; tối đa 4 bé. Thêm `"page"` vào `SyncKinds.ALLOWED`, sửa chú thích lớp thành "Stroke attempts are not among them; only the best notebook page per glyph". Phản hồi đăng nhập thêm `"account": AccountSummary.Result`.
+- [x] **Step 4: Chạy** `./gradlew test` → PASS.
+- [x] **Step 5: Commit** `feat(server): account summary and notebook page records`.
 
 ### Task 3: Máy chủ — `/api/v1/sync/link` và chặn đẩy
 
@@ -110,7 +110,7 @@
 - Consumes: Task 1 claim `dev`, Task 2 `AccountSummary`.
 - Produces: `POST /api/v1/sync/link` body `{"mode": "upload"|"replace_local"|"fresh"}` → 200 `{"linked": true}` hoặc 409 `{"error": "account_not_empty", "account": {...}}`; `GET /api/v1/sync/link` → `{"linked": bool, "account": {...}}`; `/api/v1/sync` với `changes` không rỗng từ máy chưa liên kết → 409 `{"error": "link_required"}`.
 
-- [ ] **Step 1: Viết test hỏng** (`DeviceLinkTest`):
+- [x] **Step 1: Viết test hỏng** (`DeviceLinkTest`):
   - `pushBeforeLinkIs409` — `changes` 1 bản ghi → 409 `link_required`; `changes: []` → 200 (kéo được).
   - `uploadIntoEmptyAccount` — 200, rồi đẩy được.
   - `uploadIntoAccountWithData` — gia đình có `kid:` → 409 `account_not_empty`, body có `account.kids[0].nickname`.
@@ -121,10 +121,10 @@
   - `tokenWithoutDeviceIsUnlinked` — access token ký tay không có `dev` → đẩy bị 409 `link_required`.
   - `deleteAccountRemovesLinks` — xóa tài khoản → không còn dòng `family_devices`.
   - `badModeIs400`.
-- [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài** `DeviceLinkService.link(UUID familyId, UUID deviceId, String mode)` trong `@Transactional`: `SELECT id FROM families WHERE id = ? FOR UPDATE`; đã có dòng → trả linked; `upload` mà `AccountSummary.hasData` → ném `AccountNotEmptyException(Result)`; còn lại `INSERT`. `SyncController` kiểm `DeviceLinkService.isLinked(fam, dev)` trước khi gọi `SyncService.sync` khi `changes` không rỗng. `ApiErrors` ánh xạ 2 mã lỗi → 409.
-- [ ] **Step 4: Chạy** `./gradlew test` → PASS; chạy riêng `DeviceLinkTest` 3 lần liền để chắc test song song ổn định.
-- [ ] **Step 5: Sửa `docs/online-setup.md`** (thêm mục API liên kết), **commit** `feat(server): device link gate for sync`.
+- [x] **Step 2: Chạy** → FAIL.
+- [x] **Step 3: Cài** `DeviceLinkService.link(UUID familyId, UUID deviceId, String mode)` trong `@Transactional`: `SELECT id FROM families WHERE id = ? FOR UPDATE`; đã có dòng → trả linked; `upload` mà `AccountSummary.hasData` → ném `AccountNotEmptyException(Result)`; còn lại `INSERT`. `SyncController` kiểm `DeviceLinkService.isLinked(fam, dev)` trước khi gọi `SyncService.sync` khi `changes` không rỗng. `ApiErrors` ánh xạ 2 mã lỗi → 409.
+- [x] **Step 4: Chạy** `./gradlew test` → PASS; chạy riêng `DeviceLinkTest` 3 lần liền để chắc test song song ổn định.
+- [x] **Step 5: Sửa `docs/online-setup.md`** (thêm mục API liên kết), **commit** `feat(server): device link gate for sync`.
 
 ### Task 3b: Máy chủ — đẩy dữ liệu theo lô + dọn refresh token
 
@@ -136,14 +136,14 @@
 - Consumes: không đổi API (`SyncService.sync(UUID, long, List<Change>) -> Result` giữ nguyên chữ ký và kết quả).
 - Produces: `RefreshTokenCleanup.purge() -> int` (số dòng xóa), chạy `@Scheduled(cron = "0 15 3 * * *")`.
 
-- [ ] **Step 1: Viết test hỏng / bảo vệ hành vi**:
+- [x] **Step 1: Viết test hỏng / bảo vệ hành vi**:
   - `batchPushMixedConflicts` — 500 thay đổi, trong đó 3 khóa có `baseVersion` lệch: 497 được lưu với `version` tăng dần, `conflicts` đúng 3 khóa, `records` chứa bản thắng của cả 3 (kể cả khóa đã kéo trước đó).
   - `pushTwoThousandIsFast` — 2000 thay đổi mới trong một lần < 3 giây trên DB test (in thời gian ra log).
   - `purgeRemovesExpiredAndOldRevoked` — dòng hết hạn và dòng thu hồi > 7 ngày bị xóa; dòng thu hồi 1 ngày còn (vẫn phát hiện dùng lại).
-- [ ] **Step 2: Chạy** → `pushTwoThousandIsFast` FAIL hoặc chậm với vòng lặp hiện tại (ghi số đo trước khi sửa vào commit message), test khác đạt/hỏng tùy.
-- [ ] **Step 3: Cài** theo spec §11.3 mục 1 (một `SELECT … key = ANY(?)`, một lệnh ghi theo lô qua `unnest` hoặc `batchUpdate`, một `SELECT` bản thắng của xung đột) và mục 6 (xóa theo lô 5.000 trong vòng lặp tới khi < 5.000).
-- [ ] **Step 4: Chạy** `./gradlew test` → PASS; ghi số đo sau khi sửa.
-- [ ] **Step 5: Commit** `perf(server): batched sync push, nightly refresh-token purge`.
+- [x] **Step 2: Chạy** → `pushTwoThousandIsFast` FAIL hoặc chậm với vòng lặp hiện tại (ghi số đo trước khi sửa vào commit message), test khác đạt/hỏng tùy.
+- [x] **Step 3: Cài** theo spec §11.3 mục 1 (một `SELECT … key = ANY(?)`, một lệnh ghi theo lô qua `unnest` hoặc `batchUpdate`, một `SELECT` bản thắng của xung đột) và mục 6 (xóa theo lô 5.000 trong vòng lặp tới khi < 5.000).
+- [x] **Step 4: Chạy** `./gradlew test` → PASS; ghi số đo sau khi sửa.
+- [x] **Step 5: Commit** `perf(server): batched sync push, nightly refresh-token purge`.
 
 ### Task 4: App — deviceId, phiên có `linked`, kết quả đăng nhập
 
@@ -160,16 +160,16 @@
   - `SessionController.signIn(String provider)` trả `Future<SignInResult>`; `class SignInResult { final bool linked; final AccountSummary account; }`. Body gửi thêm `'deviceId'`.
   - `SessionController.markLinked()` → lưu `linked = true`.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `device id is created once` — gọi `ensureDeviceId` 2 lần → cùng giá trị, đúng dạng UUID v4.
   - `sign-in sends deviceId and returns link state` — máy chủ giả trả `device.linked=false`, `account.hasData=true` + 1 bé → `SignInResult.linked == false`, `account.kids.single.nickname == 'Na'`; body request có `deviceId`.
   - `session read from old json is unlinked` — JSON không có `linked` → `false`.
   - `markLinked persists` — đọc lại store thấy `linked == true`.
   - Các test cũ của `session_controller_test.dart`, `family_account_card_test.dart` vẫn đạt (cập nhật phản hồi giả).
-- [ ] **Step 2: Chạy** `flutter test test/online` → FAIL.
-- [ ] **Step 3: Cài** theo Interfaces. `_resetSyncState` **không** xóa `deviceId`.
-- [ ] **Step 4: Chạy** `flutter analyze && flutter test test/online` → PASS.
-- [ ] **Step 5: Commit** `feat(online): device id and link state in the session`.
+- [x] **Step 2: Chạy** `flutter test test/online` → FAIL.
+- [x] **Step 3: Cài** theo Interfaces. `_resetSyncState` **không** xóa `deviceId`.
+- [x] **Step 4: Chạy** `flutter analyze && flutter test test/online` → PASS.
+- [x] **Step 5: Commit** `feat(online): device id and link state in the session`.
 
 ### Task 5: App — bảng `notebook_pages` (v9) và đồng bộ trang vở
 
@@ -187,16 +187,16 @@
   - `notebookProvider` đọc `notebook_pages` (giữ thứ tự `writingLadder`, giữ kiểu `NotebookPage`).
   - Bản ghi đồng bộ `page:<kidUuid>:<glyphId>` payload `{"s": [[...]], "m": int, "at": ms}`; gộp bằng `isBetterPage`.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `simplify keeps ends and caps points` — nét 500 điểm → 40 điểm, đầu/cuối giữ nguyên, mọi điểm gốc cách đường rút gọn ≤ 0.01.
   - `six strokes page is under 4 KB` — JSON payload `page:` 6 nét × 40 điểm < 4096 byte.
   - `refresh keeps the better page` — trang 0 lỗi rồi lần viết 2 lỗi → vẫn trang 0 lỗi; lần viết 0 lỗi mới hơn → thay.
   - `v8 to v9 backfill skips attempts without points` (trong `migration_test.dart`) — DB v8 có attempts của "a" (có points) và "b" (points null) → sau nâng cấp có trang "a", không có "b", không ném lỗi.
   - Trong `sync_engine_test.dart` (hai máy, máy chủ giả): `notebook page travels to the other device`, `better page replaces, worse does not`, `deleting a kid deletes its pages`, `stroke attempts never leave the device` (không bản ghi đẩy lên nào chứa khóa bắt đầu khác các loại cho phép, và không có `points`).
-- [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài** bảng + migration (`from < 9`: `createTable(notebookPages)`, tạo chỉ mục `stroke_attempts (kid_id, glyph_id)` (spec §11.4) rồi điền bằng `refreshNotebookPage` cho mọi `(kidId, glyphId)` trong `stroke_attempts` có glyph tải được), chạy build_runner; gọi `refreshNotebookPage` ngay sau `recordGlyphCompleted` ở hai màn (lỗi chỉ `debugPrint`, không chặn bé); `SyncStore.exportAll`/`_write`/`_deleteKid` cho `page`.
-- [ ] **Step 4: Chạy** `flutter analyze && flutter test test/collection test/data test/online test/features/collection` → PASS.
-- [ ] **Step 5: Commit** `feat(notebook): notebook_pages table (v9) synced as page records`.
+- [x] **Step 2: Chạy** → FAIL.
+- [x] **Step 3: Cài** bảng + migration (`from < 9`: `createTable(notebookPages)`, tạo chỉ mục `stroke_attempts (kid_id, glyph_id)` (spec §11.4) rồi điền bằng `refreshNotebookPage` cho mọi `(kidId, glyphId)` trong `stroke_attempts` có glyph tải được), chạy build_runner; gọi `refreshNotebookPage` ngay sau `recordGlyphCompleted` ở hai màn (lỗi chỉ `debugPrint`, không chặn bé); `SyncStore.exportAll`/`_write`/`_deleteKid` cho `page`.
+- [x] **Step 4: Chạy** `flutter analyze && flutter test test/collection test/data test/online test/features/collection` → PASS.
+- [x] **Step 5: Commit** `feat(notebook): notebook_pages table (v9) synced as page records`.
 
 ### Task 6: App — `LinkController`: quyết định, liên kết, thay dữ liệu
 
@@ -217,7 +217,7 @@
   - `const dataOwnerKey = 'dataOwnerFamilyId'`: đặt khi liên kết xong; xóa trong `wipeKidData`/`deleteAllData`.
 - Quyết định (spec §7.1): `linked` → `markLinked` + đồng bộ. Không có bé → `fresh` + khôi phục. Có bé, `!account.hasData` → `upload` + đồng bộ; 409 → `LinkNeedsWarning` với `account` trong 409. Có bé, `account.hasData` → `LinkNeedsWarning`. `confirmReplace`: đặt `restorePendingKey` → `link(replace_local)` → `wipeKidData` → `markLinked` → kéo hết → xóa cờ. `fresh` cũng đặt cờ trước và xóa sau khi kéo xong.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `account_summary_test.dart`: `matches the shared fixture` — dựng drift từ `test/fixtures/summary_records.json` bằng `applyRemote`, `localSummary` khớp `expected` (cùng fixture với Task 2).
   - `link_controller_test.dart` (máy chủ giả):
     - `empty device links fresh and restores` — tài khoản có 2 bé → sau đó DB có 2 bé, cờ khôi phục đã xóa, `currentKidId` là bé thứ nhất.
@@ -231,10 +231,10 @@
     - `restore resumes after restart` — cờ `link.restorePending` còn, DB trống, phiên `linked=true` → `resumeIfPending` kéo về, không qua `/setup` (kết hợp Task 7).
     - `sync is not pushed while unlinked` và `link_required from server re-runs the decision`.
   - `kid_repository_test.dart`: `wipeKidData keeps device keys`.
-- [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài** theo Interfaces.
-- [ ] **Step 4: Chạy** `flutter analyze && flutter test test/online test/profile` → PASS.
-- [ ] **Step 5: Commit** `feat(online): device link decision, replace and restore`.
+- [x] **Step 2: Chạy** → FAIL.
+- [x] **Step 3: Cài** theo Interfaces.
+- [x] **Step 4: Chạy** `flutter analyze && flutter test test/online test/profile` → PASS.
+- [x] **Step 5: Commit** `feat(online): device link decision, replace and restore`.
 
 ### Task 7: App — luồng lần đầu: "Chọn cách dùng" + màn khôi phục
 
@@ -249,7 +249,7 @@
 - Chữ cố định (spec §7.2): tiêu đề "Lưu tiến độ của bé"; phụ đề "Đăng nhập để giữ tiến độ khi đổi máy và dùng trên nhiều máy."; nút "Đăng nhập với Google", "Đăng nhập với Apple" (chỉ khi `appleAvailable`); nút phụ "Dùng thử không cần tài khoản"; chữ phụ "Dữ liệu chỉ lưu trên máy này, xóa app là mất."; màn khôi phục "Đang tải dữ liệu của bé…", lỗi "Chưa tải được, ba mẹ kiểm tra mạng nhé" + nút "Thử lại".
 - Đồng ý online (`_ConsentDialog` hiện ở `family_account_card.dart`): chuyển ra file dùng chung `lib/features/online/online_consent_dialog.dart` và hiện trước khi gọi Google/Apple ở cả hai nơi.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `guest path is unchanged` — chọn "Dùng thử…" → tạo hồ sơ → `/placement`; 0 request.
   - `no server url hides the choose step` — đồng ý → thẳng hồ sơ bé.
   - `sign in to account with placed kids goes home` — không qua `/setup`, `/placement`; trang chủ hiện tên bé thứ nhất.
@@ -258,10 +258,10 @@
   - `restore failure shows retry` — kéo lỗi → "Thử lại"; bấm → kéo lại; không nhảy `/setup`.
   - `restore resumes after restart` — (phần giao diện của test Task 6) app khởi động với cờ khôi phục → hiện `/restore`.
   - `choose step buttons are big enough` — nút đăng nhập (`PrimaryButton`) cao ≥ 64, nút khách ≥ 48, trên cả kích thước điện thoại và tablet.
-- [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài**.
-- [ ] **Step 4: Chạy** `flutter analyze && flutter test` (toàn bộ) → PASS.
-- [ ] **Step 5: Commit** `feat(setup): sign in on first launch, restore an existing family`.
+- [x] **Step 2: Chạy** → FAIL.
+- [x] **Step 3: Cài**.
+- [x] **Step 4: Chạy** `flutter analyze && flutter test` (toàn bộ) → PASS.
+- [x] **Step 5: Commit** `feat(setup): sign in on first launch, restore an existing family`.
 
 ### Task 8: App — hộp cảnh báo thay dữ liệu, Góc ba mẹ, chữ quyền riêng tư
 
@@ -277,7 +277,7 @@
 - Chữ quyền riêng tư và hộp đồng ý online: đúng các câu trong spec §8.
 - `AGENTS.md`: thay dòng mạng và dòng `stroke_attempts` đúng câu trong spec §8.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `dialog shows both sides` — 1 bé máy, 2 bé tài khoản → thấy đủ tên và số "540⭐".
   - `cancel keeps guest data and signs out`.
   - `delete needs a second confirmation` — bấm nút xóa → hộp thứ hai; "Giữ lại" → không gì bị xóa; "Xóa" → `confirmReplace` được gọi.
@@ -285,17 +285,17 @@
   - `phone stacks, tablet sides` — điện thoại 2 khối dọc, tablet ngang (so `getTopLeft`).
   - `text contrast` — dùng `contrastRatio` hiện có cho màu nút nguy hiểm trên nền.
   - `family_account_card_test.dart`: `guest hint shows when signed out`, `second tap while signing in is ignored` (hai lần bấm → 1 request `/auth/google`).
-- [ ] **Step 2: Chạy** → FAIL.
-- [ ] **Step 3: Cài**; màu nút nguy hiểm lấy token có sẵn (`AppColors.primary` hoặc token đỏ nếu có trong `tokens.dart`; không thêm mã màu trong màn hình).
-- [ ] **Step 4: Chạy** `flutter analyze && flutter test` → PASS.
-- [ ] **Step 5: Commit** `feat(online): replace-data warning, guest hint, privacy wording`.
+- [x] **Step 2: Chạy** → FAIL.
+- [x] **Step 3: Cài**; màu nút nguy hiểm lấy token có sẵn (`AppColors.primary` hoặc token đỏ nếu có trong `tokens.dart`; không thêm mã màu trong màn hình).
+- [x] **Step 4: Chạy** `flutter analyze && flutter test` → PASS.
+- [x] **Step 5: Commit** `feat(online): replace-data warning, guest hint, privacy wording`.
 
 ### Task 9: Kiểm toàn nhánh + tài liệu tình trạng
 
 **Files:**
 - Modify: `docs/PROJECT_STATE.md` (mục 6–8), `docs/superpowers/plans/2026-11-21-ke-hoach-tiep-theo.md` (dòng "đã xong")
 
-- [ ] **Step 1: Chạy** `flutter analyze` → "No issues found!"; `flutter test` → "All tests passed!"; `cd server && ./gradlew test` → 0 failures; `cd tools/glyphs && python3 -m pytest -q` → đạt.
-- [ ] **Step 2: Thử tay theo `docs/online-setup.md`** (nếu có máy chủ local): máy ảo mới → đăng nhập → tạo bé → gỡ app, cài lại → đăng nhập → bé hiện lại, Vở của bé có trang. Ghi kết quả (hoặc "chưa thử được, lý do") vào `PROJECT_STATE.md`.
-- [ ] **Step 3: Cập nhật** `PROJECT_STATE.md` mục 6–8 và kế hoạch tiếp theo.
-- [ ] **Step 4: Commit** `docs: first-launch sign-in and device link done`, `git push -u origin chipchip`.
+- [x] **Step 1: Chạy** `flutter analyze` → "No issues found!"; `flutter test` → "All tests passed!"; `cd server && ./gradlew test` → 0 failures; `cd tools/glyphs && python3 -m pytest -q` → đạt.
+- [x] **Step 2: Thử tay theo `docs/online-setup.md`** (nếu có máy chủ local): máy ảo mới → đăng nhập → tạo bé → gỡ app, cài lại → đăng nhập → bé hiện lại, Vở của bé có trang. Ghi kết quả (hoặc "chưa thử được, lý do") vào `PROJECT_STATE.md`.
+- [x] **Step 3: Cập nhật** `PROJECT_STATE.md` mục 6–8 và kế hoạch tiếp theo.
+- [x] **Step 4: Commit** `docs: first-launch sign-in and device link done`, `git push -u origin chipchip`.
