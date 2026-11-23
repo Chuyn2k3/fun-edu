@@ -15,15 +15,15 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 /** A test client for /ws/room that records every message it receives. */
-class RoomSocket extends TextWebSocketHandler implements AutoCloseable {
+public class RoomSocket extends TextWebSocketHandler implements AutoCloseable {
 
     static final ObjectMapper JSON = new ObjectMapper();
 
-    final BlockingQueue<Map<String, Object>> inbox = new LinkedBlockingQueue<>();
-    volatile CloseStatus closed;
+    public final BlockingQueue<Map<String, Object>> inbox = new LinkedBlockingQueue<>();
+    public volatile CloseStatus closed;
     WebSocketSession session;
 
-    static RoomSocket open(int port, String code, String accessToken) throws Exception {
+    public static RoomSocket open(int port, String code, String accessToken) throws Exception {
         RoomSocket s = new RoomSocket();
         var headers = new WebSocketHttpHeaders();
         if (accessToken != null) headers.setBearerAuth(accessToken);
@@ -33,18 +33,18 @@ class RoomSocket extends TextWebSocketHandler implements AutoCloseable {
         return s;
     }
 
-    void send(Map<String, Object> msg) throws Exception {
+    public void send(Map<String, Object> msg) throws Exception {
         session.sendMessage(new TextMessage(JSON.writeValueAsString(msg)));
     }
 
-    void join(String kid, String name) throws Exception {
+    public void join(String kid, String name) throws Exception {
         send(Map.of("t", "join", "kid", kid, "name", name,
                 "avatar", "assets/images/avatar_cat.png", "rocket", "rocket_blue"));
     }
 
     /** Waits for the first message matching [match], skipping others. */
     @SuppressWarnings("unchecked")
-    Map<String, Object> await(Predicate<Map<String, Object>> match) throws Exception {
+    public Map<String, Object> await(Predicate<Map<String, Object>> match) throws Exception {
         long end = System.currentTimeMillis() + 5000;
         while (System.currentTimeMillis() < end) {
             Map<String, Object> m = inbox.poll(100, TimeUnit.MILLISECONDS);
@@ -53,12 +53,23 @@ class RoomSocket extends TextWebSocketHandler implements AutoCloseable {
         throw new AssertionError("no matching message; closed=" + closed);
     }
 
-    Map<String, Object> awaitRoom(Predicate<Map<String, Object>> match) throws Exception {
+    public Map<String, Object> awaitRoom(Predicate<Map<String, Object>> match) throws Exception {
         return await(m -> "room".equals(m.get("t")) && match.test(m));
     }
 
+    public CloseStatus awaitClosed() throws Exception {
+        long end = System.currentTimeMillis() + 3000;
+        while (closed == null && System.currentTimeMillis() < end) {
+            Thread.sleep(20);
+        }
+        if (closed == null) {
+            throw new AssertionError("room socket was not closed");
+        }
+        return closed;
+    }
+
     @SuppressWarnings("unchecked")
-    static java.util.List<Map<String, Object>> players(Map<String, Object> room) {
+    public static java.util.List<Map<String, Object>> players(Map<String, Object> room) {
         return (java.util.List<Map<String, Object>>) room.get("players");
     }
 

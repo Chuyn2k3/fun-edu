@@ -15,19 +15,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * Batch-reads {@code kid}, {@code setting:*:raceNickname}, and {@code game}
  * sync records for one or more families using a single SQL query.
  */
-final class SyncKidRecords {
+public final class SyncKidRecords {
 
     private static final String SETTING_PREFIX = "setting:";
     private static final String RACE_NICKNAME_SUFFIX = ":raceNickname";
 
-    record KidRecord(String kidUuid, String nickname, String avatar, long createdAt) {}
+    public record KidRecord(String kidUuid, String nickname, String avatar, long createdAt) {}
 
-    static final class FamilyRecords {
-        final List<KidRecord> kids = new ArrayList<>();
-        final Map<String, String> raceNicknames = new HashMap<>();
-        final Map<String, String> rockets = new HashMap<>();
+    public static final class FamilyRecords {
+        public final List<KidRecord> kids = new ArrayList<>();
+        public final Map<String, String> raceNicknames = new HashMap<>();
+        public final Map<String, String> rockets = new HashMap<>();
 
-        List<KidRecord> sortedKids() {
+        public List<KidRecord> sortedKids() {
             kids.sort(Comparator.comparingLong(KidRecord::createdAt).thenComparing(KidRecord::kidUuid));
             return kids;
         }
@@ -35,7 +35,7 @@ final class SyncKidRecords {
 
     private SyncKidRecords() {}
 
-    static Map<UUID, FamilyRecords> load(
+    public static Map<UUID, FamilyRecords> load(
             JdbcTemplate jdbc, ObjectMapper json, List<UUID> familyIds, boolean includeGame) {
         Map<UUID, FamilyRecords> byFamily = new HashMap<>(familyIds.size() * 2);
         if (familyIds.isEmpty()) {

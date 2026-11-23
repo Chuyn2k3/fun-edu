@@ -64,6 +64,12 @@ public class RoomRegistry {
         return code == null ? null : rooms.get(code.toUpperCase(java.util.Locale.ROOT));
     }
 
+    public boolean isFamilyInRoom(String code, UUID family) {
+        if (code == null || family == null) return false;
+        Room r = find(code);
+        return r != null && r.hasActiveFamily(family);
+    }
+
     /** Guessing codes: each family may miss only a few times a minute. */
     boolean mayTryJoin(UUID family) {
         Counter c = failedJoins.get(family);

@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** Redeems friend codes, lists friends with kid summaries, and removes friendships. */
 @Service
@@ -65,11 +67,13 @@ public class FriendService {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final PresenceView presence;
+    private final LobbyNotifier lobby;
 
-    public FriendService(JdbcTemplate jdbc, ObjectMapper json, PresenceView presence) {
+    public FriendService(JdbcTemplate jdbc, ObjectMapper json, PresenceView presence, LobbyNotifier lobby) {
         this.jdbc = jdbc;
         this.json = json;
         this.presence = presence;
+        this.lobby = lobby;
     }
 
     @Transactional
@@ -117,6 +121,7 @@ public class FriendService {
         jdbc.update("INSERT INTO friendships (family_a, family_b) VALUES (?, ?)", pair[0], pair[1]);
 
         FriendDto dto = assembleFriends(List.of(ownerFamily)).get(0);
+        afterCommit(() -> lobby.friendAdded(callerFamily, ownerFamily));
         return new RedeemResult(dto);
     }
 
@@ -135,18 +140,35 @@ public class FriendService {
         return assembleFriends(friendIds);
     }
 
+    @Transactional
     public void remove(UUID callerFamily, UUID otherFamily) {
         if (otherFamily == null || callerFamily.equals(otherFamily)) {
             return;
         }
         UUID[] pair = orderedPair(callerFamily, otherFamily);
-        jdbc.update(
+        int deleted = jdbc.update(
                 "DELETE FROM friendships WHERE family_a = ? AND family_b = ?",
                 pair[0], pair[1]);
+        if (deleted > 0) {
+            afterCommit(() -> lobby.friendRemoved(callerFamily, otherFamily));
+        }
+    }
+
+    private static void afterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     /** PostgreSQL UUID < compares unsigned bytes, matching lowercase hex string order. */
-    static UUID[] orderedPair(UUID first, UUID second) {
+    public static UUID[] orderedPair(UUID first, UUID second) {
         return first.toString().compareTo(second.toString()) < 0
                 ? new UUID[] {first, second}
                 : new UUID[] {second, first};

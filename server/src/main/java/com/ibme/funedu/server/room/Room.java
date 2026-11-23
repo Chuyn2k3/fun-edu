@@ -1,25 +1,16 @@
 package com.ibme.funedu.server.room;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.handler.SessionLimitExceededException;
 
 /**
  * One race room: 2-4 kids from families who know its code. The server keeps
@@ -52,9 +43,6 @@ class Room {
             "q_almost", "q_fast", "q_oops", "q_chase", "q_again");
     private static final Pattern AVATAR = Pattern.compile("assets/images/[a-z0-9_\\-/]{1,80}\\.(png|webp)");
     private static final Pattern ROCKET = Pattern.compile("rocket_[a-z]{1,20}");
-    private static final long BLOCKED_SEND_THRESHOLD_NS = 25_000_000L;
-    private static final Map<WebSocketSession, SessionQueue> SESSION_QUEUES =
-            Collections.synchronizedMap(new WeakHashMap<>());
 
     static final class Player {
         final String id;
@@ -109,6 +97,16 @@ class Room {
 
     synchronized State state() {
         return state;
+    }
+
+    synchronized boolean hasActiveFamily(UUID family) {
+        if (family == null || state != State.lobby) return false;
+        for (Player p : players.values()) {
+            if (!p.left && p.familyId.equals(family)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     Instant expiresAt() {
@@ -422,92 +420,15 @@ class Room {
     static void deliver(Outbox outbox) {
         if (outbox == null || outbox.isEmpty()) return;
         for (Send s : outbox.sends()) {
-            queueFor(s.session()).submit(new Action.Send(s.session(), s.text()));
+            SocketSender.send(s.session(), s.text());
         }
         for (WebSocketSession c : outbox.closes()) {
-            queueFor(c).submit(new Action.Close(c));
-        }
-    }
-
-    private static SessionQueue queueFor(WebSocketSession session) {
-        synchronized (SESSION_QUEUES) {
-            return SESSION_QUEUES.computeIfAbsent(session, k -> new SessionQueue());
-        }
-    }
-
-    private sealed interface Action permits Action.Send, Action.Close {
-        record Send(WebSocketSession session, String text) implements Action {}
-        record Close(WebSocketSession session) implements Action {}
-    }
-
-    private static final class SessionQueue {
-        private final Queue<Action> queue = new ConcurrentLinkedQueue<>();
-        private final AtomicBoolean workerRunning = new AtomicBoolean(false);
-        private volatile long sendStartedAtNanos;
-
-        void submit(Action action) {
-            long started = sendStartedAtNanos;
-            if (started != 0 && System.nanoTime() - started > BLOCKED_SEND_THRESHOLD_NS) {
-                // An earlier send is stuck in the underlying socket; invoke the decorator
-                // directly on a virtual thread so its time/buffer limits trigger immediately.
-                Thread.startVirtualThread(() -> execute(action));
-                return;
-            }
-            queue.add(action);
-            if (workerRunning.compareAndSet(false, true)) {
-                Thread.startVirtualThread(this::drain);
-            }
-        }
-
-        private void drain() {
-            try {
-                while (true) {
-                    Action a;
-                    while ((a = queue.poll()) != null) {
-                        if (a instanceof Action.Send) {
-                            sendStartedAtNanos = System.nanoTime();
-                            try {
-                                execute(a);
-                            } finally {
-                                sendStartedAtNanos = 0;
-                            }
-                        } else {
-                            execute(a);
-                        }
-                    }
-                    workerRunning.set(false);
-                    if (queue.isEmpty() || !workerRunning.compareAndSet(false, true)) {
-                        return;
-                    }
-                }
-            } catch (Throwable t) {
-                sendStartedAtNanos = 0;
-                workerRunning.set(false);
-            }
-        }
-
-        private static void execute(Action action) {
-            if (action instanceof Action.Send s) {
-                if (!s.session().isOpen()) return;
-                try {
-                    s.session().sendMessage(new TextMessage(s.text()));
-                } catch (SessionLimitExceededException e) {
-                    closeQuietly(s.session());
-                } catch (IOException | IllegalStateException e) {
-                    // A broken or closed socket: the close callback marks the player disconnected.
-                }
-            } else if (action instanceof Action.Close c) {
-                closeQuietly(c.session());
-            }
+            SocketSender.close(c);
         }
     }
 
     static void closeQuietly(WebSocketSession s) {
-        try {
-            s.close(CloseStatus.NORMAL);
-        } catch (IOException | IllegalStateException e) {
-            // Already gone.
-        }
+        SocketSender.closeQuietly(s);
     }
 
     /** Printable, single line, at most 16 characters; never empty. */

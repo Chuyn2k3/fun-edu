@@ -1,5 +1,6 @@
 package com.ibme.funedu.server.auth;
 
+import com.ibme.funedu.server.friends.LobbyNotifier;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -42,9 +43,11 @@ public class AuthService {
     private final AppleProperties apple;
     private final AppleTokenApi appleApi;
     private final TokenCipher cipher;
+    private final LobbyNotifier lobby;
 
     public AuthService(IdTokenDecoders idTokens, TokenService tokens, AuthProperties props,
-            JdbcTemplate jdbc, TransactionTemplate tx, AppleProperties apple, AppleTokenApi appleApi) {
+            JdbcTemplate jdbc, TransactionTemplate tx, AppleProperties apple, AppleTokenApi appleApi,
+            LobbyNotifier lobby) {
         this.idTokens = idTokens;
         this.tokens = tokens;
         this.props = props;
@@ -53,6 +56,7 @@ public class AuthService {
         this.apple = apple;
         this.appleApi = appleApi;
         this.cipher = new TokenCipher(props.jwtSecret());
+        this.lobby = lobby;
     }
 
     public boolean supports(String provider) {
@@ -144,7 +148,24 @@ public class AuthService {
         var appleLink = jdbc.query(
                 "SELECT apple_refresh_token, apple_client_id FROM parent_accounts WHERE id = ?",
                 (rs, i) -> new String[] {rs.getString(1), rs.getString(2)}, parent.id());
-        jdbc.update("DELETE FROM families WHERE id = ?", parent.familyId());
+        List<UUID> friendIds = tx.execute(status -> {
+            jdbc.query("SELECT id FROM families WHERE id = ? FOR UPDATE", rs -> null, parent.familyId());
+            List<UUID> friends = jdbc.query("""
+                    SELECT CASE WHEN family_a = ? THEN family_b ELSE family_a END
+                    FROM friendships
+                    WHERE family_a = ? OR family_b = ?
+                    """,
+                    (rs, i) -> rs.getObject(1, UUID.class),
+                    parent.familyId(), parent.familyId(), parent.familyId());
+            jdbc.update("DELETE FROM families WHERE id = ?", parent.familyId());
+            return friends;
+        });
+        lobby.familyDeleted(parent.familyId());
+        if (friendIds != null) {
+            for (UUID friendId : friendIds) {
+                lobby.friendRemoved(parent.familyId(), friendId);
+            }
+        }
         // Apple requires revoking its tokens on account deletion. Best effort:
         // the account is gone either way.
         if (!appleLink.isEmpty() && appleLink.get(0)[0] != null && apple.configured()) {

@@ -8,6 +8,12 @@ public interface LobbyNotifier {
 
     void notify(UUID familyId, Map<String, Object> message);
 
+    default void friendAdded(UUID familyA, UUID familyB) {}
+
+    default void friendRemoved(UUID familyA, UUID familyB) {}
+
+    default void familyDeleted(UUID familyId) {}
+
     /** Fallback until the WebSocket lobby registry is implemented. */
     class Noop implements LobbyNotifier {
         @Override

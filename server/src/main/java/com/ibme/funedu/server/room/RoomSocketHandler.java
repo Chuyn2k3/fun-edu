@@ -154,6 +154,8 @@ public class RoomSocketHandler extends TextWebSocketHandler {
         }
         Room room = (Room) raw.getAttributes().get(ROOM);
         if (room != null) Room.deliver(room.disconnected(safe(raw), rooms.now()));
+        SocketSender.forget(safe(raw));
+        SocketSender.forget(raw);
     }
 
     @SuppressWarnings("unchecked")
