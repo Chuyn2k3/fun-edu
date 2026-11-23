@@ -8,7 +8,7 @@ import '../../progress/progress_repository.dart';
 import 'race_question.dart';
 
 const int raceQuestionCount = 10;
-const List<int> cometIndexes = [2, 5, 8];
+const List<int> cometIndexes = [2, 5, 8, 11, 14, 17];
 
 const List<String> firstLetterGroup = [
   'chu-i', 'chu-t', 'chu-u', 'chu-uw', 'chu-n', 'chu-m', 'chu-v', 'chu-r',
@@ -40,11 +40,12 @@ List<RaceQuestion> buildRaceQuestions({
   required int writingStartIndex,
   required Map<String, String> speechByGlyph,
   required Random rng,
+  int count = raceQuestionCount,
 }) {
   final List<RaceQuestion> qs = switch (subject) {
-    RaceSubject.toan => _mathQuestions(mathLevelIndex, rng),
+    RaceSubject.toan => _mathQuestions(mathLevelIndex, rng, count),
     RaceSubject.tiengViet =>
-      _vietQuestions(glyphStats, writingStartIndex, speechByGlyph, rng),
+      _vietQuestions(glyphStats, writingStartIndex, speechByGlyph, rng, count),
   };
   return [
     for (var i = 0; i < qs.length; i++)
@@ -54,7 +55,7 @@ List<RaceQuestion> buildRaceQuestions({
 
 // ---------------------------------------------------------------- Toán
 
-List<RaceQuestion> _mathQuestions(int levelIndex, Random rng) {
+List<RaceQuestion> _mathQuestions(int levelIndex, Random rng, int count) {
   var level = mathLevels[levelIndex.clamp(0, mathLevels.length - 1)];
   // Compare questions have no number answer, so that level (which is all
   // compare) borrows the counting level up to 10 instead.
@@ -70,9 +71,9 @@ List<RaceQuestion> _mathQuestions(int levelIndex, Random rng) {
     level = mathLevels.lastWhere((l) => l.kind == MathKind.addSubtract);
   }
   final out = <RaceQuestion>[];
-  while (out.length < raceQuestionCount) {
-    for (final q in generateQuestions(level, rng, count: raceQuestionCount)) {
-      if (out.length >= raceQuestionCount) break;
+  while (out.length < count) {
+    for (final q in generateQuestions(level, rng, count: count)) {
+      if (out.length >= count) break;
       final r = _toMathRace(q, level.max, rng);
       if (r != null) out.add(r);
     }
@@ -120,6 +121,7 @@ List<RaceQuestion> _vietQuestions(
   int writingStartIndex,
   Map<String, String> speech,
   Random rng,
+  int count,
 ) {
   final h = _progressIndex(stats, writingStartIndex);
   final upTo = (h + 3).clamp(-1, writingLadder.length - 1);
@@ -132,14 +134,16 @@ List<RaceQuestion> _vietQuestions(
   final toneUnlocked = h >= writingLadder.indexOf('dau-huyen');
   final toneAt = <int>{};
   if (toneUnlocked) {
-    final idx = List.generate(raceQuestionCount, (i) => i)..shuffle(rng);
-    toneAt.addAll(idx.take(toneQuestionCount));
+    final toneCount =
+        (count * toneQuestionCount / raceQuestionCount).round().clamp(0, count);
+    final idx = List.generate(count, (i) => i)..shuffle(rng);
+    toneAt.addAll(idx.take(toneCount));
   }
 
   final out = <RaceQuestion>[];
   String? lastLetter;
   String? lastTone;
-  for (var i = 0; i < raceQuestionCount; i++) {
+  for (var i = 0; i < count; i++) {
     if (toneAt.contains(i)) {
       final candidates = toneIds.where((t) => t != lastTone).toList();
       final target = candidates[rng.nextInt(candidates.length)];

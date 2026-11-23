@@ -2,6 +2,9 @@ import 'chip_pacer.dart';
 import 'race_question.dart';
 
 const int raceLength = 10;
+const int onlineRaceLength = 18;
+const int onlineStageQuestions = 6;
+const int onlineSprintFrom = 12;
 
 class RaceOutcome {
   const RaceOutcome({
@@ -40,6 +43,7 @@ class AnswerResult {
     required this.finished,
     this.comboStreak = 0,
     this.luckyStarsCollected = 0,
+    this.stageCleared = false,
   });
 
   final bool correct;
@@ -50,13 +54,21 @@ class AnswerResult {
   final bool finished;
   final int comboStreak;
   final int luckyStarsCollected;
+  final bool stageCleared;
 }
 
 class Race {
-  Race({required this.questions, required this.pacer});
+  Race({
+    required this.questions,
+    required this.pacer,
+    this.length = raceLength,
+    this.sprintFromStep,
+  });
 
   final List<RaceQuestion> questions;
   final ChipPacer pacer;
+  final int length;
+  final int? sprintFromStep;
 
   int kidSteps = 0;
   int chipSteps = 0;
@@ -64,7 +76,8 @@ class Race {
   int comboStreak = 0;
   bool get isNitroActive => comboStreak >= 2;
   int luckyStarsCollected = 0;
-  final Set<int> _starMilestones = {4, 8};
+  Set<int> get _starMilestones =>
+      length == onlineRaceLength ? const {6, 12} : const {4, 8};
   RaceOutcome? outcome;
 
   bool _triedCurrent = false;
@@ -76,6 +89,15 @@ class Race {
 
   bool get finished => outcome != null;
   RaceQuestion get current => questions[questionIndex];
+
+  /// Current stage (1..3) for online 18-step races, always 1 offline.
+  int get stage => length == onlineRaceLength
+      ? (kidSteps ~/ onlineStageQuestions + 1).clamp(1, 3)
+      : 1;
+
+  /// True once the kid has reached the sprint threshold.
+  bool get inSprint =>
+      sprintFromStep != null && kidSteps >= sprintFromStep!;
 
   /// [elapsed] is how long the question has been on screen (wrong tries
   /// included).
@@ -99,9 +121,12 @@ class Race {
     if (firstTry) {
       comboStreak++;
     }
-    final gained = q.comet ? 2 : 1;
+    final gained = (q.comet || (inSprint && firstTry)) ? 2 : 1;
     final prevSteps = kidSteps;
-    kidSteps = (kidSteps + gained).clamp(0, raceLength);
+    kidSteps = (kidSteps + gained).clamp(0, length);
+    final stageCleared = length == onlineRaceLength &&
+        ((prevSteps < 6 && kidSteps >= 6) ||
+            (prevSteps < 12 && kidSteps >= 12));
     for (final m in _starMilestones) {
       if (prevSteps < m && kidSteps >= m) {
         luckyStarsCollected++;
@@ -115,7 +140,7 @@ class Race {
       if (q.comet) _cometsFirstTry++;
     }
     _triedCurrent = false;
-    if (kidSteps >= raceLength) {
+    if (kidSteps >= length) {
       _finish(won: true);
     } else if (questionIndex < questions.length - 1) {
       questionIndex++;
@@ -131,6 +156,7 @@ class Race {
       finished: finished,
       comboStreak: comboStreak,
       luckyStarsCollected: luckyStarsCollected,
+      stageCleared: stageCleared,
     );
   }
 
@@ -142,7 +168,7 @@ class Race {
     }
     chipSteps++;
     pacer.markStep(now);
-    if (chipSteps >= raceLength) _finish(won: false);
+    if (chipSteps >= length) _finish(won: false);
   }
 
   /// Someone else reached the planet first (online room): the race ends

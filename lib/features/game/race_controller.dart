@@ -88,7 +88,10 @@ class RaceResultArgs {
   bool get won => outcome.won;
 
   /// Steps the kid still needed when Chíp landed.
-  int get stepsShort => (raceLength - kidSteps).clamp(0, raceLength);
+  int get stepsShort {
+    final target = online ? onlineRaceLength : raceLength;
+    return (target - kidSteps).clamp(0, target);
+  }
 
   /// Seconds faster than the previous best, at least 1, when a record.
   int? get secondsFaster {
@@ -283,6 +286,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     final mean = await repo.meanAnswer();
     final sel = await repo.selected();
     if (_disposed) return;
+    final isOnline = rival != null;
     final questions = buildRaceQuestions(
       subject: subject,
       mathLevelIndex: mathLevel,
@@ -290,10 +294,13 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       writingStartIndex: writingStart,
       speechByGlyph: speech,
       rng: ref.read(raceRandomProvider),
+      count: isOnline ? 20 : raceQuestionCount,
     );
     _race = Race(
       questions: questions,
       pacer: ChipPacer(initialMean: mean, slowdown: slowdown),
+      length: isOnline ? onlineRaceLength : raceLength,
+      sprintFromStep: isOnline ? onlineSprintFrom : null,
     );
     _now = Duration.zero;
     _shownAt = Duration.zero;
@@ -442,7 +449,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
   /// If self dropped past the 20 s limit (`networkLost`), saves nothing.
   Future<void> _finishOnline(RaceRival rival, Race race, RaceOutcome o) async {
     var view = rival.view;
-    if (view.myRank == null && !view.roomOver && race.kidSteps >= raceLength) {
+    if (view.myRank == null && !view.roomOver && race.kidSteps >= race.length) {
       try {
         view = await rival.changes
             .firstWhere((v) => v.myRank != null || v.roomOver)

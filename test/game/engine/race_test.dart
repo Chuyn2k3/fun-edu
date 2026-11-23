@@ -1,14 +1,31 @@
+import 'dart:math';
+
 import 'package:funedu/game/engine/chip_pacer.dart';
+import 'package:funedu/game/engine/question_source.dart';
 import 'package:funedu/game/engine/race.dart';
 import 'package:funedu/game/engine/race_question.dart';
 import 'package:funedu/game/engine/rewards.dart';
+import 'package:funedu/learning/writing_ladder.dart';
+import 'package:funedu/progress/progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-List<RaceQuestion> _qs() => [
-      for (var i = 0; i < 10; i++)
+List<RaceQuestion> _qs({
+  int count = 10,
+  Set<int> comets = const {2, 5, 8},
+}) =>
+    [
+      for (var i = 0; i < count; i++)
         ToneRaceQuestion('dau-sac', ['dau-sac', 'dau-hoi', 'dau-nga'],
-            comet: const {2, 5, 8}.contains(i)),
+            comet: comets.contains(i)),
     ];
+
+Race _onlineRace({List<RaceQuestion>? questions}) => Race(
+      questions: questions ??
+          _qs(count: 20, comets: const {2, 5, 8, 11, 14, 17}),
+      pacer: ChipPacer(),
+      length: onlineRaceLength,
+      sprintFromStep: onlineSprintFrom,
+    );
 
 const _ms = Duration(milliseconds: 1);
 
@@ -161,6 +178,170 @@ void main() {
       expect(r.finished, isTrue);
       expect(r.outcome!.luckyStarsCollected, 2);
       expect(r.outcome!.comboStreak, 0);
+    });
+
+    test('offline race unchanged', () {
+      final r = Race(questions: _qs(), pacer: ChipPacer());
+      expect(r.length, 10);
+      expect(r.stage, 1);
+      expect(r.inSprint, isFalse);
+
+      // Step through with wrong tries so no step is skipped, checking +1/+2,
+      // stars at {4, 8}, stage always 1, stageCleared always false.
+      while (!r.finished) {
+        final q = r.current;
+        final res = r.answer(0, _ms);
+        expect(res.gained, q.comet ? 2 : 1);
+        expect(res.stageCleared, isFalse);
+        expect(r.stage, 1);
+        expect(r.inSprint, isFalse);
+      }
+      expect(r.kidSteps, 10);
+      expect(r.outcome!.won, isTrue);
+      expect(r.outcome!.luckyStarsCollected, 2);
+    });
+
+    test('online race is 18 steps in 3 stages', () {
+      // No comets so steps advance +1 in stage 1 & 2, +2 in stage 3.
+      final r = _onlineRace(questions: _qs(count: 20, comets: const {}));
+      expect(r.length, 18);
+      expect(r.stage, 1);
+      expect(r.inSprint, isFalse);
+
+      // Steps 0..5 -> stage 1
+      for (var s = 0; s < 6; s++) {
+        expect(r.stage, 1);
+        expect(r.inSprint, isFalse);
+        r.answer(0, _ms);
+      }
+      expect(r.kidSteps, 6);
+      expect(r.stage, 2);
+
+      // Steps 6..11 -> stage 2
+      for (var s = 6; s < 12; s++) {
+        expect(r.stage, 2);
+        expect(r.inSprint, isFalse);
+        r.answer(0, _ms);
+      }
+      expect(r.kidSteps, 12);
+      expect(r.stage, 3);
+      expect(r.inSprint, isTrue);
+
+      // Steps 12..18 -> stage 3
+      while (!r.finished) {
+        expect(r.stage, 3);
+        expect(r.inSprint, isTrue);
+        r.answer(0, _ms);
+      }
+      expect(r.kidSteps, 18);
+      expect(r.stage, 3);
+      expect(r.outcome!.won, isTrue);
+    });
+
+    test('sprint first try gives 2', () {
+      final r = _onlineRace(questions: _qs(count: 20, comets: const {}));
+      for (var i = 0; i < 12; i++) {
+        r.answer(0, _ms);
+      }
+      expect(r.kidSteps, 12);
+      expect(r.inSprint, isTrue);
+
+      final res = r.answer(0, _ms);
+      expect(res.correct, isTrue);
+      expect(res.firstTry, isTrue);
+      expect(res.gained, 2);
+      expect(r.kidSteps, 14);
+    });
+
+    test('sprint second try gives 1', () {
+      final r = _onlineRace(questions: _qs(count: 20, comets: const {}));
+      for (var i = 0; i < 12; i++) {
+        r.answer(0, _ms);
+      }
+      expect(r.kidSteps, 12);
+      expect(r.inSprint, isTrue);
+
+      expect(r.answer(1, _ms).correct, isFalse);
+      final res = r.answer(0, _ms);
+      expect(res.correct, isTrue);
+      expect(res.firstTry, isFalse);
+      expect(res.gained, 1);
+      expect(r.kidSteps, 13);
+    });
+
+    test('comet in sprint still 2', () {
+      // Put a comet at the question reached at step 12.
+      final r = _onlineRace(questions: _qs(count: 20, comets: const {12}));
+      for (var i = 0; i < 12; i++) {
+        r.answer(0, _ms);
+      }
+      expect(r.kidSteps, 12);
+      expect(r.inSprint, isTrue);
+      expect(r.current.comet, isTrue);
+
+      final res = r.answer(0, _ms);
+      expect(res.firstTry, isTrue);
+      expect(res.gained, 2);
+      expect(r.kidSteps, 14);
+    });
+
+    test('stageCleared at 6 and 12', () {
+      // Case A: plain steps crossing 6 and 12, not other steps.
+      final r1 = _onlineRace(questions: _qs(count: 20, comets: const {}));
+      final clearedAt = <int>[];
+      while (!r1.finished) {
+        final res = r1.answer(0, _ms);
+        if (res.stageCleared) clearedAt.add(r1.kidSteps);
+      }
+      expect(clearedAt, [6, 12]);
+      expect(r1.luckyStarsCollected, 2);
+
+      // Case B: comet jumping 5 -> 7 clears stage 1 at 7, and lucky star crosses 6.
+      final r2 = _onlineRace(questions: _qs(count: 20, comets: const {5}));
+      for (var i = 0; i < 5; i++) {
+        final res = r2.answer(0, _ms);
+        expect(res.stageCleared, isFalse);
+      }
+      expect(r2.kidSteps, 5);
+      final jump = r2.answer(0, _ms);
+      expect(r2.kidSteps, 7);
+      expect(jump.stageCleared, isTrue);
+      expect(jump.luckyStarsCollected, 1);
+    });
+
+    test('online finishes before running out of questions', () {
+      final mathQs = buildRaceQuestions(
+        subject: RaceSubject.toan,
+        mathLevelIndex: 0,
+        glyphStats: const {},
+        writingStartIndex: 0,
+        speechByGlyph: const {},
+        rng: Random(42),
+        count: 20,
+      );
+      final vietQs = buildRaceQuestions(
+        subject: RaceSubject.tiengViet,
+        mathLevelIndex: 0,
+        glyphStats: const {'dau-huyen': GlyphStat(completions: 1, cleanCompletions: 1)},
+        writingStartIndex: 0,
+        speechByGlyph: {for (final g in writingLadder) g: 'đọc $g'},
+        rng: Random(42),
+        count: 20,
+      );
+      expect(mathQs, hasLength(20));
+      expect(vietQs, hasLength(20));
+
+      for (final qs in [mathQs, vietQs]) {
+        final r = _onlineRace(questions: qs);
+        while (!r.finished) {
+          final wrong = (r.current.correctIndex + 1) % 3;
+          r.answer(wrong, _ms);
+          r.answer(r.current.correctIndex, _ms);
+        }
+        expect(r.outcome!.won, isTrue);
+        expect(r.kidSteps, onlineRaceLength);
+        expect(r.questionIndex, lessThan(20));
+      }
     });
   });
 
