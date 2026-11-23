@@ -29,10 +29,11 @@ class SyncEngine {
   static const _maxRounds = 5;
 
   /// Returns true when anything was pulled into the local database.
-  Future<bool> run() async {
+  Future<bool> run({bool pushLocal = true}) async {
     var pulledAny = false;
     for (var round = 0; round < _maxRounds; round++) {
-      final pending = await _store.pendingChanges();
+      final pending =
+          pushLocal ? await _store.pendingChanges() : const <SyncChange>[];
       final push = pending.take(_batch).toList();
       final pulled = <SyncRecord>[];
 
@@ -41,7 +42,8 @@ class SyncEngine {
       while (true) {
         final res = await _transport({
           'since': cursor,
-          'changes': first ? push.map((c) => c.toJson()).toList() : const [],
+          'changes':
+              first && pushLocal ? push.map((c) => c.toJson()).toList() : const [],
         });
         first = false;
         final records = (res?['records'] as List? ?? const [])
@@ -66,6 +68,7 @@ class SyncEngine {
       final ownKeys = push.map((c) => c.key).toSet();
       if (pulled.any((r) => !ownKeys.contains(r.key))) pulledAny = true;
 
+      if (!pushLocal) break;
       final left = await _store.pendingChanges();
       if (left.isEmpty) break;
     }

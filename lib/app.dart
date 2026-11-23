@@ -120,6 +120,7 @@ class _AppState extends ConsumerState<App> {
       ref.listen(englishLevelIndexProvider, (_, __) {});
     }
     return MaterialApp.router(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'Chíp Chíp',
       theme: buildAppTheme(),
       routeInformationProvider: appRouter.routeInformationProvider,

@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/app.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/features/setup/restore_screen.dart';
 import 'package:funedu/online/api_client.dart';
 import 'package:funedu/online/auth/identity_providers.dart';
 import 'package:funedu/online/auth/token_store.dart';
+import 'package:funedu/online/link/link_controller.dart';
 import 'package:funedu/online/online_config.dart';
 import 'package:funedu/online/sync/sync_engine.dart';
 import 'package:funedu/profile/avatars.dart';
@@ -456,5 +458,118 @@ void main() {
 
     final container = ProviderScope.containerOf(t.element(find.byType(App)));
     container.read(syncControllerProvider.notifier).stop();
+  });
+
+  testWidgets('failed replace keeps the restore screen', (t) async {
+    await KidRepository(db).addKid(nickname: 'GuestKid', avatar: kidAvatars[0], age: 5);
+    store.session = const StoredSession(
+      accessToken: 'a1',
+      refreshToken: 'r1',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: false,
+    );
+    handler = (req) {
+      if (req.url.path == '/api/v1/sync/link' && req.method == 'POST') {
+        return http.Response('server error', 500);
+      }
+      return fakeServer(req);
+    };
+    await pumpOnlineApp(t);
+    final c = ProviderScope.containerOf(t.element(find.byType(App)));
+    await c.read(linkControllerProvider.notifier).confirmReplace();
+    await settle(t);
+
+    expect(c.read(restoringProvider), isTrue);
+    expect(find.byType(RestoreScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('retry-restore')), findsOneWidget);
+    expect(find.text('Tạo hồ sơ cho bé'), findsNothing);
+  });
+
+  testWidgets('failure after wipe keeps the restore screen', (t) async {
+    await KidRepository(db).addKid(nickname: 'GuestKid', avatar: kidAvatars[0], age: 5);
+    store.session = const StoredSession(
+      accessToken: 'a1',
+      refreshToken: 'r1',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: false,
+    );
+    handler = (req) {
+      if (req.url.path == '/api/v1/sync/link' && req.method == 'POST') {
+        return jsonResponse({'linked': true});
+      }
+      if (req.url.path == '/api/v1/sync') {
+        return http.Response('server error', 500);
+      }
+      return fakeServer(req);
+    };
+    await pumpOnlineApp(t);
+    final c = ProviderScope.containerOf(t.element(find.byType(App)));
+    await c.read(linkControllerProvider.notifier).confirmReplace();
+    await settle(t);
+
+    expect(c.read(restoringProvider), isTrue);
+    expect(find.byType(RestoreScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('retry-restore')), findsOneWidget);
+    expect(await KidRepository(db).setting(restorePendingKey), 'pull');
+  });
+
+  testWidgets('restore with ended session returns to choose step', (t) async {
+    final repo = KidRepository(db);
+    await repo.setSetting(restorePendingKey, 'fresh');
+    store.session = const StoredSession(
+      accessToken: 'expired',
+      refreshToken: 'bad',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: false,
+    );
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/refresh') {
+        return jsonResponse({'error': 'unauthorized'}, 401);
+      }
+      if (req.url.path == '/api/v1/sync/link') {
+        return jsonResponse({'error': 'unauthorized'}, 401);
+      }
+      return fakeServer(req);
+    };
+    await pumpOnlineApp(t);
+    await settle(t);
+    await settle(t);
+
+    expect(find.text('Lưu tiến độ của bé'), findsOneWidget);
+    expect(find.text('Phiên đăng nhập đã hết, ba mẹ đăng nhập lại nhé'),
+        findsOneWidget);
+  });
+
+  testWidgets('restore with ended session after wipe asks to sign in again',
+      (t) async {
+    final repo = KidRepository(db);
+    await repo.setSetting(restorePendingKey, 'pull');
+    store.session = const StoredSession(
+      accessToken: 'expired',
+      refreshToken: 'bad',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: true,
+    );
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/refresh') {
+        return jsonResponse({'error': 'unauthorized'}, 401);
+      }
+      if (req.url.path == '/api/v1/sync') {
+        return jsonResponse({'error': 'unauthorized'}, 401);
+      }
+      return fakeServer(req);
+    };
+    await pumpOnlineApp(t);
+    await settle(t);
+    await settle(t);
+
+    expect(find.byType(RestoreScreen), findsOneWidget);
+    expect(find.text('Đăng nhập lại'), findsOneWidget);
+    expect(find.byKey(const ValueKey('retry-restore')), findsNothing);
+    expect(await KidRepository(db).setting(restorePendingKey), 'pull');
   });
 }

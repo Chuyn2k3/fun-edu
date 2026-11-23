@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
+import '../../router.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
 import '../sync/sync_engine.dart';
@@ -93,23 +95,9 @@ class LinkController extends Notifier<LinkState> {
     final localKids = await KidRepository(_db).kids();
     if (localKids.isEmpty) {
       // Empty device: fresh link + restore
-      await KidRepository(_db).setSetting(restorePendingKey, 'true');
-      state = const LinkRestoring();
-      try {
-        await _session.authorized((token) => _api.post(
-              '/api/v1/sync/link',
-              {'mode': 'fresh'},
-              accessToken: token,
-            ));
-        await _session.markLinked();
-        await KidRepository(_db).setSetting(dataOwnerKey, s.familyId);
-        await _restoreAll();
-        await KidRepository(_db).removeSetting(restorePendingKey);
-        ref.invalidate(restorePendingSettingProvider);
-        state = const LinkIdle();
-      } catch (e) {
-        state = LinkRestoreFailed(e.toString());
-      }
+      await KidRepository(_db).setSetting(restorePendingKey, restoreStageFresh);
+      ref.invalidate(restorePendingSettingProvider);
+      await _ensureLinkedThenPull(restoreStageFresh);
       return;
     }
 
@@ -157,23 +145,9 @@ class LinkController extends Notifier<LinkState> {
     final s = ref.read(sessionProvider).valueOrNull;
     if (s == null) return;
 
-    await KidRepository(_db).setSetting(restorePendingKey, 'true');
-    state = const LinkRestoring();
-    try {
-      await _session.authorized((token) => _api.post(
-            '/api/v1/sync/link',
-            {'mode': 'replace_local'},
-            accessToken: token,
-          ));
-      await KidRepository(_db).wipeKidData();
-      await _session.markLinked();
-      await KidRepository(_db).setSetting(dataOwnerKey, s.familyId);
-      await _restoreAll();
-      await KidRepository(_db).removeSetting(restorePendingKey);
-      state = const LinkIdle();
-    } catch (e) {
-      state = LinkFailed(e.toString());
-    }
+    await KidRepository(_db).setSetting(restorePendingKey, restoreStageReplace);
+    ref.invalidate(restorePendingSettingProvider);
+    await _ensureLinkedThenPull(restoreStageReplace);
   }
 
   /// Parent cancelled the replace warning: sign out and preserve guest data.
@@ -186,15 +160,12 @@ class LinkController extends Notifier<LinkState> {
   Future<void> resumeIfPending() async {
     final pending = await KidRepository(_db).setting(restorePendingKey);
     if (pending != null) {
-      state = const LinkRestoring();
-      try {
-        await _restoreAll();
-        await KidRepository(_db).removeSetting(restorePendingKey);
-        ref.invalidate(restorePendingSettingProvider);
-        state = const LinkIdle();
-      } catch (e) {
-        state = LinkRestoreFailed(e.toString());
-      }
+      final stage = (pending == restoreStageFresh ||
+              pending == restoreStageReplace ||
+              pending == restoreStagePull)
+          ? pending
+          : restoreStagePull;
+      await _ensureLinkedThenPull(stage);
       return;
     }
 
@@ -215,29 +186,93 @@ class LinkController extends Notifier<LinkState> {
 
   /// Retries a failed family restore.
   Future<void> retryRestore() async {
+    final pending = await KidRepository(_db).setting(restorePendingKey);
+    final stage = (pending == restoreStageFresh ||
+            pending == restoreStageReplace ||
+            pending == restoreStagePull)
+        ? pending!
+        : restoreStagePull;
+    await _ensureLinkedThenPull(stage);
+  }
+
+  Future<void> _ensureLinkedThenPull(String stage) async {
     state = const LinkRestoring();
+    var currentStage = stage;
     try {
-      await _restoreAll();
+      final s = ref.read(sessionProvider).valueOrNull ??
+          await ref.read(sessionProvider.future);
+      if (s == null) {
+        throw const ApiException(401, 'signed_out');
+      }
+
+      if (currentStage == restoreStageFresh) {
+        await _session.authorized((token) => _api.post(
+              '/api/v1/sync/link',
+              {'mode': 'fresh'},
+              accessToken: token,
+            ));
+      } else if (currentStage == restoreStageReplace) {
+        await _session.authorized((token) => _api.post(
+              '/api/v1/sync/link',
+              {'mode': 'replace_local'},
+              accessToken: token,
+            ));
+        await KidRepository(_db).wipeKidData();
+        currentStage = restoreStagePull;
+        await KidRepository(_db).setSetting(restorePendingKey, restoreStagePull);
+        ref.invalidate(restorePendingSettingProvider);
+      }
+
+      await _session.markLinked();
+      await KidRepository(_db).setSetting(dataOwnerKey, s.familyId);
+
+      final engine = SyncEngine(
+        _db,
+        (body) => _session.authorized(
+            (token) => _api.post('/api/v1/sync', body, accessToken: token)),
+      );
+      await engine.run(pushLocal: false);
+
+      final kids = await KidRepository(_db).kids();
+      if (kids.isNotEmpty) {
+        await KidRepository(_db).setCurrentKid(kids.first.id);
+      }
+      invalidateKidData(ref.invalidate);
+
       await KidRepository(_db).removeSetting(restorePendingKey);
       ref.invalidate(restorePendingSettingProvider);
       state = const LinkIdle();
+    } on ApiException catch (e) {
+      if (e.unauthorized) {
+        if (currentStage == restoreStageFresh) {
+          await KidRepository(_db).setSetting(
+            consentAtKey,
+            DateTime.now().toIso8601String(),
+          );
+          ref.invalidate(consentAtProvider);
+          await KidRepository(_db).removeSetting(restorePendingKey);
+          ref.invalidate(restorePendingSettingProvider);
+          state = const LinkIdle();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            rootScaffoldMessengerKey.currentState?.showSnackBar(
+              const SnackBar(
+                content:
+                    Text('Phiên đăng nhập đã hết, ba mẹ đăng nhập lại nhé'),
+              ),
+            );
+          });
+          return;
+        }
+        state = const LinkRestoreFailed('signed_out');
+        ref.invalidate(restorePendingSettingProvider);
+        return;
+      }
+      state = LinkRestoreFailed(e.toString());
+      ref.invalidate(restorePendingSettingProvider);
     } catch (e) {
       state = LinkRestoreFailed(e.toString());
+      ref.invalidate(restorePendingSettingProvider);
     }
-  }
-
-  Future<void> _restoreAll() async {
-    final engine = SyncEngine(
-      _db,
-      (body) => _session.authorized(
-          (token) => _api.post('/api/v1/sync', body, accessToken: token)),
-    );
-    await engine.run();
-    final kids = await KidRepository(_db).kids();
-    if (kids.isNotEmpty) {
-      await KidRepository(_db).setCurrentKid(kids.first.id);
-    }
-    invalidateKidData(ref.invalidate);
   }
 }
 

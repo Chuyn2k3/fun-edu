@@ -8,6 +8,10 @@ const int maxKids = 4;
 const String _currentKidKey = 'currentKidId';
 const String voiceEnabledKey = 'voiceEnabled';
 const String restorePendingKey = 'link.restorePending';
+const String restoreStageFresh = 'fresh';
+const String restoreStageReplace = 'replace';
+const String restoreStagePull = 'pull';
+const String consentAtKey = 'consentAt';
 const String dataOwnerKey = 'dataOwnerFamilyId';
 
 class KidRepository {
@@ -183,4 +187,8 @@ final currentKidIdProvider = FutureProvider<int?>(
 final voiceEnabledProvider = FutureProvider<bool>((ref) async {
   final v = await ref.watch(kidRepositoryProvider).setting(voiceEnabledKey);
   return v != 'false';
+});
+
+final consentAtProvider = FutureProvider<String?>((ref) async {
+  return ref.watch(kidRepositoryProvider).setting(consentAtKey);
 });

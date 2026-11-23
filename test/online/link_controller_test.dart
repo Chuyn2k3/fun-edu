@@ -367,4 +367,155 @@ void main() {
     // Verify no /api/v1/sync request was made
     expect(requests.where((r) => r.url.path == '/api/v1/sync'), isEmpty);
   });
+
+  test('resume after crash between link and wipe never pushes guest data', () async {
+    await KidRepository(db).addKid(nickname: 'GuestKid', avatar: kidAvatars[0], age: 5);
+    await KidRepository(db).setSetting(restorePendingKey, 'replace');
+
+    store.session = const StoredSession(
+      accessToken: 'a1',
+      refreshToken: 'r1',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: false,
+    );
+
+    var totalPushedChanges = 0;
+    handler = (req) {
+      if (req.url.path == '/api/v1/sync/link') {
+        return jsonResponse({'linked': true});
+      }
+      if (req.url.path == '/api/v1/sync') {
+        final body = jsonDecode(req.body) as Map<String, dynamic>;
+        final changes = body['changes'] as List? ?? [];
+        totalPushedChanges += changes.length;
+        final since = (body['since'] as num?)?.toInt() ?? 0;
+        if (since >= 1) {
+          return jsonResponse({'version': 1, 'hasMore': false, 'conflicts': [], 'records': []});
+        }
+        return jsonResponse({
+          'version': 1,
+          'hasMore': false,
+          'conflicts': [],
+          'records': [
+            {
+              'key': 'kid:uuid-cloud',
+              'payload': {'nickname': 'CloudKid', 'avatar': 'chip', 'age': 6, 'createdAt': 1700000000},
+              'deleted': false,
+              'version': 1,
+            },
+          ],
+        });
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    await c.read(sessionProvider.future);
+    await c.read(linkControllerProvider.notifier).resumeIfPending();
+
+    expect(totalPushedChanges, 0);
+    final kids = await KidRepository(db).kids();
+    expect(kids, hasLength(1));
+    expect(kids.single.nickname, 'CloudKid');
+    expect(await KidRepository(db).setting(restorePendingKey), isNull);
+    expect(await KidRepository(db).setting(dataOwnerKey), 'fam-1');
+  });
+
+  test('resume after wipe only pulls', () async {
+    await KidRepository(db).setSetting(restorePendingKey, 'pull');
+
+    store.session = const StoredSession(
+      accessToken: 'a1',
+      refreshToken: 'r1',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: true,
+    );
+
+    var totalPushedChanges = 0;
+    var linkEndpointCalled = false;
+    handler = (req) {
+      if (req.url.path == '/api/v1/sync/link') {
+        linkEndpointCalled = true;
+        return jsonResponse({'linked': true});
+      }
+      if (req.url.path == '/api/v1/sync') {
+        final body = jsonDecode(req.body) as Map<String, dynamic>;
+        final changes = body['changes'] as List? ?? [];
+        totalPushedChanges += changes.length;
+        final since = (body['since'] as num?)?.toInt() ?? 0;
+        if (since >= 1) {
+          return jsonResponse({'version': 1, 'hasMore': false, 'conflicts': [], 'records': []});
+        }
+        return jsonResponse({
+          'version': 1,
+          'hasMore': false,
+          'conflicts': [],
+          'records': [
+            {
+              'key': 'kid:uuid-cloud',
+              'payload': {'nickname': 'CloudKid', 'avatar': 'chip', 'age': 6, 'createdAt': 1700000000},
+              'deleted': false,
+              'version': 1,
+            },
+          ],
+        });
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    await c.read(sessionProvider.future);
+    await c.read(linkControllerProvider.notifier).resumeIfPending();
+
+    expect(totalPushedChanges, 0);
+    expect(linkEndpointCalled, isFalse);
+    final kids = await KidRepository(db).kids();
+    expect(kids, hasLength(1));
+    expect(kids.single.nickname, 'CloudKid');
+    expect(await KidRepository(db).setting(restorePendingKey), isNull);
+  });
+
+  test('retry after failed fresh link links the device', () async {
+    var linkAttempt = 0;
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': false},
+          'account': {'hasData': true, 'kids': []},
+        });
+      }
+      if (req.url.path == '/api/v1/sync/link') {
+        linkAttempt++;
+        if (linkAttempt == 1) {
+          return http.Response('server error', 500);
+        }
+        return jsonResponse({'linked': true});
+      }
+      if (req.url.path == '/api/v1/sync') {
+        return jsonResponse({'version': 1, 'hasMore': false, 'conflicts': [], 'records': []});
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    final res = await c.read(sessionProvider.notifier).signIn('google');
+    await c.read(linkControllerProvider.notifier).afterSignIn(res);
+
+    expect(c.read(linkControllerProvider), isA<LinkRestoreFailed>());
+    expect(await KidRepository(db).setting(restorePendingKey), 'fresh');
+    expect(c.read(sessionProvider).value!.linked, isFalse);
+
+    // Now retry
+    await c.read(linkControllerProvider.notifier).retryRestore();
+
+    expect(c.read(linkControllerProvider), isA<LinkIdle>());
+    expect(linkAttempt, 2);
+    expect(c.read(sessionProvider).value!.linked, isTrue);
+    expect(await KidRepository(db).setting(restorePendingKey), isNull);
+  });
 }

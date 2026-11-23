@@ -61,6 +61,9 @@ class GlyphListScreen extends ConsumerWidget {
   }
 }
 
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(

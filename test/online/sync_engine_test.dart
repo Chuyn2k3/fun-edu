@@ -254,4 +254,41 @@ void main() {
 
     expect(await phone.select(phone.notebookPages).get(), isEmpty);
   });
+
+  test('SyncEngine with pushLocal: false sends zero changes and applies remote records', () async {
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    final progress = ProgressRepository(phone, kidId: id);
+    await progress.recordGlyphCompleted('so-1', failedStrokes: 0);
+
+    var changesSent = <Object?>[];
+    final engine = SyncEngine(phone, (body) async {
+      changesSent = body['changes'] as List<Object?>? ?? [];
+      return {
+        'version': 1,
+        'hasMore': false,
+        'conflicts': [],
+        'records': [
+          {
+            'key': 'kid:uuid-cloud',
+            'payload': {
+              'uuid': 'uuid-cloud',
+              'nickname': 'CloudKid',
+              'avatar': AppImages.chipMain,
+              'age': 6,
+              'createdAt': 1700000000,
+            },
+            'deleted': false,
+            'version': 1,
+          },
+        ],
+      };
+    });
+
+    final pulled = await engine.run(pushLocal: false);
+    expect(pulled, isTrue);
+    expect(changesSent, isEmpty);
+    final kids = await KidRepository(phone).kids();
+    expect(kids.any((k) => k.nickname == 'CloudKid'), isTrue);
+  });
 }

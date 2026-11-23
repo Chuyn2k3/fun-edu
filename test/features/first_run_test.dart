@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:funedu/features/setup/first_run_screen.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/ui/widgets/primary_button.dart';
 

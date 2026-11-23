@@ -21,8 +21,6 @@ import '../online/online_consent_dialog.dart';
 import 'choose_mode_step.dart';
 import 'kid_profile_form.dart';
 
-const String consentAtKey = 'consentAt';
-
 enum _Step { gate, consent, chooseMode, profile }
 
 /// First launch: parent gate, consent, optional sign-in / guest choose,
@@ -45,6 +43,15 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
     final session = ref.read(sessionProvider).valueOrNull;
     if (session?.linked == true) {
       _step = _Step.profile;
+    } else {
+      ref.read(kidRepositoryProvider).setting(consentAtKey).then((val) {
+        if (mounted && val != null && _step == _Step.gate) {
+          final onlineEnabled = ref.read(onlineConfigProvider).enabled;
+          setState(() {
+            _step = onlineEnabled ? _Step.chooseMode : _Step.profile;
+          });
+        }
+      });
     }
   }
 
@@ -74,7 +81,9 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
       await ref.read(linkControllerProvider.notifier).afterSignIn(res);
       if (!mounted) return;
       final kids = await ref.read(kidRepositoryProvider).kids();
-      if (kids.isEmpty && ref.read(linkControllerProvider) is! LinkRestoring) {
+      if (kids.isEmpty &&
+          ref.read(sessionProvider).valueOrNull != null &&
+          ref.read(linkControllerProvider) is! LinkRestoring) {
         setState(() => _step = _Step.profile);
       }
     } on SignInException catch (e) {
@@ -132,8 +141,17 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
       _Step.consent => _ConsentStep(
           agreed: _agreed,
           onAgreed: (v) => setState(() => _agreed = v),
-          onContinue: () => setState(() =>
-              _step = onlineEnabled ? _Step.chooseMode : _Step.profile),
+          onContinue: () async {
+            await ref.read(kidRepositoryProvider).setSetting(
+                  consentAtKey,
+                  DateTime.now().toIso8601String(),
+                );
+            ref.invalidate(consentAtProvider);
+            if (mounted) {
+              setState(() =>
+                  _step = onlineEnabled ? _Step.chooseMode : _Step.profile);
+            }
+          },
         ),
       _Step.chooseMode => ChooseModeStep(
           onGuest: () => setState(() => _step = _Step.profile),
