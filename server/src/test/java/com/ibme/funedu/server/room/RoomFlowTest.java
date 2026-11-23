@@ -414,4 +414,56 @@ class RoomFlowTest {
             assertThat(ms2).isLessThan(ms1);
         }
     }
+
+    @Test
+    void wsWithoutTokenIsRefused() {
+        assertThatThrownBy(() -> RoomSocket.open(port, "AAAAAA", null)).isInstanceOf(Exception.class);
+    }
+
+    @Test
+    void sixthSocketIsRefused() throws Exception {
+        String a = family();
+        String code = room(a);
+        java.util.List<RoomSocket> sockets = new java.util.ArrayList<>();
+        try {
+            for (int i = 0; i < 5; i++) {
+                sockets.add(RoomSocket.open(port, code, a));
+            }
+            try (var sixth = RoomSocket.open(port, code, a)) {
+                var err = sixth.await(m -> "error".equals(m.get("t")) && "too_many".equals(m.get("code")));
+                assertThat(err.get("code")).isEqualTo("too_many");
+                long deadline = System.currentTimeMillis() + 2000;
+                while (sixth.closed == null && System.currentTimeMillis() < deadline) {
+                    Thread.sleep(20);
+                }
+                assertThat(sixth.closed).isNotNull();
+            }
+        } finally {
+            for (var s : sockets) s.close();
+        }
+    }
+
+    @Test
+    void wsFloodIsClosed() throws Exception {
+        String a = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            for (int i = 0; i < 25; i++) {
+                try {
+                    host.send(Map.of("t", "sticker", "id", "wave"));
+                } catch (Exception ignored) {
+                    break;
+                }
+            }
+            var err = host.await(m -> "error".equals(m.get("t")) && "too_many".equals(m.get("code")));
+            assertThat(err.get("code")).isEqualTo("too_many");
+            long deadline = System.currentTimeMillis() + 2000;
+            while (host.closed == null && System.currentTimeMillis() < deadline) {
+                Thread.sleep(20);
+            }
+            assertThat(host.closed).isNotNull();
+        }
+    }
 }

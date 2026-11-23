@@ -1,3 +1,13 @@
+{
+	servers {
+		timeouts {
+			read_body 30s
+			write 30s
+			idle 2m
+		}
+	}
+}
+
 # HTTPS certificates are issued automatically for API_DOMAIN.
 {$API_DOMAIN} {
 	encode gzip

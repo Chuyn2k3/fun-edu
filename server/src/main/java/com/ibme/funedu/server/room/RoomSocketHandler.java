@@ -4,8 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibme.funedu.server.auth.AuthFailedException;
 import com.ibme.funedu.server.auth.AuthService;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -23,13 +27,19 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 public class RoomSocketHandler extends TextWebSocketHandler {
 
+    static final int MAX_SOCKETS_PER_FAMILY = 5;
+    static final int MAX_MESSAGES_PER_SECOND = 20;
+
     private static final String ROOM = "room";
     private static final String FAMILY = "family";
     private static final String SAFE = "safe";
+    private static final String COUNTED = "counted";
+    private static final String MSG_TIMES = "msgTimes";
 
     private final RoomRegistry rooms;
     private final AuthService auth;
     private final ObjectMapper json;
+    private final ConcurrentHashMap<UUID, AtomicInteger> activeSockets = new ConcurrentHashMap<>();
 
     public RoomSocketHandler(RoomRegistry rooms, AuthService auth, ObjectMapper json) {
         this.rooms = rooms;
@@ -43,19 +53,37 @@ public class RoomSocketHandler extends TextWebSocketHandler {
             session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
+        UUID family;
         try {
-            session.getAttributes().put(FAMILY, auth.currentParent(token.getToken()).familyId());
+            family = auth.currentParent(token.getToken()).familyId();
         } catch (AuthFailedException e) {
             session.close(CloseStatus.POLICY_VIOLATION);
             return;
         }
         // Rooms send from several threads; the decorator serialises sends.
-        session.getAttributes().put(SAFE, new ConcurrentWebSocketSessionDecorator(session, 2000, 64 * 1024));
+        WebSocketSession safeSession = new ConcurrentWebSocketSessionDecorator(session, 2000, 64 * 1024);
+        session.getAttributes().put(FAMILY, family);
+        session.getAttributes().put(SAFE, safeSession);
+
+        AtomicInteger counter = activeSockets.computeIfAbsent(family, k -> new AtomicInteger());
+        if (counter.incrementAndGet() > MAX_SOCKETS_PER_FAMILY) {
+            counter.decrementAndGet();
+            error(safeSession, "too_many");
+            session.close(CloseStatus.POLICY_VIOLATION);
+            return;
+        }
+        session.getAttributes().put(COUNTED, family);
+        session.getAttributes().put(MSG_TIMES, new ArrayDeque<Long>());
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession raw, TextMessage message) throws Exception {
         WebSocketSession session = safe(raw);
+        if (!allowMessageRate(raw)) {
+            error(session, "too_many");
+            raw.close(CloseStatus.POLICY_VIOLATION);
+            return;
+        }
         if (message.getPayloadLength() > 2048) {
             error(session, "bad_message");
             return;
@@ -111,8 +139,34 @@ public class RoomSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession raw, CloseStatus status) {
+        Object counted = raw.getAttributes().remove(COUNTED);
+        if (counted instanceof UUID family) {
+            AtomicInteger c = activeSockets.get(family);
+            if (c != null && c.decrementAndGet() <= 0) {
+                activeSockets.remove(family, c);
+            }
+        }
         Room room = (Room) raw.getAttributes().get(ROOM);
         if (room != null) room.disconnected(safe(raw), rooms.now());
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean allowMessageRate(WebSocketSession raw) {
+        Object attr = raw.getAttributes().get(MSG_TIMES);
+        if (!(attr instanceof Deque<?>)) return true;
+        Deque<Long> times = (Deque<Long>) attr;
+        long now = rooms.now().toEpochMilli();
+        synchronized (times) {
+            long cutoff = now - 1000L;
+            while (!times.isEmpty() && times.peekFirst() <= cutoff) {
+                times.removeFirst();
+            }
+            if (times.size() >= MAX_MESSAGES_PER_SECOND) {
+                return false;
+            }
+            times.addLast(now);
+            return true;
+        }
     }
 
     private WebSocketSession safe(WebSocketSession raw) {

@@ -1,6 +1,6 @@
 package com.ibme.funedu.server.web;
 
-import com.ibme.funedu.server.auth.AuthProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,22 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain api(HttpSecurity http, AuthProperties props) throws Exception {
+    FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false);
+        return reg;
+    }
+
+    @Bean
+    FilterRegistrationBean<RequestSizeLimitFilter> requestSizeLimitFilterRegistration(RequestSizeLimitFilter filter) {
+        FilterRegistrationBean<RequestSizeLimitFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false);
+        return reg;
+    }
+
+    @Bean
+    SecurityFilterChain api(HttpSecurity http, RateLimitFilter rateLimit, RequestSizeLimitFilter sizeLimit)
+            throws Exception {
         http
                 // Bearer tokens only, no cookies: CSRF does not apply.
                 .csrf(c -> c.disable())
@@ -28,8 +43,8 @@ public class SecurityConfig {
                         .jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .addFilterBefore(new AuthRateLimitFilter(props.requestsPerMinute()),
-                        BearerTokenAuthenticationFilter.class);
+                .addFilterBefore(sizeLimit, BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(rateLimit, BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 }

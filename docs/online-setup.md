@@ -97,7 +97,10 @@ keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -sto
 
 ## 5. Triển khai lên máy Oracle
 
-Sao lưu: `server/deploy/backup.sh` chạy hằng đêm bằng cron (mã hóa AES-256 bằng `BACKUP_PASSPHRASE`, giữ 14 ngày, có thể chép ra ngoài bằng rclone qua `BACKUP_REMOTE`); thử khôi phục mỗi tháng bằng `restore.sh` (vào DB nháp `funedu_restore`). Chi tiết: `server/README.md` mục Backups.
+- Bật proxy **Cloudflare** (Full strict) trước tên miền API để ẩn IP gốc và lọc L7/DDoS.
+- Security List / tường lửa Oracle chỉ mở cổng **443** (và SSH từ IP quản trị); PostgreSQL và cổng `8080` chỉ nghe nội bộ Docker network.
+- Lưu trữ dữ liệu PostgreSQL và bản sao lưu trên **Oracle Block Volume đã mã hóa** (encrypted at rest).
+- Sao lưu: `server/deploy/backup.sh` chạy hằng đêm bằng cron (mã hóa AES-256 bằng `BACKUP_PASSPHRASE`, giữ 14 ngày, có thể chép ra ngoài bằng rclone qua `BACKUP_REMOTE`); thử khôi phục mỗi tháng bằng `restore.sh` (vào DB nháp `funedu_restore`). Chi tiết: `server/README.md` mục Backups.
 
 
 Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` (điền đủ), `docker compose up -d --build`. Caddy tự cấp HTTPS cho `API_DOMAIN`.

@@ -20,7 +20,19 @@ public class ApiErrors {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "unauthorized"));
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<Map<String, String>> notReadable(HttpMessageNotReadableException ex) {
+        Throwable t = ex;
+        while (t != null) {
+            if (t instanceof RequestSizeLimitFilter.PayloadTooLargeException) {
+                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of("error", "too_large"));
+            }
+            t = t.getCause();
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", "bad_request"));
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class,
             SyncService.BadSyncRequest.class, DeviceLinkService.BadModeException.class})
     ResponseEntity<Map<String, String>> badRequest() {
         return ResponseEntity.badRequest().body(Map.of("error", "bad_request"));

@@ -237,4 +237,29 @@ class SyncApiTest {
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(elapsed).isLessThan(3000);
     }
+
+    @Test
+    void deepPayloadIsRejected() {
+        String access = newFamily();
+        // Depth 6 is accepted; depth 7 is rejected with 400.
+        Map<String, Object> d6 = Map.of("l6", 1);
+        for (int i = 5; i >= 1; i--) d6 = Map.of("l" + i, d6);
+        assertThat(sync(access, 0, List.of(change("setting:k1:ok", d6, null))).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        Map<String, Object> d7 = Map.of("l7", 1);
+        for (int i = 6; i >= 1; i--) d7 = Map.of("l" + i, d7);
+        assertThat(sync(access, 0, List.of(change("setting:k1:deep", d7, null))).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void longStringIsRejected() {
+        String access = newFamily();
+        // Non-page strings are capped at 4 KB; page keeps the 16 KB payload cap.
+        assertThat(sync(access, 0, List.of(change("kid:k1", Map.of("nickname", "a".repeat(4097)), null)))
+                .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(sync(access, 0, List.of(change("page:k1:a", Map.of("svg", "p".repeat(5000)), null)))
+                .getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
 }

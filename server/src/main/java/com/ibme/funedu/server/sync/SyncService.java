@@ -19,6 +19,8 @@ public class SyncService {
 
     public static final int MAX_CHANGES = 2000;
     public static final int MAX_PAYLOAD_BYTES = 16 * 1024;
+    public static final int MAX_DEPTH = 6;
+    public static final int MAX_STRING_BYTES = 4 * 1024;
     public static final int PAGE = 1000;
 
     public record Change(String key, JsonNode payload, boolean deleted, Long baseVersion) {}
@@ -116,7 +118,8 @@ public class SyncService {
         if (changes.size() > MAX_CHANGES) throw new BadSyncRequest("too many changes");
         var seen = new java.util.HashSet<String>();
         for (Change c : changes) {
-            if (SyncKinds.kindOf(c.key()) == null) throw new BadSyncRequest("bad key");
+            String kind = SyncKinds.kindOf(c.key());
+            if (kind == null) throw new BadSyncRequest("bad key");
             if (!seen.add(c.key())) throw new BadSyncRequest("duplicate key");
             if (c.deleted()) continue;
             if (c.payload() == null || c.payload().isNull() || !c.payload().isObject()) {
@@ -124,6 +127,34 @@ public class SyncService {
             }
             if (write(c.payload()).getBytes(java.nio.charset.StandardCharsets.UTF_8).length > MAX_PAYLOAD_BYTES) {
                 throw new BadSyncRequest("payload too big");
+            }
+            validateTree(c.payload(), 0, !"page".equals(kind));
+        }
+    }
+
+    private static void validateTree(JsonNode node, int parentDepth, boolean limitStrings) {
+        if (node.isObject() || node.isArray()) {
+            int depth = parentDepth + 1;
+            if (depth > MAX_DEPTH) throw new BadSyncRequest("payload too deep");
+            if (node.isObject()) {
+                var fields = node.fields();
+                while (fields.hasNext()) {
+                    var entry = fields.next();
+                    if (limitStrings
+                            && entry.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8).length
+                                    > MAX_STRING_BYTES) {
+                        throw new BadSyncRequest("string too long");
+                    }
+                    validateTree(entry.getValue(), depth, limitStrings);
+                }
+            } else {
+                for (JsonNode child : node) {
+                    validateTree(child, depth, limitStrings);
+                }
+            }
+        } else if (limitStrings && node.isTextual()) {
+            if (node.asText().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > MAX_STRING_BYTES) {
+                throw new BadSyncRequest("string too long");
             }
         }
     }
