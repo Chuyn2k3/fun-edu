@@ -10,296 +10,8 @@ import '../net/network_status.dart';
 import '../online_config.dart';
 import '../room/room_transport.dart';
 
-/// Opens an authenticated WebSocket connection to `/ws/lobby`.
-typedef LobbyConnector = Future<RoomTransport> Function(String accessToken);
-
-class _IoLobbyTransport implements RoomTransport {
-  _IoLobbyTransport(this._socket)
-      : messages = _socket
-            .where((m) => m is String)
-            .map((m) {
-              try {
-                return jsonDecode(m as String);
-              } on FormatException {
-                return null;
-              }
-            })
-            .where((m) => m is Map<String, Object?>)
-            .cast<Map<String, Object?>>()
-            .asBroadcastStream();
-
-  final WebSocket _socket;
-
-  @override
-  final Stream<Map<String, Object?>> messages;
-
-  @override
-  void send(Map<String, Object?> message) {
-    if (_socket.readyState == WebSocket.open) {
-      _socket.add(jsonEncode(message));
-    }
-  }
-
-  @override
-  Future<void> close() => _socket.close();
-}
-
-/// Silent transport used by default under `flutter test` when a test boots
-/// [App] without overriding [lobbyConnectorProvider].
-class _NoopLobbyTransport implements RoomTransport {
-  final _in = StreamController<Map<String, Object?>>.broadcast();
-
-  @override
-  Stream<Map<String, Object?>> get messages => _in.stream;
-
-  @override
-  void send(Map<String, Object?> message) {}
-
-  @override
-  Future<void> close() async {
-    if (!_in.isClosed) {
-      await _in.close();
-    }
-  }
-}
-
-/// `https://api.x` -> `wss://api.x/ws/lobby`.
-Uri lobbySocketUri(OnlineConfig config) {
-  final base = Uri.parse(config.apiUrl);
-  return base.replace(
-    scheme: base.scheme == 'https' ? 'wss' : 'ws',
-    path: '${base.path}/ws/lobby',
-    queryParameters: null,
-  );
-}
-
-final lobbyConnectorProvider = Provider<LobbyConnector>((ref) {
-  if (Platform.environment.containsKey('FLUTTER_TEST')) {
-    return (_) async => _NoopLobbyTransport();
-  }
-  final config = ref.watch(onlineConfigProvider);
-  return (token) async {
-    final socket = await WebSocket.connect(
-      lobbySocketUri(config).toString(),
-      headers: {'Authorization': 'Bearer $token'},
-    ).timeout(const Duration(seconds: 10));
-    socket.pingInterval = const Duration(seconds: 15);
-    return _IoLobbyTransport(socket);
-  };
-});
-
-/// Clock used for invite expiry checks (tests override for deterministic time).
-final lobbyClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
-
-/// Heartbeat interval for `/ws/lobby` pings.
-final lobbyPingIntervalProvider =
-    Provider<Duration>((_) => const Duration(seconds: 25));
-
-/// Grace period after leaving `/game*`, `/collection`, or `/parent*` before
-/// closing `/ws/lobby`.
-final lobbyLeaveDelayProvider =
-    Provider<Duration>((_) => const Duration(seconds: 30));
-
-/// Reconnect backoff schedule on unexpected socket drops.
-final lobbyRetryDelaysProvider = Provider<List<Duration>>(
-  (_) => const [
-    Duration(seconds: 1),
-    Duration(seconds: 3),
-    Duration(seconds: 6),
-    Duration(seconds: 10),
-  ],
-);
-
-/// Set to `true` while the kid is in an active race or lesson so incoming
-/// invites queue quietly instead of interrupting.
-final lobbyBusyProvider = StateProvider<bool>((_) => false);
-
-/// An incoming race invite from a friend family.
-@immutable
-class LobbyInvite {
-  const LobbyInvite({
-    required this.inviteId,
-    required this.fromFamilyId,
-    required this.kidUuid,
-    required this.nickname,
-    required this.avatar,
-    required this.roomCode,
-    required this.expiresAt,
-  });
-
-  final String inviteId;
-  final String fromFamilyId;
-  final String kidUuid;
-  final String nickname;
-  final String avatar;
-  final String roomCode;
-  final DateTime expiresAt;
-
-  bool isExpiredAt(DateTime now) => !expiresAt.isAfter(now);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LobbyInvite &&
-          inviteId == other.inviteId &&
-          fromFamilyId == other.fromFamilyId &&
-          kidUuid == other.kidUuid &&
-          nickname == other.nickname &&
-          avatar == other.avatar &&
-          roomCode == other.roomCode &&
-          expiresAt == other.expiresAt;
-
-  @override
-  int get hashCode => Object.hash(
-        inviteId,
-        fromFamilyId,
-        kidUuid,
-        nickname,
-        avatar,
-        roomCode,
-        expiresAt,
-      );
-}
-
-/// Reply sent back to the inviter for an outgoing invite.
-@immutable
-class LobbyInviteReplyEvent {
-  const LobbyInviteReplyEvent({
-    required this.inviteId,
-    required this.accept,
-    required this.seq,
-  });
-
-  final String inviteId;
-  final bool accept;
-  final int seq;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LobbyInviteReplyEvent &&
-          inviteId == other.inviteId &&
-          accept == other.accept &&
-          seq == other.seq;
-
-  @override
-  int get hashCode => Object.hash(inviteId, accept, seq);
-}
-
-/// Real-time showcase reaction event pushed over `/ws/lobby`.
-@immutable
-class LobbyReactionEvent {
-  const LobbyReactionEvent({
-    required this.kidUuid,
-    required this.kind,
-    required this.fromNickname,
-    required this.seq,
-  });
-
-  final String kidUuid;
-  final String kind;
-  final String fromNickname;
-  final int seq;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LobbyReactionEvent &&
-          kidUuid == other.kidUuid &&
-          kind == other.kind &&
-          fromNickname == other.fromNickname &&
-          seq == other.seq;
-
-  @override
-  int get hashCode => Object.hash(kidUuid, kind, fromNickname, seq);
-}
-
-/// Friendship change pushed over `/ws/lobby`.
-@immutable
-class LobbyFriendEvent {
-  const LobbyFriendEvent({
-    required this.familyId,
-    required this.added,
-    required this.seq,
-  });
-
-  final String familyId;
-  final bool added;
-  final int seq;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LobbyFriendEvent &&
-          familyId == other.familyId &&
-          added == other.added &&
-          seq == other.seq;
-
-  @override
-  int get hashCode => Object.hash(familyId, added, seq);
-}
-
-/// Server error pushed over `/ws/lobby`.
-@immutable
-class LobbyErrorEvent {
-  const LobbyErrorEvent({
-    required this.code,
-    required this.seq,
-  });
-
-  final String code;
-  final int seq;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LobbyErrorEvent && code == other.code && seq == other.seq;
-
-  @override
-  int get hashCode => Object.hash(code, seq);
-}
-
-/// Live lobby presence, pending invite, and sequence-tracked events.
-@immutable
-class LobbyState {
-  const LobbyState({
-    this.connected = false,
-    this.onlineFriends = const {},
-    this.pendingInvite,
-    this.lastInviteReply,
-    this.lastReaction,
-    this.lastFriendEvent,
-    this.lastError,
-  });
-
-  final bool connected;
-  final Set<String> onlineFriends;
-  final LobbyInvite? pendingInvite;
-  final LobbyInviteReplyEvent? lastInviteReply;
-  final LobbyReactionEvent? lastReaction;
-  final LobbyFriendEvent? lastFriendEvent;
-  final LobbyErrorEvent? lastError;
-
-  LobbyState copyWith({
-    bool? connected,
-    Set<String>? onlineFriends,
-    LobbyInvite? Function()? pendingInvite,
-    LobbyInviteReplyEvent? lastInviteReply,
-    LobbyReactionEvent? lastReaction,
-    LobbyFriendEvent? lastFriendEvent,
-    LobbyErrorEvent? lastError,
-  }) =>
-      LobbyState(
-        connected: connected ?? this.connected,
-        onlineFriends: onlineFriends ?? this.onlineFriends,
-        pendingInvite:
-            pendingInvite == null ? this.pendingInvite : pendingInvite(),
-        lastInviteReply: lastInviteReply ?? this.lastInviteReply,
-        lastReaction: lastReaction ?? this.lastReaction,
-        lastFriendEvent: lastFriendEvent ?? this.lastFriendEvent,
-        lastError: lastError ?? this.lastError,
-      );
-}
+part 'lobby_models.dart';
+part 'lobby_transport.dart';
 
 /// Manages the `/ws/lobby` WebSocket connection, friend presence, invite queue,
 /// and lobby events. Connects only while signed in, in the foreground, online,
@@ -340,8 +52,7 @@ class LobbyClient extends Notifier<LobbyState> {
 
   final _inviteRepliesController =
       StreamController<LobbyInviteReplyEvent>.broadcast();
-  final _reactionsController =
-      StreamController<LobbyReactionEvent>.broadcast();
+  final _reactionsController = StreamController<LobbyReactionEvent>.broadcast();
   final _friendEventsController =
       StreamController<LobbyFriendEvent>.broadcast();
   final _errorsController = StreamController<LobbyErrorEvent>.broadcast();
@@ -625,9 +336,8 @@ class LobbyClient extends Notifier<LobbyState> {
     final delays = ref.read(lobbyRetryDelaysProvider);
     final delay = delays.isEmpty
         ? const Duration(seconds: 10)
-        : delays[_retryAttempt < delays.length
-            ? _retryAttempt
-            : delays.length - 1];
+        : delays[
+            _retryAttempt < delays.length ? _retryAttempt : delays.length - 1];
     _retryAttempt++;
     _reconnectTimer = Timer(delay, () {
       _reconnectTimer = null;
@@ -683,10 +393,7 @@ class LobbyClient extends Notifier<LobbyState> {
         _presenceV.clear();
         final rawOnline = m['friendsOnline'];
         final online = rawOnline is List
-            ? rawOnline
-                .whereType<String>()
-                .where((id) => id.isNotEmpty)
-                .toSet()
+            ? rawOnline.whereType<String>().where((id) => id.isNotEmpty).toSet()
             : <String>{};
         state = state.copyWith(connected: true, onlineFriends: online);
       case 'presence':
@@ -799,8 +506,7 @@ class LobbyClient extends Notifier<LobbyState> {
     final rawExpiresAt = m['expiresAt'];
     final rawExpiresInMs = m['expiresInMs'];
     if (rawExpiresAt is num) {
-      expiresAt =
-          DateTime.fromMillisecondsSinceEpoch(rawExpiresAt.toInt());
+      expiresAt = DateTime.fromMillisecondsSinceEpoch(rawExpiresAt.toInt());
     } else {
       final expiresInMs =
           rawExpiresInMs is num ? rawExpiresInMs.toInt() : 30000;
