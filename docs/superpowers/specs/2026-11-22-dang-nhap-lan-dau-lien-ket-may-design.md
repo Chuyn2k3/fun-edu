@@ -154,7 +154,12 @@ Quy tắc khi đăng nhập xong mà `device.linked == false` (app tự quyết,
 
 Máy có bé thuộc chính gia đình này (`dataOwnerFamilyId == familyId`) nhưng máy chủ báo chưa liên kết: vẫn theo hai dòng dưới (an toàn hơn tự xóa).
 
-Nếu `device.linked == true` (máy này đã từng liên kết với gia đình này): đồng bộ ngay như hiện nay, không hỏi.
+Nếu `device.linked == true` (máy này đã từng liên kết với gia đình này):
+- Nếu dữ liệu trên máy không thuộc gia đình này (`dataOwnerFamilyId != familyId` hoặc trống):
+  - Máy có bé và tài khoản có dữ liệu (`account.hasData == true`) → **hộp cảnh báo** (§7.4).
+  - Máy không có bé → kéo về (`pull`, không cần gọi link).
+  - Máy có bé nhưng tài khoản trống (`account.hasData == false`) → đồng bộ mang lên.
+- Nếu dữ liệu trên máy thuộc chính gia đình này (`dataOwnerFamilyId == familyId`): đồng bộ ngay như hiện nay, không hỏi.
 
 `SyncController` chỉ chạy khi `linked == true`. Gặp 409 `link_required` (ví dụ tài khoản bị xóa liên kết ở máy chủ) → đặt `linked = false`, đi lại bảng trên.
 

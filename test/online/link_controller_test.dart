@@ -283,6 +283,9 @@ void main() {
   });
 
   test('already linked device just syncs', () async {
+    await KidRepository(db).setSetting(dataOwnerKey, 'fam-1');
+    await KidRepository(db).addKid(nickname: 'OwnKid', avatar: kidAvatars[0], age: 5);
+
     handler = (req) {
       if (req.url.path == '/api/v1/auth/google') {
         return jsonResponse({
@@ -302,6 +305,123 @@ void main() {
 
     expect(c.read(linkControllerProvider), isA<LinkIdle>());
     expect(c.read(sessionProvider).value!.linked, isTrue);
+    expect(await KidRepository(db).setting(dataOwnerKey), 'fam-1');
+  });
+
+  test('linked device with guest data after delete-all warns', () async {
+    await KidRepository(db).addKid(nickname: 'GuestKid', avatar: kidAvatars[0], age: 5);
+    // dataOwnerKey is null (e.g. after deleteAllData or fresh guest usage)
+
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': true},
+          'account': {
+            'hasData': true,
+            'kids': [
+              {'nickname': 'CloudKid', 'avatar': 'chip', 'stars': 50},
+            ],
+          },
+        });
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    final res = await c.read(sessionProvider.notifier).signIn('google');
+    await c.read(linkControllerProvider.notifier).afterSignIn(res);
+
+    final state = c.read(linkControllerProvider);
+    expect(state, isA<LinkNeedsWarning>());
+    final warning = state as LinkNeedsWarning;
+    expect(warning.account.kids.single.nickname, 'CloudKid');
+    expect(warning.local.single.nickname, 'GuestKid');
+    final syncRequests = requests.where((r) => r.url.path == '/api/v1/sync');
+    expect(syncRequests, isEmpty);
+  });
+
+  test('linked device with own data just syncs', () async {
+    await KidRepository(db).setSetting(dataOwnerKey, 'fam-1');
+    await KidRepository(db).addKid(nickname: 'OwnKid', avatar: kidAvatars[0], age: 5);
+
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': true},
+          'account': {
+            'hasData': true,
+            'kids': [
+              {'nickname': 'OwnKid', 'avatar': 'chip', 'stars': 50},
+            ],
+          },
+        });
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    final res = await c.read(sessionProvider.notifier).signIn('google');
+    await c.read(linkControllerProvider.notifier).afterSignIn(res);
+
+    expect(c.read(linkControllerProvider), isA<LinkIdle>());
+    expect(c.read(sessionProvider).value!.linked, isTrue);
+    expect(await KidRepository(db).setting(dataOwnerKey), 'fam-1');
+  });
+
+  test('linked device with no kids pulls account data', () async {
+    // db has no kids
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': true},
+          'account': {
+            'hasData': true,
+            'kids': [
+              {'nickname': 'CloudKid', 'avatar': 'chip', 'stars': 50},
+            ],
+          },
+        });
+      }
+      if (req.url.path == '/api/v1/sync') {
+        final body = jsonDecode(req.body) as Map<String, dynamic>;
+        final since = (body['since'] as num?)?.toInt() ?? 0;
+        if (since >= 1) {
+          return jsonResponse({'version': 1, 'hasMore': false, 'conflicts': [], 'records': []});
+        }
+        return jsonResponse({
+          'version': 1,
+          'hasMore': false,
+          'conflicts': [],
+          'records': [
+            {
+              'key': 'kid:uuid-cloud',
+              'payload': {'nickname': 'CloudKid', 'avatar': 'chip', 'age': 6, 'createdAt': 1700000000},
+              'deleted': false,
+              'version': 1,
+            },
+          ],
+        });
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    final res = await c.read(sessionProvider.notifier).signIn('google');
+    await c.read(linkControllerProvider.notifier).afterSignIn(res);
+
+    expect(c.read(linkControllerProvider), isA<LinkIdle>());
+    expect(c.read(sessionProvider).value!.linked, isTrue);
+    final kids = await KidRepository(db).kids();
+    expect(kids.map((k) => k.nickname), contains('CloudKid'));
   });
 
   test('restore resumes after restart', () async {

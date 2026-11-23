@@ -84,9 +84,9 @@
 
 **Quy tắc mới** (thêm vào spec §7.1): `r.linked == true` **và** máy có bé **và** `dataOwnerKey` khác `familyId` (kể cả trống) **và** `account.hasData` → `LinkNeedsWarning` (xác nhận → `replace` như thường). Nếu `account.hasData == false` → đồng bộ như thường (mang lên). Nếu máy không có bé → kéo về (giai đoạn `'pull'`, không cần gọi link).
 
-- [ ] **Step 1: Test hỏng**: `linked device with guest data after delete-all warns` (đăng nhập F → đăng xuất → `deleteAllData` → tạo bé khách → đăng nhập F, máy chủ giả trả `linked: true`, có dữ liệu → `LinkNeedsWarning`, 0 thay đổi đẩy lên); `linked device with own data just syncs` (owner = F → đồng bộ, không hộp).
-- [ ] **Step 2–4:** chạy hỏng → cài → `flutter analyze && flutter test` đạt.
-- [ ] **Step 5: Commit** `fix(online): warn when a linked device holds someone else's data`.
+- [x] **Step 1: Test hỏng**: `linked device with guest data after delete-all warns` (đăng nhập F → đăng xuất → `deleteAllData` → tạo bé khách → đăng nhập F, máy chủ giả trả `linked: true`, có dữ liệu → `LinkNeedsWarning`, 0 thay đổi đẩy lên); `linked device with own data just syncs` (owner = F → đồng bộ, không hộp).
+- [x] **Step 2–4:** chạy hỏng → cài → `flutter analyze && flutter test` đạt.
+- [x] **Step 5: Commit** `fix(online): warn when a linked device holds someone else's data`.
 
 ### Task 4: Trang vở — chỉ dựng khi xong chữ, không làm hỏng tiến độ, chỉ mục cho máy mới (lỗi 6, 7, 8, 10)
 

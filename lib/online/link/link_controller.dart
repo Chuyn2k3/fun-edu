@@ -85,6 +85,23 @@ class LinkController extends Notifier<LinkState> {
     if (s == null) return;
 
     if (r.linked) {
+      final localKids = await KidRepository(_db).kids();
+      final owner = await KidRepository(_db).setting(dataOwnerKey);
+
+      if (owner != s.familyId) {
+        if (localKids.isNotEmpty && r.account.hasData) {
+          final local = await localSummary(SyncStore(_db));
+          state = LinkNeedsWarning(r.account, local);
+          return;
+        }
+        if (localKids.isEmpty) {
+          await KidRepository(_db).setSetting(restorePendingKey, restoreStagePull);
+          ref.invalidate(restorePendingSettingProvider);
+          await _ensureLinkedThenPull(restoreStagePull);
+          return;
+        }
+      }
+
       await _session.markLinked();
       await KidRepository(_db).setSetting(dataOwnerKey, s.familyId);
       ref.read(syncControllerProvider.notifier).syncNow();
