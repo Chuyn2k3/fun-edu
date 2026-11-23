@@ -7,7 +7,10 @@ import 'package:funedu/online/api_client.dart';
 import 'package:funedu/online/auth/identity_providers.dart';
 import 'package:funedu/online/auth/token_store.dart';
 import 'package:funedu/online/online_config.dart';
+import 'package:funedu/online/sync/sync_engine.dart';
 import 'package:funedu/parent/screens/family_account_card.dart';
+import 'package:funedu/profile/avatars.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -15,12 +18,14 @@ import 'online_fakes.dart';
 
 void main() {
   late List<http.Request> requests;
+  late http.Response Function(http.Request) handler;
   late MemoryTokenStore store;
   late FakeIds ids;
   late AppDatabase db;
 
   setUp(() {
     requests = [];
+    handler = fakeServer;
     store = MemoryTokenStore();
     ids = FakeIds();
     db = AppDatabase(NativeDatabase.memory());
@@ -33,7 +38,7 @@ void main() {
         onlineConfigProvider.overrideWithValue(OnlineConfig(apiUrl: apiUrl)),
         httpClientProvider.overrideWithValue(MockClient((req) async {
           requests.add(req);
-          return fakeServer(req);
+          return handler(req);
         })),
         tokenStoreProvider.overrideWithValue(store),
         identityProvidersProvider.overrideWithValue(ids),
@@ -52,9 +57,10 @@ void main() {
     expect(find.byType(OutlinedButton), findsNothing);
   });
 
-  testWidgets('signed out: Google and Apple buttons, at least 48 tall', (t) async {
+  testWidgets('signed out: Google and Apple buttons, guest hint shows', (t) async {
     await pump(t);
     expect(find.text('Lưu tiến độ online'), findsOneWidget);
+    expect(find.text('Đang dùng thử: dữ liệu chỉ ở trên máy này'), findsOneWidget);
     for (final k in ['sign-in-google', 'sign-in-apple']) {
       expect(t.getSize(find.byKey(ValueKey(k))).height, greaterThanOrEqualTo(48));
     }
@@ -91,6 +97,77 @@ void main() {
     await t.pumpAndSettle();
     expect(requests.where((r) => r.url.path == '/api/v1/sync'), isNotEmpty);
     expect(find.textContaining('Đã lưu online lúc'), findsOneWidget);
+
+    final c = ProviderScope.containerOf(t.element(find.byType(FamilyAccountCard)));
+    c.read(syncControllerProvider.notifier).stop();
+  });
+
+  testWidgets('second tap while signing in is ignored', (t) async {
+    await pump(t);
+    // Tap sign-in-google
+    await t.tap(find.byKey(const ValueKey('sign-in-google')));
+    await t.pump(); // Start dialog
+
+    // While consent dialog is open, tapping the underlying button is blocked or ignored
+    expect(find.text('Lưu dữ liệu của bé lên máy chủ?'), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey('consent-online')));
+    await t.pumpAndSettle();
+
+    expect(requests.where((r) => r.url.path == '/api/v1/auth/google'), hasLength(1));
+
+    final c = ProviderScope.containerOf(t.element(find.byType(FamilyAccountCard)));
+    c.read(syncControllerProvider.notifier).stop();
+  });
+
+  testWidgets('sign out shows updated message', (t) async {
+    store.session = const StoredSession(
+      accessToken: 'a1',
+      refreshToken: 'r1',
+      familyId: 'fam-1',
+      provider: 'google',
+      email: 'me@x.vn',
+      linked: true,
+    );
+    await pump(t);
+    expect(find.text('Đã đăng nhập: me@x.vn'), findsOneWidget);
+
+    await t.tap(find.byKey(const ValueKey('sign-out')));
+    await t.pumpAndSettle();
+
+    expect(find.text('Đã đăng xuất. Dữ liệu vẫn ở trên máy này'), findsOneWidget);
+    expect(store.session, isNull);
+  });
+
+  testWidgets('signing in with existing account data on guest device shows replace warning dialog', (t) async {
+    await KidRepository(db).addKid(nickname: 'Bé Na', avatar: kidAvatars.first, age: 5);
+
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': false},
+          'account': {
+            'hasData': true,
+            'kids': [
+              {'nickname': 'Bé Cloud', 'avatar': 'chip', 'stars': 50},
+            ],
+          },
+        });
+      }
+      return fakeServer(req);
+    };
+
+    await pump(t);
+    await t.tap(find.byKey(const ValueKey('sign-in-google')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('consent-online')));
+    await t.pumpAndSettle();
+
+    expect(find.text('Tài khoản này đã có dữ liệu'), findsOneWidget);
+    expect(find.textContaining('Bé Na'), findsOneWidget);
+    expect(find.textContaining('Bé Cloud'), findsOneWidget);
   });
 
   testWidgets('deleting the online account asks first, then signs out', (t) async {

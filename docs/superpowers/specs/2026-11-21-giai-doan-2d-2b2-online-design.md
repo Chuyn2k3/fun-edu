@@ -41,20 +41,20 @@ App Flutter (offline-first, drift)          Máy chủ Oracle (Docker Compose)
 - **Xóa tài khoản** ngay trong app (App Store và Google Play đều bắt buộc): xóa toàn bộ dữ liệu gia đình trên máy chủ; dữ liệu trên máy giữ hoặc xóa theo lựa chọn của ba mẹ.
 - **Đăng xuất**: app quay về chế độ chỉ trên máy, dữ liệu trên máy giữ nguyên.
 
-**Dữ liệu máy chủ giữ về ba mẹ:** nhà cung cấp + mã định danh (`sub`) và email (Apple có thể là email ẩn danh `privaterelay`). **Về bé:** tên gọi ở nhà, biệt danh đua, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy (dữ liệu tối thiểu).
+**Dữ liệu máy chủ giữ về ba mẹ:** nhà cung cấp + mã định danh (`sub`) và email (Apple có thể là email ẩn danh `privaterelay`), mã ngẫu nhiên của thiết bị (`deviceId` trong `family_devices`). **Về bé:** tên gọi ở nhà, biệt danh đua, mã ảnh đại diện có sẵn, tuổi, tiến độ. **Không đồng bộ** toạ độ nét vẽ (`stroke_attempts`) — chỉ ở trên máy; chỉ trang vở đẹp nhất mỗi chữ (`notebook_pages`, đã rút gọn) được đồng bộ để giữ Vở của bé khi đổi máy (dữ liệu tối thiểu).
 
 ## 5. Đồng bộ dữ liệu (2D)
 
 **Offline-first:** mọi ghi vẫn vào drift trước; đồng bộ chạy nền khi có mạng (mở app, xong bài, xong trận, mỗi 5 phút khi đang mở, kéo để làm mới ở Góc ba mẹ).
 
 **Thiết kế đã làm (2026-11-21) — kho bản ghi theo khóa** (thay cho cột `uuid/updated_at/dirty` ở mọi bảng, để không phải sửa từng repository):
-- Máy chủ: bảng `sync_records (family_id, key, kind, payload jsonb, deleted, version, updated_at)`, khóa chính `(family_id, key)`; `version` từ một sequence, các lần đồng bộ của một gia đình chạy tuần tự (advisory lock) nên con trỏ không bỏ sót bản ghi. Loại bản ghi có danh sách trắng (không có nét vẽ).
-- App drift **v8**: `kid_profiles.uuid` (khóa toàn cục của bé, migration tự cấp) + bảng `synced_records (key, version, payload_json)` nhớ bản đã đồng bộ. Con trỏ ở `app_settings` khóa `sync.cursor`.
-- Khóa bản ghi và luật gộp: xem `docs/online-setup.md` §6.
+- Máy chủ: bảng `sync_records (family_id, key, kind, payload jsonb, deleted, version, updated_at)`, khóa chính `(family_id, key)`; `version` từ một sequence, các lần đồng bộ của một gia đình chạy tuần tự (advisory lock) nên con trỏ không bỏ sót bản ghi. Loại bản ghi có danh sách trắng (`kid`, `level`, `usage`, `lesson`, `star_reward`, `sticker`, `garage`, `badge`, `page`; không có nét vẽ `stroke_attempts`).
+- App drift **v9**: `kid_profiles.uuid` (khóa toàn cục của bé, migration tự cấp) + bảng `synced_records (key, version, payload_json)` nhớ bản đã đồng bộ + bảng `notebook_pages` lưu trang vở đẹp nhất mỗi chữ. Con trỏ ở `app_settings` khóa `sync.cursor`.
+- Khóa bản ghi và luật gộp: xem `docs/online-setup.md` §6 và `docs/superpowers/specs/2026-11-22-dang-nhap-lan-dau-lien-ket-may-design.md`.
 
 **Giao thức:** `POST /api/v1/sync` gửi `{since, changes:[{key, payload, deleted, baseVersion}]}` → máy chủ lưu các thay đổi có `baseVersion` khớp, các thay đổi lệch trả về trong `conflicts` kèm bản đang có → trả `{version, records (≤ 1000, theo version), conflicts, hasMore}`. App đẩy tối đa 500 thay đổi/lần, kéo hết các trang rồi mới gộp (bé trước, tiến độ sau).
 
-**Máy thứ hai đăng nhập:** nếu máy đã có bé chưa đồng bộ → hỏi ba mẹ "Gộp bé trên máy này vào tài khoản?" (gộp hoặc ghép với bé cùng tên đã có).
+**Liên kết máy và đăng nhập thiết bị:** liên kết thiết bị qua `/api/v1/sync/link` (`family_devices`). Nếu tài khoản đã có dữ liệu và máy khách có dữ liệu bé dùng thử, hiển thị hộp cảnh báo thay dữ liệu (`ReplaceDataDialog`) để ba mẹ xác nhận xóa dữ liệu trên máy và thay bằng tài khoản, hoặc hủy đăng xuất giữ nguyên dữ liệu khách.
 
 ## 6. Phòng đua qua mạng (2B-2)
 

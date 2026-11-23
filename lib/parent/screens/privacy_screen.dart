@@ -14,6 +14,7 @@ const _sections = <(String, List<String>)>[
       '• Tiến độ học: bài đã làm, sao, cấp độ, kết quả tập viết.',
       '• Thời gian bé dùng ứng dụng mỗi ngày.',
       '• Tên các phần thưởng do ba mẹ tự đặt.',
+      '• Mã ngẫu nhiên của máy, chỉ để biết máy nào đã liên kết với tài khoản.',
       '• Các nét bé viết (tọa độ từng nét), giữ lại để cải thiện việc chấm '
           'bài tập viết. Các nét này chỉ lưu trên máy này.',
     ],
@@ -23,12 +24,13 @@ const _sections = <(String, List<String>)>[
     [
       'Mặc định toàn bộ dữ liệu chỉ nằm trên máy này và ứng dụng không gửi '
           'gì lên mạng.',
-      'Nếu ba mẹ đăng nhập "Tài khoản gia đình" (Google hoặc Apple) trong Góc '
-          'ba mẹ, ứng dụng lưu lên máy chủ của FunEdu: tên gọi ở nhà, ảnh đại '
-          'diện, tuổi, tiến độ học và trò chơi, phần thưởng và cài đặt giờ '
-          'chơi — để dùng chung trên nhiều máy. Từ tài khoản Google/Apple, '
-          'chúng tôi chỉ giữ mã định danh và email của ba mẹ. Các nét bé viết '
-          'không bao giờ rời khỏi máy.',
+      'Nếu ba mẹ đăng nhập "Tài khoản gia đình" (Google hoặc Apple), ứng dụng '
+          'lưu lên máy chủ của FunEdu: tên gọi ở nhà, ảnh đại diện, tuổi, tiến '
+          'độ học và trò chơi, phần thưởng, cài đặt giờ chơi, mã ngẫu nhiên '
+          'của máy để liên kết, và trang vở đẹp nhất của mỗi chữ (nét chữ bé '
+          'viết), để giữ Vở của bé khi đổi máy; các lần tập khác chỉ ở trên '
+          'máy. Từ tài khoản Google/Apple, chúng tôi chỉ giữ mã định danh và '
+          'email của ba mẹ.',
       'Ba mẹ có thể đăng xuất hoặc xóa tài khoản online bất cứ lúc nào; xóa '
           'tài khoản sẽ xóa vĩnh viễn mọi dữ liệu của gia đình trên máy chủ.',
     ],

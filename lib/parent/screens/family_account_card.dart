@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/online/online_consent_dialog.dart';
+import '../../features/online/replace_data_dialog.dart';
 import '../../online/auth/identity_providers.dart';
 import '../../online/auth/session_controller.dart';
+import '../../online/link/link_controller.dart';
 import '../../online/online_config.dart';
 import '../../online/sync/sync_engine.dart';
 import '../../ui/theme/tokens.dart';
@@ -13,8 +15,15 @@ import 'parent_card.dart';
 /// "Tài khoản gia đình" in Góc ba mẹ: sign in with Google or Apple to keep
 /// the kids' progress online and share it between devices. Hidden entirely
 /// in a build without a server address.
-class FamilyAccountCard extends ConsumerWidget {
+class FamilyAccountCard extends ConsumerStatefulWidget {
   const FamilyAccountCard({super.key});
+
+  @override
+  ConsumerState<FamilyAccountCard> createState() => _FamilyAccountCardState();
+}
+
+class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
+  bool _signingIn = false;
 
   static void _say(BuildContext context, String text) {
     ScaffoldMessenger.of(context)
@@ -22,36 +31,56 @@ class FamilyAccountCard extends ConsumerWidget {
       ..showSnackBar(SnackBar(content: Text(text)));
   }
 
-  Future<void> _signIn(BuildContext context, WidgetRef ref, String provider) async {
-    final agreed = await showOnlineConsentDialog(context);
-    if (!agreed || !context.mounted) return;
+  Future<void> _signIn(BuildContext context, String provider) async {
+    if (_signingIn) return;
+    _signingIn = true;
     try {
-      await ref.read(sessionProvider.notifier).signIn(provider);
-      if (context.mounted) _say(context, 'Đã đăng nhập. Đang lưu tiến độ online…');
-    } on SignInException catch (e) {
-      if (!context.mounted) return;
-      // Debug builds add the technical reason, so setting up a build is
-      // not guesswork; parents only see the plain sentence.
-      final why = kDebugMode && e.detail != null ? '\n(${e.detail})' : '';
-      switch (e.failure) {
-        case SignInFailure.cancelled:
-          break;
-        case SignInFailure.setup:
-          _say(context, 'Chưa đăng nhập được với Google/Apple trên máy này, ba mẹ thử lại sau nhé$why');
-        case SignInFailure.network:
-          _say(context, 'Không kết nối được máy chủ, ba mẹ thử lại sau nhé$why');
-        case SignInFailure.rejected:
-          _say(context, 'Đăng nhập không thành công, ba mẹ thử lại nhé$why');
+      final agreed = await showOnlineConsentDialog(context);
+      if (!agreed || !context.mounted) return;
+      try {
+        final result = await ref.read(sessionProvider.notifier).signIn(provider);
+        await ref.read(linkControllerProvider.notifier).afterSignIn(result);
+        if (!context.mounted) return;
+        final linkState = ref.read(linkControllerProvider);
+        if (linkState is LinkNeedsWarning) {
+          final session = ref.read(sessionProvider).valueOrNull;
+          final who = session?.email ?? (session?.provider == 'apple' ? 'Apple' : 'Google');
+          await showReplaceDataDialog(
+            context,
+            local: linkState.local,
+            account: linkState.account,
+            accountLabel: who,
+          );
+        } else {
+          _say(context, 'Đã đăng nhập. Đang lưu tiến độ online…');
+        }
+      } on SignInException catch (e) {
+        if (!context.mounted) return;
+        final why = kDebugMode && e.detail != null ? '\n(${e.detail})' : '';
+        switch (e.failure) {
+          case SignInFailure.cancelled:
+            break;
+          case SignInFailure.setup:
+            _say(context, 'Chưa đăng nhập được với Google/Apple trên máy này, ba mẹ thử lại sau nhé$why');
+          case SignInFailure.network:
+            _say(context, 'Không kết nối được máy chủ, ba mẹ thử lại sau nhé$why');
+          case SignInFailure.rejected:
+            _say(context, 'Đăng nhập không thành công, ba mẹ thử lại nhé$why');
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _signingIn = false);
       }
     }
   }
 
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+  Future<void> _signOut(BuildContext context) async {
     await ref.read(sessionProvider.notifier).signOut();
-    if (context.mounted) _say(context, 'Đã đăng xuất. Dữ liệu trên máy này vẫn giữ nguyên');
+    if (context.mounted) _say(context, 'Đã đăng xuất. Dữ liệu vẫn ở trên máy này');
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+  Future<void> _delete(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -85,7 +114,7 @@ class FamilyAccountCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (!ref.watch(onlineConfigProvider).enabled) return const SizedBox.shrink();
     final session = ref.watch(sessionProvider).valueOrNull;
     final ids = ref.watch(identityProvidersProvider);
@@ -96,9 +125,30 @@ class FamilyAccountCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Đang dùng thử: dữ liệu chỉ ở trên máy này',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             const Text(
               'Đăng nhập để giữ tiến độ của các bé khi đổi máy và dùng chung '
-              'trên điện thoại, máy tính bảng. Nét vẽ của bé vẫn chỉ ở trên máy này.',
+              'trên điện thoại, máy tính bảng.',
               style: _body,
             ),
             const SizedBox(height: 14),
@@ -106,7 +156,7 @@ class FamilyAccountCard extends ConsumerWidget {
               key: const ValueKey('sign-in-google'),
               icon: Icons.account_circle_rounded,
               label: 'Đăng nhập với Google',
-              onTap: () => _signIn(context, ref, 'google'),
+              onTap: _signingIn ? null : () => _signIn(context, 'google'),
             ),
             if (ids.appleAvailable) ...[
               const SizedBox(height: 10),
@@ -114,7 +164,7 @@ class FamilyAccountCard extends ConsumerWidget {
                 key: const ValueKey('sign-in-apple'),
                 icon: Icons.apple_rounded,
                 label: 'Đăng nhập với Apple',
-                onTap: () => _signIn(context, ref, 'apple'),
+                onTap: _signingIn ? null : () => _signIn(context, 'apple'),
               ),
             ],
           ],
@@ -153,7 +203,7 @@ class FamilyAccountCard extends ConsumerWidget {
             key: const ValueKey('sign-out'),
             icon: Icons.logout_rounded,
             label: 'Đăng xuất',
-            onTap: () => _signOut(context, ref),
+            onTap: () => _signOut(context),
           ),
           const SizedBox(height: 10),
           _Button(
@@ -161,7 +211,7 @@ class FamilyAccountCard extends ConsumerWidget {
             icon: Icons.delete_forever_rounded,
             label: 'Xóa tài khoản online',
             color: AppColors.primary,
-            onTap: () => _delete(context, ref),
+            onTap: () => _delete(context),
           ),
         ],
       ),
@@ -214,4 +264,3 @@ class _Button extends StatelessWidget {
     );
   }
 }
-
