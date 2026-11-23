@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Chíp Chíp (Local Server)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=FUNEDU_API_URL=http://localhost:8080",
+        "--dart-define=GOOGLE_SERVER_CLIENT_ID=449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com"
+      ]
+    },
+    {
+      "name": "Chíp Chíp (Android Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=FUNEDU_API_URL=http://10.0.2.2:8080",
+        "--dart-define=GOOGLE_SERVER_CLIENT_ID=449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com"
+      ]
+    },
+    {
+      "name": "Chíp Chíp (Offline)",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}
