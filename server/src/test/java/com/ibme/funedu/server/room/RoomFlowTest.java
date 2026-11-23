@@ -247,4 +247,171 @@ class RoomFlowTest {
             assertThat(r.get("host")).isEqualTo(r.get("you"));
         }
     }
+
+    @Test
+    void racerAwayThenBackKeepsProgress() throws Exception {
+        String a = family(), b = family();
+        String code = room(a);
+        String kidB = kid();
+        try (var host = RoomSocket.open(port, code, a)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            var guest = RoomSocket.open(port, code, b);
+            guest.join(kidB, "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+            host.send(Map.of("t", "start"));
+            guest.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            Thread.sleep(60);
+            guest.send(Map.of("t", "step", "n", 2));
+            host.awaitRoom(m -> ((Number) players(m).get(1).get("steps")).intValue() == 2);
+
+            guest.close();
+            var awaySnap = host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("away")));
+            assertThat(players(awaySnap).get(1).get("left")).isEqualTo(false);
+            assertThat(((Number) players(awaySnap).get(1).get("awayMsLeft")).longValue()).isGreaterThan(0);
+
+            try (var back = RoomSocket.open(port, code, b)) {
+                back.join(kidB, "Bo");
+                var resumed = host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("connected")));
+                assertThat(players(resumed).get(1).get("steps")).isEqualTo(2);
+                assertThat(players(resumed).get(1).get("away")).isEqualTo(false);
+                assertThat(players(resumed).get(1).get("awayMsLeft")).isNull();
+            }
+        }
+    }
+
+    @Test
+    void racerAwayPastGraceIsLeftAndRaceGoesOn() throws Exception {
+        String a = family(), b = family(), c = family();
+        String code = room(a);
+        try (var p1 = RoomSocket.open(port, code, a);
+                var p3 = RoomSocket.open(port, code, c)) {
+            p1.join(kid(), "Na");
+            p1.awaitRoom(m -> true);
+            var p2 = RoomSocket.open(port, code, b);
+            p2.join(kid(), "Bo");
+            p1.awaitRoom(m -> players(m).size() == 2);
+            p3.join(kid(), "Bi");
+            p1.awaitRoom(m -> players(m).size() == 3);
+
+            p1.send(Map.of("t", "start"));
+            p1.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            // p2 disconnects and never returns (> 1s grace)
+            p2.close();
+            var leftSnap = p1.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("left")));
+            assertThat(leftSnap.get("state")).isEqualTo("racing");
+            assertThat(players(leftSnap).get(1).get("away")).isEqualTo(false);
+            assertThat(leftSnap.get("endReason")).isNull();
+        }
+    }
+
+    @Test
+    void onlyOneLeftWinsAtOnce() throws Exception {
+        String a = family(), b = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            var guest = RoomSocket.open(port, code, b);
+            guest.join(kid(), "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+            host.send(Map.of("t", "start"));
+            host.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            guest.close();
+            var done = host.awaitRoom(m -> "done".equals(m.get("state")));
+            assertThat(done.get("endReason")).isEqualTo("others_left");
+            assertThat(players(done).get(0).get("rank")).isEqualTo(1);
+            assertThat(players(done).get(1).get("left")).isEqualTo(true);
+        }
+    }
+
+    @Test
+    void everyoneElseLeftAfterSomeoneFinished() throws Exception {
+        String a = family(), b = family(), c = family();
+        String code = room(a);
+        try (var p1 = RoomSocket.open(port, code, a);
+                var p2 = RoomSocket.open(port, code, b);
+                var p3 = RoomSocket.open(port, code, c)) {
+            p1.join(kid(), "An");
+            p1.awaitRoom(m -> true);
+            p2.join(kid(), "Bo");
+            p1.awaitRoom(m -> players(m).size() == 2);
+            p3.join(kid(), "Chi");
+            p1.awaitRoom(m -> players(m).size() == 3);
+
+            p1.send(Map.of("t", "start"));
+            p1.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            // A finishes rank 1, then leaves.
+            for (int n = 1; n <= 10; n++) {
+                Thread.sleep(60);
+                p1.send(Map.of("t", "step", "n", n));
+            }
+            p3.awaitRoom(m -> Integer.valueOf(1).equals(players(m).get(0).get("rank")));
+            p1.send(Map.of("t", "leave"));
+
+            // B disconnects and times out -> C is the sole present player -> rank 2, others_left.
+            p2.close();
+            var done = p3.awaitRoom(m -> "done".equals(m.get("state")));
+            assertThat(done.get("endReason")).isEqualTo("others_left");
+            assertThat(players(done).get(0).get("rank")).isEqualTo(1);
+            assertThat(players(done).get(2).get("rank")).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void dropDuringCountdown() throws Exception {
+        // 1) Dropping during countdown keeps the player away; if they leave/drop before racing starts,
+        //    Rule C triggers immediately when countdown finishes and racing begins.
+        String a = family(), b = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a);
+                var guest = RoomSocket.open(port, code, b)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            guest.join(kid(), "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+            host.send(Map.of("t", "start"));
+            host.awaitRoom(m -> "countdown".equals(m.get("state")));
+
+            guest.send(Map.of("t", "leave"));
+            var inCountdown = host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("left")));
+            assertThat(inCountdown.get("state")).isEqualTo("countdown");
+
+            // Once countdown ends, Rule C triggers immediately!
+            var done = host.awaitRoom(m -> "done".equals(m.get("state")));
+            assertThat(done.get("endReason")).isEqualTo("others_left");
+            assertThat(players(done).get(0).get("rank")).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void awayFieldsInSnapshotDecrease() throws Exception {
+        String a = family(), b = family();
+        String code = room(a);
+        try (var host = RoomSocket.open(port, code, a)) {
+            host.join(kid(), "Na");
+            host.awaitRoom(m -> true);
+            var guest = RoomSocket.open(port, code, b);
+            guest.join(kid(), "Bo");
+            host.awaitRoom(m -> players(m).size() == 2);
+            host.send(Map.of("t", "start"));
+            host.awaitRoom(m -> "racing".equals(m.get("state")));
+
+            guest.close();
+            var snap1 = host.awaitRoom(m -> Boolean.TRUE.equals(players(m).get(1).get("away")));
+            long ms1 = ((Number) players(snap1).get(1).get("awayMsLeft")).longValue();
+            assertThat(ms1).isBetween(1L, 1000L);
+
+            Thread.sleep(200);
+            host.send(Map.of("t", "step", "n", 1));
+            var snap2 = host.awaitRoom(m -> Integer.valueOf(1).equals(players(m).get(0).get("steps")));
+            assertThat(players(snap2).get(1).get("away")).isEqualTo(true);
+            long ms2 = ((Number) players(snap2).get(1).get("awayMsLeft")).longValue();
+            assertThat(ms2).isLessThan(ms1);
+        }
+    }
 }

@@ -82,7 +82,7 @@ public class RoomSocketHandler extends TextWebSocketHandler {
             case "start" -> room.start(session, now);
             case "step" -> room.step(session, m.path("n").asInt(-1), now);
             case "sticker" -> room.sticker(session, m.path("id").asText(""), now);
-            case "again" -> room.again(session);
+            case "again" -> room.again(session, now);
             case "leave" -> room.leave(session, now);
             default -> error(session, "bad_message");
         }
@@ -99,7 +99,7 @@ public class RoomSocketHandler extends TextWebSocketHandler {
         Room room = rooms.find(code);
         String err = room == null ? "not_found" : room.join(session, family,
                 m.path("kid").asText(null), m.path("name").asText(null),
-                m.path("avatar").asText(null), m.path("rocket").asText(null));
+                m.path("avatar").asText(null), m.path("rocket").asText(null), rooms.now());
         if (err != null) {
             if ("not_found".equals(err)) rooms.failedJoin(family);
             error(session, err);

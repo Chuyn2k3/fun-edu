@@ -1,6 +1,7 @@
 package com.ibme.funedu.server.room;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -66,6 +67,7 @@ class Room {
     private Instant startsAt;
     private Instant raceStartedAt;
     private Instant doneAt;
+    private String endReason;
     private int nextId = 1;
     private int finished;
 
@@ -87,7 +89,7 @@ class Room {
 
     /** Returns an error code, or null when [session] is now in the room. */
     synchronized String join(WebSocketSession session, UUID family, String kid,
-            String name, String avatar, String rocket) {
+            String name, String avatar, String rocket, Instant now) {
         if (kid == null || kid.isBlank() || kid.length() > 64) return "bad_message";
         for (Player p : players.values()) {
             if (p.familyId.equals(family) && p.kid.equals(kid) && !p.left) {
@@ -96,7 +98,7 @@ class Room {
                 p.session = session;
                 p.disconnectedAt = null;
                 if (old != null && old != session && old.isOpen()) closeQuietly(old);
-                broadcast();
+                broadcast(now);
                 return null;
             }
         }
@@ -111,7 +113,7 @@ class Room {
         players.put(p.id, p);
         if (hostId == null && family.equals(hostFamily)) hostId = p.id;
         if (hostId == null) hostId = p.id;
-        broadcast();
+        broadcast(now);
         return null;
     }
 
@@ -131,12 +133,13 @@ class Room {
         // Drop anyone who is not here right now.
         players.values().removeIf(x -> !x.connected() || x.left);
         state = State.countdown;
+        endReason = null;
         startsAt = now.plus(props.countdown());
-        broadcast();
+        broadcast(now);
     }
 
     /** "Đua lại!": the host brings everyone still here back to the lobby. */
-    synchronized void again(WebSocketSession from) {
+    synchronized void again(WebSocketSession from, Instant now) {
         Player p = bySession(from);
         if (p == null || !p.id.equals(hostId) || state != State.done) return;
         players.values().removeIf(x -> !x.connected() || x.left);
@@ -146,11 +149,12 @@ class Room {
             x.lastStep = Instant.EPOCH;
         }
         finished = 0;
+        endReason = null;
         state = State.lobby;
         startsAt = null;
         raceStartedAt = null;
         doneAt = null;
-        broadcast();
+        broadcast(now);
     }
 
     synchronized void step(WebSocketSession from, int n, Instant now) {
@@ -163,7 +167,7 @@ class Room {
         p.lastStep = now;
         if (n == RACE_LENGTH) p.rank = ++finished;
         checkDone(now);
-        broadcast();
+        broadcast(now);
     }
 
     synchronized void sticker(WebSocketSession from, String id, Instant now) {
@@ -188,7 +192,7 @@ class Room {
         p.session = null;
         closeQuietly(from);
         checkDone(now);
-        broadcast();
+        broadcast(now);
     }
 
     synchronized void disconnected(WebSocketSession session, Instant now) {
@@ -196,17 +200,12 @@ class Room {
         if (p == null) return;
         p.session = null;
         p.disconnectedAt = now;
-        broadcast();
+        broadcast(now);
     }
 
     /** Time-driven changes; returns false when the room should be removed. */
     synchronized boolean tick(Instant now) {
         boolean changed = false;
-        if (state == State.countdown && !now.isBefore(startsAt)) {
-            state = State.racing;
-            raceStartedAt = now;
-            changed = true;
-        }
         Instant cutoff = now.minus(props.reconnectGrace());
         if (state == State.lobby) {
             boolean hostGone = hostId != null && gone(players.get(hostId), cutoff);
@@ -215,6 +214,19 @@ class Room {
             if (now.isAfter(expiresAt())) {
                 closeAll("expired");
                 return false;
+            }
+        } else if (state == State.countdown) {
+            for (Player p : players.values()) {
+                if (!p.left && gone(p, cutoff)) {
+                    p.left = true;
+                    changed = true;
+                }
+            }
+            if (!now.isBefore(startsAt)) {
+                state = State.racing;
+                raceStartedAt = now;
+                changed = true;
+                checkDone(now);
             }
         } else if (state == State.racing) {
             for (Player p : players.values()) {
@@ -228,7 +240,7 @@ class Room {
             closeAll(null);
             return false;
         }
-        if (changed) broadcast();
+        if (changed) broadcast(now);
         return true;
     }
 
@@ -238,6 +250,19 @@ class Room {
 
     private boolean checkDone(Instant now) {
         if (state != State.racing) return false;
+        List<Player> present = players.values().stream().filter(p -> !p.left).toList();
+        if (present.size() == 1) {
+            Player last = present.get(0);
+            if (last.rank == null) {
+                int rankedCount = (int) players.values().stream().filter(p -> p.rank != null).count();
+                last.rank = rankedCount + 1;
+                finished = Math.max(finished, last.rank);
+                endReason = "others_left";
+                state = State.done;
+                doneAt = now;
+                return true;
+            }
+        }
         boolean timeUp = raceStartedAt != null && now.isAfter(raceStartedAt.plus(props.maxRaceTime()));
         boolean allIn = players.values().stream().allMatch(p -> p.rank != null || p.left);
         if (!timeUp && !allIn) return false;
@@ -251,15 +276,20 @@ class Room {
         return null;
     }
 
-    private void broadcast() {
+    private void broadcast(Instant now) {
         for (Player p : players.values()) {
-            if (p.connected()) send(p, snapshot(p.id));
+            if (p.connected()) send(p, snapshot(p.id, now));
         }
     }
 
-    Map<String, Object> snapshot(String you) {
+    Map<String, Object> snapshot(String you, Instant now) {
         List<Map<String, Object>> list = new ArrayList<>();
         for (Player p : players.values()) {
+            boolean connected = p.connected() && !p.left;
+            boolean away = !connected && !p.left && p.disconnectedAt != null;
+            Long awayMsLeft = away
+                    ? Math.max(0L, Duration.between(now, p.disconnectedAt.plus(props.reconnectGrace())).toMillis())
+                    : null;
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", p.id);
             m.put("name", p.name);
@@ -267,7 +297,10 @@ class Room {
             m.put("rocket", p.rocket);
             m.put("steps", p.steps);
             m.put("rank", p.rank);
-            m.put("connected", p.connected() && !p.left);
+            m.put("connected", connected);
+            m.put("away", away);
+            m.put("awayMsLeft", awayMsLeft);
+            m.put("left", p.left);
             list.add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -276,6 +309,7 @@ class Room {
         out.put("state", state.name());
         out.put("you", you);
         out.put("host", hostId);
+        out.put("endReason", endReason);
         if (startsAt != null) out.put("startsAt", startsAt.toEpochMilli());
         out.put("players", list);
         return out;
