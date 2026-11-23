@@ -37,8 +37,9 @@ class FakeTransport implements RoomTransport {
   }
 }
 
-Map<String, Object?> roomMsg(String state, {String you = 'p1', String host = 'p1', List<Map<String, Object?>>? players}) => {
+Map<String, Object?> roomMsg(String state, {String you = 'p1', String host = 'p1', List<Map<String, Object?>>? players, int? seq}) => {
       't': 'room',
+      if (seq != null) 'seq': seq,
       'code': 'ABC234',
       'state': state,
       'you': you,
@@ -116,6 +117,31 @@ void main() {
     expect(s.phase, RoomPhase.lobby);
     expect(s.isHost, isTrue);
     expect(s.me!.name, 'Na');
+  });
+
+  // A slow socket can deliver an older snapshot after a newer one: the
+  // older one must not undo the newer (a finished race going back to racing).
+  test('an older snapshot arriving late is ignored', () async {
+    final c = container();
+    await c.read(roomControllerProvider.notifier).join('ABC234', kid);
+    sockets.single.push(roomMsg('racing', seq: 7));
+    sockets.single.push(roomMsg('done', seq: 9));
+    sockets.single.push(roomMsg('racing', seq: 8));
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(roomControllerProvider).phase, RoomPhase.done);
+  });
+
+  test('a rejoin accepts the restarted count of a new server', () async {
+    final c = container();
+    await c.read(roomControllerProvider.notifier).join('ABC234', kid);
+    sockets.single.push(roomMsg('racing', seq: 40));
+    await Future<void>.delayed(Duration.zero);
+    await sockets.first.drop();
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    // The server restarted: its count begins again.
+    sockets.last.push(roomMsg('lobby', seq: 1));
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(roomControllerProvider).phase, RoomPhase.lobby);
   });
 
   test('a typed code is cleaned up before joining', () async {

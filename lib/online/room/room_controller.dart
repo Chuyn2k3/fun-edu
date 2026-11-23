@@ -195,6 +195,11 @@ class RoomController extends Notifier<RoomState> {
   StreamSubscription<Map<String, Object?>>? _sub;
   RoomKid? _kid;
   String? _you;
+
+  /// Count of the last room snapshot taken on this connection. A slow
+  /// socket can hand over an older snapshot after a newer one; the older one
+  /// is dropped. Reset on every join: a restarted server counts from 1 again.
+  int? _lastSeq;
   bool _leaving = false;
   bool _disposed = false;
   int _retries = 0;
@@ -268,6 +273,7 @@ class RoomController extends Notifier<RoomState> {
       final socket = await session.authorized(
           (token) => ref.read(roomConnectorProvider)(code, token));
       _socket = socket;
+      _lastSeq = null;
       _sub = socket.messages.listen(_onMessage, onDone: () => _onClosed(code));
       socket.send({
         't': 'join',
@@ -290,6 +296,11 @@ class RoomController extends Notifier<RoomState> {
           state = state.copyWith(you: _you, error: state.error);
         }
       case 'room':
+        final seq = (m['seq'] as num?)?.toInt();
+        if (seq != null) {
+          if (_lastSeq != null && seq <= _lastSeq!) return;
+          _lastSeq = seq;
+        }
         _retries = 0;
         final startsAt = (m['startsAt'] as num?)?.toInt();
         state = RoomState(

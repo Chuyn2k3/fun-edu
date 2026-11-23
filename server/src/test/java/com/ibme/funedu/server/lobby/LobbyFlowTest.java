@@ -138,6 +138,7 @@ class LobbyFlowTest {
             assertThat((List<String>) helloA.get("friendsOnline")).isEmpty();
             assertThat(listFriends(a).get(0).get("online")).isEqualTo(false);
 
+            long onlineV;
             try (var sockB = LobbySocket.open(port, b.token())) {
                 var helloB = sockB.await(m -> "hello".equals(m.get("t")));
                 assertThat((List<String>) helloB.get("friendsOnline")).containsExactly(a.familyId().toString());
@@ -145,12 +146,18 @@ class LobbyFlowTest {
                 var onlineMsg = sockA.await(m -> "presence".equals(m.get("t")));
                 assertThat(onlineMsg.get("familyId")).isEqualTo(b.familyId().toString());
                 assertThat(onlineMsg.get("online")).isEqualTo(true);
+                onlineV = ((Number) onlineMsg.get("v")).longValue();
 
                 assertThat(listFriends(a).get(0).get("online")).isEqualTo(true);
             }
 
             var offlineMsg = sockA.await(m -> "presence".equals(m.get("t")) && Boolean.FALSE.equals(m.get("online")));
             assertThat(offlineMsg.get("familyId")).isEqualTo(b.familyId().toString());
+            // A slow socket can swap two presence messages; the app keeps the
+            // one with the larger count, so each carries a growing one.
+            long offlineV = ((Number) offlineMsg.get("v")).longValue();
+            assertThat(offlineV).isGreaterThan(onlineV);
+            assertThat(((Number) helloA.get("v")).longValue()).isLessThan(onlineV);
             assertThat(listFriends(a).get(0).get("online")).isEqualTo(false);
         }
     }

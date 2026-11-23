@@ -86,6 +86,11 @@ class Room {
     private int nextId = 1;
     private int finished;
     private boolean dirty;
+    /**
+     * Grows with every snapshot built. A slow socket can deliver an older
+     * snapshot after a newer one; the app keeps only the newest.
+     */
+    private long seq;
 
     Room(String code, UUID hostFamily, Instant now, RoomProperties props, Function<Object, String> json) {
         this.code = code;
@@ -392,6 +397,7 @@ class Room {
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("t", "room");
+        out.put("seq", ++seq);
         out.put("code", code);
         out.put("state", state.name());
         out.put("host", hostId);

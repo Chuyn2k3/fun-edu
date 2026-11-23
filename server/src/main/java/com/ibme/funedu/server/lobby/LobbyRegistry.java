@@ -72,6 +72,12 @@ public class LobbyRegistry implements PresenceView, LobbyNotifier {
 
     private final ConcurrentHashMap<UUID, FamilyEntry> families = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Invite> invites = new ConcurrentHashMap<>();
+    /**
+     * Grows with every presence message (and is reported in hello). A slow
+     * socket can swap two of them; the app keeps the larger count per family.
+     */
+    private final java.util.concurrent.atomic.AtomicLong presenceVersion =
+            new java.util.concurrent.atomic.AtomicLong();
     private final ReentrantLock inviteLock = new ReentrantLock();
 
     private final JdbcTemplate jdbc;
@@ -122,13 +128,13 @@ public class LobbyRegistry implements PresenceView, LobbyNotifier {
         if (aOnline) {
             notify(familyA, Map.of("t", "friend_added", "familyId", familyB.toString()));
             if (bOnline) {
-                notify(familyA, Map.of("t", "presence", "familyId", familyB.toString(), "online", true));
+                notify(familyA, Map.of("t", "presence", "familyId", familyB.toString(), "online", true, "v", presenceVersion.incrementAndGet()));
             }
         }
         if (bOnline) {
             notify(familyB, Map.of("t", "friend_added", "familyId", familyA.toString()));
             if (aOnline) {
-                notify(familyB, Map.of("t", "presence", "familyId", familyA.toString(), "online", true));
+                notify(familyB, Map.of("t", "presence", "familyId", familyA.toString(), "online", true, "v", presenceVersion.incrementAndGet()));
             }
         }
     }
@@ -303,19 +309,23 @@ public class LobbyRegistry implements PresenceView, LobbyNotifier {
         }
 
         Set<UUID> friends = friendsSnapshot.get();
+        // Read before looking at who is online: any change after this gets a
+        // larger count, so the app never drops a newer one as stale.
+        long helloV = presenceVersion.get();
         List<String> friendsOnline = new ArrayList<>();
         for (UUID f : friends) {
             if (isOnline(f)) {
                 friendsOnline.add(f.toString());
             }
         }
-        SocketSender.send(safeSession, serialize(Map.of("t", "hello", "friendsOnline", friendsOnline)));
+        SocketSender.send(safeSession, serialize(Map.of("t", "hello", "friendsOnline", friendsOnline, "v", helloV)));
 
         if (announceOnline.get() && !friends.isEmpty()) {
             String presenceJson = serialize(Map.of(
                     "t", "presence",
                     "familyId", family.toString(),
-                    "online", true));
+                    "online", true,
+                    "v", presenceVersion.incrementAndGet()));
             for (UUID friendId : friends) {
                 notifySerialized(friendId, presenceJson);
             }
@@ -346,7 +356,8 @@ public class LobbyRegistry implements PresenceView, LobbyNotifier {
             String presenceJson = serialize(Map.of(
                     "t", "presence",
                     "familyId", family.toString(),
-                    "online", false));
+                    "online", false,
+                    "v", presenceVersion.incrementAndGet()));
             for (UUID friendId : friends) {
                 notifySerialized(friendId, presenceJson);
             }

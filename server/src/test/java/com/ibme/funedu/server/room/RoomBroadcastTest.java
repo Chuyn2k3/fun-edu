@@ -100,6 +100,44 @@ class RoomBroadcastTest {
         }
     }
 
+    /**
+     * A slow socket may hand an older snapshot over after a newer one; the app
+     * drops anything not newer than what it holds, so every snapshot of a room
+     * carries a strictly growing count.
+     */
+    @Test
+    void everySnapshotCarriesAGrowingCount() throws Exception {
+        ObjectMapper mapper = nonNullMapper();
+        Instant t0 = Instant.parse("2026-11-23T10:00:00Z");
+        UUID famA = UUID.randomUUID(), famB = UUID.randomUUID();
+        Room room = new Room("SEQSEQ", famA, t0, defaultProps(), v -> writeJson(mapper, v));
+        var s1 = new RecordingSession("s1");
+        var s2 = new RecordingSession("s2");
+        List<String> payloads = new ArrayList<>();
+        room.join(s1, famA, "k1", "Na", "", "rocket_orange", t0).outbox().sends()
+                .forEach(x -> payloads.add(x.text()));
+        room.join(s2, famB, "k2", "Bo", "", "rocket_blue", t0).outbox().sends()
+                .forEach(x -> payloads.add(x.text()));
+        room.start(s1, t0).sends().forEach(x -> payloads.add(x.text()));
+        room.tick(t0.plusMillis(200)).outbox().sends().forEach(x -> payloads.add(x.text()));
+        room.step(s1, 1, t0.plusMillis(220));
+        room.flush(t0.plusMillis(300)).sends().forEach(x -> payloads.add(x.text()));
+
+        long last = 0;
+        int seen = 0;
+        for (String text : payloads) {
+            Map<String, Object> m = mapper.readValue(text, Map.class);
+            if (!"room".equals(m.get("t"))) continue;
+            long seq = ((Number) m.get("seq")).longValue();
+            assertThat(seq).isGreaterThanOrEqualTo(last);
+            if (seq == last) continue; // one shared payload goes to every player
+            assertThat(seq).isGreaterThan(last);
+            last = seq;
+            seen++;
+        }
+        assertThat(seen).isGreaterThanOrEqualTo(4);
+    }
+
     @Test
     void snapshotsAreCoalesced() throws Exception {
         // Unit check: step() sets dirty and returns no sends; flush() produces one shared snapshot.

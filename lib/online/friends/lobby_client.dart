@@ -327,6 +327,12 @@ class LobbyClient extends Notifier<LobbyState> {
   int _inviteReplySeq = 0;
   int _reactionSeq = 0;
   int _friendSeq = 0;
+
+  /// Presence counts from the server: a slow socket can swap two presence
+  /// messages, so a family's dot follows only the larger count. [_helloV]
+  /// covers every family listed (or not) in the last hello.
+  int _helloV = 0;
+  final Map<String, int> _presenceV = {};
   int _errorSeq = 0;
   DateTime? _lastPongAt;
 
@@ -673,6 +679,8 @@ class LobbyClient extends Notifier<LobbyState> {
     switch (type) {
       case 'hello':
         _retryAttempt = 0;
+        _helloV = (m['v'] as num?)?.toInt() ?? 0;
+        _presenceV.clear();
         final rawOnline = m['friendsOnline'];
         final online = rawOnline is List
             ? rawOnline
@@ -685,6 +693,12 @@ class LobbyClient extends Notifier<LobbyState> {
         final familyId = m['familyId'];
         final online = m['online'];
         if (familyId is! String || familyId.isEmpty || online is! bool) return;
+        final v = (m['v'] as num?)?.toInt();
+        if (v != null) {
+          final known = _presenceV[familyId] ?? _helloV;
+          if (v <= known) return;
+          _presenceV[familyId] = v;
+        }
         final next = Set<String>.from(state.onlineFriends);
         if (online) {
           next.add(familyId);

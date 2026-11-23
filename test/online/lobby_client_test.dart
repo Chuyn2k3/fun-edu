@@ -288,6 +288,28 @@ void main() {
     ]);
   });
 
+  // A slow socket can swap two presence messages: the later count wins,
+  // and anything not newer than hello is already in hello's list.
+  test('a presence message older than what is known is ignored', () async {
+    final c = makeContainer(signedIn: true);
+    final lobby = c.read(lobbyClientProvider.notifier);
+    await c.read(sessionProvider.future);
+    lobby.setRouteEligible(true);
+    await flush();
+
+    final sock = sockets.single;
+    sock.push({'t': 'hello', 'friendsOnline': ['fam-2'], 'v': 10});
+    sock.push({'t': 'presence', 'familyId': 'fam-2', 'online': false, 'v': 9});
+    await flush();
+    expect(c.read(lobbyClientProvider).onlineFriends, {'fam-2'});
+
+    sock.push({'t': 'presence', 'familyId': 'fam-3', 'online': true, 'v': 12});
+    sock.push({'t': 'presence', 'familyId': 'fam-3', 'online': false, 'v': 14});
+    sock.push({'t': 'presence', 'familyId': 'fam-3', 'online': true, 'v': 13});
+    await flush();
+    expect(c.read(lobbyClientProvider).onlineFriends, {'fam-2'});
+  });
+
   testWidgets('25s heartbeat sends ping, handles pong, and reconnects on drop',
       (t) async {
     final c = makeContainer(
