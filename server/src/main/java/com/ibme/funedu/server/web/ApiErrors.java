@@ -1,6 +1,7 @@
 package com.ibme.funedu.server.web;
 
 import com.ibme.funedu.server.auth.AuthFailedException;
+import com.ibme.funedu.server.sync.DeviceLinkService;
 import com.ibme.funedu.server.sync.SyncService;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -20,8 +21,20 @@ public class ApiErrors {
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
-            SyncService.BadSyncRequest.class})
+            SyncService.BadSyncRequest.class, DeviceLinkService.BadModeException.class})
     ResponseEntity<Map<String, String>> badRequest() {
         return ResponseEntity.badRequest().body(Map.of("error", "bad_request"));
+    }
+
+    @ExceptionHandler(DeviceLinkService.LinkRequiredException.class)
+    ResponseEntity<Map<String, String>> linkRequired() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "link_required"));
+    }
+
+    @ExceptionHandler(DeviceLinkService.AccountNotEmptyException.class)
+    ResponseEntity<Map<String, Object>> accountNotEmpty(DeviceLinkService.AccountNotEmptyException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "error", "account_not_empty",
+                "account", e.account()));
     }
 }

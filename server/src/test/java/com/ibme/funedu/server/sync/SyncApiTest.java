@@ -34,10 +34,19 @@ class SyncApiTest {
     TestRestTemplate http;
 
     String newFamily() {
+        return newFamily(UUID.randomUUID());
+    }
+
+    String newFamily(UUID deviceId) {
         var res = http.exchange("/api/v1/auth/google", HttpMethod.POST,
                 new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()),
-                        "deviceId", UUID.randomUUID().toString())), JSON);
-        return (String) res.getBody().get("accessToken");
+                        "deviceId", deviceId.toString())), JSON);
+        String token = (String) res.getBody().get("accessToken");
+        var h = new HttpHeaders();
+        h.setBearerAuth(token);
+        http.exchange("/api/v1/sync/link", HttpMethod.POST,
+                new HttpEntity<>(Map.of("mode", "upload"), h), JSON);
+        return token;
     }
 
     ResponseEntity<Map<String, Object>> sync(String access, long since, List<Map<String, Object>> changes) {

@@ -118,3 +118,16 @@ Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` 
 - Trận qua mạng **không cộng sao vũ trụ, không tính huy hiệu và không đổi nhịp Chíp** (chỉ trận với Chíp mới tính).
 - Thử local: chạy máy chủ (mục 1), 2 máy ảo/điện thoại cùng trỏ `FUNEDU_API_URL`, đăng nhập 2 tài khoản khác nhau. Giao thức chi tiết: `server/README.md` mục "Race rooms".
 - Máy chủ giữ phòng trong bộ nhớ: khởi động lại máy chủ thì các phòng đang mở mất (bé vào phòng mới).
+
+## 8. Liên kết máy và cổng đồng bộ (V5)
+
+- Đăng nhập (`POST /api/v1/auth/google`, `POST /api/v1/auth/apple`) yêu cầu trường `deviceId` (UUID). JWT access token chứa claim `dev` = deviceId.
+- Phản hồi đăng nhập trả thêm `device: { linked: boolean }` và `account: { hasData: boolean, kids: [...] }`.
+- API liên kết máy:
+  - `POST /api/v1/sync/link` body `{ "mode": "upload" | "replace_local" | "fresh" }`: liên kết máy với gia đình.
+    - `upload`: chỉ cho phép nếu tài khoản chưa có dữ liệu (hoặc chỉ toàn tombstone) và chưa có máy nào liên kết `upload`. Nếu tài khoản có dữ liệu, trả **409 `account_not_empty`** kèm thông tin `account`.
+    - `replace_local`, `fresh`: luôn thành công, idempotent.
+  - `GET /api/v1/sync/link`: trả `{ "linked": boolean, "account": { "hasData": ..., "kids": [...] } }`.
+- Cổng đồng bộ `POST /api/v1/sync`:
+  - Nếu `changes` không rỗng: yêu cầu máy đã liên kết (`(family_id, device_id)` tồn tại trong `family_devices`). Nếu chưa liên kết hoặc thiếu claim `dev`, trả **409 `link_required`**.
+  - Nếu `changes` rỗng (kéo dữ liệu): cho phép máy chưa liên kết để phục vụ kéo dữ liệu khôi phục.
