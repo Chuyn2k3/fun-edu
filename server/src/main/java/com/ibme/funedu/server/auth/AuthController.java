@@ -3,6 +3,7 @@ package com.ibme.funedu.server.auth;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,8 @@ public class AuthController {
     /** [authorizationCode]: Apple only, optional (lets deletion revoke Apple's token). */
     public record SignInRequest(
             @NotBlank @Size(max = 8192) String idToken,
-            @Size(max = 2048) String authorizationCode) {}
+            @Size(max = 2048) String authorizationCode,
+            @NotNull UUID deviceId) {}
 
     public record RefreshRequest(@NotBlank @Size(max = 256) String refreshToken) {}
 
@@ -35,7 +37,7 @@ public class AuthController {
         if (!auth.supports(provider)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
         }
-        return ResponseEntity.ok(auth.signIn(provider, req.idToken(), req.authorizationCode()));
+        return ResponseEntity.ok(auth.signIn(provider, req.idToken(), req.authorizationCode(), req.deviceId()));
     }
 
     @PostMapping("/auth/refresh")

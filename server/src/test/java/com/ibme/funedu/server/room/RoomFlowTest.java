@@ -41,7 +41,8 @@ class RoomFlowTest {
 
     String family() {
         return (String) http.exchange("/api/v1/auth/google", HttpMethod.POST,
-                new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()))), JSON)
+                new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()),
+                        "deviceId", UUID.randomUUID().toString())), JSON)
                 .getBody().get("accessToken");
     }
 

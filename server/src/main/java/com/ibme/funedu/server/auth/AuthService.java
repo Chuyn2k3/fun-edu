@@ -16,8 +16,17 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class AuthService {
 
+    /** Device link status returned in the session. */
+    public record Device(boolean linked) {}
+
     /** What the app receives after signing in or refreshing. */
-    public record Session(String accessToken, String refreshToken, long expiresIn, UUID familyId) {}
+    public record Session(
+            String accessToken,
+            String refreshToken,
+            long expiresIn,
+            UUID familyId,
+            Device device,
+            UUID deviceId) {}
 
     /** The signed-in parent, re-read from the database on every request. */
     public record Parent(UUID id, UUID familyId, String provider, String email) {}
@@ -50,7 +59,11 @@ public class AuthService {
     }
 
     public Session signIn(String provider, String idToken) {
-        return signIn(provider, idToken, null);
+        return signIn(provider, idToken, null, UUID.randomUUID());
+    }
+
+    public Session signIn(String provider, String idToken, String authorizationCode) {
+        return signIn(provider, idToken, authorizationCode, UUID.randomUUID());
     }
 
     /**
@@ -58,7 +71,7 @@ public class AuthService {
      * kept sealed so deleting the account can revoke it. Apple being down
      * never blocks the sign-in.
      */
-    public Session signIn(String provider, String idToken, String authorizationCode) {
+    public Session signIn(String provider, String idToken, String authorizationCode, UUID deviceId) {
         Jwt jwt = idTokens.decode(provider, idToken);
         String subject = jwt.getSubject();
         String email = emailOf(jwt);
@@ -73,7 +86,7 @@ public class AuthService {
                 && apple.configured()) {
             linkApple(parent, jwt, authorizationCode);
         }
-        return newSession(parent);
+        return newSession(parent, deviceId != null ? deviceId : UUID.randomUUID());
     }
 
     private void linkApple(Parent parent, Jwt jwt, String code) {
@@ -94,10 +107,11 @@ public class AuthService {
     public Session refresh(String refreshToken) {
         byte[] hash = TokenService.hash(refreshToken);
         List<Object[]> rows = jdbc.query(
-                "SELECT id, parent_id, expires_at, revoked_at FROM refresh_tokens WHERE token_hash = ? FOR UPDATE",
+                "SELECT id, parent_id, expires_at, revoked_at, device_id FROM refresh_tokens WHERE token_hash = ? FOR UPDATE",
                 (rs, i) -> new Object[] {
                         rs.getObject(1, UUID.class), rs.getObject(2, UUID.class),
-                        rs.getTimestamp(3).toInstant(), rs.getTimestamp(4)},
+                        rs.getTimestamp(3).toInstant(), rs.getTimestamp(4),
+                        rs.getObject(5, UUID.class)},
                 hash);
         if (rows.isEmpty()) throw new AuthFailedException("unknown refresh token");
         Object[] row = rows.get(0);
@@ -112,7 +126,8 @@ public class AuthService {
         if (((Instant) row[2]).isBefore(Instant.now())) throw new AuthFailedException("refresh token expired");
         jdbc.update("UPDATE refresh_tokens SET revoked_at = now() WHERE id = ?", tokenId);
         Parent parent = findParent(parentId).orElseThrow(() -> new AuthFailedException("account gone"));
-        return newSession(parent);
+        UUID deviceId = (UUID) row[4];
+        return newSession(parent, deviceId != null ? deviceId : UUID.randomUUID());
     }
 
     public void logout(String refreshToken) {
@@ -176,13 +191,22 @@ public class AuthService {
                 id).stream().findFirst();
     }
 
-    private Session newSession(Parent parent) {
+    public boolean isDeviceLinked(UUID familyId, UUID deviceId) {
+        if (familyId == null || deviceId == null) return false;
+        Boolean exists = jdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM family_devices WHERE family_id = ? AND device_id = ?)",
+                Boolean.class, familyId, deviceId);
+        return Boolean.TRUE.equals(exists);
+    }
+
+    private Session newSession(Parent parent, UUID deviceId) {
         String refresh = tokens.newRefreshToken();
-        jdbc.update("INSERT INTO refresh_tokens (id, parent_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
+        jdbc.update("INSERT INTO refresh_tokens (id, parent_id, token_hash, expires_at, device_id) VALUES (?, ?, ?, ?, ?)",
                 UUID.randomUUID(), parent.id(), TokenService.hash(refresh),
-                Timestamp.from(Instant.now().plus(props.refreshTtl())));
-        return new Session(tokens.accessToken(parent.id(), parent.familyId()), refresh,
-                props.accessTtl().toSeconds(), parent.familyId());
+                Timestamp.from(Instant.now().plus(props.refreshTtl())), deviceId);
+        boolean linked = isDeviceLinked(parent.familyId(), deviceId);
+        return new Session(tokens.accessToken(parent.id(), parent.familyId(), deviceId), refresh,
+                props.accessTtl().toSeconds(), parent.familyId(), new Device(linked), deviceId);
     }
 
     private static String emailOf(Jwt jwt) {

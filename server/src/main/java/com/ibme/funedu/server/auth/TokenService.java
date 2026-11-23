@@ -28,6 +28,7 @@ public class TokenService {
 
     public static final String ISSUER = "funedu";
     public static final String FAMILY_CLAIM = "fam";
+    public static final String DEVICE_CLAIM = "dev";
 
     private final SecretKey key;
     private final NimbusJwtEncoder encoder;
@@ -41,16 +42,22 @@ public class TokenService {
     }
 
     public String accessToken(UUID parentId, UUID familyId) {
+        return accessToken(parentId, familyId, null);
+    }
+
+    public String accessToken(UUID parentId, UUID familyId, UUID deviceId) {
         Instant now = Instant.now();
-        var claims = JwtClaimsSet.builder()
+        var builder = JwtClaimsSet.builder()
                 .issuer(ISSUER)
                 .audience(List.of(ISSUER))
                 .subject(parentId.toString())
                 .claim(FAMILY_CLAIM, familyId.toString())
                 .issuedAt(now)
-                .expiresAt(now.plus(props.accessTtl()))
-                .build();
-        return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+                .expiresAt(now.plus(props.accessTtl()));
+        if (deviceId != null) {
+            builder.claim(DEVICE_CLAIM, deviceId.toString());
+        }
+        return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), builder.build()))
                 .getTokenValue();
     }
 

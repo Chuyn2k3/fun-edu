@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,7 +35,8 @@ class SyncApiTest {
 
     String newFamily() {
         var res = http.exchange("/api/v1/auth/google", HttpMethod.POST,
-                new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()))), JSON);
+                new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()),
+                        "deviceId", UUID.randomUUID().toString())), JSON);
         return (String) res.getBody().get("accessToken");
     }
 

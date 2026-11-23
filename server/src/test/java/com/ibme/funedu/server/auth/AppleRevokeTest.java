@@ -7,6 +7,7 @@ import com.ibme.funedu.server.TestDatabase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,7 +82,9 @@ class AppleRevokeTest {
     }
 
     Map<String, Object> signIn(String idToken, String code) {
-        var body = code == null ? Map.of("idToken", idToken) : Map.of("idToken", idToken, "authorizationCode", code);
+        var body = code == null
+                ? Map.of("idToken", idToken, "deviceId", UUID.randomUUID().toString())
+                : Map.of("idToken", idToken, "authorizationCode", code, "deviceId", UUID.randomUUID().toString());
         var res = http.exchange("/api/v1/auth/apple", HttpMethod.POST, new HttpEntity<>(body), JSON);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
         return res.getBody();
@@ -135,7 +138,8 @@ class AppleRevokeTest {
     @Test
     void googleAccountsNeverTalkToApple() {
         var res = http.exchange("/api/v1/auth/google", HttpMethod.POST,
-                new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()), "authorizationCode", "c")), JSON);
+                new HttpEntity<>(Map.of("idToken", googleToken(randomSubject()), "authorizationCode", "c",
+                        "deviceId", UUID.randomUUID().toString())), JSON);
         deleteAccount((String) res.getBody().get("accessToken"));
         assertThat(apple.exchanged).isEmpty();
         assertThat(apple.revoked).isEmpty();

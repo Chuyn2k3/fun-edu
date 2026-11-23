@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ibme.funedu.server.TestDatabase;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -33,12 +35,19 @@ class AuthFlowTest {
     @Autowired
     JdbcTemplate jdbc;
 
+    @Autowired
+    TokenService tokens;
+
     ResponseEntity<Map<String, Object>> post(String path, Map<String, String> body) {
         return http.exchange(path, HttpMethod.POST, new HttpEntity<>(body), JSON);
     }
 
     ResponseEntity<Map<String, Object>> signIn(String provider, String idToken) {
-        return post("/api/v1/auth/" + provider, Map.of("idToken", idToken));
+        return signIn(provider, idToken, UUID.randomUUID());
+    }
+
+    ResponseEntity<Map<String, Object>> signIn(String provider, String idToken, UUID deviceId) {
+        return post("/api/v1/auth/" + provider, Map.of("idToken", idToken, "deviceId", deviceId.toString()));
     }
 
     ResponseEntity<Map<String, Object>> withBearer(HttpMethod method, String path, String access) {
@@ -94,9 +103,78 @@ class AuthFlowTest {
 
     @Test
     void missingIdTokenIsABadRequestWithoutDetails() {
-        var res = post("/api/v1/auth/google", Map.of());
+        var res = post("/api/v1/auth/google", Map.of("deviceId", UUID.randomUUID().toString()));
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(res.getBody()).containsOnlyKeys("error");
+    }
+
+    @Test
+    void signInWithoutDeviceIdIs400() {
+        String sub = randomSubject();
+        // missing deviceId
+        var missing = post("/api/v1/auth/google", Map.of("idToken", googleToken(sub)));
+        assertThat(missing.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        // malformed deviceId
+        var bad = post("/api/v1/auth/google", Map.of("idToken", googleToken(sub), "deviceId", "abc"));
+        assertThat(bad.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void accessTokenCarriesDeviceClaim() {
+        UUID deviceId = UUID.randomUUID();
+        var login = signIn("google", googleToken(randomSubject()), deviceId).getBody();
+        String token = (String) login.get("accessToken");
+        Jwt jwt = tokens.accessTokenDecoder().decode(token);
+        assertThat(jwt.getClaimAsString(TokenService.DEVICE_CLAIM)).isEqualTo(deviceId.toString());
+    }
+
+    @Test
+    void refreshKeepsDevice() {
+        UUID deviceId = UUID.randomUUID();
+        var login = signIn("google", googleToken(randomSubject()), deviceId).getBody();
+        String refresh = (String) login.get("refreshToken");
+        var rotated = post("/api/v1/auth/refresh", Map.of("refreshToken", refresh));
+        assertThat(rotated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        String newToken = (String) rotated.getBody().get("accessToken");
+        Jwt jwt = tokens.accessTokenDecoder().decode(newToken);
+        assertThat(jwt.getClaimAsString(TokenService.DEVICE_CLAIM)).isEqualTo(deviceId.toString());
+    }
+
+    @Test
+    void newDeviceIsNotLinked() {
+        UUID deviceId = UUID.randomUUID();
+        var login = signIn("google", googleToken(randomSubject()), deviceId).getBody();
+        @SuppressWarnings("unchecked")
+        var device = (Map<String, Object>) login.get("device");
+        assertThat(device).isNotNull();
+        assertThat(device.get("linked")).isEqualTo(false);
+    }
+
+    @Test
+    void relinkedDeviceIsLinked() {
+        UUID deviceId = UUID.randomUUID();
+        String sub = randomSubject();
+        var login = signIn("google", googleToken(sub), deviceId).getBody();
+        UUID familyId = UUID.fromString((String) login.get("familyId"));
+
+        // Manually link the device in family_devices
+        jdbc.update("INSERT INTO family_devices (family_id, device_id, mode) VALUES (?, ?, 'fresh')",
+                familyId, deviceId);
+
+        // Logout and sign in again with the same deviceId
+        post("/api/v1/auth/logout", Map.of("refreshToken", (String) login.get("refreshToken")));
+
+        var again = signIn("google", googleToken(sub), deviceId).getBody();
+        @SuppressWarnings("unchecked")
+        var deviceAgain = (Map<String, Object>) again.get("device");
+        assertThat(deviceAgain.get("linked")).isEqualTo(true);
+
+        // Signing in with a different deviceId returns linked: false
+        var otherDevice = signIn("google", googleToken(sub), UUID.randomUUID()).getBody();
+        @SuppressWarnings("unchecked")
+        var deviceOther = (Map<String, Object>) otherDevice.get("device");
+        assertThat(deviceOther.get("linked")).isEqualTo(false);
     }
 
     @Test
