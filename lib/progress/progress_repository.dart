@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../collection/notebook_pages.dart';
@@ -53,8 +54,12 @@ class ProgressRepository {
               lastPracticedAt: at,
             ),
           );
-      await refreshNotebookPage(_db, kid, glyphId);
     });
+    try {
+      await refreshNotebookPage(_db, kid, glyphId);
+    } catch (e, st) {
+      debugPrint('Failed to refresh notebook page for $glyphId: $e\n$st');
+    }
   }
 
   /// One star per lesson item plus a 2-star bonus; returns the stars just earned.

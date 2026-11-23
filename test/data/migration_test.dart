@@ -401,7 +401,7 @@ CREATE TABLE synced_records (
     expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
   });
 
-  test('upgrading from v1 reaches v9 with notebook_pages', () async {
+  test('upgrading from v1 reaches v10 with notebook_pages and attempts index', () async {
     final db = AppDatabase(
       NativeDatabase.memory(
         setup: (raw) {
@@ -415,9 +415,47 @@ CREATE TABLE synced_records (
     );
     addTearDown(db.close);
 
-    expect(db.schemaVersion, 9);
+    expect(db.schemaVersion, 10);
     final pages = await db.select(db.notebookPages).get();
     expect(pages, isEmpty);
+    final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
+    expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
+  });
+
+  test('fresh install has the attempts index', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
+    expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
+    expect(db.schemaVersion, 10);
+  });
+
+  test('upgrading from v9 reaches v10 with attempts index', () async {
+    final db = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
+CREATE TABLE stroke_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kid_id INTEGER NOT NULL,
+  glyph_id TEXT NOT NULL,
+  stroke_index INTEGER NOT NULL,
+  ok INTEGER NOT NULL,
+  error TEXT,
+  deviation REAL NOT NULL,
+  points TEXT,
+  created_at INTEGER NOT NULL
+)''');
+          raw.execute('PRAGMA user_version = 9');
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    expect(db.schemaVersion, 10);
+    final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
+    expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
   });
 }
 

@@ -4519,6 +4519,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GameCountersTable gameCounters = $GameCountersTable(this);
   late final $SyncedRecordsTable syncedRecords = $SyncedRecordsTable(this);
   late final $NotebookPagesTable notebookPages = $NotebookPagesTable(this);
+  late final Index strokeAttemptsKidGlyphIdx = Index(
+      'stroke_attempts_kid_glyph_idx',
+      'CREATE INDEX stroke_attempts_kid_glyph_idx ON stroke_attempts (kid_id, glyph_id)');
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4538,7 +4541,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         gameBadges,
         gameCounters,
         syncedRecords,
-        notebookPages
+        notebookPages,
+        strokeAttemptsKidGlyphIdx
       ];
 }
 

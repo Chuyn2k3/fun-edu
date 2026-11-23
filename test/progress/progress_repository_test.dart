@@ -33,6 +33,18 @@ void main() {
     expect((await repo.glyphStats())['so-2']!.cleanCompletions, 1);
   });
 
+  test('page failure keeps glyph progress', () async {
+    final failingDb = _FailingDb(NativeDatabase.memory());
+    addTearDown(failingDb.close);
+    final failingRepo = ProgressRepository(failingDb, kidId: 1, now: () => clock);
+
+    await failingRepo.recordGlyphCompleted('so-1', failedStrokes: 0);
+
+    final stat = (await failingRepo.glyphStats())['so-1'];
+    expect(stat, isNotNull);
+    expect(stat!.completions, 1);
+  });
+
   test('lesson stars are glyphs plus a 2-star bonus', () async {
     expect(await repo.totalStars(), 0);
     expect(await repo.recordLessonCompleted(itemsCompleted: 3), 5);
@@ -67,4 +79,13 @@ void main() {
     await repo.recordLessonCompleted(itemsCompleted: 3);
     expect(await repo.lessonsCompletedToday(), 2);
   });
+}
+
+class _FailingDb extends AppDatabase {
+  _FailingDb(super.e);
+
+  @override
+  Future<List<StrokeAttempt>> attemptsFor(int kidId, String glyphId) {
+    throw StateError('disk error during attemptsFor');
+  }
 }

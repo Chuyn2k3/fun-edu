@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show Value;
@@ -163,5 +164,36 @@ void main() {
     pages = await db.select(db.notebookPages).get();
     expect(pages, hasLength(1));
     expect(pages.single.mistakes, 0);
+  });
+
+  test('accepted stroke does not rebuild the page', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await db.logAttempt(
+      kidId: 1,
+      glyphId: 'net-ngang',
+      strokeIndex: 0,
+      ok: true,
+      error: null,
+      deviation: 0.1,
+      drawn: Stroke([Point2(0.1, 0.5), Point2(0.9, 0.5)]),
+    );
+
+    final pages = await db.select(db.notebookPages).get();
+    expect(pages, isEmpty);
+  });
+
+  test('stroke counts match the glyph assets', () {
+    final dir = Directory('assets/glyphs');
+    final files = dir.listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList();
+    expect(glyphStrokeCounts.length, files.length);
+
+    for (final file in files) {
+      final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      final id = json['id'] as String;
+      final strokes = json['strokes'] as List<dynamic>;
+      expect(glyphStrokeCounts[id], strokes.length, reason: 'Mismatch for $id');
+    }
   });
 }

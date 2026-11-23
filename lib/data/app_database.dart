@@ -17,6 +17,7 @@ import '../collection/notebook_pages.dart';
 part 'app_database.g.dart';
 
 /// One graded stroke, logged so false rejections can be counted later.
+@TableIndex(name: 'stroke_attempts_kid_glyph_idx', columns: {#kidId, #glyphId})
 class StrokeAttempts extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get kidId => integer()();
@@ -83,7 +84,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -107,8 +108,19 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 8) await _upgradeToV8(m, from);
           if (from < 9) await _upgradeToV9(m, from);
+          if (from < 10) await _upgradeToV10(m, from);
         },
       );
+
+  Future<void> _upgradeToV10(Migrator m, int from) async {
+    final tables = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='stroke_attempts'",
+    ).get();
+    if (tables.isEmpty) return;
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS stroke_attempts_kid_glyph_idx ON stroke_attempts (kid_id, glyph_id)',
+    );
+  }
 
   Future<void> _upgradeToV9(Migrator m, int from) => transaction(() async {
         await m.createTable(notebookPages);
@@ -249,9 +261,6 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now(),
       ),
     );
-    if (ok) {
-      await refreshNotebookPage(this, kidId, glyphId);
-    }
   }
 
   Future<List<StrokeAttempt>> attemptsFor(int kidId, String glyphId) =>

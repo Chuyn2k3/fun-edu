@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/collection/notebook.dart';
 import 'package:funedu/collection/notebook_pdf.dart';
 import 'package:funedu/features/collection/collection_screen.dart';
+import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/router.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
@@ -54,6 +55,7 @@ void main() {
             error: null, deviation: 0.05, drawn: _line(0.5));
         await db.logAttempt(kidId: kid, glyphId: 'chu-i', strokeIndex: 1, ok: true,
             error: null, deviation: 0.02, drawn: const Stroke([Point2(0.5, 0.1)]));
+        await ProgressRepository(db, kidId: kid).recordGlyphCompleted('chu-i', failedStrokes: 1);
         // so-1 started but not finished: no page.
         await db.logAttempt(kidId: kid, glyphId: 'so-1', strokeIndex: 0, ok: true,
             error: null, deviation: 0.05, drawn: _line(0.4));
@@ -81,6 +83,7 @@ void main() {
         await db.logAttempt(kidId: kid, glyphId: 'chu-i', strokeIndex: i, ok: true,
             error: null, deviation: 0.05, drawn: _line(0.5));
       }
+      await ProgressRepository(db, kidId: kid).recordGlyphCompleted('chu-i', failedStrokes: 0);
     });
     await _openNotebook(t);
     await t.scrollUntilVisible(find.byKey(const ValueKey('notebook-print')), 200,

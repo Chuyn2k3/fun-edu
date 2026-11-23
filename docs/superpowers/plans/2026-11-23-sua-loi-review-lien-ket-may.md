@@ -94,13 +94,13 @@
 - Modify: `lib/data/app_database.dart` (bỏ `refreshNotebookPage` trong `logAttempt`; khai báo chỉ mục `stroke_attempts(kid_id, glyph_id)` bằng `@TableIndex` trên `StrokeAttempts`; `schemaVersion` 10, migration `from < 10`: `CREATE INDEX IF NOT EXISTS …` — giữ cùng tên `stroke_attempts_kid_glyph_idx`), `lib/data/app_database.g.dart` (build_runner), `lib/progress/progress_repository.dart` (gọi `refreshNotebookPage` **sau** transaction, bọc `try/catch` + `debugPrint`)
 - Test: `test/data/migration_test.dart`, `test/progress/progress_repository_test.dart`, `test/collection/notebook_pages_test.dart`
 
-- [ ] **Step 1: Test hỏng**:
+- [x] **Step 1: Test hỏng**:
   - `accepted stroke does not rebuild the page` — `logAttempt(ok: true)` khi chưa xong chữ → không có dòng `notebook_pages` mới (trang chỉ xuất hiện sau `recordGlyphCompleted`).
   - `page failure keeps glyph progress` — `refreshNotebookPage` ném lỗi (dữ liệu `points` hỏng/ép bằng glyph id lạ) → `glyph_progress.completions` vẫn tăng.
   - `fresh install has the attempts index` — DB tạo mới: `PRAGMA index_list(stroke_attempts)` có `stroke_attempts_kid_glyph_idx`; nâng cấp v9 → v10 cũng có (không lỗi trùng).
   - `stroke counts match the glyph assets` — với mọi file `assets/glyphs/*.json`, `glyphStrokeCounts[id] == glyph.strokes.length`, và số khóa bằng số file.
-- [ ] **Step 2–4:** hỏng → cài → `dart run build_runner build --delete-conflicting-outputs`, `flutter analyze && flutter test` đạt.
-- [ ] **Step 5: Commit** `fix(notebook): build pages on completion only, keep progress safe, index on fresh installs`.
+- [x] **Step 2–4:** hỏng → cài → `dart run build_runner build --delete-conflicting-outputs`, `flutter analyze && flutter test` đạt.
+- [x] **Step 5: Commit** `fix(notebook): build pages on completion only, keep progress safe, index on fresh installs`.
 
 ### Task 5: Giao diện nhỏ (lỗi 9, 11)
 
