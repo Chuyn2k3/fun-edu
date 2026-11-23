@@ -96,10 +96,6 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   ValueListenable<bool>? _tickerMode;
   bool _showTryAgain = false;
   DateTime? _finishingSince;
-  int _comboStreak = 0;
-  bool _triedCurrent = false;
-
-  bool get _isNitroActive => _comboStreak >= 2;
 
   @override
   void initState() {
@@ -166,19 +162,16 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
 
   void _onState(RaceState? prev, RaceState next) {
     final q = next.current;
-    final shown = prev?.phase != RacePhase.racing ||
-        prev?.questionIndex != next.questionIndex;
+    final leavingGate =
+        (prev?.starGateActive ?? false) && !next.starGateActive;
+    final shown = !next.starGateActive &&
+        (prev?.phase != RacePhase.racing ||
+            prev?.questionIndex != next.questionIndex ||
+            leavingGate);
     if (next.phase == RacePhase.racing && q != null && shown) {
-      _triedCurrent = false;
       _speaker.speak(spokenRaceIntro(q));
     }
-    if (prev?.phase != RacePhase.racing && next.phase == RacePhase.racing) {
-      _comboStreak = 0;
-      _triedCurrent = false;
-    }
     if (prev != null && next.wrongSeq > prev.wrongSeq) {
-      _triedCurrent = true;
-      if (_comboStreak != 0) setState(() => _comboStreak = 0);
       _speaker.speak(_tryAgain);
       setState(() => _showTryAgain = true);
       _bubble?.cancel();
@@ -186,15 +179,12 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         if (mounted) setState(() => _showTryAgain = false);
       });
     }
+    if (next.comboStreak == 2 && (prev?.comboStreak ?? 0) < 2) {
+      _speaker.speak(voiceNitroFast);
+    }
     if (next.correctKey != null &&
         prev?.correctKey == null &&
         next.phase == RacePhase.racing) {
-      if (!_triedCurrent) {
-        setState(() => _comboStreak++);
-        if (_comboStreak == 2) {
-          _speaker.speak(voiceNitroFast);
-        }
-      }
       _next?.cancel();
       _next = Timer(_rightAnswerPause, _controller.showNext);
     }
@@ -260,6 +250,8 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
                 rocket: s.rocket,
                 trail: s.trail,
                 wrongSeq: s.wrongSeq,
+                comboStreak: s.comboStreak,
+                starGateStage: s.starGateStage,
               ))),
           bottomInset: bottomInset,
           kidAvatar: currentKid?.avatar,
@@ -275,6 +267,10 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
                 phase: s.phase,
                 questionIndex: s.questionIndex,
                 count: s.questions.length,
+                online: s.online,
+                stage: s.stage,
+                inSprint: s.inSprint,
+                kidSteps: s.kidSteps,
               ))));
           // Online rooms of 3-4: everyone's progress under the top bar.
           final rival = ref.watch(raceControllerProvider.select((s) => s.rival));
@@ -313,8 +309,6 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         child: Opacity(
           opacity: widget.inputLocked ? 0.55 : 1.0,
           child: AnswerDesk(
-            comboStreak: _comboStreak,
-            nitroActive: _isNitroActive,
             onKey: (i) {
               if (!widget.inputLocked) _controller.answer(i);
             },
@@ -428,6 +422,8 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       String rocket,
       String trail,
       int wrongSeq,
+      int comboStreak,
+      int? starGateStage,
     }) s, {
     required double bottomInset,
     String? kidAvatar,
@@ -493,6 +489,9 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       rivalAway: rival?.rivalAway ?? false,
       onlineRacers: onlineRacers,
       raceSteps: targetSteps,
+      comboStreak: s.comboStreak,
+      superSpeed: s.comboStreak >= 3,
+      starGateStage: s.starGateStage,
       stallSeq: s.wrongSeq,
       bottomInset: bottomInset,
     );
@@ -503,63 +502,205 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
         RacePhase phase,
         int questionIndex,
         int count,
+        bool online,
+        int stage,
+        bool inSprint,
+        int kidSteps,
       }) s) {
     final tablet = context.isTablet;
+    final onlineQ = (s.questionIndex + 1).clamp(1, onlineRaceLength);
+    final hudLabel = s.phase == RacePhase.loading
+        ? 'Chuẩn bị…'
+        : (s.online
+            ? 'Chặng ${s.stage} · Câu $onlineQ/$onlineRaceLength'
+            : 'Câu ${s.questionIndex + 1}/${s.count}');
+    final showSprint = s.online &&
+        s.phase != RacePhase.loading &&
+        (s.stage == 3 || s.inSprint);
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: tablet ? 28 : 16,
         vertical: 12,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _HudButton(
-            size: tablet ? 80 : 54,
-            onTap: s.phase == RacePhase.racing
-                ? () => _controller.setPaused(true)
-                : null,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _HudButton(
+                size: tablet ? 80 : 54,
+                onTap: s.phase == RacePhase.racing
+                    ? () => _controller.setPaused(true)
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showSprint) ...[
+                      Flexible(
+                        child: Container(
+                          key: const ValueKey('sprint-badge'),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: tablet ? 14 : 10,
+                            vertical: tablet ? 8 : 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: GameColors.sprintBadgeBg,
+                            borderRadius: BorderRadius.circular(AppRadii.pill),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: GameColors.hudShadow,
+                                blurRadius: 8,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Nước rút!',
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: tablet ? 18 : 13,
+                                fontWeight: FontWeight.w900,
+                                color: GameColors.sprintBadgeInk,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tablet ? 20 : 12,
+                          vertical: tablet ? 10 : 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(AppRadii.pill),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: GameColors.hudEdge,
+                              offset: Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: GameColors.hudShadow,
+                              blurRadius: 12,
+                              offset: Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                AppImages.icStar,
+                                width: tablet ? 26 : 20,
+                                height: tablet ? 26 : 20,
+                                fit: BoxFit.contain,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                hudLabel,
+                                style: TextStyle(
+                                  fontSize: tablet ? 22 : 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: GameColors.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: tablet ? 20 : 14,
-              vertical: tablet ? 10 : 8,
+          if (s.online) ...[
+            const SizedBox(height: 8),
+            _StageProgressBar(
+              kidSteps: s.kidSteps,
+              stage: s.stage,
+              inSprint: s.inSprint,
+              tablet: tablet,
             ),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-              boxShadow: const [
-                BoxShadow(color: GameColors.hudEdge, offset: Offset(0, 4)),
-                BoxShadow(
-                  color: GameColors.hudShadow,
-                  blurRadius: 12,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  AppImages.icStar,
-                  width: tablet ? 26 : 20,
-                  height: tablet ? 26 : 20,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  s.phase == RacePhase.loading
-                      ? 'Chuẩn bị…'
-                      : 'Câu ${s.questionIndex + 1}/${s.count}',
-                  style: TextStyle(
-                    fontSize: tablet ? 22 : 16,
-                    fontWeight: FontWeight.w900,
-                    color: GameColors.ink,
-                  ),
-                ),
-              ],
-            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StageProgressBar extends StatelessWidget {
+  const _StageProgressBar({
+    required this.kidSteps,
+    required this.stage,
+    required this.inSprint,
+    required this.tablet,
+  });
+
+  final int kidSteps;
+  final int stage;
+  final bool inSprint;
+  final bool tablet;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = tablet ? 10.0 : 7.0;
+    return Row(
+      key: const ValueKey('stage-progress-bar'),
+      children: [
+        for (var i = 1; i <= 3; i++) ...[
+          if (i > 1) const SizedBox(width: 6),
+          Expanded(
+            child: _stageSegment(i, h),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _stageSegment(int idx, double height) {
+    final start = (idx - 1) * onlineStageQuestions;
+    final fill =
+        ((kidSteps - start) / onlineStageQuestions).clamp(0.0, 1.0);
+    final isCurrent = stage == idx;
+    final isSprint = idx == 3 && (inSprint || isCurrent);
+    final fillColor = isSprint
+        ? GameColors.sprintBadgeBg
+        : (fill >= 1.0 ? GameColors.stageDone : GameColors.stageActive);
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: GameColors.stageTrack,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: isCurrent
+            ? Border.all(
+                color: isSprint ? GameColors.cometRim : GameColors.stageActive,
+                width: 1.2,
+              )
+            : null,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FractionallySizedBox(
+            widthFactor: fill,
+            heightFactor: 1.0,
+            child: ColoredBox(color: fillColor),
+          ),
+        ),
       ),
     );
   }
@@ -717,6 +858,8 @@ class AnswerDesk extends ConsumerWidget {
           wrongSeq: s.wrongSeq,
           correctKey: s.correctKey,
           paused: s.paused,
+          comboStreak: s.comboStreak,
+          starGateStage: s.starGateStage,
         )));
     final tablet = context.isTablet;
     final landscape = context.formFactor == FormFactor.tabletLandscape;
@@ -724,9 +867,11 @@ class AnswerDesk extends ConsumerWidget {
         state.questions.isEmpty ? null : state.questions[state.questionIndex];
     final enabled = state.phase == RacePhase.racing &&
         !state.paused &&
-        state.correctKey == null;
+        state.correctKey == null &&
+        state.starGateStage == null;
 
-    final isNitro = nitroActive || comboStreak >= 2;
+    final liveCombo = math.max(comboStreak, state.comboStreak);
+    final isNitro = nitroActive || liveCombo >= 2;
 
     return Container(
       decoration: const BoxDecoration(
@@ -765,7 +910,13 @@ class AnswerDesk extends ConsumerWidget {
             ),
             child: q == null
                 ? _CockpitPlaceholder(tablet: tablet, landscape: landscape)
-                : Column(
+                : state.starGateStage != null
+                    ? _StarGateBoard(
+                        stage: state.starGateStage!,
+                        tablet: tablet,
+                        landscape: landscape,
+                      )
+                    : Column(
                     mainAxisSize:
                         landscape ? MainAxisSize.max : MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -778,102 +929,115 @@ class AnswerDesk extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           // Left: Toy Speed / Energy Gauge
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: tablet ? 12 : 8,
-                              vertical: tablet ? 5 : 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: GameColors.gaugeBg,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: GameColors.gaugeBorder,
-                                width: 1.5,
+                          Flexible(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: tablet ? 12 : 8,
+                                vertical: tablet ? 5 : 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: GameColors.gaugeBg,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: GameColors.gaugeBorder,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isNitro
+                                          ? Icons.bolt_rounded
+                                          : Icons.speed_rounded,
+                                      size: tablet ? 20 : 16,
+                                      color: GameColors.gaugeIcon,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isNitro
+                                          ? 'BỨT TỐC x$liveCombo!'
+                                          : 'NĂNG LƯỢNG',
+                                      style: TextStyle(
+                                        fontSize: tablet ? 14 : 11,
+                                        fontWeight: FontWeight.w900,
+                                        color: GameColors.gaugeText,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Right: Co-pilot Chíp reaction / speech bubble
+                          Flexible(
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  isNitro
-                                      ? Icons.bolt_rounded
-                                      : Icons.speed_rounded,
-                                  size: tablet ? 20 : 16,
-                                  color: GameColors.gaugeIcon,
+                                Flexible(
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: tablet ? 10 : 8,
+                                      vertical: tablet ? 5 : 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.card,
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: AppColors.accent,
+                                        width: 1.5,
+                                      ),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: GameColors.hudShadow,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        isNitro
+                                            ? 'Nhanh quá!'
+                                            : (q.comet ? 'Sao chổi!' : 'Cố lên!'),
+                                        style: TextStyle(
+                                          fontSize: tablet ? 14 : 11,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.text,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isNitro
-                                      ? 'BỨT TỐC x$comboStreak!'
-                                      : 'NĂNG LƯỢNG',
-                                  style: TextStyle(
-                                    fontSize: tablet ? 14 : 11,
-                                    fontWeight: FontWeight.w900,
-                                    color: GameColors.gaugeText,
-                                    letterSpacing: 0.3,
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: tablet ? 42 : 32,
+                                  height: tablet ? 42 : 32,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: GameColors.coPilotBg,
+                                    border: Border.all(
+                                      color: AppColors.accent,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      isNitro
+                                          ? AppImages.chipSurprise
+                                          : AppImages.chipJoy,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-
-                          // Right: Co-pilot Chíp reaction / speech bubble
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: tablet ? 10 : 8,
-                                  vertical: tablet ? 5 : 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.card,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: AppColors.accent,
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: GameColors.hudShadow,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  isNitro
-                                      ? 'Nhanh quá!'
-                                      : (q.comet ? 'Sao chổi!' : 'Cố lên!'),
-                                  style: TextStyle(
-                                    fontSize: tablet ? 14 : 11,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColors.text,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                width: tablet ? 42 : 32,
-                                height: tablet ? 42 : 32,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: GameColors.coPilotBg,
-                                  border: Border.all(
-                                    color: AppColors.accent,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    isNitro
-                                        ? AppImages.chipSurprise
-                                        : AppImages.chipJoy,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
@@ -1133,6 +1297,127 @@ class _CockpitPlaceholder extends StatelessWidget {
 }
 
 typedef FloatingCockpitHUD = AnswerDesk;
+
+/// Temporary board + quick-phrase placeholder row shown while the 2.5 s
+/// Star Gate scene plays between online stages so the kid cannot tap answers.
+class _StarGateBoard extends StatelessWidget {
+  const _StarGateBoard({
+    required this.stage,
+    required this.tablet,
+    required this.landscape,
+  });
+
+  final int stage;
+  final bool tablet;
+  final bool landscape;
+
+  static const _quickPlaceholders = [
+    'Tớ sắp tới rồi!',
+    'Cậu nhanh quá!',
+    'Bắt tớ đi!',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final keyHeight = tablet ? 88.0 : 66.0;
+    return Column(
+      key: const ValueKey('star-gate-board'),
+      mainAxisSize: landscape ? MainAxisSize.max : MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (landscape) const Spacer(),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: tablet ? 20 : 14,
+            vertical: tablet ? 18 : 14,
+          ),
+          decoration: BoxDecoration(
+            color: GameColors.rareGoldTint,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(color: GameColors.rareGold, width: 2.5),
+            boxShadow: const [
+              BoxShadow(
+                color: GameColors.questionCardEdge,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                AppImages.icStar,
+                width: tablet ? 40 : 30,
+                height: tablet ? 40 : 30,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Qua Cổng Sao chặng $stage!',
+                      style: TextStyle(
+                        fontSize: tablet ? 24 : 18,
+                        fontWeight: FontWeight.w900,
+                        color: GameColors.rareInk,
+                      ),
+                    ),
+                    Text(
+                      'Chuẩn bị vào chặng ${stage + 1}…',
+                      style: TextStyle(
+                        fontSize: tablet ? 17 : 13,
+                        fontWeight: FontWeight.w800,
+                        color: GameColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: tablet ? 14 : 10),
+        SizedBox(
+          height: keyHeight,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _quickPlaceholders.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) => Center(
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: tablet ? 16 : 12,
+                  vertical: tablet ? 12 : 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  border: Border.all(
+                    color: GameColors.questionCardEdge,
+                    width: 1.5,
+                  ),
+                ),
+                child: Text(
+                  _quickPlaceholders[i],
+                  style: TextStyle(
+                    fontSize: tablet ? 16 : 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (landscape) const Spacer(),
+      ],
+    );
+  }
+}
 
 /// One glyph key: drawn at the scale shared by the question's three glyphs.
 class _GlyphKey extends ConsumerWidget {

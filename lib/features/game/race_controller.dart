@@ -21,6 +21,10 @@ import 'race_rival.dart';
 /// Seeds question building; tests override it for a fixed race.
 final raceRandomProvider = Provider<Random>((ref) => Random());
 
+/// Duration of the Star Gate transition between online stages (spec §5.1).
+final starGateDurationProvider =
+    Provider<Duration>((ref) => const Duration(milliseconds: 2500));
+
 /// URL segment of a subject: `/game/race/toan`, `/game/race/tieng-viet`.
 String subjectSlug(RaceSubject s) => switch (s) {
       RaceSubject.toan => 'toan',
@@ -147,6 +151,10 @@ class RaceState {
     this.paused = false,
     this.result,
     this.rival,
+    this.stage = 1,
+    this.inSprint = false,
+    this.comboStreak = 0,
+    this.starGateStage,
   });
 
   final RacePhase phase;
@@ -179,6 +187,13 @@ class RaceState {
   final bool wasRetryAfterLoss;
   final bool paused;
   final RaceResultArgs? result;
+  final int stage;
+  final bool inSprint;
+  final int comboStreak;
+
+  /// Stage just cleared (1 or 2) during the 2.5 s online Star Gate scene, else null.
+  final int? starGateStage;
+  bool get starGateActive => starGateStage != null;
 
   RaceQuestion? get current =>
       questions.isEmpty ? null : questions[questionIndex];
@@ -197,6 +212,10 @@ class RaceState {
     bool? paused,
     RaceResultArgs? result,
     RivalView? rival,
+    int? stage,
+    bool? inSprint,
+    int? comboStreak,
+    int? Function()? starGateStage,
   }) =>
       RaceState(
         phase: phase ?? this.phase,
@@ -216,6 +235,11 @@ class RaceState {
         paused: paused ?? this.paused,
         result: result ?? this.result,
         rival: rival ?? this.rival,
+        stage: stage ?? this.stage,
+        inSprint: inSprint ?? this.inSprint,
+        comboStreak: comboStreak ?? this.comboStreak,
+        starGateStage:
+            starGateStage == null ? this.starGateStage : starGateStage(),
       );
 }
 
@@ -230,6 +254,9 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
   bool _disposed = false;
   RaceRival? _rival;
   StreamSubscription<RivalView>? _rivalSub;
+  int? _pendingStarGateStage;
+  bool _pendingRoomOver = false;
+  Timer? _starGateTimer;
 
   /// Race time, which only moves through [advance].
   Duration get now => _now;
@@ -238,6 +265,7 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
   RaceState build() {
     ref.onDispose(() {
       _disposed = true;
+      _starGateTimer?.cancel();
       _rivalSub?.cancel();
     });
     return const RaceState();
@@ -304,6 +332,10 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     );
     _now = Duration.zero;
     _shownAt = Duration.zero;
+    _pendingStarGateStage = null;
+    _pendingRoomOver = false;
+    _starGateTimer?.cancel();
+    _starGateTimer = null;
     state = RaceState(
       phase: RacePhase.racing,
       subject: subject,
@@ -314,6 +346,9 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
       wasRetryAfterLoss: retryAfterLoss,
       rival: rival?.view,
       chipSteps: rival?.view.steps ?? 0,
+      stage: _race!.stage,
+      inSprint: _race!.inSprint,
+      comboStreak: _race!.comboStreak,
     );
     if (rival != null) {
       _rivalSub = rival.changes.listen(_onRival);
@@ -328,6 +363,10 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     state = state.copyWith(chipSteps: v.steps, rival: v);
     // Friends landing first do not stop the kid: they fly on for 2nd/3rd.
     if (v.roomOver) {
+      if (state.starGateStage != null || _pendingStarGateStage != null) {
+        _pendingRoomOver = true;
+        return;
+      }
       race.endLost();
       _finish();
     }
@@ -356,23 +395,32 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     if (race == null ||
         state.phase != RacePhase.racing ||
         state.paused ||
-        state.correctKey != null) {
+        state.correctKey != null ||
+        state.starGateActive) {
       return null;
     }
     final q = race.current;
+    final prevSteps = race.kidSteps;
     final r = race.answer(index, _now - _shownAt);
     if (!r.correct) {
       state = state.copyWith(
         wrongKey: () => index,
         wrongSeq: state.wrongSeq + 1,
+        comboStreak: race.comboStreak,
       );
       return false;
+    }
+    if (_rival != null && r.stageCleared && !race.finished) {
+      _pendingStarGateStage = prevSteps < onlineStageQuestions ? 1 : 2;
     }
     state = state.copyWith(
       kidSteps: race.kidSteps,
       boosting: q.comet,
       correctKey: () => index,
       wrongKey: () => null,
+      stage: race.stage,
+      inSprint: race.inSprint,
+      comboStreak: race.comboStreak,
     );
     _rival?.kidStepped(race.kidSteps);
     if (race.finished) _finish();
@@ -385,11 +433,36 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
     if (race == null || state.phase != RacePhase.racing) return;
     if (state.correctKey == null) return;
     _shownAt = _now;
+    final gateStage = _pendingStarGateStage;
+    _pendingStarGateStage = null;
     state = state.copyWith(
       questionIndex: race.questionIndex,
       correctKey: () => null,
       wrongKey: () => null,
+      starGateStage: gateStage == null ? null : () => gateStage,
     );
+    if (gateStage != null) {
+      _starGateTimer?.cancel();
+      _starGateTimer =
+          Timer(ref.read(starGateDurationProvider), _endStarGate);
+    }
+  }
+
+  void _endStarGate() {
+    _starGateTimer = null;
+    if (_disposed) return;
+    final race = _race;
+    if (race == null || state.phase != RacePhase.racing) {
+      state = state.copyWith(starGateStage: () => null);
+      return;
+    }
+    if (_pendingRoomOver) {
+      _pendingRoomOver = false;
+      race.endLost();
+      _finish();
+      return;
+    }
+    state = state.copyWith(starGateStage: () => null);
   }
 
   void setPaused(bool paused) {
@@ -398,12 +471,17 @@ class RaceController extends AutoDisposeNotifier<RaceState> {
   }
 
   Future<void> _finish() async {
+    _starGateTimer?.cancel();
+    _starGateTimer = null;
+    _pendingStarGateStage = null;
+    _pendingRoomOver = false;
     final race = _race!;
     final o = race.outcome!;
     state = state.copyWith(
       phase: RacePhase.finishing,
       kidSteps: race.kidSteps,
       chipSteps: race.chipSteps,
+      starGateStage: () => null,
     );
     RaceRecordResult? record;
     final rival = _rival;

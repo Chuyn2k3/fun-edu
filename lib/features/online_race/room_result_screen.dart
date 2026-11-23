@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../game/data/reward_pool.dart';
 import '../../online/room/room_controller.dart';
 import '../../online/sync/sync_engine.dart';
+import '../../profile/avatars.dart';
 import '../../ui/assets.dart';
 import '../../ui/theme/depth.dart';
 import '../game/badge_popup.dart';
@@ -69,7 +70,8 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
     final room = ref.watch(roomControllerProvider);
     final tablet = context.isTablet;
     final networkLost = (widget.rewards?.networkLost ?? false) ||
-        (room.phase == RoomPhase.error && room.error == 'network');
+        (room.phase == RoomPhase.error &&
+            (room.error == 'network' || room.error == 'server_unreachable'));
 
     if (networkLost) {
       return PopScope(
@@ -189,6 +191,14 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
                               ),
                             ),
                           ],
+                        ],
+                        if (ranked.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _ResultPodium(
+                            ranked: ranked,
+                            you: room.you,
+                            tablet: tablet,
+                          ),
                         ],
                         const SizedBox(height: 16),
                         for (final p in ranked) ...[
@@ -332,6 +342,184 @@ class _RareStickerCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ResultPodium extends StatelessWidget {
+  const _ResultPodium({
+    required this.ranked,
+    required this.you,
+    required this.tablet,
+  });
+
+  final List<RoomPlayer> ranked;
+  final String? you;
+  final bool tablet;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = ranked.take(3).toList();
+    if (top.isEmpty) return const SizedBox.shrink();
+
+    // Order left-to-right: 2nd, 1st, 3rd (or 2nd, 1st when 2 players).
+    final entries = <(int index, RoomPlayer player, int place)>[
+      for (var i = 0; i < top.length; i++)
+        (i, top[i], top[i].rank ?? (i + 1)),
+    ];
+    final ordered = switch (entries.length) {
+      1 => [entries[0]],
+      2 => [entries[1], entries[0]],
+      _ => [entries[1], entries[0], entries[2]],
+    };
+
+    return Container(
+      key: const ValueKey('room-result-podium'),
+      padding: EdgeInsets.fromLTRB(
+        tablet ? 20 : 10,
+        tablet ? 16 : 12,
+        tablet ? 20 : 10,
+        tablet ? 16 : 12,
+      ),
+      decoration: raisedDecoration(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < ordered.length; i++) ...[
+            if (i > 0) SizedBox(width: tablet ? 12 : 6),
+            Expanded(
+              child: _PodiumColumn(
+                index: ordered[i].$1,
+                player: ordered[i].$2,
+                place: ordered[i].$3,
+                isYou: ordered[i].$2.id == you,
+                tablet: tablet,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PodiumColumn extends StatelessWidget {
+  const _PodiumColumn({
+    required this.index,
+    required this.player,
+    required this.place,
+    required this.isYou,
+    required this.tablet,
+  });
+
+  final int index;
+  final RoomPlayer player;
+  final int place;
+  final bool isYou;
+  final bool tablet;
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color border, Color fill, Color ink, double pedestalH) =
+        switch (place) {
+      1 => (
+          GameColors.rareGold,
+          GameColors.rareGoldTint,
+          GameColors.rareInk,
+          tablet ? 82.0 : 60.0,
+        ),
+      2 => (
+          GameColors.podiumSilver,
+          GameColors.podiumSilverTint,
+          AppColors.text,
+          tablet ? 60.0 : 44.0,
+        ),
+      _ => (
+          GameColors.podiumBronze,
+          GameColors.podiumBronzeTint,
+          GameColors.keyOrangeInk,
+          tablet ? 44.0 : 32.0,
+        ),
+    };
+    final avatar = kidAvatars.contains(player.avatar)
+        ? player.avatar
+        : kidAvatars[index % kidAvatars.length];
+    final avatarSize =
+        place == 1 ? (tablet ? 72.0 : 54.0) : (tablet ? 60.0 : 44.0);
+    final name = player.name.isEmpty ? 'Bạn ${index + 1}' : player.name;
+
+    return Column(
+      key: ValueKey('podium-rank-$place'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (place == 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Image.asset(
+              AppImages.icCrown,
+              width: tablet ? 30 : 24,
+              height: tablet ? 30 : 24,
+              fit: BoxFit.contain,
+            ),
+          ),
+        Container(
+          width: avatarSize,
+          height: avatarSize,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.card,
+            border: Border.all(color: border, width: place == 1 ? 3.5 : 2.5),
+          ),
+          child: ClipOval(
+            child: Image.asset(avatar, fit: BoxFit.contain),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          isYou ? '$name (bé)' : name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: tablet ? 17 : 13,
+            fontWeight: FontWeight.w900,
+            color: AppColors.text,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: pedestalH,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(14),
+              bottom: Radius.circular(8),
+            ),
+            border: Border.all(color: border, width: 2),
+          ),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: tablet ? 12 : 9,
+              vertical: 2,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              border: Border.all(color: border, width: 1.5),
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+            ),
+            child: Text(
+              '#$place',
+              style: TextStyle(
+                fontSize: tablet ? 17 : 13,
+                fontWeight: FontWeight.w900,
+                color: ink,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

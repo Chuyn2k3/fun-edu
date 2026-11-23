@@ -193,6 +193,17 @@ abstract final class GameColors {
   static const rareGoldTint = Color(0xFFFFF4CC);
   static const rareInk = Color(0xFF6B4A00);
 
+  // Online race moments (3-stage bar, super speed, podium 1-2-3).
+  static const stageTrack = Color(0x40FFFFFF);
+  static const stageDone = Color(0xFF22C55E);
+  static const stageActive = Color(0xFFFFD54F);
+  static const sprintBadgeBg = Color(0xFFC8460F);
+  static const sprintBadgeInk = Color(0xFFFFFFFF);
+  static const podiumSilver = Color(0xFF94A3B8);
+  static const podiumSilverTint = Color(0xFFF1F5F9);
+  static const podiumBronze = Color(0xFFCD7F32);
+  static const podiumBronzeTint = Color(0xFFFFEFE0);
+
   // Fireworks sparks.
   static const fireworks = [
     Color(0xFFFFD24A),

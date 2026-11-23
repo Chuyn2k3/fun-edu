@@ -89,6 +89,10 @@ void main() {
     expect(find.byType(RaceScreen), findsOneWidget);
 
     while (room.steps.isEmpty || room.steps.last < 10) {
+      if (raceState(t).starGateActive) {
+        await t.pump(const Duration(milliseconds: 2600));
+        continue;
+      }
       await answerRight(t);
     }
     // The room ranks the kid second.

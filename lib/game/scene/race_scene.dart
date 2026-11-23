@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../profile/avatars.dart' show kidAvatars;
@@ -49,6 +51,9 @@ class RaceScene extends StatefulWidget {
     this.rivalAway = false,
     this.onlineRacers,
     this.raceSteps = raceLength,
+    this.comboStreak = 0,
+    this.superSpeed = false,
+    this.starGateStage,
     this.stallSeq = 0,
     this.lanes = 2,
     this.bottomInset = 0,
@@ -86,6 +91,11 @@ class RaceScene extends StatefulWidget {
 
   /// Total steps to reach the destination planet (10 offline, 18 online).
   final int raceSteps;
+
+  /// Current consecutive first-try answers and super speed / star gate moments.
+  final int comboStreak;
+  final bool superSpeed;
+  final int? starGateStage;
 
   /// Sequence number incremented on wrong answers to trigger sputter dip.
   final int stallSeq;
@@ -138,6 +148,9 @@ class RaceSceneState extends State<RaceScene>
   Size? _onlineArea;
   List<String> _onlineAssetKeys = const [];
   Listenable? _onlineRepaint;
+  Map<String, int> _prevOnlineRanks = {};
+  int? _prevMyOnlineRank;
+  Timer? _overtakeTimer;
 
   @visibleForTesting
   int debugTickersCreated = 0;
@@ -246,6 +259,18 @@ class RaceSceneState extends State<RaceScene>
       _onlineEffects.displayedSteps[id] ?? 0.0;
 
   @visibleForTesting
+  Iterable<String> get onlinePaintedLabels => _onlineLabels.cachedTexts;
+
+  @visibleForTesting
+  String? get onlineOvertakeBanner => _onlineEffects.overtakeBanner;
+
+  @visibleForTesting
+  bool get onlineSuperSpeedActive => _onlineEffects.superSpeed;
+
+  @visibleForTesting
+  int? get onlineStarGateStage => _onlineEffects.starGateStage;
+
+  @visibleForTesting
   Iterable<String> get loadedAssets => _assets;
 
   @override
@@ -257,6 +282,7 @@ class RaceSceneState extends State<RaceScene>
     _chip.leadOffset = _chipWantsLead ? _Racer.chipLeadOffset : 0.0;
     if (_isOnline) {
       _syncOnlineMotions(jump: true);
+      _syncOnlineMoments(detectOvertake: false);
     }
   }
 
@@ -305,6 +331,8 @@ class RaceSceneState extends State<RaceScene>
         ],
         AppImages.planet,
         AppImages.comet,
+        AppImages.icStar,
+        AppImages.icFlame,
       };
     }
     return {
@@ -328,6 +356,7 @@ class RaceSceneState extends State<RaceScene>
       return;
     }
     final activeIds = <String>{};
+    final isSuper = widget.superSpeed || widget.comboStreak >= 3;
     for (var i = 0; i < list.length; i++) {
       final r = list[i];
       activeIds.add(r.id);
@@ -337,7 +366,9 @@ class RaceSceneState extends State<RaceScene>
         _onlineMotions[r.id] = m;
         _onlineEffects.displayedSteps[r.id] = m.displayedSteps;
         _onlineSmokes[r.id] = SmokeParticles(
-          style: r.me ? TrailStyle.fromId(widget.kidTrail) : TrailStyle.flame,
+          style: r.me
+              ? (isSuper ? TrailStyle.blueFlame : TrailStyle.fromId(widget.kidTrail))
+              : TrailStyle.flame,
           seed: i + 1,
           capacity: 20,
         );
@@ -347,7 +378,9 @@ class RaceSceneState extends State<RaceScene>
           _onlineEffects.displayedSteps[r.id] = existing.displayedSteps;
         }
         if (r.me) {
-          _onlineSmokes[r.id]?.style = TrailStyle.fromId(widget.kidTrail);
+          _onlineSmokes[r.id]?.style = isSuper
+              ? TrailStyle.blueFlame
+              : TrailStyle.fromId(widget.kidTrail);
         }
       }
     }
@@ -356,12 +389,98 @@ class RaceSceneState extends State<RaceScene>
     _onlineSmokes.removeWhere((id, _) => !activeIds.contains(id));
   }
 
+  void _syncOnlineMoments({required bool detectOvertake}) {
+    final list = widget.onlineRacers;
+    if (list == null || list.isEmpty) return;
+
+    final isSuper = widget.superSpeed || widget.comboStreak >= 3;
+    _onlineEffects.superSpeed = isSuper;
+    _onlineEffects.comboStreak = widget.comboStreak;
+    if (_onlineEffects.starGateStage != widget.starGateStage) {
+      _onlineEffects.starGateStage = widget.starGateStage;
+      _onlineEffects.starGateAge = 0.0;
+    }
+
+    final newRanks = OnlineRacePainter.computeRanksMap(list);
+    final leader = list.where((r) => newRanks[r.id] == 1).firstOrNull;
+    _onlineEffects.starGateLeader = leader?.name;
+
+    final me = list.where((r) => r.me).firstOrNull;
+    final newMyRank = me == null ? null : newRanks[me.id];
+    final prevMyRank = _prevMyOnlineRank;
+
+    if (detectOvertake && me != null && newMyRank != null && prevMyRank != null) {
+      final anySteps = list.any((r) => r.steps > 0);
+      if (anySteps) {
+        if (newMyRank < prevMyRank && me.steps > 0) {
+          // Only celebrate an overtake when a remaining racer actually dropped
+          // behind us, not merely because an ahead player left the room.
+          final passedSomeone = list.any((r) {
+            if (r.me) return false;
+            final prevR = _prevOnlineRanks[r.id];
+            final newR = newRanks[r.id];
+            return prevR != null &&
+                newR != null &&
+                prevR < prevMyRank &&
+                newR > newMyRank;
+          });
+          if (passedSomeone) {
+            _showOnlineOvertake(
+              'VƯỢT! 🚀 Con lên hạng $newMyRank',
+              positive: true,
+            );
+            HapticFeedback.lightImpact();
+          }
+        } else if (newMyRank > prevMyRank) {
+          OnlineRacer? passer;
+          for (final r in list) {
+            if (r.me) continue;
+            final prevR = _prevOnlineRanks[r.id];
+            final newR = newRanks[r.id];
+            if (prevR != null &&
+                newR != null &&
+                prevR > prevMyRank &&
+                newR < newMyRank) {
+              passer = r;
+              break;
+            }
+          }
+          passer ??= list
+              .where((r) => !r.me && newRanks[r.id] == newMyRank - 1)
+              .firstOrNull;
+          passer ??= leader != null && !leader.me ? leader : null;
+          if (passer != null) {
+            final name = passer.name.isEmpty ? 'Bạn' : passer.name;
+            _showOnlineOvertake('$name vừa vượt con!', positive: false);
+          }
+        }
+      }
+    }
+
+    _prevOnlineRanks = newRanks;
+    _prevMyOnlineRank = newMyRank;
+    _onlineEffects.notify();
+  }
+
+  void _showOnlineOvertake(String text, {required bool positive}) {
+    _onlineEffects.overtakeBanner = text;
+    _onlineEffects.isPositiveOvertake = positive;
+    _onlineEffects.notify();
+    _overtakeTimer?.cancel();
+    _overtakeTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
+      _onlineEffects.overtakeBanner = null;
+      _onlineEffects.notify();
+    });
+  }
+
   @override
   void didUpdateWidget(RaceScene oldWidget) {
     super.didUpdateWidget(oldWidget);
     final old = oldWidget;
     if (_isOnline) {
       _syncOnlineMotions(jump: _reduceMotion);
+      _syncOnlineMoments(detectOvertake: _prevMyOnlineRank != null);
       _images.resolve(createLocalImageConfiguration(context), _assets);
       if (_reduceMotion) {
         _onlineEffects.cometProgress = null;
@@ -427,10 +546,12 @@ class RaceSceneState extends State<RaceScene>
 
   @override
   void dispose() {
+    _overtakeTimer?.cancel();
     _ticker.dispose();
     _avatarShaders.dispose();
     _onlineLabels.dispose();
     _images.dispose();
+    _onlineEffects.dispose();
     _clock.dispose();
     super.dispose();
   }
@@ -460,6 +581,9 @@ class RaceSceneState extends State<RaceScene>
       }
       _speedLinesAge += dt;
       _shakeAge += dt;
+      if (_onlineEffects.starGateStage != null) {
+        _onlineEffects.starGateAge += dt;
+      }
       _onlineEffects.cometProgress = cometProgress;
       _onlineEffects.speedLinesAge = _speedLinesAge;
       _onlineEffects.shakeOffset = _shakeOffset;
@@ -504,7 +628,10 @@ class RaceSceneState extends State<RaceScene>
 
       _clock.advance(
         dt,
-        targetWarp: _speedLines.isActive(_speedLinesAge) ? 0.85 : 0.0,
+        targetWarp: (_onlineEffects.superSpeed ||
+                _speedLines.isActive(_speedLinesAge))
+            ? 0.85
+            : 0.0,
       );
       return;
     }
@@ -598,6 +725,7 @@ class RaceSceneState extends State<RaceScene>
     _onlineAssetKeys = keys;
     _onlineRepaint = Listenable.merge([
       _clock,
+      _onlineEffects,
       for (final a in keys) _images[a],
     ]);
     return _onlineRepaint!;
