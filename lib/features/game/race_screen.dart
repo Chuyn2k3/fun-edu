@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../game/engine/race.dart';
 import '../../game/engine/race_question.dart';
+import '../../game/scene/online_race_painter.dart'
+    show roomRocketForIndex, safeOnlineAvatar;
 import '../../game/scene/race_scene.dart';
 import '../../math/math_question.dart';
 import '../../profile/avatars.dart';
@@ -266,54 +268,58 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       },
     );
 
-    final topBar = Consumer(
-      builder: (context, ref, _) {
-        final bar = _topBar(ref.watch(raceControllerProvider.select((s) => (
-              phase: s.phase,
-              questionIndex: s.questionIndex,
-              count: s.questions.length,
-            ))));
-        // Online rooms of 3-4: everyone's progress under the top bar.
-        final rival = ref.watch(raceControllerProvider.select((s) => s.rival));
-        final standings = rival?.standings;
-        final showStandings = RaceStandingsStrip.shows(standings);
-        final showRivalWaiting =
-            !showStandings && (rival?.rivalAway ?? false) && rival != null;
-        if (!showStandings && !showRivalWaiting) return bar;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            bar,
-            if (showStandings)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: RaceStandingsStrip(standings: standings!),
-              )
-            else if (showRivalWaiting)
-              Align(
-                alignment: Alignment.centerRight,
-                child: _RivalWaitingBadge(
-                  avatar: rival.avatar,
-                  name: rival.name,
+    final topBar = RepaintBoundary(
+      child: Consumer(
+        builder: (context, ref, _) {
+          final bar = _topBar(ref.watch(raceControllerProvider.select((s) => (
+                phase: s.phase,
+                questionIndex: s.questionIndex,
+                count: s.questions.length,
+              ))));
+          // Online rooms of 3-4: everyone's progress under the top bar.
+          final rival = ref.watch(raceControllerProvider.select((s) => s.rival));
+          final standings = rival?.standings;
+          final showStandings = RaceStandingsStrip.shows(standings);
+          final showRivalWaiting =
+              !showStandings && (rival?.rivalAway ?? false) && rival != null;
+          if (!showStandings && !showRivalWaiting) return bar;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              bar,
+              if (showStandings)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: RaceStandingsStrip(standings: standings!),
+                )
+              else if (showRivalWaiting)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _RivalWaitingBadge(
+                    avatar: rival.avatar,
+                    name: rival.name,
+                  ),
                 ),
-              ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
 
-    final desk = IgnorePointer(
-      ignoring: widget.inputLocked,
-      child: Opacity(
-        opacity: widget.inputLocked ? 0.55 : 1.0,
-        child: AnswerDesk(
-          comboStreak: _comboStreak,
-          nitroActive: _isNitroActive,
-          onKey: (i) {
-            if (!widget.inputLocked) _controller.answer(i);
-          },
-          onListen: _speakAgain,
+    final desk = RepaintBoundary(
+      child: IgnorePointer(
+        ignoring: widget.inputLocked,
+        child: Opacity(
+          opacity: widget.inputLocked ? 0.55 : 1.0,
+          child: AnswerDesk(
+            comboStreak: _comboStreak,
+            nitroActive: _isNitroActive,
+            onKey: (i) {
+              if (!widget.inputLocked) _controller.answer(i);
+            },
+            onListen: _speakAgain,
+          ),
         ),
       ),
     );
@@ -427,6 +433,49 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     String? kidAvatar,
     RivalView? rival,
   }) {
+    final isOnline = rival != null;
+    final targetSteps = isOnline ? onlineRaceLength : raceLength;
+    List<OnlineRacer>? onlineRacers;
+    if (isOnline) {
+      final active = <OnlineRacer>[];
+      for (var i = 0; i < rival.standings.length; i++) {
+        final r = rival.standings[i];
+        if (r.left) continue;
+        final fallbackAvatar = r.isYou && kidAvatar != null ? kidAvatar : r.avatar;
+        active.add(OnlineRacer(
+          id: r.id.isNotEmpty ? r.id : 'p$i',
+          name: r.name,
+          avatar: safeOnlineAvatar(fallbackAvatar, i),
+          rocket: roomRocketForIndex(i),
+          steps: r.isYou ? math.max(r.steps, s.kidSteps) : r.steps,
+          rank: r.rank,
+          me: r.isYou,
+          away: r.away,
+        ));
+      }
+      if (active.isEmpty) {
+        active.addAll([
+          OnlineRacer(
+            id: 'me',
+            name: 'Bé',
+            avatar: safeOnlineAvatar(kidAvatar ?? '', 0),
+            rocket: roomRocketForIndex(0),
+            steps: s.kidSteps,
+            me: true,
+          ),
+          OnlineRacer(
+            id: 'rival',
+            name: rival.name,
+            avatar: safeOnlineAvatar(rival.avatar, 1),
+            rocket: roomRocketForIndex(1),
+            steps: s.chipSteps,
+            away: rival.rivalAway,
+          ),
+        ]);
+      }
+      onlineRacers = active;
+    }
+
     return RaceScene(
       key: _sceneKey,
       kidSteps: s.kidSteps,
@@ -436,12 +485,14 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
       boosting: s.boosting,
       won: s.phase != RacePhase.racing &&
           s.phase != RacePhase.loading &&
-          s.kidSteps >= raceLength,
+          s.kidSteps >= targetSteps,
       kidAvatar: kidAvatar,
       rivalRocket: rival?.rocket,
       rivalAvatar: rival?.avatar,
       rivalName: rival?.name,
       rivalAway: rival?.rivalAway ?? false,
+      onlineRacers: onlineRacers,
+      raceSteps: targetSteps,
       stallSeq: s.wrongSeq,
       bottomInset: bottomInset,
     );

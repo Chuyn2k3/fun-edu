@@ -1,10 +1,12 @@
 import 'dart:async';
 
-/// One racer in an online room, for the standings strip.
+/// One racer in an online room, for the standings strip and race scene.
 class RacerStanding {
   const RacerStanding({
+    this.id = '',
     required this.name,
     required this.avatar,
+    this.rocket = 'rocket_orange',
     required this.steps,
     this.rank,
     this.isYou = false,
@@ -13,8 +15,10 @@ class RacerStanding {
     this.left = false,
   });
 
+  final String id;
   final String name;
   final String avatar;
+  final String rocket;
   final int steps;
   final int? rank;
   final bool isYou;

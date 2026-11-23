@@ -58,7 +58,7 @@ class _Racer extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatar = kidAvatars.contains(s.avatar) ? s.avatar : kidAvatars[1];
     final size = tablet ? 38.0 : 28.0;
-    final progress = (s.steps / raceLength).clamp(0.0, 1.0);
+    final progress = (s.steps / onlineRaceLength).clamp(0.0, 1.0);
     final place = switch (s.rank) {
       1 => 'Nhất',
       2 => 'Nhì',
@@ -73,7 +73,7 @@ class _Racer extends StatelessWidget {
             ? '${s.name}: đang chờ'
             : place != null
                 ? '${s.name}: về ${place.toLowerCase()}'
-                : '${s.name}: ${s.steps} trên $raceLength nấc';
+                : '${s.name}: ${s.steps} trên $onlineRaceLength nấc';
 
     Widget trailing;
     if (s.left && place == null) {

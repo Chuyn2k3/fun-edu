@@ -236,9 +236,23 @@ void main() {
 
     test('lists every racer in room order, marking the kid', () {
       final v = OnlineRival.viewOf(room([p('p1', 5), p('p2', 3), p('p3', 10, 1)]));
+      expect(v.standings.map((s) => s.id), ['p1', 'p2', 'p3']);
       expect(v.standings.map((s) => s.name), ['p1', 'p2', 'p3']);
+      expect(v.standings.map((s) => s.rocket),
+          ['rocket_green', 'rocket_green', 'rocket_green']);
       expect(v.standings.map((s) => s.isYou), [true, false, false]);
       expect(v.standings.last.rank, 1);
+    });
+
+    test('treats both network and server_unreachable errors as networkLost', () {
+      for (final err in const ['network', 'server_unreachable']) {
+        final v = OnlineRival.viewOf(RoomState(phase: RoomPhase.error, error: err));
+        expect(v.networkLost, isTrue);
+        expect(v.roomOver, isTrue);
+      }
+      final other = OnlineRival.viewOf(
+          const RoomState(phase: RoomPhase.error, error: 'not_found'));
+      expect(other.networkLost, isFalse);
     });
 
     test('a finished room ends the kid\'s race', () {

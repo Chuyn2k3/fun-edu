@@ -8,8 +8,8 @@ import '../../ui/assets.dart';
 import '../../ui/feedback/feedback.dart';
 import '../game/race_screen.dart';
 
-/// `/game/room/race`: the usual race screen with the friends' rocket in
-/// place of Chíp's. Handles friend disconnect toasts and self-reconnect banner.
+/// `/game/room/race`: the online race screen where the whole pack flies
+/// together. Handles friend disconnect toasts and self-reconnect banner.
 class RoomRaceScreen extends ConsumerStatefulWidget {
   const RoomRaceScreen({super.key, required this.subject});
 

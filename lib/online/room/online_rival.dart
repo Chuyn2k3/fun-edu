@@ -21,7 +21,8 @@ class OnlineRival implements RaceRival {
       });
     final me = s.me;
     final best = others.firstOrNull;
-    final networkLost = s.phase == RoomPhase.error && s.error == 'network';
+    final networkLost = s.phase == RoomPhase.error &&
+        (s.error == 'network' || s.error == 'server_unreachable');
     return RivalView(
       steps: best?.steps ?? 0,
       name: best?.name ?? '',
@@ -36,8 +37,10 @@ class OnlineRival implements RaceRival {
       standings: [
         for (final p in s.players)
           RacerStanding(
+            id: p.id,
             name: p.name,
             avatar: p.avatar,
+            rocket: p.rocket,
             steps: p.steps,
             rank: p.rank,
             isYou: p.id == s.you,

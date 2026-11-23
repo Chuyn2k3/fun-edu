@@ -7,12 +7,16 @@ import 'package:flutter/widgets.dart';
 import '../../profile/avatars.dart' show kidAvatars;
 import '../../ui/assets.dart';
 import '../../ui/theme/tokens.dart';
+import '../engine/race.dart';
 import 'flame_painter.dart';
+import 'online_race_painter.dart';
 import 'rocket_sprite.dart';
 import 'smoke_particles.dart';
 import 'space_track.dart';
 import 'speed_lines.dart';
 import 'trails.dart';
+
+export 'online_race_painter.dart' show OnlineRaceLayout, OnlineRacer;
 
 /// Redesigned StarPath rocket race scene:
 /// Both rockets race along a visible 10-step perspective stardust highway towards
@@ -43,12 +47,14 @@ class RaceScene extends StatefulWidget {
     this.rivalAvatar,
     this.rivalName,
     this.rivalAway = false,
+    this.onlineRacers,
+    this.raceSteps = raceLength,
     this.stallSeq = 0,
     this.lanes = 2,
     this.bottomInset = 0,
   }) : assert(lanes >= 2);
 
-  /// Steps climbed, 0..10 (10 = at the planet).
+  /// Steps climbed, 0..[raceSteps] ([raceSteps] = at the planet).
   final int kidSteps;
   final int chipSteps;
 
@@ -73,6 +79,13 @@ class RaceScene extends StatefulWidget {
   final String? rivalAvatar;
   final String? rivalName;
   final bool rivalAway;
+
+  /// Online room ("whole pack flies together"): when non-null and non-empty,
+  /// renders all racers flying together via [OnlineRacePainter].
+  final List<OnlineRacer>? onlineRacers;
+
+  /// Total steps to reach the destination planet (10 offline, 18 online).
+  final int raceSteps;
 
   /// Sequence number incremented on wrong answers to trigger sputter dip.
   final int stallSeq;
@@ -115,6 +128,25 @@ class RaceSceneState extends State<RaceScene>
   double _shakeAge = double.infinity;
   bool _kidWasAhead = false;
   double _overtakeAge = double.infinity;
+
+  // Online mode ("whole pack flies together") state, driven by the same Ticker.
+  final Map<String, _OnlineRacerMotion> _onlineMotions = {};
+  final OnlineRaceEffects _onlineEffects = OnlineRaceEffects();
+  final AvatarShaderCache _avatarShaders = AvatarShaderCache();
+  final OnlineLabelCache _onlineLabels = OnlineLabelCache();
+  final Map<String, SmokeParticles> _onlineSmokes = {};
+  Size? _onlineArea;
+  List<String> _onlineAssetKeys = const [];
+  Listenable? _onlineRepaint;
+
+  @visibleForTesting
+  int debugTickersCreated = 0;
+
+  @override
+  Ticker createTicker(TickerCallback onTick) {
+    debugTickersCreated++;
+    return super.createTicker(onTick);
+  }
 
   static const _cometDuration = 1.3;
   static const _overtakeDuration = 0.75;
@@ -206,6 +238,13 @@ class RaceSceneState extends State<RaceScene>
     return sp.point(milestone, isKid: true);
   }
 
+  bool get _isOnline =>
+      widget.onlineRacers != null && widget.onlineRacers!.isNotEmpty;
+
+  @visibleForTesting
+  double onlineDisplayedSteps(String id) =>
+      _onlineEffects.displayedSteps[id] ?? 0.0;
+
   @visibleForTesting
   Iterable<String> get loadedAssets => _assets;
 
@@ -216,6 +255,9 @@ class RaceSceneState extends State<RaceScene>
     _chip.setTarget(widget.chipSteps, jump: true);
     _kidWasAhead = widget.kidSteps > widget.chipSteps;
     _chip.leadOffset = _chipWantsLead ? _Racer.chipLeadOffset : 0.0;
+    if (_isOnline) {
+      _syncOnlineMotions(jump: true);
+    }
   }
 
   @override
@@ -230,10 +272,16 @@ class RaceSceneState extends State<RaceScene>
         _kid.snap();
         _chip.snap();
         _snapLead();
+        if (_isOnline) {
+          _syncOnlineMotions(jump: true);
+        }
         _cometAge = null;
         _speedLinesAge = double.infinity;
         _shakeAge = double.infinity;
         _overtakeAge = double.infinity;
+        _onlineEffects.cometProgress = null;
+        _onlineEffects.speedLinesAge = double.infinity;
+        _onlineEffects.shakeOffset = Offset.zero;
         _settleSmoke();
         _clock.touch();
       } else if (!_ticker.isActive) {
@@ -243,21 +291,99 @@ class RaceSceneState extends State<RaceScene>
     }
   }
 
-  Iterable<String> get _assets => {
-        _kid.sprite.asset,
-        _chip.sprite.asset,
-        kidAvatarAsset,
-        if (_hasRival) rivalAvatarAsset,
+  Iterable<String> get _assets {
+    final online = widget.onlineRacers;
+    if (online != null && online.isNotEmpty) {
+      return {
+        for (var i = 0; i < online.length; i++) ...[
+          RocketSprite.forItem(
+            online[i].rocket.isNotEmpty
+                ? online[i].rocket
+                : roomRocketForIndex(i),
+          ).asset,
+          safeOnlineAvatar(online[i].avatar, i),
+        ],
         AppImages.planet,
         AppImages.comet,
-        AppImages.chipSurprise,
-        AppImages.chipJoy,
       };
+    }
+    return {
+      _kid.sprite.asset,
+      _chip.sprite.asset,
+      kidAvatarAsset,
+      if (_hasRival) rivalAvatarAsset,
+      AppImages.planet,
+      AppImages.comet,
+      AppImages.chipSurprise,
+      AppImages.chipJoy,
+    };
+  }
+
+  void _syncOnlineMotions({required bool jump}) {
+    final list = widget.onlineRacers;
+    if (list == null || list.isEmpty) {
+      _onlineMotions.clear();
+      _onlineEffects.displayedSteps.clear();
+      _onlineSmokes.clear();
+      return;
+    }
+    final activeIds = <String>{};
+    for (var i = 0; i < list.length; i++) {
+      final r = list[i];
+      activeIds.add(r.id);
+      final existing = _onlineMotions[r.id];
+      if (existing == null) {
+        final m = _OnlineRacerMotion(r);
+        _onlineMotions[r.id] = m;
+        _onlineEffects.displayedSteps[r.id] = m.displayedSteps;
+        _onlineSmokes[r.id] = SmokeParticles(
+          style: r.me ? TrailStyle.fromId(widget.kidTrail) : TrailStyle.flame,
+          seed: i + 1,
+          capacity: 20,
+        );
+      } else {
+        existing.setTarget(r, jump: jump);
+        if (jump) {
+          _onlineEffects.displayedSteps[r.id] = existing.displayedSteps;
+        }
+        if (r.me) {
+          _onlineSmokes[r.id]?.style = TrailStyle.fromId(widget.kidTrail);
+        }
+      }
+    }
+    _onlineMotions.removeWhere((id, _) => !activeIds.contains(id));
+    _onlineEffects.displayedSteps.removeWhere((id, _) => !activeIds.contains(id));
+    _onlineSmokes.removeWhere((id, _) => !activeIds.contains(id));
+  }
 
   @override
   void didUpdateWidget(RaceScene oldWidget) {
     super.didUpdateWidget(oldWidget);
     final old = oldWidget;
+    if (_isOnline) {
+      _syncOnlineMotions(jump: _reduceMotion);
+      _images.resolve(createLocalImageConfiguration(context), _assets);
+      if (_reduceMotion) {
+        _onlineEffects.cometProgress = null;
+        _onlineEffects.speedLinesAge = double.infinity;
+        _onlineEffects.shakeOffset = Offset.zero;
+        _clock.touch();
+        return;
+      }
+      final kidUp = widget.kidSteps > old.kidSteps;
+      final cometNow = widget.boosting && !old.boosting;
+      if (kidUp || cometNow) {
+        _speedLinesAge = 0;
+        _shakeAge = 0;
+        _onlineEffects.speedLinesAge = 0;
+        _onlineEffects.shakeOffset = _shakeOffset;
+      }
+      if (cometNow) {
+        _cometAge = 0;
+        _onlineEffects.cometProgress = 0;
+      }
+      return;
+    }
     if (old.kidRocket != widget.kidRocket) {
       _kid.sprite = RocketSprite.forItem(widget.kidRocket);
       _images.resolve(createLocalImageConfiguration(context), _assets);
@@ -302,15 +428,87 @@ class RaceSceneState extends State<RaceScene>
   @override
   void dispose() {
     _ticker.dispose();
+    _avatarShaders.dispose();
+    _onlineLabels.dispose();
     _images.dispose();
     _clock.dispose();
     super.dispose();
   }
 
   void _onTick(Duration elapsed) {
-    final dt = math.min((elapsed - _last).inMicroseconds / 1e6, 0.05);
+    final rawDt = (elapsed - _last).inMicroseconds / 1e6;
+    final dt = math.min(rawDt, 0.05);
     _last = elapsed;
-    if (dt <= 0) return;
+    if (rawDt <= 0) return;
+
+    if (_isOnline) {
+      final online = widget.onlineRacers!;
+      var leaderSteps = 0.0;
+      for (final r in online) {
+        final m = _onlineMotions[r.id];
+        if (m != null) {
+          m.advance(rawDt);
+          _onlineEffects.displayedSteps[r.id] = m.displayedSteps;
+          if (m.displayedSteps > leaderSteps) {
+            leaderSteps = m.displayedSteps;
+          }
+        }
+      }
+      if (_cometAge != null) {
+        _cometAge = _cometAge! + dt;
+        if (_cometAge! >= _cometDuration) _cometAge = null;
+      }
+      _speedLinesAge += dt;
+      _shakeAge += dt;
+      _onlineEffects.cometProgress = cometProgress;
+      _onlineEffects.speedLinesAge = _speedLinesAge;
+      _onlineEffects.shakeOffset = _shakeOffset;
+
+      final area = _onlineArea;
+      if (area != null && !area.isEmpty) {
+        final u = math.min(area.width / 390.0, area.height / 520.0).clamp(0.72, 1.5);
+        final count = online.length;
+        final rocketW = math
+            .min(72.0 * u, area.width / math.max(2, count) * 0.62)
+            .clamp(42.0, 88.0);
+        for (var i = 0; i < count; i++) {
+          final r = online[i];
+          final smoke = _onlineSmokes[r.id];
+          if (smoke == null) continue;
+          if (r.away) {
+            smoke.update(dt, emitX: 0, emitY: 0, unit: u, intensity: 0);
+            continue;
+          }
+          final s = _onlineEffects.displayedSteps[r.id] ?? r.steps.toDouble();
+          final center = OnlineRaceLayout.rocketCenter(
+            area: area,
+            index: i,
+            count: count,
+            steps: s,
+            leaderSteps: leaderSteps,
+          );
+          final rocketId =
+              r.rocket.isNotEmpty ? r.rocket : roomRocketForIndex(i);
+          final sprite = RocketSprite.forItem(rocketId);
+          final rocketH = rocketW * sprite.aspect;
+          final nozzleY = center.dy + rocketH * (sprite.nozzle - 0.5) + rocketW * 0.35;
+          smoke.update(
+            dt,
+            emitX: center.dx,
+            emitY: nozzleY,
+            unit: u * rocketW / (84 * u),
+            intensity: (s - leaderSteps).abs() < 0.05 ? 1.15 : 0.9,
+          );
+        }
+      }
+
+      _clock.advance(
+        dt,
+        targetWarp: _speedLines.isActive(_speedLinesAge) ? 0.85 : 0.0,
+      );
+      return;
+    }
+
     final t = _clock.time + dt;
     _kid.step(dt, leading: _kidLeads);
     _chip.step(dt, leading: _chipLeads);
@@ -392,8 +590,139 @@ class RaceSceneState extends State<RaceScene>
     if (_reduceMotion) _settleSmoke();
   }
 
+  Listenable _onlineRepaintListenable() {
+    final keys = _assets.toList(growable: false);
+    if (_onlineRepaint != null && _listEquals(_onlineAssetKeys, keys)) {
+      return _onlineRepaint!;
+    }
+    _onlineAssetKeys = keys;
+    _onlineRepaint = Listenable.merge([
+      _clock,
+      for (final a in keys) _images[a],
+    ]);
+    return _onlineRepaint!;
+  }
+
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  Widget _buildSceneStack({
+    required TrackGeometry g,
+    required StarPath sp,
+    required int kidSteps,
+    required int chipSteps,
+    required int totalSteps,
+    required CustomPainter foregroundPainter,
+  }) {
+    return ClipRect(
+      child: Stack(fit: StackFit.expand, children: [
+        // Layer 1: Warm Twilight Space Gradient (static)
+        const RepaintBoundary(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  GameColors.skyTop,
+                  GameColors.skyUpper,
+                  GameColors.skyLower,
+                  GameColors.skyHorizon,
+                ],
+                stops: [0.0, 0.35, 0.70, 1.0],
+              ),
+            ),
+          ),
+        ),
+
+        // Layer 2: Cosmic motion (parallax nebulae, twinkling stars)
+        RepaintBoundary(
+          child: CustomPaint(
+            painter: SkyMotionPainter(clock: _clock, geometry: g),
+          ),
+        ),
+
+        // Layer 3: Star track & approaching Saturn (repaints only on step change)
+        RepaintBoundary(
+          child: CustomPaint(
+            painter: _StarTrackPainter(
+              starPath: sp,
+              kidSteps: kidSteps,
+              chipSteps: chipSteps,
+              totalSteps: totalSteps,
+              planetImage: _images[AppImages.planet].value,
+            ),
+          ),
+        ),
+
+        // Layer 4: Foreground dynamic racers, smoke, flames, comet, speed lines
+        RepaintBoundary(
+          child: CustomPaint(painter: foregroundPainter),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isOnline) {
+      final online = widget.onlineRacers!;
+      var leaderIntSteps = 0;
+      for (final r in online) {
+        if (r.steps > leaderIntSteps) leaderIntSteps = r.steps;
+      }
+      leaderIntSteps = leaderIntSteps.clamp(0, widget.raceSteps);
+      return Semantics(
+        container: true,
+        label: online
+            .map((r) => '${r.name}: ${r.steps} trên ${widget.raceSteps} nấc')
+            .join('. '),
+        child: LayoutBuilder(builder: (context, c) {
+          final size = c.biggest;
+          final availH = math.max(120.0, size.height - widget.bottomInset);
+          _onlineArea = Size(size.width, availH);
+          final g = TrackGeometry(
+            size,
+            lanes: math.max(2, online.length),
+            bottomInset: widget.bottomInset,
+          );
+          final isLandscapeTablet =
+              size.width >= 600 && size.width > size.height;
+          final sp = StarPath(
+            size,
+            bottomInset: widget.bottomInset,
+            isLandscapeTablet: isLandscapeTablet,
+          );
+
+          return _buildSceneStack(
+            g: g,
+            sp: sp,
+            kidSteps: leaderIntSteps,
+            chipSteps: leaderIntSteps,
+            totalSteps: widget.raceSteps,
+            foregroundPainter: OnlineRacePainter(
+              racers: online,
+              effects: _onlineEffects,
+              images: _images,
+              shaderCache: _avatarShaders,
+              labelCache: _onlineLabels,
+              smokes: _onlineSmokes,
+              clock: _clock,
+              reduceMotion: _reduceMotion,
+              bottomInset: widget.bottomInset,
+              speedLines: _speedLines,
+              repaint: _onlineRepaintListenable(),
+            ),
+          );
+        }),
+      );
+    }
+
     final kid = widget.kidSteps.clamp(0, RaceScene.steps);
     final chip = widget.chipSteps.clamp(0, RaceScene.steps);
     return Semantics(
@@ -411,68 +740,27 @@ class RaceSceneState extends State<RaceScene>
             isLandscapeTablet: isLandscapeTablet);
         _setGeometry(g, sp);
 
-        return ClipRect(
-          child: Stack(fit: StackFit.expand, children: [
-            // Layer 1: Warm Twilight Space Gradient
-            const RepaintBoundary(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      GameColors.skyTop,
-                      GameColors.skyUpper,
-                      GameColors.skyLower,
-                      GameColors.skyHorizon,
-                    ],
-                    stops: [0.0, 0.35, 0.70, 1.0],
-                  ),
-                ),
-              ),
-            ),
-
-            // Layer 2: Cosmic motion (parallax nebulae, twinkling stars)
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: SkyMotionPainter(clock: _clock, geometry: g),
-              ),
-            ),
-
-            // Layer 3: Static Star Track, 10 perspective step stones, and Saturn with corona
-            // Repaints ONLY when steps change (not every frame!)
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: _StarTrackPainter(
-                  starPath: sp,
-                  kidSteps: kid,
-                  chipSteps: chip,
-                  planetImage: _images[AppImages.planet].value,
-                ),
-              ),
-            ),
-
-            // Layer 4: Foreground dynamic racers, smoke, flames, comet, speed lines
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: _RaceForegroundPainter(
-                  state: this,
-                  geometry: g,
-                  starPath: sp,
-                  repaint: Listenable.merge([
-                    _clock,
-                    _images[_kid.sprite.asset],
-                    _images[_chip.sprite.asset],
-                    _images[kidAvatarAsset],
-                    _images[AppImages.planet],
-                    _images[AppImages.comet],
-                    _images[AppImages.chipSurprise],
-                    _images[AppImages.chipJoy],
-                  ]),
-                ),
-              ),
-            ),
-          ]),
+        return _buildSceneStack(
+          g: g,
+          sp: sp,
+          kidSteps: kid,
+          chipSteps: chip,
+          totalSteps: RaceScene.steps,
+          foregroundPainter: _RaceForegroundPainter(
+            state: this,
+            geometry: g,
+            starPath: sp,
+            repaint: Listenable.merge([
+              _clock,
+              _images[_kid.sprite.asset],
+              _images[_chip.sprite.asset],
+              _images[kidAvatarAsset],
+              _images[AppImages.planet],
+              _images[AppImages.comet],
+              _images[AppImages.chipSurprise],
+              _images[AppImages.chipJoy],
+            ]),
+          ),
         );
       }),
     );
@@ -796,12 +1084,14 @@ class _StarTrackPainter extends CustomPainter {
     required this.kidSteps,
     required this.chipSteps,
     required this.planetImage,
+    this.totalSteps = 10,
   });
 
   final StarPath starPath;
   final int kidSteps;
   final int chipSteps;
   final ui.Image? planetImage;
+  final int totalSteps;
 
   static final Path _unitCircle = Path()
     ..addOval(Rect.fromCircle(center: Offset.zero, radius: 1));
@@ -812,7 +1102,8 @@ class _StarTrackPainter extends CustomPainter {
 
     // Draw Approaching Destination Planet Saturn with Atmospheric Corona & Depth Wisps
     final maxStep = math.max(kidSteps, chipSteps);
-    final pr = sp.planetRectFor(maxStep / 10.0);
+    final denom = math.max(1, totalSteps).toDouble();
+    final pr = sp.planetRectFor(maxStep / denom);
     _paintAtmosphericPlanet(canvas, pr);
   }
 
@@ -887,7 +1178,48 @@ class _StarTrackPainter extends CustomPainter {
       oldDelegate.starPath != starPath ||
       oldDelegate.kidSteps != kidSteps ||
       oldDelegate.chipSteps != chipSteps ||
+      oldDelegate.totalSteps != totalSteps ||
       oldDelegate.planetImage != planetImage;
+}
+
+class _OnlineRacerMotion {
+  _OnlineRacerMotion(OnlineRacer r)
+      : fromSteps = r.steps.toDouble(),
+        targetSteps = r.steps.toDouble(),
+        displayedSteps = r.steps.toDouble();
+
+  static const double _lerpDurationMs = 200.0;
+
+  double fromSteps;
+  double targetSteps;
+  double displayedSteps;
+  double elapsedMs = _lerpDurationMs;
+
+  void setTarget(OnlineRacer next, {required bool jump}) {
+    final nextTarget = next.steps.toDouble();
+    if (jump) {
+      fromSteps = nextTarget;
+      targetSteps = nextTarget;
+      displayedSteps = nextTarget;
+      elapsedMs = _lerpDurationMs;
+      return;
+    }
+    if ((nextTarget - targetSteps).abs() > 1e-6) {
+      fromSteps = displayedSteps;
+      targetSteps = nextTarget;
+      elapsedMs = 0.0;
+    }
+  }
+
+  void advance(double dtSeconds) {
+    if (elapsedMs >= _lerpDurationMs) {
+      displayedSteps = targetSteps;
+      return;
+    }
+    elapsedMs += dtSeconds * 1000.0;
+    final t = (elapsedMs / _lerpDurationMs).clamp(0.0, 1.0);
+    displayedSteps = fromSteps + (targetSteps - fromSteps) * t;
+  }
 }
 
 class _RaceForegroundPainter extends CustomPainter {
