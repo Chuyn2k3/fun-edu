@@ -132,7 +132,7 @@ void main() {
     appRouter.go('/game/room/lobby');
     await pumpReal(t);
     expect(find.byType(RoomLobbyScreen), findsOneWidget);
-    expect(find.text('A B C 2 3 4'), findsOneWidget);
+    expect(find.text('Phòng ABC234'), findsOneWidget);
 
     await t.tap(find.byKey(const ValueKey('room-start')));
     await t.pump();

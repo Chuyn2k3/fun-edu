@@ -368,6 +368,6 @@ void main() {
     await pumpReal(t, times: 6);
 
     expect(find.byType(RoomLobbyScreen), findsOneWidget);
-    expect(find.text('Đang kết nối lại… (15s)'), findsOneWidget);
+    expect(find.text('Mất mạng · chờ 15s'), findsOneWidget);
   });
 }

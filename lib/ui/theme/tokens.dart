@@ -13,6 +13,10 @@ abstract final class AppColors {
   static const danger = Color(0xFFC5221F);
   static const text = Color(0xFF22284A);
   static const textMuted = Color(0xFF5B6385);
+  /// Connected / online presence dot.
+  static const online = Color(0xFF22C55E);
+  /// Accessible green for status labels on white or cream cards (>= 4.5:1).
+  static const onlineInk = Color(0xFF0E6B42);
 }
 
 enum Subject {
