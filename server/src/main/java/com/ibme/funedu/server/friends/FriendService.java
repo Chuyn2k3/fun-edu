@@ -1,12 +1,8 @@
 package com.ibme.funedu.server.friends;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -164,72 +160,13 @@ public class FriendService {
     }
 
     private List<FriendDto> assembleFriends(List<UUID> friendIds) {
-        UUID[] idArray = friendIds.toArray(UUID[]::new);
-        Map<UUID, FamilyRecords> byFamily = new HashMap<>();
-        for (UUID id : friendIds) {
-            byFamily.put(id, new FamilyRecords());
-        }
-
-        jdbc.query("""
-                SELECT family_id, key, kind, payload::text
-                FROM sync_records
-                WHERE family_id = ANY(?)
-                  AND kind IN ('kid', 'setting', 'game')
-                  AND NOT deleted
-                """,
-                ps -> ps.setArray(1, ps.getConnection().createArrayOf("uuid", idArray)),
-                rs -> {
-                    UUID famId = rs.getObject(1, UUID.class);
-                    FamilyRecords recs = byFamily.get(famId);
-                    if (recs == null) return;
-                    String key = rs.getString(2);
-                    String kind = rs.getString(3);
-                    JsonNode payload = parse(rs.getString(4));
-                    if (payload == null) return;
-
-                    switch (kind) {
-                        case "kid" -> {
-                            if (key.startsWith("kid:")) {
-                                String kidUuid = key.substring("kid:".length());
-                                recs.kids.add(new KidRecord(
-                                        kidUuid,
-                                        textOrNull(payload, "nickname"),
-                                        textOrNull(payload, "avatar"),
-                                        createdAtOf(payload)));
-                            }
-                        }
-                        case "setting" -> {
-                            if (key.startsWith("setting:")
-                                    && key.endsWith(":raceNickname")
-                                    && key.length() > "setting::raceNickname".length()) {
-                                String kidUuid = key.substring(
-                                        "setting:".length(),
-                                        key.length() - ":raceNickname".length());
-                                String val = textOrNull(payload, "value");
-                                if (val != null && !val.isBlank()) {
-                                    recs.raceNicknames.put(kidUuid, val);
-                                }
-                            }
-                        }
-                        case "game" -> {
-                            if (key.startsWith("game:")) {
-                                String kidUuid = key.substring("game:".length());
-                                String rocket = textOrNull(payload, "rocket");
-                                if (rocket != null && !rocket.isBlank()) {
-                                    recs.rockets.put(kidUuid, rocket);
-                                }
-                            }
-                        }
-                        default -> {}
-                    }
-                });
-
+        Map<UUID, SyncKidRecords.FamilyRecords> byFamily = SyncKidRecords.load(jdbc, json, friendIds, true);
         List<FriendDto> out = new ArrayList<>(friendIds.size());
         for (UUID famId : friendIds) {
-            FamilyRecords recs = byFamily.get(famId);
-            recs.kids.sort(Comparator.comparingLong(KidRecord::createdAt).thenComparing(KidRecord::kidUuid));
-            List<KidDto> kids = new ArrayList<>(recs.kids.size());
-            for (KidRecord k : recs.kids) {
+            SyncKidRecords.FamilyRecords recs = byFamily.get(famId);
+            List<SyncKidRecords.KidRecord> sorted = recs.sortedKids();
+            List<KidDto> kids = new ArrayList<>(sorted.size());
+            for (SyncKidRecords.KidRecord k : sorted) {
                 String raceNick = recs.raceNicknames.get(k.kidUuid());
                 String nickname = nonBlankOr(raceNick, nonNullOr(k.nickname(), ""));
                 String avatar = nonNullOr(k.avatar(), "");
@@ -241,34 +178,6 @@ public class FriendService {
         return out;
     }
 
-    private JsonNode parse(String raw) {
-        if (raw == null) return null;
-        try {
-            return json.readTree(raw);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
-
-    private static String textOrNull(JsonNode node, String field) {
-        JsonNode child = node.get(field);
-        return child != null && child.isTextual() ? child.asText() : null;
-    }
-
-    private static long createdAtOf(JsonNode payload) {
-        JsonNode c = payload.get("createdAt");
-        if (c == null || c.isNull()) return 0L;
-        if (c.isNumber()) return c.asLong();
-        if (c.isTextual()) {
-            try {
-                return Long.parseLong(c.asText());
-            } catch (NumberFormatException ignored) {
-                return 0L;
-            }
-        }
-        return 0L;
-    }
-
     private static String nonBlankOr(String preferred, String fallback) {
         return preferred != null && !preferred.isBlank() ? preferred : fallback;
     }
@@ -278,12 +187,4 @@ public class FriendService {
     }
 
     private record CodeRow(UUID familyId, Instant expiresAt) {}
-
-    private record KidRecord(String kidUuid, String nickname, String avatar, long createdAt) {}
-
-    private static final class FamilyRecords {
-        final List<KidRecord> kids = new ArrayList<>();
-        final Map<String, String> raceNicknames = new HashMap<>();
-        final Map<String, String> rockets = new HashMap<>();
-    }
 }

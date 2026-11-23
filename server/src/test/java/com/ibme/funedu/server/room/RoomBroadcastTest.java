@@ -143,26 +143,33 @@ class RoomBroadcastTest {
             listener.awaitRoom(m -> "racing".equals(m.get("state")));
             listener.inbox.clear();
 
-            // Send 5 steps across 75ms right after the racing tick.
-            long startMs = System.currentTimeMillis();
+            // Send 5 steps inside ~60ms (each player's steps >= 30ms apart > 10ms limit).
             p1.send(Map.of("t", "step", "n", 1));
-            Thread.sleep(18);
+            Thread.sleep(15);
             p2.send(Map.of("t", "step", "n", 1));
-            Thread.sleep(18);
+            Thread.sleep(15);
             p1.send(Map.of("t", "step", "n", 2));
-            Thread.sleep(18);
+            Thread.sleep(15);
             p2.send(Map.of("t", "step", "n", 2));
-            Thread.sleep(18);
+            Thread.sleep(15);
             p1.send(Map.of("t", "step", "n", 3));
 
             List<Map<String, Object>> snapshots = new ArrayList<>();
-            long deadline = startMs + 190;
+            long deadline = System.currentTimeMillis() + 500;
+            boolean reachedFinal = false;
             while (System.currentTimeMillis() < deadline) {
-                Map<String, Object> m = listener.inbox.poll(15, TimeUnit.MILLISECONDS);
+                Map<String, Object> m = listener.inbox.poll(20, TimeUnit.MILLISECONDS);
                 if (m != null && "room".equals(m.get("t"))) {
                     snapshots.add(m);
+                    var ps = players(m);
+                    if (Integer.valueOf(3).equals(ps.get(0).get("steps"))
+                            && Integer.valueOf(2).equals(ps.get(1).get("steps"))) {
+                        reachedFinal = true;
+                        break;
+                    }
                 }
             }
+            assertThat(reachedFinal).isTrue();
             assertThat(snapshots).isNotEmpty();
             assertThat(snapshots.size()).isLessThanOrEqualTo(2);
             Map<String, Object> last = snapshots.get(snapshots.size() - 1);

@@ -2,6 +2,7 @@ package com.ibme.funedu.server.web;
 
 import com.ibme.funedu.server.auth.AuthFailedException;
 import com.ibme.funedu.server.friends.FriendService;
+import com.ibme.funedu.server.friends.ShowcaseService;
 import com.ibme.funedu.server.sync.DeviceLinkService;
 import com.ibme.funedu.server.sync.SyncService;
 import java.util.Map;
@@ -43,6 +44,11 @@ public class ApiErrors {
 
     @ExceptionHandler(FriendService.FriendException.class)
     ResponseEntity<Map<String, String>> friendError(FriendService.FriendException e) {
+        return ResponseEntity.status(e.status()).body(Map.of("error", e.code()));
+    }
+
+    @ExceptionHandler(ShowcaseService.ShowcaseException.class)
+    ResponseEntity<Map<String, String>> showcaseError(ShowcaseService.ShowcaseException e) {
         return ResponseEntity.status(e.status()).body(Map.of("error", e.code()));
     }
 
