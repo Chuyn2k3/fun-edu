@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import 'net/network_status.dart';
 import 'online_config.dart';
 
 /// A non-2xx answer from the server ([status] 0 = no connection).
@@ -20,12 +22,18 @@ class ApiException implements Exception {
 
 /// Thin JSON client for the FunEdu server.
 class ApiClient {
-  ApiClient(this._config, this._http);
+  ApiClient(
+    this._config,
+    this._http, {
+    void Function(bool ok)? onNetResult,
+    Duration timeout = const Duration(seconds: 15),
+  })  : _onNetResult = onNetResult,
+        _timeout = timeout;
 
   final OnlineConfig _config;
   final http.Client _http;
-
-  static const _timeout = Duration(seconds: 20);
+  final void Function(bool ok)? _onNetResult;
+  final Duration _timeout;
 
   Future<Map<String, Object?>?> post(
     String path,
@@ -57,9 +65,15 @@ class ApiClient {
     http.Response res;
     try {
       res = await http.Response.fromStream(await _http.send(req).timeout(_timeout));
+    } on TimeoutException {
+      _onNetResult?.call(false);
+      throw const ApiException(0, 'timeout');
     } catch (_) {
+      _onNetResult?.call(false);
       throw const ApiException(0, 'network');
     }
+    _onNetResult?.call(true);
+
     Map<String, Object?>? json;
     if (res.body.isNotEmpty) {
       try {
@@ -82,5 +96,16 @@ final httpClientProvider = Provider<http.Client>((ref) {
 });
 
 final apiClientProvider = Provider<ApiClient>(
-  (ref) => ApiClient(ref.watch(onlineConfigProvider), ref.watch(httpClientProvider)),
+  (ref) => ApiClient(
+    ref.watch(onlineConfigProvider),
+    ref.watch(httpClientProvider),
+    onNetResult: (ok) {
+      final net = ref.read(networkStatusProvider.notifier);
+      if (ok) {
+        net.reportOk();
+      } else {
+        net.reportNetworkError();
+      }
+    },
+  ),
 );
