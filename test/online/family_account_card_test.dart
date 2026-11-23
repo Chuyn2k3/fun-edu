@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/features/online/link_warning_listener.dart';
 import 'package:funedu/online/api_client.dart';
 import 'package:funedu/online/auth/identity_providers.dart';
 import 'package:funedu/online/auth/token_store.dart';
@@ -45,7 +46,11 @@ void main() {
         databaseProvider.overrideWithValue(db),
       ],
       child: const MaterialApp(
-        home: Scaffold(body: SingleChildScrollView(child: FamilyAccountCard())),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: LinkWarningListener(child: FamilyAccountCard()),
+          ),
+        ),
       ),
     ));
     await t.pumpAndSettle();

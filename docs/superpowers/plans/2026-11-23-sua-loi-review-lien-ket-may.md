@@ -43,7 +43,7 @@
   - `ApiException.unauthorized` (phiên đã hết) → xóa cờ chỉ khi giai đoạn là `'fresh'` (máy trống, không mất gì); giai đoạn `'replace'`/`'pull'` giữ cờ, `state = LinkRestoreFailed('signed_out')`, màn khôi phục hiện nút "Đăng nhập lại" (gọi lại luồng đăng nhập của màn đầu) thay cho "Thử lại".
 - Mọi chỗ `setSetting(restorePendingKey, …)` đều đi kèm `ref.invalidate(restorePendingSettingProvider)`.
 
-- [ ] **Step 1: Viết test hỏng** (máy chủ giả đếm request đẩy):
+- [x] **Step 1: Viết test hỏng** (máy chủ giả đếm request đẩy):
   - `resume after crash between link and wipe never pushes guest data` — cờ `'replace'`, dữ liệu khách còn, phiên `linked=false`, máy chủ đã liên kết máy → `resumeIfPending()` → máy chủ giả nhận **0** thay đổi đẩy lên; DB chỉ còn dữ liệu tài khoản.
   - `resume after wipe only pulls` — cờ `'pull'` → 0 thay đổi đẩy; dữ liệu tài khoản có.
   - `retry after failed fresh link links the device` — `POST link` lỗi mạng lần 1 → `LinkRestoreFailed`; `retryRestore()` → máy chủ giả có liên kết `fresh`, phiên `linked == true`.
@@ -51,10 +51,10 @@
   - `failure after wipe keeps the restore screen` — kéo về lỗi sau khi xóa → như trên, cờ `'pull'`.
   - `restore with ended session returns to choose step` — refresh bị từ chối khi cờ `'fresh'` → về màn đầu bước chọn cách dùng, snackbar "Phiên đăng nhập đã hết, ba mẹ đăng nhập lại nhé".
   - `restore with ended session after wipe asks to sign in again` — cờ `'pull'` → màn khôi phục có nút "Đăng nhập lại".
-- [ ] **Step 2: Chạy** `flutter test test/online test/features/setup` → FAIL.
-- [ ] **Step 3: Cài** theo Interfaces.
-- [ ] **Step 4: Chạy** `flutter analyze && flutter test` → PASS.
-- [ ] **Step 5: Commit** `fix(online): restore in stages, pull-only, retry relinks`.
+- [x] **Step 2: Chạy** `flutter test test/online test/features/setup` → FAIL.
+- [x] **Step 3: Cài** theo Interfaces.
+- [x] **Step 4: Chạy** `flutter analyze && flutter test` → PASS.
+- [x] **Step 5: Commit** `fix(online): restore in stages, pull-only, retry relinks`.
 
 ### Task 2: Hộp cảnh báo hiện ở mọi nơi trạng thái cần cảnh báo (lỗi 4)
 
@@ -67,14 +67,14 @@
 - `class LinkWarningListener extends ConsumerStatefulWidget { const LinkWarningListener({required this.child}); }` — `ref.listen(linkControllerProvider)`: khi chuyển sang `LinkNeedsWarning` và chưa có hộp đang mở (`bool _open`), mở `showReplaceDataDialog` bằng `navigatorKey` của `appRouter` (`appRouter.routerDelegate.navigatorKey.currentContext`). **Không** mở khi đường dẫn là màn bé đang học/viết (`/lesson`, `/trace/*`, `/practice*`, `/game/*race*`): chờ tới khi về `/` hoặc `/parent` (dùng `routerLocation` hiện có). Đóng hộp → `_open = false`.
 - `FamilyAccountCard` khi đã đăng nhập mà `session.linked == false` và state là `LinkNeedsWarning`: dòng chữ phụ "Chưa lưu online: cần ba mẹ chọn dữ liệu" + nút "Xem" mở lại hộp.
 
-- [ ] **Step 1: Viết test hỏng**:
+- [x] **Step 1: Viết test hỏng**:
   - `warning at launch is shown on home` — khởi động với phiên `linked=false`, tài khoản có dữ liệu, máy có bé → trên `/` thấy "Tài khoản này đã có dữ liệu".
   - `warning waits while the kid is writing` — đang ở `/trace/chu-a` → không có hộp; `go('/')` → hộp hiện.
   - `warning after link_required from sync` — máy chủ giả trả 409 `link_required` khi đồng bộ → hộp hiện.
   - `warning shown once` — phát lại `LinkNeedsWarning` hai lần (ví dụ resume app) → đúng một hộp.
   - `card offers to reopen the warning`.
-- [ ] **Step 2: Chạy** → FAIL. **Step 3: Cài.** **Step 4:** `flutter analyze && flutter test` → PASS.
-- [ ] **Step 5: Commit** `fix(online): show the replace warning wherever it is needed`.
+- [x] **Step 2: Chạy** → FAIL. **Step 3: Cài.** **Step 4:** `flutter analyze && flutter test` → PASS.
+- [x] **Step 5: Commit** `fix(online): show the replace warning wherever it is needed`.
 
 ### Task 3: Máy đã liên kết nhưng dữ liệu trên máy không thuộc tài khoản (lỗi 5, sửa thiếu sót của spec)
 

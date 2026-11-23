@@ -42,16 +42,7 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
         await ref.read(linkControllerProvider.notifier).afterSignIn(result);
         if (!context.mounted) return;
         final linkState = ref.read(linkControllerProvider);
-        if (linkState is LinkNeedsWarning) {
-          final session = ref.read(sessionProvider).valueOrNull;
-          final who = session?.email ?? (session?.provider == 'apple' ? 'Apple' : 'Google');
-          await showReplaceDataDialog(
-            context,
-            local: linkState.local,
-            account: linkState.account,
-            accountLabel: who,
-          );
-        } else {
+        if (linkState is! LinkNeedsWarning) {
           _say(context, 'Đã đăng nhập. Đang lưu tiến độ online…');
         }
       } on SignInException catch (e) {
@@ -111,6 +102,17 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
         _say(context, 'Chưa xóa được, ba mẹ kiểm tra mạng rồi thử lại nhé');
       }
     }
+  }
+
+  Future<void> _openWarning(BuildContext context, LinkNeedsWarning warning) async {
+    final session = ref.read(sessionProvider).valueOrNull;
+    final who = session?.email ?? (session?.provider == 'apple' ? 'Apple' : 'Google');
+    await showReplaceDataDialog(
+      context,
+      local: warning.local,
+      account: warning.account,
+      accountLabel: who,
+    );
   }
 
   @override
@@ -173,6 +175,8 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
     }
 
     final sync = ref.watch(syncControllerProvider);
+    final linkState = ref.watch(linkControllerProvider);
+    final isUnlinkedWarning = !session.linked && linkState is LinkNeedsWarning;
     final who = session.email ?? (session.provider == 'apple' ? 'Apple' : 'Google');
     final status = sync.running
         ? 'Đang lưu online…'
@@ -187,8 +191,39 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Đã đăng nhập: $who', style: _body),
-          const SizedBox(height: 4),
-          Text(status, key: const ValueKey('sync-status'), style: _muted),
+          if (isUnlinkedWarning) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Chưa lưu online: cần ba mẹ chọn dữ liệu',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  key: const ValueKey('reopen-warning'),
+                  onPressed: () => _openWarning(context, linkState),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    minimumSize: const Size(48, 48),
+                  ),
+                  child: const Text(
+                    'Xem',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 4),
+            Text(status, key: const ValueKey('sync-status'), style: _muted),
+          ],
           const SizedBox(height: 14),
           _Button(
             key: const ValueKey('sync-now'),

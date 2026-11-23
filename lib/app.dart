@@ -4,6 +4,7 @@ import 'online/sync/sync_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/online/link_warning_listener.dart';
 import 'features/splash/splash_view.dart';
 import 'profile/kid_repository.dart';
 import 'progress/level_repository.dart';
@@ -176,10 +177,12 @@ class _AppState extends ConsumerState<App> {
               duration: const Duration(milliseconds: 250),
               child: waiting
                   ? const SplashView()
-                  : ScreenTimeGuard(
-                      key: const ValueKey('app'),
-                      router: appRouter,
-                      child: child ?? const SizedBox.shrink(),
+                  : LinkWarningListener(
+                      child: ScreenTimeGuard(
+                        key: const ValueKey('app'),
+                        router: appRouter,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
             );
           },

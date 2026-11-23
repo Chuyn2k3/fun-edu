@@ -8,7 +8,7 @@ import '../../ui/theme/tokens.dart';
 
 /// Warning dialog shown when a guest device signs into an account that already
 /// contains family data.
-class ReplaceDataDialog extends ConsumerWidget {
+class ReplaceDataDialog extends ConsumerStatefulWidget {
   const ReplaceDataDialog({
     super.key,
     required this.local,
@@ -20,17 +20,28 @@ class ReplaceDataDialog extends ConsumerWidget {
   final AccountSummary account;
   final String accountLabel;
 
+  @override
+  ConsumerState<ReplaceDataDialog> createState() => _ReplaceDataDialogState();
+}
+
+class _ReplaceDataDialogState extends ConsumerState<ReplaceDataDialog> {
+  @override
+  void dispose() {
+    _isReplaceDataDialogOpen = false;
+    super.dispose();
+  }
+
   String _formatKid(KidSummary k) {
     return '${k.nickname} · ${k.stars}⭐ · ${k.glyphs} chữ · ${k.pages} trang vở · ${k.items} món đồ';
   }
 
-  Future<void> _onCancel(BuildContext context, WidgetRef ref) async {
+  Future<void> _onCancel(BuildContext context) async {
     await ref.read(linkControllerProvider.notifier).cancelReplace();
     if (context.mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _onConfirmDanger(BuildContext context, WidgetRef ref) async {
-    final kidsNames = local.map((k) => k.nickname).where((n) => n.isNotEmpty).join(', ');
+  Future<void> _onConfirmDanger(BuildContext context) async {
+    final kidsNames = widget.local.map((k) => k.nickname).where((n) => n.isNotEmpty).join(', ');
     final target = kidsNames.isNotEmpty ? kidsNames : 'các bé';
 
     final confirmed = await showDialog<bool>(
@@ -114,19 +125,19 @@ class ReplaceDataDialog extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isTablet = context.isTablet;
 
     final localBox = _buildBox(
       key: const ValueKey('local-data-box'),
       title: 'Trên máy này (dùng thử)',
-      kids: local,
+      kids: widget.local,
     );
 
     final accountBox = _buildBox(
       key: const ValueKey('account-data-box'),
-      title: 'Tài khoản $accountLabel',
-      kids: account.kids,
+      title: 'Tài khoản ${widget.accountLabel}',
+      kids: widget.account.kids,
     );
 
     return PopScope(
@@ -186,7 +197,7 @@ class ReplaceDataDialog extends ConsumerWidget {
                   const SizedBox(height: 16),
                   OutlinedButton(
                     key: const ValueKey('cancel-replace'),
-                    onPressed: () => _onCancel(context, ref),
+                    onPressed: () => _onCancel(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.text,
                       minimumSize: const Size.fromHeight(50),
@@ -203,7 +214,7 @@ class ReplaceDataDialog extends ConsumerWidget {
                   const SizedBox(height: 8),
                   ElevatedButton(
                     key: const ValueKey('confirm-replace-danger'),
-                    onPressed: () => _onConfirmDanger(context, ref),
+                    onPressed: () => _onConfirmDanger(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -228,19 +239,30 @@ class ReplaceDataDialog extends ConsumerWidget {
   }
 }
 
+bool _isReplaceDataDialogOpen = false;
+bool get isReplaceDataDialogOpen => _isReplaceDataDialogOpen;
+@visibleForTesting
+set isReplaceDataDialogOpen(bool value) => _isReplaceDataDialogOpen = value;
+
 Future<void> showReplaceDataDialog(
   BuildContext context, {
   required List<KidSummary> local,
   required AccountSummary account,
   required String accountLabel,
 }) async {
-  await showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => ReplaceDataDialog(
-      local: local,
-      account: account,
-      accountLabel: accountLabel,
-    ),
-  );
+  if (_isReplaceDataDialogOpen) return;
+  _isReplaceDataDialogOpen = true;
+  try {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => ReplaceDataDialog(
+        local: local,
+        account: account,
+        accountLabel: accountLabel,
+      ),
+    );
+  } finally {
+    _isReplaceDataDialogOpen = false;
+  }
 }
