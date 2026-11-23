@@ -107,11 +107,18 @@ Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` 
 
 ## 6. Thiết kế đồng bộ (tóm tắt)
 
-- Máy chủ lưu bản ghi `(family_id, key, payload JSON, version, deleted)` trong `sync_records`; khóa dạng `kid:<uuid>`, `glyph:<kid>:<chữ>`, `lesson:<kid>:<ms>`, `level:<kid>:<môn>`, `usage:<kid>:<ngày>`, `reward:<kid>:<ms>`, `setting:<kid>:<tên>`, `race:<kid>:<ms>`, `game:<kid>`, `item:<kid>:<món>`, `badge:<kid>:<huy hiệu>`, `counter:<kid>:<khóa>`.
-- App (`lib/online/sync/sync_store.dart`) xuất DB thành bản ghi, so với `synced_records` (bản lần trước) để biết thay đổi; gộp bản kéo về: bài học/trận đua/món đồ hợp lại; bộ đếm, giây dùng, sao vũ trụ lấy lớn hơn; huy hiệu giữ ngày sớm nhất; còn lại giữ bản sửa trên máy; xóa từ máy chủ luôn thắng.
-- Gửi kèm `baseVersion`; lệch thì máy chủ báo xung đột và trả bản đang có → app gộp rồi gửi lại.
+- Máy chủ lưu bản ghi `(family_id, key, payload JSON, version, deleted)` trong `sync_records`; khóa dạng `kid:<uuid>`, `glyph:<kid>:<chữ>`, `lesson:<kid>:<ms>`, `level:<kid>:<môn>`, `usage:<kid>:<ngày>`, `reward:<kid>:<ms>`, `setting:<kid>:<tên>`, `race:<kid>:<ms>`, `game:<kid>`, `item:<kid>:<món>`, `badge:<kid>:<huy hiệu>`, `counter:<kid>:<khóa>`, `page:<kid>:<chữ>`.
+- App (`lib/online/sync/sync_store.dart`) xuất DB thành bản ghi, so với `synced_records` để biết thay đổi; luật gộp mới (`SyncStore` + `DeviceCounters`):
+  - **Bộ đếm cộng theo thiết bị (`by`):** số lần hoàn thành chữ (`glyph`), thời lượng dùng ngày (`usage`), tổng sao vũ trụ earned/spent (`game`) tách theo từng `deviceId` (giữ được đóng góp offline của nhiều máy cùng lúc, chuyển đổi dữ liệu cũ không nhân đôi).
+  - **Last-Write-Wins (LWW):** hồ sơ bé (`kid`), cài đặt (`setting`), cấp môn (`level`), bộ đếm khác (`counter`), trang vở (`page`) kèm mốc thời gian + thiết bị `(u, d)` (chịu được lệch đồng hồ nhẹ); xóa trên máy chủ luôn thắng.
+  - **Hợp nhất:** `lesson`, `race`, `reward`, `item` hợp cả hai phía; `badge` giữ ngày đạt sớm nhất.
+- Gửi kèm `baseVersion`; lệch thì máy chủ báo xung đột và trả bản đang có → app giữ bản chờ ở `sync_pending_remote` trong khi kéo phân trang (`applyPage` / `applyWaiting`) rồi gộp và gửi lại theo lô thích ứng (`50..500`, tự chia đôi khi timeout hoặc `413`).
 - Không đồng bộ: `stroke_attempts` (nét vẽ), giọng đọc, bé đang chọn, thời điểm đồng ý.
-- Đồng bộ khi: đăng nhập, mở lại app, mỗi 5 phút khi đang mở, bấm "Lưu online ngay".
+- Đồng bộ khi: đăng nhập, mở/hiện lại app, có mạng trở lại (debounce 2 giây), sau bài học/trận đua (gộp 3 giây), mỗi 5 phút khi đang mở, bấm "Lưu online ngay"; lỗi thử lại theo lịch lùi dần `30s -> 60s -> 120s -> 240s -> 480s` (tối đa 10 phút).
+- Mã lỗi bảo vệ từ máy chủ:
+  - **`413 too_large`:** thân HTTP vượt **4 MB** (cả khai báo `Content-Length` lẫn stream/chunked). App dừng lô ngay và giảm nửa kích thước lô đồng bộ (`sync.batch`) cho lần kế, tránh lặp vô hạn.
+  - **`429 too_many` (+ header `Retry-After`):** vượt giới hạn cửa sổ trượt 1 phút (`20/IP` cho `/api/v1/auth/**`, `60/gia đình + 120/IP` cho `/api/v1/sync`, `10/gia đình` cho `POST /api/v1/rooms`). App lùi lịch thử lại im lặng (`SyncController`).
+  - Lỗi định dạng từ đồng bộ (`400 bad_request`): độ sâu JSON vượt 6 cấp hoặc chuỗi dài vượt 4 KB (ngoại trừ `page` giữ trần payload 16 KB).
 
 ## 7. Phòng đua qua mạng (2B-2)
 
