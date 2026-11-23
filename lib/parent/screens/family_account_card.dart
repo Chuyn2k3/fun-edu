@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/online/online_consent_dialog.dart';
 import '../../online/auth/identity_providers.dart';
 import '../../online/auth/session_controller.dart';
 import '../../online/online_config.dart';
@@ -22,11 +23,8 @@ class FamilyAccountCard extends ConsumerWidget {
   }
 
   Future<void> _signIn(BuildContext context, WidgetRef ref, String provider) async {
-    final agreed = await showDialog<bool>(
-      context: context,
-      builder: (_) => const _ConsentDialog(),
-    );
-    if (agreed != true || !context.mounted) return;
+    final agreed = await showOnlineConsentDialog(context);
+    if (!agreed || !context.mounted) return;
     try {
       await ref.read(sessionProvider.notifier).signIn(provider);
       if (context.mounted) _say(context, 'Đã đăng nhập. Đang lưu tiến độ online…');
@@ -217,35 +215,3 @@ class _Button extends StatelessWidget {
   }
 }
 
-/// What is sent before the first sign-in (Nghị định 13/2023: consent first).
-class _ConsentDialog extends StatelessWidget {
-  const _ConsentDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Lưu dữ liệu của bé lên máy chủ?'),
-      content: const SingleChildScrollView(
-        child: Text(
-          'Khi đăng nhập, ứng dụng sẽ lưu lên máy chủ của FunEdu:\n'
-          '• Tên gọi ở nhà, ảnh đại diện và tuổi của bé\n'
-          '• Tiến độ học, sao, cấp độ, kết quả trò chơi\n'
-          '• Phần thưởng và cài đặt giờ chơi ba mẹ đặt\n\n'
-          'Không lưu nét vẽ của bé. Không chia sẻ với ai, không quảng cáo. '
-          'Ba mẹ có thể xóa tài khoản online bất cứ lúc nào.',
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Để sau'),
-        ),
-        TextButton(
-          key: const ValueKey('consent-online'),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Đồng ý'),
-        ),
-      ],
-    );
-  }
-}

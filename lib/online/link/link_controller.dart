@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
+import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
@@ -52,6 +53,10 @@ class LinkFailed extends LinkState {
   int get hashCode => message.hashCode;
 }
 
+class LinkRestoreFailed extends LinkFailed {
+  const LinkRestoreFailed(super.message);
+}
+
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;
@@ -100,9 +105,10 @@ class LinkController extends Notifier<LinkState> {
         await KidRepository(_db).setSetting(dataOwnerKey, s.familyId);
         await _restoreAll();
         await KidRepository(_db).removeSetting(restorePendingKey);
+        ref.invalidate(restorePendingSettingProvider);
         state = const LinkIdle();
       } catch (e) {
-        state = LinkFailed(e.toString());
+        state = LinkRestoreFailed(e.toString());
       }
       return;
     }
@@ -184,9 +190,10 @@ class LinkController extends Notifier<LinkState> {
       try {
         await _restoreAll();
         await KidRepository(_db).removeSetting(restorePendingKey);
+        ref.invalidate(restorePendingSettingProvider);
         state = const LinkIdle();
       } catch (e) {
-        state = LinkFailed(e.toString());
+        state = LinkRestoreFailed(e.toString());
       }
       return;
     }
@@ -206,6 +213,19 @@ class LinkController extends Notifier<LinkState> {
     }
   }
 
+  /// Retries a failed family restore.
+  Future<void> retryRestore() async {
+    state = const LinkRestoring();
+    try {
+      await _restoreAll();
+      await KidRepository(_db).removeSetting(restorePendingKey);
+      ref.invalidate(restorePendingSettingProvider);
+      state = const LinkIdle();
+    } catch (e) {
+      state = LinkRestoreFailed(e.toString());
+    }
+  }
+
   Future<void> _restoreAll() async {
     final engine = SyncEngine(
       _db,
@@ -217,13 +237,24 @@ class LinkController extends Notifier<LinkState> {
     if (kids.isNotEmpty) {
       await KidRepository(_db).setCurrentKid(kids.first.id);
     }
+    invalidateKidData(ref.invalidate);
   }
 }
 
 final linkControllerProvider =
     NotifierProvider<LinkController, LinkState>(LinkController.new);
 
+final restorePendingSettingProvider = FutureProvider<bool>((ref) async {
+  final v = await ref.watch(kidRepositoryProvider).setting(restorePendingKey);
+  return v != null;
+});
+
 final restoringProvider = Provider<bool>((ref) {
   final linkState = ref.watch(linkControllerProvider);
-  return linkState is LinkRestoring;
+  if (linkState is LinkRestoring || linkState is LinkRestoreFailed) {
+    return true;
+  }
+  final pendingSetting =
+      ref.watch(restorePendingSettingProvider).valueOrNull ?? false;
+  return pendingSetting;
 });

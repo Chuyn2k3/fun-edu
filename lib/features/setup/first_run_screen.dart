@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../online/auth/session_controller.dart';
+import '../../online/link/link_controller.dart';
+import '../../online/online_config.dart';
+import '../../online/sync/sync_engine.dart';
 import '../../parent/parent_gate_route.dart';
 import '../../parent/screens/privacy_screen.dart';
 import '../../profile/kid_refresh.dart';
@@ -12,13 +17,16 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/message_card.dart';
 import '../../ui/widgets/primary_button.dart';
+import '../online/online_consent_dialog.dart';
+import 'choose_mode_step.dart';
 import 'kid_profile_form.dart';
 
 const String consentAtKey = 'consentAt';
 
-enum _Step { gate, consent, profile }
+enum _Step { gate, consent, chooseMode, profile }
 
-/// First launch: parent gate, consent, then the first kid's profile.
+/// First launch: parent gate, consent, optional sign-in / guest choose,
+/// then the first kid's profile.
 class FirstRunScreen extends ConsumerStatefulWidget {
   const FirstRunScreen({super.key});
 
@@ -31,6 +39,12 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
   bool _agreed = false;
   bool _opening = false;
 
+  void _say(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
   Future<void> _openGate() async {
     if (_opening) return;
     _opening = true;
@@ -39,6 +53,34 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
       if (passed && mounted) setState(() => _step = _Step.consent);
     } finally {
       _opening = false;
+    }
+  }
+
+  Future<void> _signIn(String provider) async {
+    final agreed = await showOnlineConsentDialog(context);
+    if (!agreed || !mounted) return;
+    try {
+      final res = await ref.read(sessionProvider.notifier).signIn(provider);
+      if (!mounted) return;
+      await ref.read(linkControllerProvider.notifier).afterSignIn(res);
+      if (!mounted) return;
+      final kids = await ref.read(kidRepositoryProvider).kids();
+      if (kids.isEmpty && ref.read(linkControllerProvider) is! LinkRestoring) {
+        setState(() => _step = _Step.profile);
+      }
+    } on SignInException catch (e) {
+      if (!mounted) return;
+      final why = kDebugMode && e.detail != null ? '\n(${e.detail})' : '';
+      switch (e.failure) {
+        case SignInFailure.cancelled:
+          break;
+        case SignInFailure.setup:
+          _say('Chưa đăng nhập được với Google/Apple trên máy này, ba mẹ thử lại sau nhé$why');
+        case SignInFailure.network:
+          _say('Không kết nối được máy chủ, ba mẹ thử lại sau nhé$why');
+        case SignInFailure.rejected:
+          _say('Đăng nhập không thành công, ba mẹ thử lại nhé$why');
+      }
     }
   }
 
@@ -56,6 +98,9 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
       await repo.setCurrentKid(id);
       if (!mounted) return;
       refreshAfterKidChange(ref);
+      if (ref.read(sessionProvider).valueOrNull?.linked == true) {
+        ref.read(syncControllerProvider.notifier).syncNow();
+      }
       router.go('/placement');
     } catch (e, st) {
       debugPrint('create first kid failed: $e\n$st');
@@ -67,12 +112,18 @@ class _FirstRunScreenState extends ConsumerState<FirstRunScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final onlineEnabled = ref.watch(onlineConfigProvider).enabled;
     final body = switch (_step) {
       _Step.gate => _GateStep(onOpen: _openGate),
       _Step.consent => _ConsentStep(
           agreed: _agreed,
           onAgreed: (v) => setState(() => _agreed = v),
-          onContinue: () => setState(() => _step = _Step.profile),
+          onContinue: () => setState(() =>
+              _step = onlineEnabled ? _Step.chooseMode : _Step.profile),
+        ),
+      _Step.chooseMode => ChooseModeStep(
+          onGuest: () => setState(() => _step = _Step.profile),
+          onSignIn: _signIn,
         ),
       _Step.profile => KidProfileForm(onSubmit: _create),
     };
@@ -168,23 +219,22 @@ class _ConsentStep extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         const Text(
-          'Chíp Chíp chỉ lưu tên gọi ở nhà, ảnh đại diện có sẵn và tuổi của bé, '
-          'ngay trên máy này. Không quảng cáo, không gửi dữ liệu của bé ra '
-          'ngoài. Ba mẹ có thể xóa toàn bộ dữ liệu bất cứ lúc nào trong Góc '
-          'ba mẹ.',
+          'Chíp Chíp chỉ lưu tên gọi ở nhà, ảnh đại diện và tuổi của bé. '
+          'Dùng thử chỉ lưu trên máy; đăng nhập thì lưu lên máy chủ FunEdu. '
+          'Không quảng cáo. Ba mẹ có thể xóa dữ liệu bất cứ lúc nào.',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: FontWeight.w700,
-            height: 1.4,
+            height: 1.35,
             color: AppColors.text,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
             style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
+              minimumSize: const Size(48, 40),
               foregroundColor: AppColors.primary,
             ),
             onPressed: () => Navigator.of(context).push<void>(
@@ -193,7 +243,7 @@ class _ConsentStep extends StatelessWidget {
             child: const Text(
               'Xem chính sách quyền riêng tư',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
                 decoration: TextDecoration.underline,
               ),
@@ -208,10 +258,10 @@ class _ConsentStep extends StatelessWidget {
           onChanged: (v) => onAgreed(v ?? false),
           title: const Text(
             'Tôi đồng ý',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         PrimaryButton(
           label: 'Tiếp tục',
           onPressed: agreed ? onContinue : null,

@@ -1,3 +1,4 @@
+import 'online/link/link_controller.dart';
 import 'online/online_config.dart';
 import 'online/sync/sync_engine.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +14,14 @@ import 'ui/layout/orientation_lock.dart';
 import 'ui/precache.dart';
 import 'ui/theme/app_theme.dart';
 
-class App extends ConsumerWidget {
+class App extends ConsumerStatefulWidget {
   const App({super.key});
 
+  @override
+  ConsumerState<App> createState() => _AppState();
+}
+
+class _AppState extends ConsumerState<App> {
   static bool _precached = false;
 
   // GoRouter's redirect is synchronous, so the async checks live here:
@@ -28,37 +34,76 @@ class App extends ConsumerWidget {
   static bool _isParent(String p) => p == '/parent' || p.startsWith('/parent/');
 
   /// Where the app must be sent from [path], or null to stay.
-  static String? _target(String path, {required bool hasKid, bool? placed}) {
-    if (_isDev(path) || path == '/setup' || _isParent(path)) return null;
+  static String? _target(
+    String path, {
+    required bool hasKid,
+    bool? placed,
+    required bool isRestoring,
+  }) {
+    if (_isDev(path)) return null;
+    if (isRestoring) {
+      return path == '/restore' ? null : '/restore';
+    }
+    if (path == '/restore') {
+      if (!hasKid) return '/setup';
+      return placed == false ? '/placement' : '/';
+    }
+    if (path == '/setup' || _isParent(path)) return null;
     if (!hasKid) return '/setup';
     if (placed == false && path != '/placement') return '/placement';
     return null;
   }
 
-  void _redirect(WidgetRef ref) {
+  void _redirect() {
+    final restorePending = ref.read(restorePendingSettingProvider);
+    if (!restorePending.hasValue && restorePending.isLoading) return;
+
+    final isRestoring = ref.read(restoringProvider);
     final kid = ref.read(currentKidIdProvider);
-    if (kid.isLoading || !kid.hasValue) return;
-    final hasKid = kid.value != null;
+    if (!isRestoring && (kid.isLoading || !kid.hasValue)) return;
+    final hasKid = kid.valueOrNull != null;
     bool? placed;
-    if (hasKid) {
+    if (hasKid && !isRestoring) {
       final p = ref.read(isPlacedProvider);
       if (p.isLoading || !p.hasValue) return;
       placed = p.value;
     }
-    final target = _target(_currentPath(), hasKid: hasKid, placed: placed);
+    final target = _target(
+      _currentPath(),
+      hasKid: hasKid,
+      placed: placed,
+      isRestoring: isRestoring,
+    );
     if (target != null) appRouter.go(target);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    if (ref.read(onlineConfigProvider).enabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(linkControllerProvider.notifier).resumeIfPending();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen<AsyncValue<int?>>(currentKidIdProvider, (_, __) {
-      _redirect(ref);
+      _redirect();
     });
     ref.listen<AsyncValue<bool>>(isPlacedProvider, (_, __) {
-      _redirect(ref);
+      _redirect();
+    });
+    ref.listen<bool>(restoringProvider, (_, __) {
+      _redirect();
     });
     final kid = ref.watch(currentKidIdProvider);
     final placed = ref.watch(isPlacedProvider);
+    final isRestoring = ref.watch(restoringProvider);
+    final restorePending = ref.watch(restorePendingSettingProvider);
     // Load the voice setting before any screen can speak.
     final voice = ref.watch(voiceEnabledProvider);
     // Online sync runs only in a build with a server address, and only once a
@@ -96,21 +141,24 @@ class App extends ConsumerWidget {
             final kidKnown = kid.hasValue;
             final hasKid = kid.valueOrNull != null;
             final placedKnown = placed.hasValue;
-            final loading = !kidKnown && kid.isLoading ||
-                hasKid && !placedKnown && placed.isLoading ||
-                !voice.hasValue && voice.isLoading;
-            final due = kidKnown &&
-                _target(_currentPath(),
-                        hasKid: hasKid,
-                        placed: hasKid ? placed.valueOrNull : null) !=
-                    null;
+            final loading = (!kidKnown && kid.isLoading && !isRestoring) ||
+                (hasKid && !placedKnown && placed.isLoading && !isRestoring) ||
+                (!voice.hasValue && voice.isLoading) ||
+                (!restorePending.hasValue && restorePending.isLoading);
+            final due = (isRestoring || kidKnown) &&
+                _target(
+                  _currentPath(),
+                  hasKid: hasKid,
+                  placed: hasKid ? placed.valueOrNull : null,
+                  isRestoring: isRestoring,
+                ) != null;
             // A reload keeps the previous value; only wait when it is a
             // settled answer that demands a move.
             if (due) {
               // A location change (e.g. leaving /parent) can make a move due
               // without any provider changing: make it after this frame.
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (context.mounted) _redirect(ref);
+                if (context.mounted) _redirect();
               });
             }
             final waiting = loading || due;

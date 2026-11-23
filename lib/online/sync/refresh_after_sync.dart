@@ -13,7 +13,9 @@ void refreshAfterSync(Ref ref) {
   ref.invalidate(vietnameseLevelIndexProvider);
   ref.invalidate(englishLevelIndexProvider);
   ref.invalidate(screenTimeStatusProvider);
-  ref.invalidate(collectionSnapshotProvider);
+  if (ref.exists(collectionSnapshotProvider)) {
+    ref.invalidate(collectionSnapshotProvider);
+  }
   ref.read(gameDataRevisionProvider.notifier).state++;
   ref.read(houseRevisionProvider.notifier).state++;
 }

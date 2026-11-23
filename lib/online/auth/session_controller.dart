@@ -155,7 +155,7 @@ class SessionController extends AsyncNotifier<StoredSession?> {
   /// Runs [call] with a valid access token, refreshing it once on 401.
   /// A refused refresh ends the session.
   Future<T> authorized<T>(Future<T> Function(String accessToken) call) async {
-    final s = state.valueOrNull ?? await future;
+    final s = state.valueOrNull ?? await _store.read();
     if (s == null) throw const ApiException(401, 'signed_out');
     try {
       return await call(s.accessToken);

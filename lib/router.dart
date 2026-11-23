@@ -25,6 +25,7 @@ import 'features/lesson/lesson_done_screen.dart';
 import 'features/lesson/lesson_flow_screen.dart';
 import 'features/placement/placement_screen.dart';
 import 'features/setup/first_run_screen.dart';
+import 'features/setup/restore_screen.dart';
 import 'features/subject/english_map_screen.dart';
 import 'features/subject/math_map_screen.dart';
 import 'features/subject/vietnamese_map_screen.dart';
@@ -212,6 +213,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/setup',
       builder: (context, state) => const FirstRunScreen(),
+    ),
+    GoRoute(
+      path: '/restore',
+      builder: (context, state) => const RestoreScreen(),
     ),
     GoRoute(
       path: '/placement',

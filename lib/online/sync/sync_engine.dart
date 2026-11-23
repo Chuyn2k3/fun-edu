@@ -118,7 +118,7 @@ class SyncController extends Notifier<SyncStatus> {
         // launch): right after it.
         Future.microtask(syncNow);
       } else if (!now && was) {
-        _stop();
+        stop();
         state = const SyncStatus();
       }
     }, fireImmediately: true);
@@ -130,7 +130,7 @@ class SyncController extends Notifier<SyncStatus> {
     _lifecycle ??= AppLifecycleListener(onResume: () => unawaited(syncNow()));
   }
 
-  void _stop() {
+  void stop() {
     _timer?.cancel();
     _timer = null;
     _lifecycle?.dispose();
