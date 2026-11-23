@@ -169,4 +169,37 @@ void main() {
     expect(await kids.setting('dailyLimitMinutes.$b'), '30');
     expect(await kids.setting('extraMinutes.$b.2026-11-13'), '15');
   });
+
+  test('wipeKidData keeps device keys and removes kid progress', () async {
+    final a = await kids.addKid(nickname: 'Na', avatar: kidAvatars[0], age: 5);
+    await ProgressRepository(db, kidId: a).recordGlyphCompleted('so-1', failedStrokes: 0);
+    await kids.setSetting('deviceId', 'dev-uuid-1234');
+    await kids.setSetting('consentAt', '2026-11-20T10:00:00Z');
+    await kids.setSetting(restorePendingKey, 'true');
+    await kids.setSetting(dataOwnerKey, 'fam-xyz');
+    await kids.setSetting('dailyLimitMinutes.$a', '30');
+
+    await kids.wipeKidData();
+
+    expect(await kids.kids(), isEmpty);
+    expect(await db.select(db.glyphProgress).get(), isEmpty);
+    expect(await db.select(db.notebookPages).get(), isEmpty);
+    expect(await kids.setting('deviceId'), 'dev-uuid-1234');
+    expect(await kids.setting('consentAt'), '2026-11-20T10:00:00Z');
+    expect(await kids.setting(restorePendingKey), 'true');
+    expect(await kids.setting(dataOwnerKey), isNull);
+    expect(await kids.setting('dailyLimitMinutes.$a'), isNull);
+  });
+
+  test('deleteAllData preserves deviceId', () async {
+    await kids.addKid(nickname: 'Na', avatar: kidAvatars[0], age: 5);
+    await kids.setSetting('deviceId', 'dev-uuid-1234');
+    await kids.setSetting('someSetting', 'abc');
+
+    await kids.deleteAllData();
+
+    expect(await kids.kids(), isEmpty);
+    expect(await kids.setting('deviceId'), 'dev-uuid-1234');
+    expect(await kids.setting('someSetting'), isNull);
+  });
 }

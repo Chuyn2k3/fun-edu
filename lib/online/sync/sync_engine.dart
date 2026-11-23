@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/app_database.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
+import '../link/link_controller.dart';
 import 'refresh_after_sync.dart';
 import 'sync_store.dart';
 
@@ -139,9 +140,10 @@ class SyncController extends Notifier<SyncStatus> {
   Future<void> syncNow() => _running ??= _sync().whenComplete(() => _running = null);
 
   Future<void> _sync() async {
-    final session = ref.read(sessionProvider.notifier);
-    if (ref.read(sessionProvider).valueOrNull == null) return;
+    final s = ref.read(sessionProvider).valueOrNull;
+    if (s == null || !s.linked) return;
     state = SyncStatus(running: true, lastAt: state.lastAt);
+    final session = ref.read(sessionProvider.notifier);
     final api = ref.read(apiClientProvider);
     final engine = SyncEngine(
       ref.read(databaseProvider),
@@ -152,6 +154,12 @@ class SyncController extends Notifier<SyncStatus> {
       final pulled = await engine.run();
       state = SyncStatus(lastAt: DateTime.now());
       if (pulled) refreshAfterSync(ref);
+    } on ApiException catch (e) {
+      if (e.status == 409 && e.code == 'link_required') {
+        await ref.read(sessionProvider.notifier).markUnlinked();
+        ref.read(linkControllerProvider.notifier).resumeIfPending();
+      }
+      state = SyncStatus(lastAt: state.lastAt, failed: true);
     } catch (_) {
       // Offline or server down: try again on the next trigger.
       state = SyncStatus(lastAt: state.lastAt, failed: true);

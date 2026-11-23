@@ -143,6 +143,15 @@ class SessionController extends AsyncNotifier<StoredSession?> {
     state = AsyncData(updated);
   }
 
+  /// Marks this device as unlinked in local session state.
+  Future<void> markUnlinked() async {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    final updated = s.copyWith(linked: false);
+    await _store.write(updated);
+    state = AsyncData(updated);
+  }
+
   /// Runs [call] with a valid access token, refreshing it once on 401.
   /// A refused refresh ends the session.
   Future<T> authorized<T>(Future<T> Function(String accessToken) call) async {

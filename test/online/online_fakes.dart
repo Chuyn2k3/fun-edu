@@ -35,7 +35,7 @@ http.Response fakeServer(http.Request req) => switch (req.url.path) {
           'refreshToken': 'r1',
           'expiresIn': 900,
           'familyId': 'fam-1',
-          'device': {'linked': false},
+          'device': {'linked': true},
           'account': {'hasData': false, 'kids': []},
         }),
       '/api/v1/sync/link' => jsonResponse({

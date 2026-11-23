@@ -7,6 +7,8 @@ import '../online/uuid.dart';
 const int maxKids = 4;
 const String _currentKidKey = 'currentKidId';
 const String voiceEnabledKey = 'voiceEnabled';
+const String restorePendingKey = 'link.restorePending';
+const String dataOwnerKey = 'dataOwnerFamilyId';
 
 class KidRepository {
   KidRepository(this._db, {DateTime Function() now = DateTime.now})
@@ -135,10 +137,30 @@ class KidRepository {
   Future<void> removeSetting(String key) =>
       (_db.delete(_db.appSettings)..where((t) => t.key.equals(key))).go();
 
-  /// Wipes every table: kids, settings and all progress.
+  /// Wipes all kid profiles, progress, and settings, preserving only device-level
+  /// identifiers and consent: deviceId, consentAt, link.restorePending.
+  Future<void> wipeKidData() => _db.transaction(() async {
+        for (final table in _db.allTables) {
+          if (table == _db.appSettings) continue;
+          await _db.delete(table).go();
+        }
+        await (_db.delete(_db.appSettings)
+              ..where((t) => t.key.isNotIn(const [
+                    'deviceId',
+                    'consentAt',
+                    restorePendingKey,
+                  ])))
+            .go();
+      });
+
+  /// Wipes every table: kids, settings and all progress, keeping only deviceId.
   Future<void> deleteAllData() => _db.transaction(() async {
+        final deviceId = await setting('deviceId');
         for (final table in _db.allTables) {
           await _db.delete(table).go();
+        }
+        if (deviceId != null) {
+          await setSetting('deviceId', deviceId);
         }
       });
 }

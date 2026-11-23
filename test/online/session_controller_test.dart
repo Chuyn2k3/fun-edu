@@ -72,8 +72,8 @@ void main() {
     final s = c.read(sessionProvider).value!;
     expect(s.familyId, 'fam-1');
     expect(s.email, 'me@x.vn');
-    expect(s.linked, isFalse);
-    expect(res.linked, isFalse);
+    expect(s.linked, isTrue);
+    expect(res.linked, isTrue);
     expect(store.session!.refreshToken, 'r1');
     final signIn = requests.firstWhere((r) => r.url.path == '/api/v1/auth/google');
     final body = jsonDecode(signIn.body) as Map<String, dynamic>;
@@ -136,6 +136,19 @@ void main() {
   });
 
   test('markLinked persists', () async {
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a1',
+          'refreshToken': 'r1',
+          'familyId': 'fam-1',
+          'device': {'linked': false},
+          'account': {'hasData': false, 'kids': []},
+        });
+      }
+      return fakeServer(req);
+    };
+
     final c = container();
     await c.read(sessionProvider.future);
     await c.read(sessionProvider.notifier).signIn('google');
@@ -241,7 +254,12 @@ void main() {
 
   test('already signed in at launch: the first sync runs on its own', () async {
     store.session = const StoredSession(
-        accessToken: 'a1', refreshToken: 'r1', familyId: 'fam-1', provider: 'google');
+      accessToken: 'a1',
+      refreshToken: 'r1',
+      familyId: 'fam-1',
+      provider: 'google',
+      linked: true,
+    );
     final c = container();
     await c.read(sessionProvider.future);
     c.read(syncControllerProvider);
