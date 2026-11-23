@@ -4,9 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
 import '../api_client.dart';
+import '../device_id.dart';
+import '../link/account_summary.dart';
 import '../online_config.dart';
 import 'identity_providers.dart';
 import 'token_store.dart';
+
+/// Result of signing in: includes whether the device is linked on the server
+/// and a high-level summary of the account's data.
+class SignInResult {
+  const SignInResult({
+    required this.linked,
+    required this.account,
+  });
+
+  final bool linked;
+  final AccountSummary account;
+}
 
 /// Why a sign-in did not finish.
 enum SignInFailure {
@@ -45,7 +59,7 @@ class SessionController extends AsyncNotifier<StoredSession?> {
   Future<StoredSession?> build() => _store.read();
 
   /// [provider] is 'google' or 'apple'.
-  Future<void> signIn(String provider) async {
+  Future<SignInResult> signIn(String provider) async {
     final ids = ref.read(identityProvidersProvider);
     String? idToken;
     String? appleCode;
@@ -71,10 +85,13 @@ class SessionController extends AsyncNotifier<StoredSession?> {
     }
     if (idToken == null) throw const SignInException(SignInFailure.cancelled);
 
+    final deviceId = await ensureDeviceId(ref.read(databaseProvider));
+
     Map<String, Object?>? res;
     try {
       res = await _api.post('/api/v1/auth/$provider', {
         'idToken': idToken,
+        'deviceId': deviceId,
         // Lets the server revoke Apple's access when the account is deleted.
         if (appleCode != null) 'authorizationCode': appleCode,
       });
@@ -94,17 +111,36 @@ class SessionController extends AsyncNotifier<StoredSession?> {
     try {
       email = (await _api.get('/api/v1/me', accessToken: access))?['email'] as String?;
     } on ApiException catch (_) {}
+
+    final deviceMap = res?['device'] as Map<String, dynamic>?;
+    final linked = deviceMap?['linked'] as bool? ?? false;
+    final accountMap = res?['account'] as Map<String, dynamic>?;
+    final account = accountMap != null
+        ? AccountSummary.fromJson(accountMap)
+        : const AccountSummary(hasData: false);
+
     final session = StoredSession(
       accessToken: access,
       refreshToken: refresh,
       familyId: family,
       provider: provider,
       email: email,
+      linked: linked,
     );
     // Another family's sync history must not leak into this one.
     await _resetSyncState();
     await _store.write(session);
     state = AsyncData(session);
+    return SignInResult(linked: linked, account: account);
+  }
+
+  /// Marks this device as linked to the family account in local session state.
+  Future<void> markLinked() async {
+    final s = state.valueOrNull;
+    if (s == null) return;
+    final updated = s.copyWith(linked: true);
+    await _store.write(updated);
+    state = AsyncData(updated);
   }
 
   /// Runs [call] with a valid access token, refreshing it once on 401.

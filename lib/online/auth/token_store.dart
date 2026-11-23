@@ -11,6 +11,7 @@ class StoredSession {
     required this.familyId,
     required this.provider,
     this.email,
+    this.linked = false,
   });
 
   final String accessToken;
@@ -20,14 +21,20 @@ class StoredSession {
   /// 'google' or 'apple'.
   final String provider;
   final String? email;
+  final bool linked;
 
-  StoredSession copyWith({String? accessToken, String? refreshToken}) =>
+  StoredSession copyWith({
+    String? accessToken,
+    String? refreshToken,
+    bool? linked,
+  }) =>
       StoredSession(
         accessToken: accessToken ?? this.accessToken,
         refreshToken: refreshToken ?? this.refreshToken,
         familyId: familyId,
         provider: provider,
         email: email,
+        linked: linked ?? this.linked,
       );
 
   Map<String, Object?> toJson() => {
@@ -36,6 +43,7 @@ class StoredSession {
         'familyId': familyId,
         'provider': provider,
         'email': email,
+        'linked': linked,
       };
 
   static StoredSession? fromJson(Object? json) {
@@ -49,6 +57,7 @@ class StoredSession {
       familyId: f,
       provider: p,
       email: json['email'] as String?,
+      linked: json['linked'] as bool? ?? false,
     );
   }
 }

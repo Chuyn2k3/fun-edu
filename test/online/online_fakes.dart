@@ -35,6 +35,12 @@ http.Response fakeServer(http.Request req) => switch (req.url.path) {
           'refreshToken': 'r1',
           'expiresIn': 900,
           'familyId': 'fam-1',
+          'device': {'linked': false},
+          'account': {'hasData': false, 'kids': []},
+        }),
+      '/api/v1/sync/link' => jsonResponse({
+          'linked': true,
+          'account': {'hasData': false, 'kids': []},
         }),
       '/api/v1/me' => jsonResponse({'familyId': 'fam-1', 'provider': 'google', 'email': 'me@x.vn'}),
       '/api/v1/auth/refresh' =>

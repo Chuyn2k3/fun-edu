@@ -64,27 +64,89 @@ void main() {
     expect(requests, isEmpty);
   });
 
-  test('Google sign-in stores the session and sends the id token', () async {
+  test('Google sign-in stores the session and sends the id token and deviceId', () async {
     final c = container();
     await c.read(sessionProvider.future);
-    await c.read(sessionProvider.notifier).signIn('google');
+    final res = await c.read(sessionProvider.notifier).signIn('google');
 
     final s = c.read(sessionProvider).value!;
     expect(s.familyId, 'fam-1');
     expect(s.email, 'me@x.vn');
+    expect(s.linked, isFalse);
+    expect(res.linked, isFalse);
     expect(store.session!.refreshToken, 'r1');
     final signIn = requests.firstWhere((r) => r.url.path == '/api/v1/auth/google');
-    expect(jsonDecode(signIn.body), {'idToken': 'google-id-token'});
+    final body = jsonDecode(signIn.body) as Map<String, dynamic>;
+    expect(body['idToken'], 'google-id-token');
+    expect(body['deviceId'], isNotEmpty);
   });
 
-  test('Apple sign-in uses the Apple endpoint', () async {
+  test('Apple sign-in uses the Apple endpoint and sends deviceId', () async {
     final c = container();
     await c.read(sessionProvider.future);
     await c.read(sessionProvider.notifier).signIn('apple');
     expect(requests.first.url.path, '/api/v1/auth/apple');
-    expect(jsonDecode(requests.first.body),
-        {'idToken': 'apple-id-token', 'authorizationCode': 'apple-code'});
+    final body = jsonDecode(requests.first.body) as Map<String, dynamic>;
+    expect(body['idToken'], 'apple-id-token');
+    expect(body['authorizationCode'], 'apple-code');
+    expect(body['deviceId'], isNotEmpty);
     expect(c.read(sessionProvider).value!.provider, 'apple');
+  });
+
+  test('sign-in sends deviceId and returns link state and account summary', () async {
+    handler = (req) {
+      if (req.url.path == '/api/v1/auth/google') {
+        return jsonResponse({
+          'accessToken': 'a-new',
+          'refreshToken': 'r-new',
+          'familyId': 'fam-na',
+          'device': {'linked': false},
+          'account': {
+            'hasData': true,
+            'kids': [
+              {
+                'nickname': 'Na',
+                'avatar': 'chip',
+                'stars': 120,
+                'glyphs': 10,
+                'pages': 8,
+                'items': 3,
+                'badges': 2,
+              }
+            ],
+          },
+        });
+      }
+      return fakeServer(req);
+    };
+
+    final c = container();
+    await c.read(sessionProvider.future);
+    final res = await c.read(sessionProvider.notifier).signIn('google');
+
+    expect(res.linked, isFalse);
+    expect(res.account.hasData, isTrue);
+    expect(res.account.kids, hasLength(1));
+    expect(res.account.kids.first.nickname, 'Na');
+    expect(res.account.kids.first.stars, 120);
+
+    final signIn = requests.firstWhere((r) => r.url.path == '/api/v1/auth/google');
+    final body = jsonDecode(signIn.body) as Map<String, dynamic>;
+    expect(body['deviceId'], isNotEmpty);
+  });
+
+  test('markLinked persists', () async {
+    final c = container();
+    await c.read(sessionProvider.future);
+    await c.read(sessionProvider.notifier).signIn('google');
+
+    expect(c.read(sessionProvider).value!.linked, isFalse);
+    expect(store.session!.linked, isFalse);
+
+    await c.read(sessionProvider.notifier).markLinked();
+
+    expect(c.read(sessionProvider).value!.linked, isTrue);
+    expect(store.session!.linked, isTrue);
   });
 
   test('cancelling the Google sheet makes no request', () async {
