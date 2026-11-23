@@ -17,6 +17,20 @@ abstract final class AppImages {
   static const logo = 'assets/images/logo.png';
   static const bgSky = 'assets/images/bg-sky.jpg';
 
+  // Animal avatars under assets/images/avatars/.
+  static const avatarFox = 'assets/images/avatars/fox.png';
+  static const avatarPanda = 'assets/images/avatars/panda.png';
+  static const avatarBunny = 'assets/images/avatars/bunny.png';
+  static const avatarTiger = 'assets/images/avatars/tiger.png';
+  static const avatarCat = 'assets/images/avatars/cat.png';
+  static const avatarDog = 'assets/images/avatars/dog.png';
+  static const avatarElephant = 'assets/images/avatars/elephant.png';
+  static const avatarDino = 'assets/images/avatars/dino.png';
+  static const avatarOwl = 'assets/images/avatars/owl.png';
+  static const avatarPenguin = 'assets/images/avatars/penguin.png';
+  static const avatarBear = 'assets/images/avatars/bear.png';
+  static const avatarUnicorn = 'assets/images/avatars/unicorn.png';
+
   // Game art (rocket race), under assets/images/game/.
   static const rocketOrange = 'assets/images/game/rocket-orange.png';
   static const rocketBlue = 'assets/images/game/rocket-blue.png';
@@ -57,6 +71,19 @@ abstract final class AppImages {
   static const stickerRareComet = 'assets/images/game/sticker-rare-comet.png';
   static const stickerRarePlanet = 'assets/images/game/sticker-rare-planet.png';
 
+  // Tease and party stickers (under assets/images/game/).
+  static const stickerTeaseBubble = 'assets/images/game/sticker-tease-bubble.png';
+  static const stickerTeaseTongue = 'assets/images/game/sticker-tease-tongue.png';
+  static const stickerTeaseByebye = 'assets/images/game/sticker-tease-byebye.png';
+  static const stickerTeaseRain = 'assets/images/game/sticker-tease-rain.png';
+  static const stickerTeaseSleepy = 'assets/images/game/sticker-tease-sleepy.png';
+  static const stickerTeaseTurtle = 'assets/images/game/sticker-tease-turtle.png';
+  static const stickerTeaseSmoke = 'assets/images/game/sticker-tease-smoke.png';
+  static const stickerParty = 'assets/images/game/sticker-party.png';
+
+  /// Tease sticker path by id: bubble, tongue, byebye, rain, sleepy, turtle, smoke.
+  static String stickerTease(String id) => 'assets/images/game/sticker-tease-$id.png';
+
   /// Album sticker art by sticker id (Chíp poses, cut from green).
   static const stickers = <String, String>{
     'sticker_clap': stickerClap,
@@ -81,6 +108,16 @@ abstract final class AppImages {
     'rare_crown': stickerRareCrown,
     'rare_comet': stickerRareComet,
     'rare_planet': stickerRarePlanet,
+    // Party and tease stickers
+    'sticker_party': stickerParty,
+    'party': stickerParty,
+    'bubble': stickerTeaseBubble,
+    'tongue': stickerTeaseTongue,
+    'byebye': stickerTeaseByebye,
+    'rain': stickerTeaseRain,
+    'sleepy': stickerTeaseSleepy,
+    'turtle': stickerTeaseTurtle,
+    'smoke': stickerTeaseSmoke,
   };
 
   static const all = [
@@ -99,6 +136,18 @@ abstract final class AppImages {
     icFlame,
     icCrown,
     bgSky,
+    avatarFox,
+    avatarPanda,
+    avatarBunny,
+    avatarTiger,
+    avatarCat,
+    avatarDog,
+    avatarElephant,
+    avatarDino,
+    avatarOwl,
+    avatarPenguin,
+    avatarBear,
+    avatarUnicorn,
     rocketOrange,
     rocketBlue,
     rocketGreen,
@@ -137,5 +186,13 @@ abstract final class AppImages {
     stickerRareCrown,
     stickerRareComet,
     stickerRarePlanet,
+    stickerTeaseBubble,
+    stickerTeaseTongue,
+    stickerTeaseByebye,
+    stickerTeaseRain,
+    stickerTeaseSleepy,
+    stickerTeaseTurtle,
+    stickerTeaseSmoke,
+    stickerParty,
   ];
 }

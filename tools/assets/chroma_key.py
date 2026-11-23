@@ -15,6 +15,8 @@ Config: {"items": [{"name": "badge-pilot", "box": [l, t, r, b],
                     "min_hole": 40}],
          "export_widths": [w1x, w2x, w3x]}
 """
+from __future__ import annotations
+
 import argparse
 import json
 import sys

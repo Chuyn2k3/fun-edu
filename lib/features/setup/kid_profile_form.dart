@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../profile/avatars.dart';
+import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/primary_button.dart';
 
@@ -43,6 +44,7 @@ class KidProfileForm extends StatefulWidget {
 class _KidProfileFormState extends State<KidProfileForm> {
   late final _controller =
       TextEditingController(text: widget.initialNickname);
+  late final _avatarScrollController = ScrollController();
   late String? _avatar = widget.initialAvatar;
   late int? _age = widget.initialAge;
   bool _touched = false;
@@ -51,6 +53,7 @@ class _KidProfileFormState extends State<KidProfileForm> {
   @override
   void dispose() {
     _controller.dispose();
+    _avatarScrollController.dispose();
     super.dispose();
   }
 
@@ -70,6 +73,7 @@ class _KidProfileFormState extends State<KidProfileForm> {
   @override
   Widget build(BuildContext context) {
     final showError = _touched && !isValidNickname(_controller.text);
+    final tileSize = context.isTablet ? TabletSizes.kidTarget : 72.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -100,19 +104,38 @@ class _KidProfileFormState extends State<KidProfileForm> {
           onChanged: (_) => setState(() => _touched = true),
         ),
         const SizedBox(height: 20),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            for (var i = 0; i < kidAvatars.length; i++)
-              _AvatarTile(
-                index: i,
-                path: kidAvatars[i],
-                selected: _avatar == kidAvatars[i],
-                onTap: () => setState(() => _avatar = kidAvatars[i]),
+        Container(
+          height: context.isTablet ? 280 : 176,
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(AppRadii.tile),
+            border: Border.all(color: AppColors.dot, width: 2),
+          ),
+          child: Scrollbar(
+            controller: _avatarScrollController,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: _avatarScrollController,
+              key: const ValueKey('avatar-grid-scroll'),
+              padding: const EdgeInsets.all(8),
+              child: Wrap(
+                key: const ValueKey('avatar-grid'),
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (var i = 0; i < kidAvatars.length; i++)
+                    _AvatarTile(
+                      index: i,
+                      path: kidAvatars[i],
+                      size: tileSize,
+                      selected: _avatar == kidAvatars[i],
+                      onTap: () => setState(() => _avatar = kidAvatars[i]),
+                    ),
+                ],
               ),
-          ],
+            ),
+          ),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -154,12 +177,14 @@ class _AvatarTile extends StatelessWidget {
     required this.path,
     required this.selected,
     required this.onTap,
+    this.size = 72,
   });
 
   final int index;
   final String path;
   final bool selected;
   final VoidCallback onTap;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -171,8 +196,8 @@ class _AvatarTile extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: Ink(
-          width: 80,
-          height: 80,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: BorderRadius.circular(AppRadii.tile),
@@ -186,7 +211,7 @@ class _AvatarTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadii.tile),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               child: Image.asset(path, fit: BoxFit.contain),
             ),
           ),

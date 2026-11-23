@@ -23,8 +23,8 @@ void main() {
   Future<int> add(String name) =>
       kids.addKid(nickname: name, avatar: kidAvatars.first, age: 5);
 
-  test('kidAvatars lists the six app images', () {
-    expect(kidAvatars, hasLength(6));
+  test('kidAvatars lists the eighteen app images', () {
+    expect(kidAvatars, hasLength(18));
   });
 
   test('a fresh install has no kid and no stars', () async {

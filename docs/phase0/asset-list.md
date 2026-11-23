@@ -78,3 +78,41 @@ Mỗi sticker một hình riêng, nền trắng, nhìn cùng phong cách với C
 | `rare_planet` Hành tinh vành đai | `sticker-rare-planet.png` (Đã vẽ 3D) | Chíp ngồi trên vành Sao Thổ |
 
 Sticker của 4 huy hiệu mới dùng tư thế Chíp có sẵn: giơ ngón cái, vui mừng, ngạc nhiên, cổ vũ.
+
+## Bộ ảnh đại diện con vật & Sticker Đua Bạn Bè (2B-2 / Online)
+
+Hiện đang dùng ảnh giữ chỗ vector/canvas do `tools/assets/make_placeholders.py` sinh ra (không ghi đè khi thay ảnh thật).
+Khi vẽ bằng Gemini:
+- **Câu lệnh chung:** `soft 3D render, cute rounded toy-like shapes, smooth glossy plastic and soft clay materials, soft warm studio lighting, gentle shadows, vibrant colors, solid green background #00FF00, no text`
+- Tách nền bằng script: `python3 tools/assets/chroma_key.py <ảnh> <config.json> <thư mục ra>`
+
+### 12 Ảnh đại diện con vật (`assets/images/avatars/`)
+
+| Tên file | Nhân vật | Gợi ý mô tả Gemini (3D mềm kiểu đồ chơi như Chíp, nền xanh lá #00FF00) |
+|---|---|---|
+| `fox.png` | Cáo con | Chú cáo con màu cam đất sét mềm, tai vểnh, má phúng phính, mắt to tròn lanh lợi |
+| `panda.png` | Gấu trúc | Chú gấu trúc con tròn xoe trắng đen, ôm cành măng tre đồ chơi, má hồng |
+| `bunny.png` | Thỏ con | Bé thỏ con màu trắng hồng pastel, hai tai dài cụp nhẹ, nơ nhỏ xinh xắn |
+| `tiger.png` | Hổ con | Chú hổ con màu vàng cam có sọc vằn mềm mại, cười toe toét dũng cảm |
+| `cat.png` | Mèo con | Mèo con tròn trịa lông vàng kem, râu mép ngộ nghĩnh, mắt biếc long lanh |
+| `dog.png` | Cún con | Chú cún con tai cụp màu nâu ấm, mũi đen tròn ươn ướt, đeo vòng cổ đỏ |
+| `elephant.png` | Voi con | Chú voi con màu xanh đá pastel (slate blue), vòi cong giơ lên chào, tai to |
+| `dino.png` | Khủng long | Bé khủng long bạo chúa tí hon màu xanh lá mạ, gai lưng tròn mềm, bụng vàng |
+| `owl.png` | Cú mèo | Chú cú mèo con mắt tròn xoe sáng ngời, lông tím pastel mềm mại, đầu nghiêng tò mò |
+| `penguin.png` | Cánh cụt | Chim cánh cụt con mập mạp bụng trắng lưng đen, mỏ cam, lắc lư ngộ nghĩnh |
+| `bear.png` | Gấu con | Gấu nâu con ấm áp, ôm hũ mật ong đất sét nhỏ, biểu cảm hiền lành |
+| `unicorn.png` | Kỳ lân | Bé kỳ lân màu trắng ngọc, bờm ngũ sắc pastel, sừng vàng xoắn ốc đồ chơi |
+
+### 8 Sticker Đua bạn bè (`assets/images/game/`)
+
+| Tên file | Sticker | Gợi ý mô tả Gemini (3D mềm kiểu đồ chơi như Chíp, nền xanh lá #00FF00) |
+|---|---|---|
+| `sticker-tease-bubble.png` | Bọt bóng trêu | Bong bóng xà phòng 3D trong veo ngũ sắc bốc lên lung linh, phản chiếu ánh sáng |
+| `sticker-tease-tongue.png` | Lè lưỡi trêu | Biểu tượng mặt cười 3D đất sét lè lưỡi nháy mắt tinh nghịch lém lỉnh |
+| `sticker-tease-byebye.png` | Vẫy tay tạm biệt | Bàn tay găng trắng 3D vẫy tay chào tạm biệt bye-bye bồng bềnh |
+| `sticker-tease-rain.png` | Mưa rào | Đám mây nhỏ màu xanh xám có giọt mưa rơi tí tách kèm hạt mưa lấp lánh |
+| `sticker-tease-sleepy.png` | Buồn ngủ | Mũ ngủ sọc xanh trắng kèm chữ zZz 3D bồng bềnh lơ lửng |
+| `sticker-tease-turtle.png` | Rùa bò chậm | Chú rùa con mai tròn màu xanh ngọc bò chậm rãi, đầu rụt rè ngộ nghĩnh |
+| `sticker-tease-smoke.png` | Xì khói | Đám mây khói xì poof xám trắng bùng ra tròn xoe như khói ống xả xe đồ chơi |
+| `sticker-party.png` | Pháo hoa tiệc | Ống pháo giấy bung tỏa hoa giấy ngũ sắc và dải ruy băng lấp lánh ăn mừng |
+
