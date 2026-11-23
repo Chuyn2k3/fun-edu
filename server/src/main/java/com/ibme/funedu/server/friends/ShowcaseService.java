@@ -117,6 +117,14 @@ public class ShowcaseService {
                 callerFamily, kidUuid, serialized);
     }
 
+    /** Removes the caller's own showcase for [kidUuid] (reactions cascade). Idempotent. */
+    public void delete(UUID callerFamily, String kidUuid) {
+        if (kidUuid == null || kidUuid.isBlank() || kidUuid.length() > 64) {
+            throw ShowcaseException.badRequest();
+        }
+        jdbc.update("DELETE FROM showcases WHERE family_id = ? AND kid_uuid = ?", callerFamily, kidUuid);
+    }
+
     public ObjectNode get(UUID callerFamily, UUID targetFamily, String kidUuid) {
         if (targetFamily == null || kidUuid == null || kidUuid.isBlank() || kidUuid.length() > MAX_KID_UUID_LEN) {
             throw ShowcaseException.notFound();

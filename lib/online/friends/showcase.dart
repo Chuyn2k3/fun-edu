@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../collection/collection_provider.dart';
+import '../../data/app_database.dart';
+import '../../game/data/reward_pool.dart';
+import '../../learning/writing_ladder.dart';
+import '../../progress/progress_repository.dart';
 import '../../game/data/game_repository.dart';
 import '../../profile/avatars.dart';
 import '../../profile/kid_repository.dart';
@@ -196,6 +199,13 @@ class ShowcaseApi {
     });
   }
 
+  /// Removes this family's showcase of [kidUuid] (ba mẹ turned it off).
+  Future<void> deleteShowcase(String kidUuid) async {
+    await _ref.read(sessionProvider.notifier).authorized((token) {
+      return _apiClient.delete('/api/v1/showcase/$kidUuid', accessToken: token);
+    });
+  }
+
   Future<ShowcaseData?> getShowcase(String familyId, String kidUuid) async {
     final res = await _ref.read(sessionProvider.notifier).authorized((token) {
       return _apiClient.get(
@@ -247,55 +257,79 @@ final pinnedShowcaseProvider = FutureProvider<List<String>>((ref) async {
   return ref.watch(kidPinnedShowcaseProvider(kidId).future);
 });
 
-/// Builds the local [ShowcaseData] for the current kid from device databases.
-final ownShowcaseProvider = FutureProvider<ShowcaseData?>((ref) async {
-  final kidId = await ref.watch(currentKidIdProvider.future);
-  if (kidId == null) return null;
+/// Game items that count as stickers in the showcase (not rockets or trails).
+bool _isSticker(String itemId) =>
+    itemId.startsWith('sticker_') || rareStickers.contains(itemId);
 
-  final repo = ref.watch(kidRepositoryProvider);
-  final kids = await repo.kids();
-  final kid = kids.where((k) => k.id == kidId).firstOrNull;
+/// The showcase card of [kidId], built from this device's data. One builder
+/// for the kid's own preview and for what is sent to friends, so both always
+/// match. Learning numbers are the [kidId]'s own, not the current kid's.
+Future<ShowcaseData?> buildShowcaseData(
+  AppDatabase db,
+  int kidId, {
+  required bool includeLearning,
+}) async {
+  final repo = KidRepository(db);
+  final kid = (await repo.kids()).where((k) => k.id == kidId).firstOrNull;
   if (kid == null) return null;
 
-  final raceNick = await repo.setting('raceNickname.$kidId');
-  final nickname = (raceNick?.trim().isNotEmpty == true)
-      ? raceNick!.trim()
-      : kid.nickname;
+  final raceNick = (await repo.setting('raceNickname.$kidId'))?.trim();
+  final nickname =
+      (raceNick != null && raceNick.isNotEmpty) ? raceNick : kid.nickname;
 
-  final rocket = await repo.setting('rocket.$kidId') ?? 'rocket_orange';
-  final trail = await repo.setting('trail.$kidId') ?? 'flame';
-  final pinned = await ref.watch(pinnedShowcaseProvider.future);
+  final profile = await (db.select(db.gameProfile)
+        ..where((t) => t.kidId.equals(kidId)))
+      .getSingleOrNull();
+  final game = GameRepository(db, kidId: kidId);
+  final stats = await game.overallStats(kidId);
+  final owned = await game.owned();
 
-  final gameRepo = await ref.watch(gameRepositoryProvider.future);
-  final stats = await gameRepo.overallStats();
-  final ownedBadges = await gameRepo.badges();
-  final ownedItems = await gameRepo.newGarageItems(); // fallback items
-
-  // Calculate learning stats
-  final learningOn = await ref.watch(showcaseLearningProvider.future);
   ShowcaseLearning? learning;
-  if (learningOn) {
-    try {
-      final snap = await ref.watch(collectionSnapshotProvider.future);
-      learning = ShowcaseLearning(
-        glyphs: snap.masteredWriting,
-        lessons: snap.totalLessons,
-        stars: snap.totalStars,
-      );
-    } catch (_) {}
+  if (includeLearning) {
+    final progress = ProgressRepository(db, kidId: kidId);
+    final glyphStats = await progress.glyphStats();
+    learning = ShowcaseLearning(
+      glyphs: writingLadder.where((id) => glyphStats[id]?.mastered ?? false).length,
+      lessons: await progress.totalLessons(),
+      stars: await progress.totalStars(),
+    );
   }
 
   return ShowcaseData(
     nickname: nickname,
     avatar: safeOnlineAvatar(kid.avatar),
-    rocket: rocket,
-    trail: trail,
-    pinned: pinned,
+    rocket: profile?.selectedRocket ?? 'rocket_orange',
+    trail: profile?.selectedTrail ?? 'trail_flame',
+    pinned: _decodePinned(await repo.setting(showcasePinnedKey(kidId))),
     races: stats.races,
     wins: stats.wins,
-    stickers: ownedBadges.length + ownedItems.length,
+    stickers: owned.where(_isSticker).length,
     learning: learning,
   );
+}
+
+List<String> _decodePinned(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return const [];
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is List) {
+      return [for (final i in decoded) if (i is String && i.isNotEmpty) i];
+    }
+  } catch (_) {
+    return raw.split(',').where((s) => s.trim().isNotEmpty).toList();
+  }
+  return const [];
+}
+
+/// The current kid's showcase card, as friends will see it.
+final ownShowcaseProvider = FutureProvider<ShowcaseData?>((ref) async {
+  final kidId = await ref.watch(currentKidIdProvider.future);
+  if (kidId == null) return null;
+  // Re-read when the pins or the switch change.
+  await ref.watch(pinnedShowcaseProvider.future);
+  final learningOn = await ref.watch(showcaseLearningProvider.future);
+  return buildShowcaseData(ref.watch(databaseProvider), kidId,
+      includeLearning: learningOn);
 });
 
 /// Clock provider for coalescing sync.
@@ -311,13 +345,11 @@ class ShowcaseSync {
   @visibleForTesting
   void clearLastSyncTimes() => _lastSyncTimes.clear();
 
-  Future<bool> request({int? kidId}) async {
-    final online = _ref.read(onlineConfigProvider).enabled;
-    if (!online) return false;
-    final session = await _ref.read(sessionProvider.future);
-    if (session == null) return false;
-
-    final targetKidId = kidId ?? await _ref.read(currentKidIdProvider.future);
+  /// Sends [kidId]'s card (the current kid when null). At most one send
+  /// every 5 minutes per kid, unless [force] (a parent switch just changed:
+  /// friends must see it now).
+  Future<bool> request({int? kidId, bool force = false}) async {
+    final targetKidId = await _signedInKid(kidId);
     if (targetKidId == null) return false;
 
     final showcaseOn =
@@ -326,66 +358,54 @@ class ShowcaseSync {
 
     final now = _ref.read(showcaseClockProvider)();
     final last = _lastSyncTimes[targetKidId];
-    if (last != null && now.difference(last) < showcaseSyncCoalesceInterval) {
+    if (!force &&
+        last != null &&
+        now.difference(last) < showcaseSyncCoalesceInterval) {
       return false; // Coalesced
     }
 
-    final repo = _ref.read(kidRepositoryProvider);
-    final kids = await repo.kids();
-    final kid = kids.where((k) => k.id == targetKidId).firstOrNull;
-    if (kid == null) return false;
-
-    final raceNick = await repo.setting('raceNickname.$targetKidId');
-    final nickname = (raceNick?.trim().isNotEmpty == true)
-        ? raceNick!.trim()
-        : kid.nickname;
-
-    final rocket =
-        await repo.setting('rocket.$targetKidId') ?? 'rocket_orange';
-    final trail = await repo.setting('trail.$targetKidId') ?? 'flame';
-    final pinned =
-        await _ref.read(kidPinnedShowcaseProvider(targetKidId).future);
-
-    final gameRepo = await _ref.read(gameRepositoryProvider.future);
-    final stats = await gameRepo.overallStats(targetKidId);
-    final ownedBadges = await gameRepo.badges(targetKidId);
-
     final learningOn =
         await _ref.read(kidShowcaseLearningProvider(targetKidId).future);
-    ShowcaseLearning? learning;
-    if (learningOn) {
-      try {
-        final snap = await _ref.read(collectionSnapshotProvider.future);
-        learning = ShowcaseLearning(
-          glyphs: snap.masteredWriting,
-          lessons: snap.totalLessons,
-          stars: snap.totalStars,
-        );
-      } catch (_) {}
-    }
-
-    final kidUuid = kid.uuid;
-    if (kidUuid == null || kidUuid.isEmpty) return false;
-
-    final payload = ShowcaseData(
-      nickname: nickname,
-      avatar: safeOnlineAvatar(kid.avatar),
-      rocket: rocket,
-      trail: trail,
-      pinned: pinned,
-      races: stats.races,
-      wins: stats.wins,
-      stickers: ownedBadges.length,
-      learning: learning,
-    ).toJson();
+    final db = _ref.read(databaseProvider);
+    final data =
+        await buildShowcaseData(db, targetKidId, includeLearning: learningOn);
+    final kidUuid = await _kidUuid(targetKidId);
+    if (data == null || kidUuid == null) return false;
 
     try {
-      await _ref.read(showcaseApiProvider).putShowcase(kidUuid, payload);
+      await _ref.read(showcaseApiProvider).putShowcase(kidUuid, data.toJson());
       _lastSyncTimes[targetKidId] = now;
       return true;
     } catch (_) {
       return false;
     }
+  }
+
+  /// Removes [kidId]'s card from the server (ba mẹ turned the showcase off).
+  Future<bool> takeDown(int kidId) async {
+    if (await _signedInKid(kidId) == null) return false;
+    final kidUuid = await _kidUuid(kidId);
+    if (kidUuid == null) return false;
+    try {
+      await _ref.read(showcaseApiProvider).deleteShowcase(kidUuid);
+      _lastSyncTimes.remove(kidId);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<int?> _signedInKid(int? kidId) async {
+    if (!_ref.read(onlineConfigProvider).enabled) return null;
+    final session = await _ref.read(sessionProvider.future);
+    if (session == null) return null;
+    return kidId ?? await _ref.read(currentKidIdProvider.future);
+  }
+
+  Future<String?> _kidUuid(int kidId) async {
+    final kids = await KidRepository(_ref.read(databaseProvider)).kids();
+    final uuid = kids.where((k) => k.id == kidId).firstOrNull?.uuid;
+    return (uuid == null || uuid.isEmpty) ? null : uuid;
   }
 }
 

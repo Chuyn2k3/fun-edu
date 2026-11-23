@@ -28,6 +28,9 @@ class _FakeShowcaseApi implements ShowcaseApi {
 
   @override
   Future<void> putShowcase(String kidUuid, Map<String, dynamic> payload) async {}
+
+  @override
+  Future<void> deleteShowcase(String kidUuid) async {}
 }
 
 class _FakeGameRepository extends Fake implements GameRepository {

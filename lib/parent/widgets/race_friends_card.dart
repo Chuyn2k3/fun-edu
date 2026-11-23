@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../online/friends/showcase.dart';
+
 import '../../online/auth/session_controller.dart';
 import '../../online/friends/friends_api.dart';
 import '../../online/friends/friends_controller.dart';
@@ -159,6 +161,9 @@ class _RaceFriendsCardState extends ConsumerState<RaceFriendsCard> {
     ref.invalidate(kidShowcaseOnProvider(kidId));
     ref.invalidate(showcaseOnProvider);
     ref.read(syncControllerProvider.notifier).requestSync();
+    // Friends must stop seeing the card now, not at the next race.
+    final showcase = ref.read(showcaseSyncProvider);
+    await (on ? showcase.request(kidId: kidId, force: true) : showcase.takeDown(kidId));
   }
 
   Future<void> _setShowcaseLearning(int kidId, bool on) async {
@@ -168,6 +173,8 @@ class _RaceFriendsCardState extends ConsumerState<RaceFriendsCard> {
     ref.invalidate(kidShowcaseLearningProvider(kidId));
     ref.invalidate(showcaseLearningProvider);
     ref.read(syncControllerProvider.notifier).requestSync();
+    // Showing or hiding learning numbers reaches friends at once.
+    await ref.read(showcaseSyncProvider).request(kidId: kidId, force: true);
   }
 
   @override

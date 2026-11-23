@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,7 +53,8 @@ void main() {
       httpClientProvider.overrideWithValue(
         MockClient((req) async {
           requests.add(req);
-          if (req.method == 'PUT' && req.url.path.startsWith('/api/v1/showcase/')) {
+          if ((req.method == 'PUT' || req.method == 'DELETE') &&
+              req.url.path.startsWith('/api/v1/showcase/')) {
             return http.Response('', 204);
           }
           return http.Response('{"error":"not_found"}', 404);
@@ -158,5 +160,77 @@ void main() {
     expect(learning.containsKey('glyphs'), isTrue);
     expect(learning.containsKey('lessons'), isTrue);
     expect(learning.containsKey('stars'), isTrue);
+  });
+
+  Map<String, dynamic> lastBody() =>
+      jsonDecode(requests.last.body) as Map<String, dynamic>;
+
+  test('payload shows the rocket and trail in use and counts stickers only',
+      () async {
+    final kidId = await insertKid(db);
+    final c = makeContainer();
+    await c.read(kidRepositoryProvider).setSetting('showcaseOn.$kidId', 'true');
+    await db.into(db.gameProfile).insert(GameProfileCompanion.insert(
+          kidId: Value(kidId),
+          selectedRocket: const Value('rocket_blue'),
+          selectedTrail: const Value('trail_rainbow'),
+        ));
+    for (final item in ['sticker_clap', 'rare_crown', 'rocket_blue']) {
+      await db
+          .into(db.gameItems)
+          .insert(GameItemsCompanion.insert(kidId: kidId, itemId: item));
+    }
+
+    expect(await c.read(showcaseSyncProvider).request(kidId: kidId), isTrue);
+    final body = lastBody();
+    expect(body['rocket'], 'rocket_blue');
+    expect(body['trail'], 'trail_rainbow');
+    expect(body['stickers'], 2, reason: 'a rocket is not a sticker');
+  });
+
+  test('learning numbers are those of the kid being sent, not the current one',
+      () async {
+    final current = await insertKid(db, name: 'Na');
+    final other = await insertKid(db, name: 'Bin');
+    await KidRepository(db).setCurrentKid(current);
+    for (var i = 0; i < 2; i++) {
+      await db.into(db.lessonCompletions).insert(LessonCompletionsCompanion.insert(
+          kidId: other,
+          completedAt: DateTime(2026, 11, 20 + i),
+          starsEarned: 7));
+    }
+    final c = makeContainer();
+    final repo = c.read(kidRepositoryProvider);
+    await repo.setSetting('showcaseOn.$other', 'true');
+    await repo.setSetting('showcaseLearning.$other', 'true');
+
+    expect(await c.read(showcaseSyncProvider).request(kidId: other), isTrue);
+    final learning = lastBody()['learning'] as Map<String, dynamic>;
+    expect(learning['lessons'], 2);
+    expect(learning['stars'], 14);
+    expect(lastBody()['nickname'], 'Bin');
+  });
+
+  test('turning the showcase off takes it down on the server', () async {
+    final kidId = await insertKid(db);
+    final c = makeContainer();
+    final uuid = (await KidRepository(db).kids()).single.uuid;
+
+    expect(await c.read(showcaseSyncProvider).takeDown(kidId), isTrue);
+    expect(requests.single.method, 'DELETE');
+    expect(requests.single.url.path, '/api/v1/showcase/$uuid');
+  });
+
+  test('a switch change is sent at once, even inside the 5 minutes', () async {
+    final kidId = await insertKid(db);
+    final c = makeContainer();
+    await c.read(kidRepositoryProvider).setSetting('showcaseOn.$kidId', 'true');
+    final sync = c.read(showcaseSyncProvider);
+
+    expect(await sync.request(kidId: kidId), isTrue);
+    fakeNow = fakeNow.add(const Duration(minutes: 1));
+    expect(await sync.request(kidId: kidId), isFalse);
+    expect(await sync.request(kidId: kidId, force: true), isTrue);
+    expect(requests.where((r) => r.method == 'PUT'), hasLength(2));
   });
 }

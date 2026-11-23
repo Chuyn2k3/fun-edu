@@ -190,6 +190,37 @@ class ShowcaseApiTest {
         }
     }
 
+    /** Turning the showcase off in Góc ba mẹ removes it: friends no longer see the old copy. */
+    @Test
+    void ownerCanTakeTheShowcaseDown() {
+        FamilySession owner = newFamily();
+        FamilySession friend = newFamily();
+        makeFriends(owner, friend);
+        assertThat(putShowcase(owner.token(), "kid-1", Map.of("nickname", "Na")).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(react(friend.token(), owner.familyId(), "kid-1", "star").getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+
+        var del = http.exchange("/api/v1/showcase/kid-1", HttpMethod.DELETE,
+                new HttpEntity<>(bearer(owner.token())), MAP);
+        assertThat(del.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(getShowcase(friend.token(), owner.familyId(), "kid-1").getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        // Taking down a showcase that is not there is fine (idempotent).
+        assertThat(http.exchange("/api/v1/showcase/kid-1", HttpMethod.DELETE,
+                new HttpEntity<>(bearer(owner.token())), MAP).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+        // A friend cannot take down someone else's: it only touches the caller's family.
+        assertThat(putShowcase(owner.token(), "kid-1", Map.of("nickname", "Na")).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+        http.exchange("/api/v1/showcase/kid-1", HttpMethod.DELETE, new HttpEntity<>(bearer(friend.token())), MAP);
+        var stillThere = getShowcase(friend.token(), owner.familyId(), "kid-1");
+        assertThat(stillThere.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> reactions = (Map<String, Object>) stillThere.getBody().get("reactions");
+        assertThat(reactions).containsEntry("star", 0);
+    }
+
     @Test
     void strangerGets404() {
         FamilySession owner = newFamily();
