@@ -84,12 +84,14 @@ class RoomPlayerTile extends StatelessWidget {
     required this.isYou,
     required this.isHost,
     this.trailing,
+    this.onTap,
   });
 
   final RoomPlayer player;
   final bool isYou;
   final bool isHost;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -106,10 +108,11 @@ class RoomPlayerTile extends StatelessWidget {
     } else if (isHost) {
       subtitle = 'Chủ phòng';
     }
-    return Container(
+
+    Widget buildCard([bool pressed = false]) => Container(
       constraints: BoxConstraints(minHeight: tablet ? 88 : 72),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: raisedDecoration(),
+      decoration: raisedDecoration(pressed: pressed),
       child: Row(
         children: [
           Opacity(
@@ -147,6 +150,16 @@ class RoomPlayerTile extends StatelessWidget {
           if (trailing != null) trailing!,
         ],
       ),
+    );
+
+    if (onTap == null) {
+      return buildCard(false);
+    }
+    return Pressable(
+      key: ValueKey('player-tile-${player.id}'),
+      semanticsLabel: isYou ? '${player.name} (bé)' : player.name,
+      onTap: onTap,
+      builder: buildCard,
     );
   }
 }

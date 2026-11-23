@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../online/friends/showcase.dart';
 import '../../online/sync/sync_engine.dart';
 import '../../progress/progress_repository.dart';
 import '../../ui/assets.dart';
@@ -38,6 +39,7 @@ class _LessonDoneScreenState extends ConsumerState<LessonDoneScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncControllerProvider.notifier).requestSync();
+      ref.read(showcaseSyncProvider).request();
     });
   }
 

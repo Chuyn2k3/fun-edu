@@ -23,6 +23,7 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 import '../../ui/widgets/pressable.dart';
 import '../game/friends_row.dart';
+import '../collection/showcase_screen.dart';
 import 'room_widgets.dart';
 
 /// Which subject this kid answers in the online race (each kid picks their
@@ -494,7 +495,7 @@ class _RoomHeaderPill extends StatelessWidget {
   }
 }
 
-class _LobbySlotsGrid extends StatelessWidget {
+class _LobbySlotsGrid extends ConsumerWidget {
   const _LobbySlotsGrid({
     required this.room,
     required this.tablet,
@@ -507,22 +508,52 @@ class _LobbySlotsGrid extends StatelessWidget {
   final Map<String, RoomSticker> slotStickers;
   final VoidCallback onInvite;
 
-  Widget _slot(int i) {
+  Widget _slot(BuildContext context, WidgetRef ref, int i) {
     if (i < room.players.length) {
       final p = room.players[i];
+      final isYou = p.id == room.you;
       return LobbyPlayerSlot(
         player: p,
         slotIndex: i,
-        isYou: p.id == room.you,
+        isYou: isYou,
         isHost: p.id == room.host,
         receivedSticker: slotStickers[p.id],
+        onTap: () {
+          if (isYou) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ShowcaseScreen(isOwn: true),
+              ),
+            );
+          } else {
+            final friends = ref.read(friendsProvider).valueOrNull ?? const [];
+            String? familyId;
+            for (final f in friends) {
+              for (final k in f.kids) {
+                if (k.kidUuid == p.id) {
+                  familyId = f.familyId;
+                  break;
+                }
+              }
+              if (familyId != null) break;
+            }
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ShowcaseScreen(
+                  familyId: familyId,
+                  kidUuid: p.id,
+                ),
+              ),
+            );
+          }
+        },
       );
     }
     return LobbyEmptySlot(slotIndex: i, onTap: onInvite);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (tablet) {
       return KeyedSubtree(
         key: const ValueKey('lobby-slots-4x1'),
@@ -532,7 +563,7 @@ class _LobbySlotsGrid extends StatelessWidget {
             children: [
               for (var i = 0; i < 4; i++) ...[
                 if (i > 0) const SizedBox(width: 12),
-                Expanded(child: _slot(i)),
+                Expanded(child: _slot(context, ref, i)),
               ],
             ],
           ),
@@ -547,9 +578,9 @@ class _LobbySlotsGrid extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _slot(0)),
+                Expanded(child: _slot(context, ref, 0)),
                 const SizedBox(width: 10),
-                Expanded(child: _slot(1)),
+                Expanded(child: _slot(context, ref, 1)),
               ],
             ),
           ),
@@ -558,9 +589,9 @@ class _LobbySlotsGrid extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _slot(2)),
+                Expanded(child: _slot(context, ref, 2)),
                 const SizedBox(width: 10),
-                Expanded(child: _slot(3)),
+                Expanded(child: _slot(context, ref, 3)),
               ],
             ),
           ),

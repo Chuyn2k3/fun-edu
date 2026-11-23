@@ -15,6 +15,7 @@ import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/pressable.dart';
+import '../collection/showcase_screen.dart';
 import '../online_race/room_widgets.dart';
 
 /// Friendly Vietnamese text for a lobby error code that follows an invite.
@@ -192,7 +193,20 @@ class FriendsRow extends ConsumerWidget {
                       key: ValueKey('friend-${kid.kidUuid}'),
                       kid: kid,
                       online: family.online,
-                      onTap: () => inviteFriendFromHub(ref, context, family),
+                      onTap: () {
+                        if (family.online) {
+                          inviteFriendFromHub(ref, context, family);
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => ShowcaseScreen(
+                                familyId: family.familyId,
+                                kidUuid: kid.kidUuid,
+                              ),
+                            ),
+                          );
+                        }
+                      },
                     );
                   },
                 ),

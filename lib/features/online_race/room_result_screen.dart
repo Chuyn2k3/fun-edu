@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../game/data/reward_pool.dart';
+import '../../online/friends/friends_controller.dart';
+import '../../online/friends/showcase.dart';
 import '../../online/room/room_controller.dart';
 import '../../online/sync/sync_engine.dart';
 import '../../profile/avatars.dart';
 import '../../ui/assets.dart';
 import '../../ui/theme/depth.dart';
+import '../../ui/widgets/pressable.dart';
+import '../collection/showcase_screen.dart';
 import '../game/badge_popup.dart';
 import '../game/race_controller.dart';
 import '../../ui/layout/form_factor.dart';
@@ -36,6 +40,7 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
     if (!lost) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(syncControllerProvider.notifier).requestSync();
+        ref.read(showcaseSyncProvider).request();
       });
     }
     final badges = widget.rewards?.onlineRecord?.newBadges ?? const [];
@@ -56,6 +61,36 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
         4 => 'Về tư',
         _ => p.left ? 'Rời trận' : 'Đang bay…',
       };
+
+  void _openShowcase(RoomPlayer p, String? you) {
+    if (p.id == you) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const ShowcaseScreen(isOwn: true),
+        ),
+      );
+      return;
+    }
+    final friends = ref.read(friendsProvider).valueOrNull ?? const [];
+    String? familyId;
+    for (final f in friends) {
+      for (final k in f.kids) {
+        if (k.kidUuid == p.id) {
+          familyId = f.familyId;
+          break;
+        }
+      }
+      if (familyId != null) break;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ShowcaseScreen(
+          familyId: familyId,
+          kidUuid: p.id,
+        ),
+      ),
+    );
+  }
 
   Future<void> _leave(BuildContext context) async {
     await ref.read(roomControllerProvider.notifier).leave();
@@ -198,6 +233,7 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
                             ranked: ranked,
                             you: room.you,
                             tablet: tablet,
+                            onTap: (p) => _openShowcase(p, room.you),
                           ),
                         ],
                         const SizedBox(height: 16),
@@ -206,6 +242,7 @@ class _RoomResultScreenState extends ConsumerState<RoomResultScreen> {
                             player: p,
                             isYou: p.id == room.you,
                             isHost: false,
+                            onTap: () => _openShowcase(p, room.you),
                             trailing: Text(
                               _rankLabel(p),
                               style: TextStyle(
@@ -351,11 +388,13 @@ class _ResultPodium extends StatelessWidget {
     required this.ranked,
     required this.you,
     required this.tablet,
+    this.onTap,
   });
 
   final List<RoomPlayer> ranked;
   final String? you;
   final bool tablet;
+  final void Function(RoomPlayer player)? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -394,6 +433,7 @@ class _ResultPodium extends StatelessWidget {
                 place: ordered[i].$3,
                 isYou: ordered[i].$2.id == you,
                 tablet: tablet,
+                onTap: onTap,
               ),
             ),
           ],
@@ -410,6 +450,7 @@ class _PodiumColumn extends StatelessWidget {
     required this.place,
     required this.isYou,
     required this.tablet,
+    this.onTap,
   });
 
   final int index;
@@ -417,6 +458,7 @@ class _PodiumColumn extends StatelessWidget {
   final int place;
   final bool isYou;
   final bool tablet;
+  final void Function(RoomPlayer player)? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -448,7 +490,7 @@ class _PodiumColumn extends StatelessWidget {
         place == 1 ? (tablet ? 72.0 : 54.0) : (tablet ? 60.0 : 44.0);
     final name = player.name.isEmpty ? 'Bạn ${index + 1}' : player.name;
 
-    return Column(
+    final content = Column(
       key: ValueKey('podium-rank-$place'),
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -520,6 +562,14 @@ class _PodiumColumn extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (onTap == null) return content;
+    return Pressable(
+      key: ValueKey('podium-tap-$place'),
+      semanticsLabel: isYou ? '$name (bé)' : name,
+      onTap: () => onTap!(player),
+      builder: (_) => content,
     );
   }
 }

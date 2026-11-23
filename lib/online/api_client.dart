@@ -42,6 +42,13 @@ class ApiClient {
   }) =>
       _send('POST', path, body: body, accessToken: accessToken);
 
+  Future<Map<String, Object?>?> put(
+    String path,
+    Map<String, Object?> body, {
+    String? accessToken,
+  }) =>
+      _send('PUT', path, body: body, accessToken: accessToken);
+
   Future<Map<String, Object?>?> get(String path, {String? accessToken}) =>
       _send('GET', path, accessToken: accessToken);
 

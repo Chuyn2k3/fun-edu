@@ -22,6 +22,7 @@ import '../../worksheet/worksheet_pdf.dart';
 import '../../worksheet/worksheet_printer.dart';
 import '../home/kid_nav.dart';
 import 'notebook_section.dart';
+import 'showcase_screen.dart';
 
 const _phoneMaxWidth = 560.0;
 const _tabletMaxWidth = 1140.0;
@@ -244,6 +245,17 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                         unlockedCerts: unlockedCerts,
                         totalCerts: certs.length,
                         tablet: tablet,
+                      ),
+                      SizedBox(height: tablet ? 16 : 12),
+                      _ShowcaseBanner(
+                        tablet: tablet,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const ShowcaseScreen(isOwn: true),
+                            ),
+                          );
+                        },
                       ),
                       SizedBox(height: tablet ? 20 : 14),
                       _SectionSwitcher(
@@ -654,6 +666,86 @@ class _ChipHeroBanner extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ShowcaseBanner extends StatelessWidget {
+  const _ShowcaseBanner({required this.tablet, required this.onTap});
+
+  final bool tablet;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      key: const ValueKey('collection-showcase-entry'),
+      semanticsLabel: 'Tủ khoe của con',
+      onTap: onTap,
+      builder: (pressed) => Container(
+        constraints: BoxConstraints(minHeight: tablet ? 80 : 64),
+        padding: EdgeInsets.symmetric(
+          horizontal: tablet ? 20 : 16,
+          vertical: tablet ? 14 : 12,
+        ),
+        decoration: raisedDecoration(
+          tint: GameColors.cockpitBg,
+          pressed: pressed,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: tablet ? 54 : 44,
+              height: tablet ? 54 : 44,
+              decoration: BoxDecoration(
+                color: GameColors.starWarm.withOpacity(0.24),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Image.asset(
+                  AppImages.icStar,
+                  width: tablet ? 32 : 26,
+                  height: tablet ? 32 : 26,
+                ),
+              ),
+            ),
+            SizedBox(width: tablet ? 16 : 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Tủ khoe của con',
+                    style: TextStyle(
+                      fontSize: tablet ? 20 : 17,
+                      fontWeight: FontWeight.w900,
+                      color: GameColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Khoe tên lửa, sticker và nhận sao từ bạn bè',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: tablet ? 15 : 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: tablet ? 12 : 8),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: tablet ? 32 : 26,
+              color: GameColors.ink,
+            ),
+          ],
+        ),
       ),
     );
   }

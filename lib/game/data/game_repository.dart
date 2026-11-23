@@ -523,8 +523,21 @@ class GameRepository {
     );
   }
 
-  Future<Set<GameBadge>> badges() async {
-    final kid = kidId;
+  Future<({int races, int wins})> overallStats([int? targetKidId]) async {
+    final kid = targetKidId ?? kidId;
+    if (kid == null) return (races: 0, wins: 0);
+    final rows = await (_db.select(_db.raceResults)
+          ..where((t) => t.kidId.equals(kid)))
+        .get();
+    var wins = 0;
+    for (final r in rows) {
+      if (r.won) wins++;
+    }
+    return (races: rows.length, wins: wins);
+  }
+
+  Future<Set<GameBadge>> badges([int? targetKidId]) async {
+    final kid = targetKidId ?? kidId;
     if (kid == null) return {};
     final rows = await (_db.select(_db.gameBadges)
           ..where((t) => t.kidId.equals(kid)))
