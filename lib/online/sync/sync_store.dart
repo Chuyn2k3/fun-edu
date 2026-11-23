@@ -78,6 +78,11 @@ class SyncStore {
 
   final AppDatabase _db;
 
+  /// Kid uuid -> local id while a page is being applied: every record looks
+  /// its kid up, and one query per record made a restore twice as slow.
+  /// Null outside [applyPage] / [applyWaiting]; dropped when a kid changes.
+  Map<String, int>? _kidIds;
+
   /// Every record kind explicitly handled by [_merge]. Tested against
   /// `exportAll()` and `SyncKinds.ALLOWED`.
   static const Set<String> mergeKinds = {
@@ -337,7 +342,7 @@ class SyncStore {
   /// to `app_settings` (key `sync.cursor`). Records for unknown kids are placed
   /// in `sync_pending_remote` to be applied later when the kid arrives.
   Future<void> applyPage(List<SyncRecord> records, int cursor) =>
-      _db.transaction(() async {
+      _db.transaction(() => _withKidCache(() async {
         final sorted = [...records]..sort((a, b) {
             final ak = a.kind == 'kid' ? 0 : 1;
             final bk = b.kind == 'kid' ? 0 : 1;
@@ -346,6 +351,10 @@ class SyncStore {
         final local = await exportAll();
         final synced = {
           for (final r in await _db.select(_db.syncedRecords).get()) r.key: r,
+        };
+        // Usually empty: only these keys need clearing from the waiting list.
+        final waiting = {
+          for (final w in await _db.select(_db.syncPendingRemote).get()) w.key,
         };
         var hasNewKids = false;
         for (final r in sorted) {
@@ -375,10 +384,12 @@ class SyncStore {
           final applied = await _write(r.key, merged, existed: mine != null);
           await markSynced(r.key, r.version, applied ? r.payload : null);
 
-          // Clear from pending if it was there
-          await (_db.delete(_db.syncPendingRemote)
-                ..where((t) => t.key.equals(r.key)))
-              .go();
+          // Clear from the waiting list if it was there
+          if (waiting.contains(r.key)) {
+            await (_db.delete(_db.syncPendingRemote)
+                  ..where((t) => t.key.equals(r.key)))
+                .go();
+          }
 
           if (kind == 'kid') {
             hasNewKids = true;
@@ -395,10 +406,11 @@ class SyncStore {
                     key: 'sync.cursor', value: '$cursor'),
               );
         }
-      });
+      }));
 
   /// Applies pending remote records whose kid is now known locally.
-  Future<void> applyWaiting() => _db.transaction(_applyWaitingInternal);
+  Future<void> applyWaiting() =>
+      _db.transaction(() => _withKidCache(_applyWaitingInternal));
 
   Future<void> _applyWaitingInternal() async {
     final pending = await _db.select(_db.syncPendingRemote).get();
@@ -876,6 +888,7 @@ class SyncStore {
     final id = await _kidIdOf(ku);
     if (p == null) {
       if (id != null) await _deleteKid(id, ku: ku);
+      _kidIds?.remove(ku);
       return false;
     }
     final row = KidProfilesCompanion(
@@ -888,6 +901,7 @@ class SyncStore {
     );
     if (id == null) {
       final newId = await _db.into(_db.kidProfiles).insert(row);
+      _kidIds?[ku] = newId;
       // A device with no kid yet picks the first one that arrives.
       final current = await (_db.select(_db.appSettings)
             ..where((r) => r.key.equals('currentKidId')))
@@ -972,10 +986,29 @@ class SyncStore {
     return out;
   }
 
-  Future<int?> _kidIdOf(String uuid) async =>
-      (await (_db.select(_db.kidProfiles)..where((r) => r.uuid.equals(uuid)))
+  Future<int?> _kidIdOf(String uuid) async {
+    if (_kidIds == null) {
+      return (await (_db.select(_db.kidProfiles)..where((r) => r.uuid.equals(uuid)))
               .getSingleOrNull())
           ?.id;
+    }
+    return _kidIds![uuid];
+  }
+
+  Future<Map<String, int>> _loadKidIds() async => {
+        for (final k in await _db.select(_db.kidProfiles).get())
+          if (k.uuid != null) k.uuid!: k.id,
+      };
+
+  /// Runs [body] with the kid cache on (rebuilt after any kid record).
+  Future<T> _withKidCache<T>(Future<T> Function() body) async {
+    _kidIds = await _loadKidIds();
+    try {
+      return await body();
+    } finally {
+      _kidIds = null;
+    }
+  }
 
   /// `dailyLimitMinutes.3` -> (3, 'dailyLimitMinutes');
   /// `extraMinutes.3.2026-11-21` -> (3, 'extraMinutes.2026-11-21').

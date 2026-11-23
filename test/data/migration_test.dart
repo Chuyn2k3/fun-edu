@@ -415,7 +415,7 @@ CREATE TABLE synced_records (
     );
     addTearDown(db.close);
 
-    expect(db.schemaVersion, 11);
+    expect(db.schemaVersion, 12);
     final pages = await db.select(db.notebookPages).get();
     expect(pages, isEmpty);
     final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
@@ -424,13 +424,27 @@ CREATE TABLE synced_records (
     expect(pending, isEmpty);
   });
 
+  Future<Set<String>> indexesOf(AppDatabase db, String table) async => {
+        for (final r in await db.customSelect("PRAGMA index_list('$table')").get())
+          r.read<String>('name'),
+      };
+
+  // A pulled lesson or race replaces the local row with the same time: without
+  // these indexes each one scanned the whole table (a restore was quadratic).
+  test('fresh install indexes lessons and races by kid and time', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    expect(await indexesOf(db, 'lesson_completions'), contains('lesson_completions_kid_time_idx'));
+    expect(await indexesOf(db, 'race_results'), contains('race_results_kid_time_idx'));
+  });
+
   test('fresh install has the attempts index and schemaVersion 11', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
     final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
     expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
-    expect(db.schemaVersion, 11);
+    expect(db.schemaVersion, 12);
 
     final pending = await db.select(db.syncPendingRemote).get();
     expect(pending, isEmpty);
@@ -460,7 +474,7 @@ CREATE TABLE stroke_attempts (
     );
     addTearDown(db.close);
 
-    expect(db.schemaVersion, 11);
+    expect(db.schemaVersion, 12);
     final indexList = await db.customSelect("PRAGMA index_list('stroke_attempts')").get();
     expect(indexList.any((r) => r.read<String>('name') == 'stroke_attempts_kid_glyph_idx'), isTrue);
     final pending = await db.select(db.syncPendingRemote).get();
@@ -603,7 +617,9 @@ CREATE TABLE notebook_pages (
     );
     addTearDown(db.close);
 
-    expect(db.schemaVersion, 11);
+    expect(await indexesOf(db, 'lesson_completions'), contains('lesson_completions_kid_time_idx'));
+    expect(await indexesOf(db, 'race_results'), contains('race_results_kid_time_idx'));
+    expect(db.schemaVersion, 12);
 
     // Verify tables exist
     final pending = await db.select(db.syncPendingRemote).get();

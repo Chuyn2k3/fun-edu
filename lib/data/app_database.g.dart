@@ -5159,6 +5159,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index strokeAttemptsKidGlyphIdx = Index(
       'stroke_attempts_kid_glyph_idx',
       'CREATE INDEX stroke_attempts_kid_glyph_idx ON stroke_attempts (kid_id, glyph_id)');
+  late final Index lessonCompletionsKidTimeIdx = Index(
+      'lesson_completions_kid_time_idx',
+      'CREATE INDEX lesson_completions_kid_time_idx ON lesson_completions (kid_id, completed_at)');
+  late final Index raceResultsKidTimeIdx = Index('race_results_kid_time_idx',
+      'CREATE INDEX race_results_kid_time_idx ON race_results (kid_id, finished_at)');
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5181,7 +5186,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         notebookPages,
         syncPendingRemote,
         deviceCounters,
-        strokeAttemptsKidGlyphIdx
+        strokeAttemptsKidGlyphIdx,
+        lessonCompletionsKidTimeIdx,
+        raceResultsKidTimeIdx
       ];
 }
 

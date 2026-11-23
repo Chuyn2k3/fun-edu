@@ -111,7 +111,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -137,6 +137,7 @@ class AppDatabase extends _$AppDatabase {
           if (from < 9) await _upgradeToV9(m, from);
           if (from < 10) await _upgradeToV10(m, from);
           if (from < 11) await _upgradeToV11(m, from);
+          if (from < 12) await _upgradeToV12();
         },
       );
 
@@ -277,6 +278,22 @@ class AppDatabase extends _$AppDatabase {
           }
         }
       });
+
+  /// v11 -> v12: sync finds a pulled lesson or race by kid and time; without
+  /// an index every one scanned the whole table.
+  Future<void> _upgradeToV12() async {
+    Future<void> index(String table, String name, String columns) async {
+      final found = await customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+        variables: [Variable.withString(table)],
+      ).get();
+      if (found.isEmpty) return;
+      await customStatement('CREATE INDEX IF NOT EXISTS $name ON $table ($columns)');
+    }
+
+    await index('lesson_completions', 'lesson_completions_kid_time_idx', 'kid_id, completed_at');
+    await index('race_results', 'race_results_kid_time_idx', 'kid_id, finished_at');
+  }
 
   Future<void> _upgradeToV10(Migrator m, int from) async {
     final tables = await customSelect(

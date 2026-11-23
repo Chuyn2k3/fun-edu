@@ -2,7 +2,8 @@ import 'package:drift/drift.dart';
 
 /// One row per finished race (abandoned races are never stored).
 /// [subject] is 'toan' or 'tiengViet'; [kidTimeMs] counts as a finish time
-/// only when [won].
+/// only when [won]. Indexed by kid and time: a synced race is found by that pair.
+@TableIndex(name: 'race_results_kid_time_idx', columns: {#kidId, #finishedAt})
 class RaceResults extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get kidId => integer()();

@@ -15,6 +15,8 @@ class GlyphProgress extends Table {
 }
 
 /// One row per finished lesson; also the source of "learned days".
+/// Indexed by kid and time: a synced lesson is found by that pair.
+@TableIndex(name: 'lesson_completions_kid_time_idx', columns: {#kidId, #completedAt})
 class LessonCompletions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get kidId => integer()();
