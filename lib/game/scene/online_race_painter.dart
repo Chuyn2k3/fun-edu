@@ -12,6 +12,7 @@ import 'rocket_sprite.dart';
 import 'smoke_particles.dart';
 import 'space_track.dart';
 import 'speed_lines.dart';
+import 'sticker_fx.dart';
 import 'trails.dart';
 
 /// One racer in the online "whole pack flies together" race scene.
@@ -186,6 +187,7 @@ class OnlineRacePainter extends CustomPainter {
     required AvatarShaderCache shaderCache,
     required OnlineLabelCache labelCache,
     this.smokes,
+    this.stickerFx,
     this.clock,
     this.reduceMotion = false,
     this.bottomInset = 0,
@@ -211,6 +213,7 @@ class OnlineRacePainter extends CustomPainter {
   final AvatarShaderCache _shaders;
   final OnlineLabelCache _labels;
   final Map<String, SmokeParticles>? smokes;
+  final StickerFx? stickerFx;
   final SceneClock? clock;
   final bool reduceMotion;
   final double bottomInset;
@@ -387,6 +390,25 @@ class OnlineRacePainter extends CustomPainter {
         positive: livePositiveOvertake,
         belowSuper: showSuperBanner,
       );
+    }
+
+    // Stickers, particles, and speech bubbles are strictly clipped above the
+    // question panel so they never paint over HUD controls.
+    final fx = stickerFx;
+    final clipH = math.max(0.0, size.height - bottomInset);
+    if (fx != null && clipH > 0) {
+      canvas.save();
+      canvas.clipRect(Rect.fromLTWH(0, 0, size.width, clipH));
+      fx.paint(
+        canvas,
+        Size(size.width, clipH),
+        imageLookup: fx.imageLookup == null && images != null
+            ? (path) => images![path].value
+            : null,
+        labelCache: _labels,
+        reduceMotion: reduceMotion,
+      );
+      canvas.restore();
     }
   }
 
@@ -918,5 +940,6 @@ class OnlineRacePainter extends CustomPainter {
       oldDelegate.clock != clock ||
       oldDelegate.images != images ||
       oldDelegate.speedLines != speedLines ||
-      oldDelegate.smokes != smokes;
+      oldDelegate.smokes != smokes ||
+      oldDelegate.stickerFx != stickerFx;
 }

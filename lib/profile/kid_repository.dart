@@ -110,7 +110,7 @@ class KidRepository {
         ['%:$uuid', '%:$uuid:%'],
       );
     }
-    // Screen-time, Nhà Chíp and race-nickname settings of this kid.
+    // Screen-time, Nhà Chíp, race-nickname and tease-stickers settings of this kid.
     await (_db.delete(_db.appSettings)
           ..where((t) =>
               t.key.equals('dailyLimitMinutes.$id') |
@@ -118,6 +118,7 @@ class KidRepository {
               t.key.equals('bedtimeEnd.$id') |
               t.key.equals('chipHouse.$id') |
               t.key.equals('raceNickname.$id') |
+              t.key.equals('teaseStickers.$id') |
               t.key.like('extraMinutes.$id.%')))
         .go();
   }
@@ -198,6 +199,22 @@ final kidsProvider = FutureProvider<List<KidProfile>>(
 final currentKidIdProvider = FutureProvider<int?>(
   (ref) => ref.watch(kidRepositoryProvider).currentKidId(),
 );
+
+/// Per-kid setting key for showing/sending tease stickers in online races.
+String teaseStickersKey(int kidId) => 'teaseStickers.$kidId';
+
+/// Whether tease stickers are enabled for [kidId] (defaults to `true`).
+final kidTeaseStickersProvider = FutureProvider.family<bool, int>((ref, kidId) async {
+  final raw = await ref.watch(kidRepositoryProvider).setting(teaseStickersKey(kidId));
+  return raw != 'false';
+});
+
+/// Whether tease stickers are enabled for the currently selected kid (defaults to `true`).
+final teaseStickersProvider = FutureProvider<bool>((ref) async {
+  final kidId = await ref.watch(currentKidIdProvider.future);
+  if (kidId == null) return true;
+  return ref.watch(kidTeaseStickersProvider(kidId).future);
+});
 
 /// Whether Chip speaks aloud; defaults to true.
 final voiceEnabledProvider = FutureProvider<bool>((ref) async {

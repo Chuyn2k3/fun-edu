@@ -220,11 +220,70 @@ void main() {
           ],
         ));
       }
+      // Fire 6 flying stickers (including tease bursts and quick phrases)
+      // across the 120 frames; QuestionCard must still rebuild 0 times.
+      if (frame == 10) {
+        room.set(RoomState(
+          phase: RoomPhase.racing,
+          code: 'ABC234',
+          you: 'p1',
+          host: 'p1',
+          players: room.state.players,
+          sticker: const RoomSticker('p2', 'bubble', 1, to: 'p1'),
+        ));
+      } else if (frame == 25) {
+        room.set(RoomState(
+          phase: RoomPhase.racing,
+          code: 'ABC234',
+          you: 'p1',
+          host: 'p1',
+          players: room.state.players,
+          sticker: const RoomSticker('p3', 'party', 2),
+        ));
+      } else if (frame == 40) {
+        room.set(RoomState(
+          phase: RoomPhase.racing,
+          code: 'ABC234',
+          you: 'p1',
+          host: 'p1',
+          players: room.state.players,
+          sticker: const RoomSticker('p4', 'rain', 3, to: 'p1'),
+        ));
+      } else if (frame == 55) {
+        room.set(RoomState(
+          phase: RoomPhase.racing,
+          code: 'ABC234',
+          you: 'p1',
+          host: 'p1',
+          players: room.state.players,
+          sticker: const RoomSticker('p2', 'turtle', 4, to: 'p3'),
+        ));
+      } else if (frame == 70) {
+        room.set(RoomState(
+          phase: RoomPhase.racing,
+          code: 'ABC234',
+          you: 'p1',
+          host: 'p1',
+          players: room.state.players,
+          sticker: const RoomSticker('p3', 'smoke', 5, to: 'p1'),
+        ));
+      } else if (frame == 85) {
+        room.set(RoomState(
+          phase: RoomPhase.racing,
+          code: 'ABC234',
+          you: 'p1',
+          host: 'p1',
+          players: room.state.players,
+          sticker: const RoomSticker('p4', 'q_almost', 6),
+        ));
+      }
       await tester.pump(const Duration(milliseconds: 16));
     }
 
     expect(debugQuestionCardBuilds, buildsBefore);
     expect(sceneState.debugTickersCreated, 1);
+    expect(sceneState.stickerFx.pool.alive, lessThanOrEqualTo(120));
+    expect(sceneState.stickerFx.pool.allocations, 120);
     expect(
       find.descendant(of: find.byType(RaceScene), matching: find.byType(Opacity)),
       findsNothing,

@@ -11,7 +11,54 @@ import 'room_transport.dart';
 enum RoomPhase { idle, connecting, lobby, countdown, racing, done, error }
 
 /// Stickers a kid can send: the server relays only these ids.
-const roomStickers = ['cheer', 'wow', 'love', 'fast', 'hi', 'gg'];
+const roomStickers = [
+  'cheer',
+  'love',
+  'party',
+  'bubble',
+  'tongue',
+  'byebye',
+  'rain',
+  'sleepy',
+  'turtle',
+  'smoke',
+  'wow',
+  'fast',
+  'hi',
+  'gg',
+  'q_almost',
+  'q_fast',
+  'q_oops',
+  'q_chase',
+  'q_again',
+];
+
+const Set<String> cheerStickerIds = {'cheer', 'love', 'party'};
+
+const Set<String> teaseStickerIds = {
+  'bubble',
+  'tongue',
+  'byebye',
+  'rain',
+  'sleepy',
+  'turtle',
+  'smoke',
+};
+
+const Map<String, String> quickPhraseTexts = {
+  'q_almost': 'Tớ sắp tới rồi!',
+  'q_fast': 'Cậu nhanh quá!',
+  'q_oops': 'Ối, tớ sai rồi!',
+  'q_chase': 'Bắt tớ đi!',
+  'q_again': 'Đua lại nào!',
+};
+
+bool isTeaseSticker(String id) => teaseStickerIds.contains(id);
+
+bool isQuickPhraseSticker(String id) => quickPhraseTexts.containsKey(id);
+
+/// Clock used for sticker cooldown and tease-rate windows (tests override).
+final stickerClockProvider = Provider<DateTime Function()>((_) => DateTime.now);
 
 class RoomPlayer {
   const RoomPlayer({
@@ -55,10 +102,11 @@ class RoomPlayer {
 }
 
 class RoomSticker {
-  const RoomSticker(this.from, this.id, this.seq);
+  const RoomSticker(this.from, this.id, this.seq, {this.to});
   final String from;
   final String id;
   final int seq;
+  final String? to;
 }
 
 class RoomState {
@@ -71,6 +119,7 @@ class RoomState {
     this.startsAt,
     this.error,
     this.sticker,
+    this.stickerLockedUntil,
     this.reconnecting = false,
     this.endReason,
   });
@@ -86,6 +135,7 @@ class RoomState {
   /// `network`, `signed_out`.
   final String? error;
   final RoomSticker? sticker;
+  final DateTime? stickerLockedUntil;
   final bool reconnecting;
   final String? endReason;
 
@@ -100,6 +150,7 @@ class RoomState {
     String? you,
     String? error,
     RoomSticker? sticker,
+    DateTime? Function()? stickerLockedUntil,
     bool? reconnecting,
     String? endReason,
   }) =>
@@ -112,6 +163,9 @@ class RoomState {
         startsAt: startsAt,
         error: error,
         sticker: sticker ?? this.sticker,
+        stickerLockedUntil: stickerLockedUntil == null
+            ? this.stickerLockedUntil
+            : stickerLockedUntil(),
         reconnecting: reconnecting ?? this.reconnecting,
         endReason: endReason ?? this.endReason,
       );
@@ -135,6 +189,8 @@ class RoomKid {
 /// The live room this device is in (one at a time). Reconnects a few times
 /// when the connection drops; the server keeps the kid's place for 20 s.
 class RoomController extends Notifier<RoomState> {
+  static const Duration stickerCooldown = Duration(seconds: 3);
+
   RoomTransport? _socket;
   StreamSubscription<Map<String, Object?>>? _sub;
   RoomKid? _kid;
@@ -143,6 +199,7 @@ class RoomController extends Notifier<RoomState> {
   bool _disposed = false;
   int _retries = 0;
   int _stickerSeq = 0;
+  Timer? _stickerUnlockTimer;
 
   List<Duration> get _retryDelays => ref.read(roomRetryDelaysProvider);
 
@@ -151,6 +208,7 @@ class RoomController extends Notifier<RoomState> {
     _disposed = false;
     ref.onDispose(() {
       _disposed = true;
+      _stickerUnlockTimer?.cancel();
       _closeSocket();
     });
     return const RoomState();
@@ -158,6 +216,8 @@ class RoomController extends Notifier<RoomState> {
 
   /// A parent opens a new room and the kid joins it as host.
   Future<void> create(RoomKid kid) async {
+    _stickerUnlockTimer?.cancel();
+    _stickerUnlockTimer = null;
     _you = null;
     state = const RoomState(phase: RoomPhase.connecting);
     final Map<String, Object?>? res;
@@ -189,6 +249,8 @@ class RoomController extends Notifier<RoomState> {
 
   /// Joins the room [code] (letters are upper-cased, spaces ignored).
   Future<void> join(String code, RoomKid kid) async {
+    _stickerUnlockTimer?.cancel();
+    _stickerUnlockTimer = null;
     await _closeSocket();
     _kid = kid;
     _you = null;
@@ -246,12 +308,19 @@ class RoomController extends Notifier<RoomState> {
               .toList(),
           startsAt: startsAt == null ? null : DateTime.fromMillisecondsSinceEpoch(startsAt),
           sticker: state.sticker,
+          stickerLockedUntil: state.stickerLockedUntil,
           reconnecting: false,
           endReason: m['endReason'] as String?,
         );
       case 'sticker':
+        final toRaw = m['to'] as String?;
         state = state.copyWith(
-          sticker: RoomSticker(m['from'] as String? ?? '', m['id'] as String? ?? '', ++_stickerSeq),
+          sticker: RoomSticker(
+            m['from'] as String? ?? '',
+            m['id'] as String? ?? '',
+            ++_stickerSeq,
+            to: (toRaw != null && toRaw.isNotEmpty) ? toRaw : null,
+          ),
           phase: state.phase,
           error: state.error,
         );
@@ -262,6 +331,8 @@ class RoomController extends Notifier<RoomState> {
           state = state.copyWith(error: code);
         } else {
           _leaving = true;
+          _stickerUnlockTimer?.cancel();
+          _stickerUnlockTimer = null;
           state = RoomState(phase: RoomPhase.error, code: state.code, error: code);
         }
     }
@@ -301,10 +372,29 @@ class RoomController extends Notifier<RoomState> {
   /// The kid's rocket climbed to [steps] (0..18).
   void step(int steps) => _socket?.send({'t': 'step', 'n': steps});
 
-  void sticker(String id) {
+  void sticker(String id, {String? to, DateTime? now}) {
     final socket = _socket;
     if (!roomStickers.contains(id) || socket == null) return;
-    socket.send({'t': 'sticker', 'id': id});
+    final currentTime = now ?? ref.read(stickerClockProvider)();
+    final lockedUntil = state.stickerLockedUntil;
+    if (lockedUntil != null && currentTime.isBefore(lockedUntil)) {
+      return;
+    }
+    final nextUnlock = currentTime.add(stickerCooldown);
+    state = state.copyWith(stickerLockedUntil: () => nextUnlock);
+    _stickerUnlockTimer?.cancel();
+    _stickerUnlockTimer = Timer(stickerCooldown, () {
+      if (_disposed) return;
+      final lock = state.stickerLockedUntil;
+      if (lock != null && !lock.isAfter(nextUnlock)) {
+        state = state.copyWith(stickerLockedUntil: () => null);
+      }
+    });
+    socket.send({
+      't': 'sticker',
+      'id': id,
+      if (to != null && to.isNotEmpty) 'to': to,
+    });
     // Counts toward the "Cổ Vũ Nhiệt Tình" badge; a failure is harmless.
     unawaited(ref
         .read(gameRepositoryProvider.future)
@@ -315,6 +405,8 @@ class RoomController extends Notifier<RoomState> {
   Future<void> leave() async {
     _leaving = true;
     _you = null;
+    _stickerUnlockTimer?.cancel();
+    _stickerUnlockTimer = null;
     _socket?.send(const {'t': 'leave'});
     await _closeSocket();
     state = const RoomState();

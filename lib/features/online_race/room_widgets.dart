@@ -40,8 +40,16 @@ Future<RoomKid?> currentRoomKid(WidgetRef ref) async {
 /// Sticker id -> (Chíp sticker art, caption).
 const roomStickerArt = <String, (String, String)>{
   'cheer': (AppImages.stickerFist, 'Cố lên!'),
-  'wow': (AppImages.stickerLaugh, 'Hihi!'),
   'love': (AppImages.stickerHugHeart, 'Thương!'),
+  'party': (AppImages.stickerParty, 'Chúc mừng!'),
+  'bubble': (AppImages.stickerTeaseBubble, 'Bong bóng!'),
+  'tongue': (AppImages.stickerTeaseTongue, 'Lè lưỡi!'),
+  'byebye': (AppImages.stickerTeaseByebye, 'Bái bai!'),
+  'rain': (AppImages.stickerTeaseRain, 'Mưa rơi!'),
+  'sleepy': (AppImages.stickerTeaseSleepy, 'Buồn ngủ!'),
+  'turtle': (AppImages.stickerTeaseTurtle, 'Rùa bò!'),
+  'smoke': (AppImages.stickerTeaseSmoke, 'Xịt khói!'),
+  'wow': (AppImages.stickerLaugh, 'Hihi!'),
   'fast': (AppImages.stickerPilotGoggles, 'Nhanh quá!'),
   'hi': (AppImages.stickerWaveRocket, 'Chào bạn!'),
   'gg': (AppImages.stickerClap, 'Giỏi lắm!'),
@@ -136,32 +144,79 @@ class RoomPlayerTile extends StatelessWidget {
   }
 }
 
-/// Six Chíp stickers to cheer friends on (no free text).
+/// Shared raised button displaying an image sticker.
+class StickerImageTile extends StatelessWidget {
+  const StickerImageTile({
+    super.key,
+    required this.tileKey,
+    required this.size,
+    required this.asset,
+    required this.label,
+    required this.locked,
+    required this.onTap,
+  });
+
+  final Key tileKey;
+  final double size;
+  final String asset;
+  final String label;
+  final bool locked;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      key: tileKey,
+      semanticsLabel: 'Gửi sticker $label',
+      onTap: locked ? null : onTap,
+      builder: (pressed) => Container(
+        width: size,
+        height: size,
+        padding: const EdgeInsets.all(6),
+        decoration: raisedDecoration(
+          tint: locked ? GameColors.lockedFill : AppColors.card,
+          pressed: pressed,
+        ),
+        child: Image.asset(asset, fit: BoxFit.contain),
+      ),
+    );
+  }
+}
+
+/// Chíp stickers to cheer or tease friends (no free text; 3 s cooldown).
 class StickerBar extends ConsumerWidget {
   const StickerBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final size = context.isTablet ? 80.0 : 64.0;
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final e in roomStickerArt.entries)
-          Pressable(
-            key: ValueKey('sticker-${e.key}'),
-            semanticsLabel: 'Gửi sticker ${e.value.$2}',
+    final teaseOn = ref.watch(teaseStickersProvider).valueOrNull ?? true;
+    final lockedUntil =
+        ref.watch(roomControllerProvider.select((s) => s.stickerLockedUntil));
+    final locked = lockedUntil != null &&
+        lockedUntil.isAfter(ref.read(stickerClockProvider)());
+    final entries = [
+      for (final e in roomStickerArt.entries)
+        if (teaseOn || !isTeaseSticker(e.key)) e,
+    ];
+    return SizedBox(
+      height: size,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: entries.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final e = entries[index];
+          return StickerImageTile(
+            tileKey: ValueKey('sticker-${e.key}'),
+            size: size,
+            asset: e.value.$1,
+            label: e.value.$2,
+            locked: locked,
             onTap: () => ref.read(roomControllerProvider.notifier).sticker(e.key),
-            builder: (pressed) => Container(
-              width: size,
-              height: size,
-              padding: const EdgeInsets.all(6),
-              decoration: raisedDecoration(pressed: pressed),
-              child: Image.asset(e.value.$1, fit: BoxFit.contain),
-            ),
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 }
@@ -188,6 +243,8 @@ class _StickerToastState extends ConsumerState<StickerToast> {
   Widget build(BuildContext context) {
     ref.listen(roomControllerProvider.select((s) => s.sticker), (_, s) {
       if (s == null) return;
+      final teaseOn = ref.read(teaseStickersProvider).valueOrNull ?? true;
+      if (isTeaseSticker(s.id) && !teaseOn) return;
       setState(() => _shown = s);
       _hide?.cancel();
       _hide = Timer(const Duration(seconds: 2), () {
@@ -196,10 +253,14 @@ class _StickerToastState extends ConsumerState<StickerToast> {
     });
     final s = _shown;
     final art = s == null ? null : roomStickerArt[s.id];
-    if (s == null || art == null) return const SizedBox.shrink();
+    final phrase = s == null ? null : quickPhraseTexts[s.id];
+    if (s == null || (art == null && phrase == null)) {
+      return const SizedBox.shrink();
+    }
     final room = ref.read(roomControllerProvider);
     final from = room.players.where((p) => p.id == s.from).firstOrNull?.name ?? '';
     final size = context.isTablet ? 120.0 : 96.0;
+    final caption = art?.$2 ?? phrase!;
     return IgnorePointer(
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -207,9 +268,9 @@ class _StickerToastState extends ConsumerState<StickerToast> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(art.$1, width: size, height: size),
+            if (art != null) Image.asset(art.$1, width: size, height: size),
             Text(
-              from.isEmpty ? art.$2 : '$from: ${art.$2}',
+              from.isEmpty ? caption : '$from: $caption',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,

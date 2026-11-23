@@ -16,9 +16,12 @@ import 'rocket_sprite.dart';
 import 'smoke_particles.dart';
 import 'space_track.dart';
 import 'speed_lines.dart';
+import 'sticker_fx.dart';
 import 'trails.dart';
 
 export 'online_race_painter.dart' show OnlineRaceLayout, OnlineRacer;
+export 'sticker_fx.dart'
+    show FxKind, IncomingStickerEvent, StickerFx, fxKindsForSticker;
 
 /// Redesigned StarPath rocket race scene:
 /// Both rockets race along a visible 10-step perspective stardust highway towards
@@ -145,12 +148,18 @@ class RaceSceneState extends State<RaceScene>
   final AvatarShaderCache _avatarShaders = AvatarShaderCache();
   final OnlineLabelCache _onlineLabels = OnlineLabelCache();
   final Map<String, SmokeParticles> _onlineSmokes = {};
+  late final StickerFx _stickerFx = StickerFx(
+    imageLookup: (path) => _images[path].value,
+    labelCache: _onlineLabels,
+  );
   Size? _onlineArea;
   List<String> _onlineAssetKeys = const [];
   Listenable? _onlineRepaint;
   Map<String, int> _prevOnlineRanks = {};
   int? _prevMyOnlineRank;
   Timer? _overtakeTimer;
+  Timer? _reduceMotionStickerTimer;
+  Duration _sceneElapsed = Duration.zero;
 
   @visibleForTesting
   int debugTickersCreated = 0;
@@ -271,6 +280,9 @@ class RaceSceneState extends State<RaceScene>
   int? get onlineStarGateStage => _onlineEffects.starGateStage;
 
   @visibleForTesting
+  StickerFx get stickerFx => _stickerFx;
+
+  @visibleForTesting
   Iterable<String> get loadedAssets => _assets;
 
   @override
@@ -333,6 +345,21 @@ class RaceSceneState extends State<RaceScene>
         AppImages.comet,
         AppImages.icStar,
         AppImages.icFlame,
+        AppImages.chipEncourage,
+        AppImages.stickerFist,
+        AppImages.stickerHugHeart,
+        AppImages.stickerParty,
+        AppImages.stickerTeaseBubble,
+        AppImages.stickerTeaseTongue,
+        AppImages.stickerTeaseByebye,
+        AppImages.stickerTeaseRain,
+        AppImages.stickerTeaseSleepy,
+        AppImages.stickerTeaseTurtle,
+        AppImages.stickerTeaseSmoke,
+        AppImages.stickerLaugh,
+        AppImages.stickerPilotGoggles,
+        AppImages.stickerWaveRocket,
+        AppImages.stickerClap,
       };
     }
     return {
@@ -547,7 +574,9 @@ class RaceSceneState extends State<RaceScene>
   @override
   void dispose() {
     _overtakeTimer?.cancel();
+    _reduceMotionStickerTimer?.cancel();
     _ticker.dispose();
+    _stickerFx.dispose();
     _avatarShaders.dispose();
     _onlineLabels.dispose();
     _images.dispose();
@@ -556,13 +585,90 @@ class RaceSceneState extends State<RaceScene>
     super.dispose();
   }
 
+  /// Plays an incoming sticker or quick-phrase bubble on the online race scene.
+  void playSticker(IncomingStickerEvent event) {
+    if (!_isOnline) return;
+    final from = _onlineRacerCenter(event.fromId) ?? _fallbackOnlineCenter();
+    final to = event.toId == null ? null : _onlineRacerCenter(event.toId!);
+    _stickerFx.play(
+      event.stickerId,
+      from: from,
+      to: to,
+      now: _sceneElapsed,
+      bubbleText: event.bubbleText,
+      reduceMotion: _reduceMotion,
+    );
+    _onlineEffects.notify();
+    if (_reduceMotion) _scheduleReduceMotionStickerClear();
+  }
+
+  /// Shows Chíp's encouraging safety bubble above the local kid's rocket.
+  void playCheerUp() {
+    if (!_isOnline) return;
+    final me = widget.onlineRacers?.where((r) => r.me).firstOrNull;
+    final anchor =
+        (me != null ? _onlineRacerCenter(me.id) : null) ?? _fallbackOnlineCenter();
+    _stickerFx.playCheerUp(
+      anchor: anchor,
+      now: _sceneElapsed,
+      reduceMotion: _reduceMotion,
+    );
+    _onlineEffects.notify();
+    if (_reduceMotion) _scheduleReduceMotionStickerClear();
+  }
+
+  void _scheduleReduceMotionStickerClear() {
+    _reduceMotionStickerTimer?.cancel();
+    _reduceMotionStickerTimer = Timer(const Duration(milliseconds: 2250), () {
+      if (!mounted) return;
+      _sceneElapsed += const Duration(milliseconds: 2250);
+      _stickerFx.update(_sceneElapsed);
+      _onlineEffects.notify();
+    });
+  }
+
+  Offset _fallbackOnlineCenter() {
+    final area = _onlineArea ??
+        Size(390.0, math.max(120.0, 500.0 - widget.bottomInset));
+    return Offset(area.width * 0.5, area.height * 0.4);
+  }
+
+  Offset? _onlineRacerCenter(String racerId) {
+    final online = widget.onlineRacers;
+    if (online == null || online.isEmpty) return null;
+    final area = _onlineArea ??
+        Size(390.0, math.max(120.0, 500.0 - widget.bottomInset));
+    var leaderSteps = 0.0;
+    var targetIndex = -1;
+    var targetSteps = 0.0;
+    for (var i = 0; i < online.length; i++) {
+      final r = online[i];
+      final s = _onlineEffects.displayedSteps[r.id] ?? r.steps.toDouble();
+      if (s > leaderSteps) leaderSteps = s;
+      if (r.id == racerId) {
+        targetIndex = i;
+        targetSteps = s;
+      }
+    }
+    if (targetIndex < 0) return null;
+    return OnlineRaceLayout.rocketCenter(
+      area: area,
+      index: targetIndex,
+      count: online.length,
+      steps: targetSteps,
+      leaderSteps: leaderSteps,
+    );
+  }
+
   void _onTick(Duration elapsed) {
     final rawDt = (elapsed - _last).inMicroseconds / 1e6;
     final dt = math.min(rawDt, 0.05);
     _last = elapsed;
+    _sceneElapsed = elapsed;
     if (rawDt <= 0) return;
 
     if (_isOnline) {
+      _stickerFx.update(elapsed);
       final online = widget.onlineRacers!;
       var leaderSteps = 0.0;
       for (final r in online) {
@@ -840,6 +946,7 @@ class RaceSceneState extends State<RaceScene>
               shaderCache: _avatarShaders,
               labelCache: _onlineLabels,
               smokes: _onlineSmokes,
+              stickerFx: _stickerFx,
               clock: _clock,
               reduceMotion: _reduceMotion,
               bottomInset: widget.bottomInset,

@@ -266,13 +266,31 @@ void main() {
       final speaker = _container(t).read(speakerProvider);
       await speaker.speak('một');
       expect(device.spoken, ['một']);
-      await t.tap(find.byType(Switch));
+      await t.tap(find.byKey(const ValueKey('voice-enabled-switch')));
       await settle(t);
       expect(await t.runAsync(() => KidRepository(db).setting('voiceEnabled')),
           'false');
       await speaker.speak('hai');
       await _container(t).read(speakerProvider).speak('ba');
       expect(device.spoken, ['một']);
+    });
+
+    testWidgets('Sticker trêu switch persists per kid', (t) async {
+      await _pumpParent(t);
+      await _openTab(t, 'Cài đặt');
+      final sw = find.byKey(const ValueKey('tease-stickers-switch'));
+      expect(sw, findsOneWidget);
+      expect(t.widget<Switch>(sw).value, isTrue);
+      await t.tap(sw);
+      await settle(t);
+      expect(
+        await t.runAsync(() => KidRepository(db).setting(teaseStickersKey(na))),
+        'false',
+      );
+      expect(
+        await t.runAsync(() => KidRepository(db).setting(teaseStickersKey(bo))),
+        isNull,
+      );
     });
 
     testWidgets('redo placement clears only the selected kid', (t) async {

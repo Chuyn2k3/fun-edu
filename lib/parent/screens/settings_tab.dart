@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/app_database.dart';
+import '../../online/sync/sync_engine.dart';
 import '../../profile/kid_refresh.dart';
 import '../../profile/kid_repository.dart';
 import '../../progress/level_repository.dart';
@@ -60,6 +61,15 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
   Future<void> _setVoice(bool on) async {
     await ref.read(kidRepositoryProvider).setSetting(voiceEnabledKey, '$on');
     ref.invalidate(voiceEnabledProvider);
+  }
+
+  Future<void> _setTeaseStickers(int kidId, bool on) async {
+    await ref
+        .read(kidRepositoryProvider)
+        .setSetting(teaseStickersKey(kidId), '$on');
+    ref.invalidate(kidTeaseStickersProvider(kidId));
+    ref.invalidate(teaseStickersProvider);
+    ref.read(syncControllerProvider.notifier).requestSync();
   }
 
   Future<void> _redoPlacement(BuildContext context, int id) async {
@@ -121,6 +131,7 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
                   ),
                 ),
                 Switch(
+                  key: const ValueKey('voice-enabled-switch'),
                   value: voice,
                   activeColor: AppColors.primary,
                   onChanged: _setVoice,
@@ -128,6 +139,46 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
               ],
             ),
           ),
+          if (kid != null) ...[
+            const SizedBox(height: 12),
+            ParentCard(
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sticker trêu',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Hiện và gửi sticker trêu vui khi đua cùng bạn',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    key: const ValueKey('tease-stickers-switch'),
+                    value: ref.watch(kidTeaseStickersProvider(kid.id)).valueOrNull ??
+                        true,
+                    activeColor: AppColors.primary,
+                    onChanged: (on) => _setTeaseStickers(kid.id, on),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           FamilyAccountCard(key: _accountKey),
           if (kid != null) ...[

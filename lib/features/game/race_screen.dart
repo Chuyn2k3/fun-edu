@@ -13,6 +13,7 @@ import '../../game/scene/online_race_painter.dart'
     show roomRocketForIndex, safeOnlineAvatar;
 import '../../game/scene/race_scene.dart';
 import '../../math/math_question.dart';
+import '../../online/room/room_controller.dart';
 import '../../profile/avatars.dart';
 import '../../profile/kid_repository.dart';
 import '../../stroke/glyph_repository.dart';
@@ -23,6 +24,7 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../voice/speaker.dart';
 import '../../voice/voice_lines.dart';
+import '../online_race/room_widgets.dart' show StickerImageTile, roomStickerArt;
 import 'answer_keys.dart';
 import 'glyph_view.dart';
 import 'race_controller.dart';
@@ -83,7 +85,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
 
   late final Speaker _speaker;
   late final RaceController _controller;
-  final _sceneKey = GlobalKey();
+  final _sceneKey = GlobalKey<RaceSceneState>();
   late final Ticker _clock = createTicker(_onTick);
   Duration _lastTick = Duration.zero;
 
@@ -96,6 +98,12 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   ValueListenable<bool>? _tickerMode;
   bool _showTryAgain = false;
   DateTime? _finishingSince;
+  bool _speakingQuestion = false;
+  int _speakToken = 0;
+  int _lastHandledStickerSeq = -1;
+  int _cheerStage = 1;
+  bool _cheeredThisStage = false;
+  final List<DateTime> _teaseTimestamps = [];
 
   @override
   void initState() {
@@ -156,8 +164,70 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     _next?.cancel();
     _bubble?.cancel();
     _leave?.cancel();
+    _speakToken++;
+    _speakingQuestion = false;
     _speaker.stop();
     super.dispose();
+  }
+
+  Future<void> _speakQuestion(String line) async {
+    final token = ++_speakToken;
+    _speakingQuestion = true;
+    try {
+      await _speaker.speak(line);
+    } finally {
+      if (_speakToken == token) {
+        _speakingQuestion = false;
+      }
+    }
+  }
+
+  void _onIncomingSticker(RoomSticker? s) {
+    if (s == null || s.seq == _lastHandledStickerSeq) return;
+    _lastHandledStickerSeq = s.seq;
+
+    final race = ref.read(raceControllerProvider);
+    if (race.phase != RacePhase.racing) return;
+
+    final teaseOn = ref.read(teaseStickersProvider).valueOrNull ?? true;
+    if (isTeaseSticker(s.id) && !teaseOn) {
+      return;
+    }
+
+    final room = ref.read(roomControllerProvider);
+    final scene = _sceneKey.currentState;
+    final phrase = quickPhraseTexts[s.id];
+
+    scene?.playSticker(
+      IncomingStickerEvent(
+        seq: s.seq,
+        fromId: s.from,
+        stickerId: s.id,
+        toId: s.to,
+        bubbleText: phrase,
+      ),
+    );
+
+    if (phrase != null && !_speakingQuestion && !race.paused) {
+      unawaited(_speaker.speak(phrase));
+    }
+
+    if (isTeaseSticker(s.id) && teaseOn && s.from != room.you) {
+      if (_cheerStage != race.stage) {
+        _cheerStage = race.stage;
+        _cheeredThisStage = false;
+        _teaseTimestamps.clear();
+      }
+      final now = ref.read(stickerClockProvider)();
+      _teaseTimestamps.add(now);
+      _teaseTimestamps.removeWhere(
+        (t) => now.difference(t) > const Duration(seconds: 10),
+      );
+      if (!_cheeredThisStage && _teaseTimestamps.length >= 3) {
+        _cheeredThisStage = true;
+        scene?.playCheerUp();
+      }
+    }
   }
 
   void _onState(RaceState? prev, RaceState next) {
@@ -169,7 +239,7 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
             prev?.questionIndex != next.questionIndex ||
             leavingGate);
     if (next.phase == RacePhase.racing && q != null && shown) {
-      _speaker.speak(spokenRaceIntro(q));
+      unawaited(_speakQuestion(spokenRaceIntro(q)));
     }
     if (prev != null && next.wrongSeq > prev.wrongSeq) {
       _speaker.speak(_tryAgain);
@@ -191,6 +261,8 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
     if (next.phase == RacePhase.finishing && prev?.phase == RacePhase.racing) {
       _finishingSince = DateTime.now();
       _clock.stop();
+      _speakToken++;
+      _speakingQuestion = false;
       _speaker.stop();
       if (_showTryAgain) setState(() => _showTryAgain = false);
     }
@@ -220,20 +292,29 @@ class _RaceScreenState extends ConsumerState<RaceScreen>
   void _speakAgain() {
     final q = ref.read(raceControllerProvider).current;
     // The listen button repeats the question itself, comet or not.
-    if (q != null) _speaker.speak(spokenRaceQuestion(q));
+    if (q != null) unawaited(_speakQuestion(spokenRaceQuestion(q)));
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen<RaceState>(raceControllerProvider, _onState);
+    if (widget.rival != null) {
+      ref.listen<RoomSticker?>(
+        roomControllerProvider.select((s) => s.sticker),
+        (_, next) => _onIncomingSticker(next),
+      );
+    }
     final paused = ref.watch(raceControllerProvider.select((s) => s.paused));
     final form = context.formFactor;
     final tablet = context.isTablet;
     final landscape = form == FormFactor.tabletLandscape;
     final safeBottom = MediaQuery.paddingOf(context).bottom;
+    final isOnline = widget.rival != null;
     final double bottomInset = landscape
         ? 0.0
-        : (tablet ? 310.0 : 256.0 + safeBottom);
+        : isOnline
+            ? (tablet ? 400.0 : 328.0 + safeBottom)
+            : (tablet ? 310.0 : 256.0 + safeBottom);
 
     final scene = Consumer(
       builder: (context, ref, _) {
@@ -852,6 +933,7 @@ class AnswerDesk extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(raceControllerProvider.select((s) => (
           phase: s.phase,
+          online: s.online,
           questions: s.questions,
           questionIndex: s.questionIndex,
           wrongKey: s.wrongKey,
@@ -906,7 +988,7 @@ class AnswerDesk extends ConsumerWidget {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: landscape ? 32 : (tablet ? 32 : 16),
-              vertical: tablet ? 18 : 14,
+              vertical: state.online && !tablet ? 10 : (tablet ? 18 : 14),
             ),
             child: q == null
                 ? _CockpitPlaceholder(tablet: tablet, landscape: landscape)
@@ -922,6 +1004,10 @@ class AnswerDesk extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (landscape) const Spacer(),
+                      if (state.online) ...[
+                        const _OnlineStickerBar(),
+                        SizedBox(height: tablet ? 10 : 6),
+                      ],
 
                       // Top instrument bar: Speed Gauge (left) & Co-pilot Chíp (right)
                       Row(
@@ -1298,7 +1384,7 @@ class _CockpitPlaceholder extends StatelessWidget {
 
 typedef FloatingCockpitHUD = AnswerDesk;
 
-/// Temporary board + quick-phrase placeholder row shown while the 2.5 s
+/// Temporary board + live sticker/quick-phrase row shown while the 2.5 s
 /// Star Gate scene plays between online stages so the kid cannot tap answers.
 class _StarGateBoard extends StatelessWidget {
   const _StarGateBoard({
@@ -1311,15 +1397,8 @@ class _StarGateBoard extends StatelessWidget {
   final bool tablet;
   final bool landscape;
 
-  static const _quickPlaceholders = [
-    'Tớ sắp tới rồi!',
-    'Cậu nhanh quá!',
-    'Bắt tớ đi!',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final keyHeight = tablet ? 88.0 : 66.0;
     return Column(
       key: const ValueKey('star-gate-board'),
       mainAxisSize: landscape ? MainAxisSize.max : MainAxisSize.min,
@@ -1381,40 +1460,125 @@ class _StarGateBoard extends StatelessWidget {
           ),
         ),
         SizedBox(height: tablet ? 14 : 10),
-        SizedBox(
-          height: keyHeight,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _quickPlaceholders.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (_, i) => Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: tablet ? 16 : 12,
-                  vertical: tablet ? 12 : 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  border: Border.all(
-                    color: GameColors.questionCardEdge,
-                    width: 1.5,
-                  ),
-                ),
-                child: Text(
-                  _quickPlaceholders[i],
-                  style: TextStyle(
-                    fontSize: tablet ? 16 : 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+        const _OnlineStickerBar(),
         if (landscape) const Spacer(),
       ],
+    );
+  }
+}
+
+String? _bestActiveRivalId(RoomState room) {
+  final activeOthers = room.others.where((p) => !p.left).toList();
+  if (activeOthers.isEmpty) return null;
+  activeOthers.sort((a, b) {
+    final ar = a.rank ?? 99, br = b.rank ?? 99;
+    return ar != br ? ar - br : b.steps - a.steps;
+  });
+  return activeOthers.first.id;
+}
+
+/// Compact horizontal bar of cheer stickers, tease stickers (when enabled by
+/// parent), and quick phrases in online races. Isolated in its own
+/// [RepaintBoundary] so cooldown locks never rebuild [_QuestionCard].
+class _OnlineStickerBar extends ConsumerWidget {
+  const _OnlineStickerBar();
+
+  static const _cheerIds = ['cheer', 'love', 'party'];
+  static const _teaseIds = [
+    'bubble',
+    'tongue',
+    'byebye',
+    'rain',
+    'sleepy',
+    'turtle',
+    'smoke',
+  ];
+  static const _phraseIds = [
+    'q_almost',
+    'q_fast',
+    'q_oops',
+    'q_chase',
+    'q_again',
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tablet = context.isTablet;
+    final btnSize = tablet ? 80.0 : 64.0;
+    final teaseOn = ref.watch(teaseStickersProvider).valueOrNull ?? true;
+    final lockedUntil =
+        ref.watch(roomControllerProvider.select((s) => s.stickerLockedUntil));
+    final locked = lockedUntil != null &&
+        lockedUntil.isAfter(ref.read(stickerClockProvider)());
+
+    final ids = <String>[
+      ..._cheerIds,
+      if (teaseOn) ..._teaseIds,
+      ..._phraseIds,
+    ];
+
+    return RepaintBoundary(
+      child: SizedBox(
+        key: const ValueKey('online-sticker-bar'),
+        height: btnSize,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: ids.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final id = ids[index];
+            final phrase = quickPhraseTexts[id];
+            final art = roomStickerArt[id];
+            void onTap() {
+              final roomState = ref.read(roomControllerProvider);
+              final target =
+                  isTeaseSticker(id) ? _bestActiveRivalId(roomState) : null;
+              ref.read(roomControllerProvider.notifier).sticker(id, to: target);
+            }
+
+            if (phrase != null) {
+              return Pressable(
+                key: ValueKey('race-sticker-$id'),
+                semanticsLabel: phrase,
+                onTap: locked ? null : onTap,
+                builder: (pressed) => Container(
+                  constraints: BoxConstraints(
+                    minWidth: btnSize,
+                    minHeight: btnSize,
+                  ),
+                  height: btnSize,
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.symmetric(horizontal: tablet ? 16 : 12),
+                  decoration: raisedDecoration(
+                    tint: locked ? GameColors.lockedFill : AppColors.card,
+                    pressed: pressed,
+                  ),
+                  child: Text(
+                    phrase,
+                    style: TextStyle(
+                      fontSize: tablet ? 16 : 13,
+                      fontWeight: FontWeight.w800,
+                      color: locked ? GameColors.lockedInk : GameColors.ink,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            if (art == null) {
+              return SizedBox(width: btnSize, height: btnSize);
+            }
+            return StickerImageTile(
+              tileKey: ValueKey('race-sticker-$id'),
+              size: btnSize,
+              asset: art.$1,
+              label: art.$2,
+              locked: locked,
+              onTap: onTap,
+            );
+          },
+        ),
+      ),
     );
   }
 }

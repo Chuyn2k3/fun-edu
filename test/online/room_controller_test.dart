@@ -356,4 +356,92 @@ void main() {
     expect(s.me?.steps, 3);
     expect(s.others.single.id, 'p2');
   });
+
+  test('roomStickers includes all 19 whitelisted ids and parses incoming to',
+      () async {
+    expect(
+      roomStickers.toSet(),
+      equals({
+        'cheer',
+        'love',
+        'party',
+        'bubble',
+        'tongue',
+        'byebye',
+        'rain',
+        'sleepy',
+        'turtle',
+        'smoke',
+        'wow',
+        'fast',
+        'hi',
+        'gg',
+        'q_almost',
+        'q_fast',
+        'q_oops',
+        'q_chase',
+        'q_again',
+      }),
+    );
+
+    final c = container();
+    await c.read(roomControllerProvider.notifier).join('ABC234', kid);
+    sockets.single.push({'t': 'sticker', 'from': 'p2', 'id': 'bubble', 'to': 'p1'});
+    await Future<void>.delayed(Duration.zero);
+
+    final st = c.read(roomControllerProvider).sticker;
+    expect(st, isNotNull);
+    expect(st!.from, 'p2');
+    expect(st.id, 'bubble');
+    expect(st.to, 'p1');
+  });
+
+  test('sticker button locks for 3 s and forwards target player id', () async {
+    var clock = DateTime(2026, 11, 23, 12, 0, 0);
+    final c = ProviderContainer(overrides: [
+      onlineConfigProvider.overrideWithValue(const OnlineConfig(apiUrl: 'https://api.test')),
+      httpClientProvider.overrideWithValue(MockClient((req) async => fakeServer(req))),
+      tokenStoreProvider.overrideWithValue(MemoryTokenStore()
+        ..session = const StoredSession(
+            accessToken: 'a1', refreshToken: 'r1', familyId: 'fam-1', provider: 'google')),
+      identityProvidersProvider.overrideWithValue(FakeIds()),
+      databaseProvider.overrideWithValue(db),
+      stickerClockProvider.overrideWithValue(() => clock),
+      roomConnectorProvider.overrideWithValue((code, token) async {
+        final s = FakeTransport();
+        sockets.add(s);
+        return s;
+      }),
+    ]);
+    addTearDown(c.dispose);
+
+    final room = c.read(roomControllerProvider.notifier);
+    await room.join('ABC234', kid);
+    final s = sockets.single;
+
+    expect(c.read(roomControllerProvider).stickerLockedUntil, isNull);
+
+    // First targeted tease sticker goes out and locks for 3 s.
+    room.sticker('bubble', to: 'p2', now: clock);
+    expect(
+      c.read(roomControllerProvider).stickerLockedUntil,
+      clock.add(const Duration(seconds: 3)),
+    );
+    expect(s.sent.skip(1).toList(), [
+      {'t': 'sticker', 'id': 'bubble', 'to': 'p2'},
+    ]);
+
+    // Within 3 s: ignored silently.
+    clock = clock.add(const Duration(milliseconds: 2999));
+    room.sticker('q_almost', now: clock);
+    expect(s.sent.skip(1).toList(), hasLength(1));
+
+    // At 3 s: unlocked and sends untargeted quick phrase.
+    clock = clock.add(const Duration(milliseconds: 1));
+    room.sticker('q_almost', now: clock);
+    expect(s.sent.skip(1).toList(), [
+      {'t': 'sticker', 'id': 'bubble', 'to': 'p2'},
+      {'t': 'sticker', 'id': 'q_almost'},
+    ]);
+  });
 }
