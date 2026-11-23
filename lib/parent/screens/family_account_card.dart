@@ -175,7 +175,9 @@ class _FamilyAccountCardState extends ConsumerState<FamilyAccountCard> {
         ? 'Đang lưu online…'
         : health.net == NetState.offline
             ? 'Đang offline · ${health.pending} bài chưa lưu, sẽ tự lưu khi có mạng'
-            : sync.failed
+            : health.net == NetState.serverUnreachable
+                ? 'Không kết nối được máy chủ · ${health.pending} bài chưa lưu, sẽ tự lưu khi kết nối lại'
+                : sync.failed
                 ? 'Chưa lưu được, sẽ thử lại khi có mạng'
                 : lastAt == null
                     ? 'Chưa lưu lần nào'

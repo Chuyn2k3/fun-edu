@@ -85,13 +85,16 @@ class SyncHealthNotifier extends Notifier<SyncHealth> {
     }
 
     final initialNet = ref.read(networkStatusProvider);
-    if (initialNet == NetState.offline && _offlineSince == null) {
+    if ((initialNet == NetState.offline ||
+            initialNet == NetState.serverUnreachable) &&
+        _offlineSince == null) {
       _offlineSince = ref.read(syncHealthClockProvider)();
     }
 
     ref.listen<NetState>(networkStatusProvider, (_, nextNet) {
       if (_disposed) return;
-      if (nextNet == NetState.offline) {
+      if (nextNet == NetState.offline ||
+          nextNet == NetState.serverUnreachable) {
         _offlineSince ??= ref.read(syncHealthClockProvider)();
         state = state.copyWith(net: nextNet, offlineSince: _offlineSince);
       } else {

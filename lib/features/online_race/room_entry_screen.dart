@@ -59,8 +59,13 @@ class _RoomEntryScreenState extends ConsumerState<RoomEntryScreen> {
   }
 
   Future<void> _go() async {
-    if (ref.read(networkStatusProvider) == NetState.offline) {
+    final net = ref.read(networkStatusProvider);
+    if (net == NetState.offline) {
       setState(() => _error = 'Cần có mạng để đua với bạn nhé');
+      return;
+    }
+    if (net == NetState.serverUnreachable) {
+      setState(() => _error = 'Chưa kết nối được với máy chủ FunEdu, thử lại sau nhé');
       return;
     }
     final code = _code.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');

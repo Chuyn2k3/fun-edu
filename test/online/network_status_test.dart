@@ -126,7 +126,16 @@ void main() {
     container.read(networkStatusProvider.notifier).reportOk();
     expect(container.read(networkStatusProvider), NetState.online);
 
-    // Network error sets state to offline
+    // Network error when physical connection is present sets state to serverUnreachable
+    container.read(networkStatusProvider.notifier).reportNetworkError();
+    expect(container.read(networkStatusProvider), NetState.serverUnreachable);
+
+    // When physical connection drops: state becomes offline
+    fakeConnectivity.emit(false);
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(networkStatusProvider), NetState.offline);
+
+    // Network error when physical connection is missing sets state to offline
     container.read(networkStatusProvider.notifier).reportNetworkError();
     expect(container.read(networkStatusProvider), NetState.offline);
   });

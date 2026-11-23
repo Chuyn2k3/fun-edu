@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../game/data/game_repository.dart';
 import '../api_client.dart';
 import '../auth/session_controller.dart';
+import '../net/network_status.dart';
 import 'room_transport.dart';
 
 enum RoomPhase { idle, connecting, lobby, countdown, racing, done, error }
@@ -161,14 +162,23 @@ class RoomController extends Notifier<RoomState> {
       res = await ref.read(sessionProvider.notifier).authorized((t) =>
           ref.read(apiClientProvider).post('/api/v1/rooms', const {}, accessToken: t));
     } on ApiException catch (e) {
+      final isOffline = ref.read(networkStatusProvider) == NetState.offline;
       state = RoomState(
           phase: RoomPhase.error,
-          error: e.unauthorized ? 'signed_out' : (e.status == 429 ? 'too_many' : 'network'));
+          error: e.unauthorized
+              ? 'signed_out'
+              : (e.status == 429
+                  ? 'too_many'
+                  : (isOffline ? 'network' : 'server_unreachable')));
       return;
     }
     final code = res?['code'] as String?;
     if (code == null) {
-      state = const RoomState(phase: RoomPhase.error, error: 'network');
+      final isOffline = ref.read(networkStatusProvider) == NetState.offline;
+      state = RoomState(
+        phase: RoomPhase.error,
+        error: isOffline ? 'network' : 'server_unreachable',
+      );
       return;
     }
     await join(code, kid);
@@ -262,10 +272,11 @@ class RoomController extends Notifier<RoomState> {
   Future<void> _retryOrFail(String code) async {
     if (_disposed || _leaving) return;
     if (_retries >= _retryDelays.length) {
+      final isOffline = ref.read(networkStatusProvider) == NetState.offline;
       state = state.copyWith(
         phase: RoomPhase.error,
         code: code,
-        error: 'network',
+        error: isOffline ? 'network' : 'server_unreachable',
         reconnecting: false,
       );
       return;

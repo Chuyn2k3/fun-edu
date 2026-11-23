@@ -209,7 +209,9 @@ Trạng thái kiểm tra (2026-11-23): `flutter analyze` sạch, **4718 test Dar
 
 ## 8. Làm gì tiếp (theo spec, mục 10)
 
-0. **Việc kế tiếp (2026-11-23):** Đã hoàn thành toàn bộ kế hoạch 12 task trong `docs/superpowers/plans/2026-11-23-online-offline-muot.md` và kế hoạch sửa lỗi liên kết máy (`docs/superpowers/plans/2026-11-23-sua-loi-review-lien-ket-may.md`). Còn lại: đưa máy chủ lên Oracle (`2D-7`: tên miền, `.env`, Cloudflare, cron sao lưu/khôi phục thử), cấu hình Google/Apple client id thật, và thử tay 2 máy thật cho đồng bộ nhiều thiết bị + phòng đua mạng yếu theo `docs/online-setup.md`. Chữ hoa cần chủ dự án duyệt `capitals-sheet.png`.
+0. **Việc kế tiếp (2026-11-23):**
+   - Đã phân biệt rõ ràng 2 trạng thái: `NetState.offline` (thiết bị mất kết nối Wi-Fi/4G) và `NetState.serverUnreachable` (có kết nối mạng nhưng máy chủ FunEdu không phản hồi/lỗi). Cập nhật dialog và thông báo thân thiện cho bé ("Chưa kết nối được với trạm vũ trụ") và ba mẹ.
+   - Đã hoàn thành toàn bộ kế hoạch 12 task trong `docs/superpowers/plans/2026-11-23-online-offline-muot.md` và kế hoạch sửa lỗi liên kết máy (`docs/superpowers/plans/2026-11-23-sua-loi-review-lien-ket-may.md`). Còn lại: đưa máy chủ lên Oracle (`2D-7`: tên miền, `.env`, Cloudflare, cron sao lưu/khôi phục thử), cấu hình Google/Apple client id thật, và thử tay 2 máy thật cho đồng bộ nhiều thiết bị + phòng đua mạng yếu theo `docs/online-setup.md`. Chữ hoa cần chủ dự án duyệt `capitals-sheet.png`.
    **Đã làm (2026-11-19):**
    - **Sửa 4 lỗi nhỏ trước beta:** Đã xong 100% (`8aab810`, `2f574dc`, `b540b5c`, `c09276c`, `babbd83`), đã push `chipchip`.
    - **Đua tên lửa đồng bộ thiết kế, bỏ "nét AI":** `docs/superpowers/plans/2026-11-19-dua-ten-lua-dong-bo-thiet-ke.md`.

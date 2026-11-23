@@ -487,10 +487,22 @@ class _SoonRow extends ConsumerWidget {
       _soon(context);
       return;
     }
-    if (ref.read(networkStatusProvider) == NetState.offline) {
+    final net = ref.read(networkStatusProvider);
+    if (net == NetState.offline) {
       await showAppDialog<void>(
         context,
         title: 'Cần có mạng để đua với bạn nhé',
+        primaryLabel: 'Được rồi',
+        audience: AppAudience.kid,
+        image: AppImages.chipEncourage,
+      );
+      return;
+    }
+    if (net == NetState.serverUnreachable) {
+      await showAppDialog<void>(
+        context,
+        title: 'Chưa kết nối được với trạm vũ trụ',
+        message: 'Máy chủ đang bận hoặc chưa bật, bạn thử lại sau nhé!',
         primaryLabel: 'Được rồi',
         audience: AppAudience.kid,
         image: AppImages.chipEncourage,

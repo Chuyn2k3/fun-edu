@@ -56,6 +56,8 @@ String roomErrorText(String? code) => switch (code) {
       'signed_out' => 'Ba mẹ cần đăng nhập lại Tài khoản gia đình',
       'need_two' => 'Cần ít nhất 2 bạn để bắt đầu',
       'not_host' => 'Chủ phòng sẽ bắt đầu nhé',
+      'server_unreachable' => 'Không kết nối được tới máy chủ FunEdu. Thử lại sau nhé',
+      'network' => 'Không có kết nối mạng. Kiểm tra lại Wi-Fi hoặc 4G nhé',
       _ => 'Mất kết nối. Kiểm tra mạng rồi thử lại nhé',
     };
 

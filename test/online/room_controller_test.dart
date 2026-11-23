@@ -166,7 +166,7 @@ void main() {
     await sockets.single.drop();
     await Future<void>.delayed(const Duration(milliseconds: 100));
     expect(c.read(roomControllerProvider).phase, RoomPhase.error);
-    expect(c.read(roomControllerProvider).error, 'network');
+    expect(c.read(roomControllerProvider).error, 'server_unreachable');
   });
 
   test('steps, stickers, start, again and leave go out as messages', () async {

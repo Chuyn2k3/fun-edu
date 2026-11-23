@@ -34,6 +34,18 @@ class _OfflineConn implements ConnectivitySource {
   Future<void> dispose() => _ctrl.close();
 }
 
+class _OnlineConn implements ConnectivitySource {
+  final _ctrl = StreamController<bool>.broadcast();
+
+  @override
+  Stream<bool> get hasConnection => _ctrl.stream;
+
+  @override
+  Future<bool> check() async => true;
+
+  Future<void> dispose() => _ctrl.close();
+}
+
 RoomPlayer _rp(
   String id, {
   int steps = 0,
@@ -304,6 +316,43 @@ void main() {
     expect(find.text('Cần có mạng để đua với bạn nhé'), findsOneWidget);
     expect(find.byType(ParentGate), findsNothing);
     expect(networkCalls, 0);
+  });
+
+  testWidgets('server unreachable invite shows trạm vũ trụ dialog without gate or HTTP',
+      (t) async {
+    final conn = _OnlineConn();
+    addTearDown(conn.dispose);
+    var networkCalls = 0;
+
+    await bootGame(t, extra: [
+      onlineConfigProvider
+          .overrideWithValue(const OnlineConfig(apiUrl: 'https://api.test')),
+      connectivitySourceProvider.overrideWithValue(conn),
+      httpClientProvider.overrideWithValue(MockClient((_) async {
+        networkCalls++;
+        return http.Response('', 500);
+      })),
+    ]);
+    appRouter.go('/game');
+    await pumpReal(t, times: 6);
+    expect(find.byType(GameHubScreen), findsOneWidget);
+
+    final c = ProviderScope.containerOf(t.element(find.byType(GameHubScreen)));
+    c.read(networkStatusProvider.notifier).reportNetworkError();
+    await pumpReal(t, times: 2);
+
+    await t.tap(find.text('Mời bạn đua'));
+    await pumpReal(t, times: 4);
+
+    expect(find.byType(ParentGate), findsNothing);
+    expect(find.text('Chưa kết nối được với trạm vũ trụ'), findsOneWidget);
+    expect(find.text('Máy chủ đang bận hoặc chưa bật, bạn thử lại sau nhé!'), findsOneWidget);
+    expect(find.text('Được rồi'), findsOneWidget);
+    expect(networkCalls, 0);
+
+    await t.tap(find.text('Được rồi'));
+    await pumpReal(t, times: 4);
+    expect(find.text('Chưa kết nối được với trạm vũ trụ'), findsNothing);
   });
 
   testWidgets('lobby shows away countdown for disconnected friend', (t) async {

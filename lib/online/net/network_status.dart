@@ -9,6 +9,7 @@ import '../online_config.dart';
 enum NetState {
   unknown,
   offline,
+  serverUnreachable,
   online,
 }
 
@@ -58,6 +59,7 @@ final connectivitySourceProvider = Provider<ConnectivitySource>((ref) {
 class NetworkStatus extends Notifier<NetState> {
   final _maybeBackController = StreamController<void>.broadcast();
   StreamSubscription<bool>? _connectivitySub;
+  bool _hasPhysicalConn = true;
 
   Stream<void> get maybeBack => _maybeBackController.stream;
 
@@ -82,7 +84,14 @@ class NetworkStatus extends Notifier<NetState> {
   void _startListening() {
     _connectivitySub?.cancel();
     final source = ref.read(connectivitySourceProvider);
+    unawaited(source.check().then((hasConn) {
+      _hasPhysicalConn = hasConn;
+      if (!hasConn) {
+        state = NetState.offline;
+      }
+    }));
     _connectivitySub = source.hasConnection.listen((hasConn) {
+      _hasPhysicalConn = hasConn;
       if (!hasConn) {
         state = NetState.offline;
       } else {
@@ -99,11 +108,22 @@ class NetworkStatus extends Notifier<NetState> {
   }
 
   void reportOk() {
+    _hasPhysicalConn = true;
     state = NetState.online;
   }
 
-  void reportNetworkError() {
-    state = NetState.offline;
+  void reportNetworkError({bool? hasConnection}) {
+    if (hasConnection != null) {
+      _hasPhysicalConn = hasConnection;
+      state = hasConnection ? NetState.serverUnreachable : NetState.offline;
+      return;
+    }
+    final source = ref.read(connectivitySourceProvider);
+    unawaited(source.check().then((hasConn) {
+      _hasPhysicalConn = hasConn;
+      state = hasConn ? NetState.serverUnreachable : NetState.offline;
+    }));
+    state = _hasPhysicalConn ? NetState.serverUnreachable : NetState.offline;
   }
 }
 
