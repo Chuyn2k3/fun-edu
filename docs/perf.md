@@ -36,6 +36,24 @@ rm -rf test/_shot
 
 ## Đua Bạn Bè (2D/2B2) — Sảnh, Phòng đua 4 người, Tải máy chủ & App
 
+### Đo màn đua online trên máy thật (một lệnh)
+
+Cắm điện thoại (Android tầm trung hoặc iPhone 11), rồi:
+
+```
+flutter run --profile -t tools/perf/online_race_perf_main.dart
+```
+
+Màn này chạy cảnh đua online 4 tên lửa như trận thật (cập nhật vị trí mỗi 200 ms, sticker bay mỗi 0,8 s), không cần máy chủ. Sau khoảng 25 giây, kết quả hiện trên màn hình và in ra console giữa hai dòng `===== PERF ONLINE RACE =====`. **Đạt** khi: fps ≥ 58, không khung nào > 32 ms, build và raster trung bình ≤ 8 ms (spec §9.1). Dán kết quả vào bảng dưới.
+
+| Máy | Ngày | fps | Build avg / p99 | Raster avg / p99 | Khung > 32 ms | Kết luận |
+|---|---|---|---|---|---|---|
+| (chưa đo) | | | | | | |
+
+### Đo máy chủ trên Oracle A1
+
+Trên máy Oracle (đã có Java 21 và PostgreSQL theo `server/deploy`), chạy đúng lệnh kiểm tải ở mục 1 với mục tiêu spec §9.2 (5.000 kết nối sảnh + 1.000 phòng): `LOAD_LOBBY_FAMILIES=1250 LOAD_ROOMS=1000 LOAD_TEST_SECONDS=60 ./gradlew loadTest`. Đạt khi p99 phòng ≤ 150 ms, p99 lời mời ≤ 300 ms, CPU ≤ 60 %. Ghi số vào bảng mục 1.
+
 ### 1. Kết quả kiểm tải máy chủ (`LobbyRoomLoadTest`)
 
 Kiểm thử chạy trên môi trường thực tế (Java 21, Spring Boot 3.3.5, PostgreSQL 16 local, virtual threads) theo đúng quy mô Spec §9.2:
