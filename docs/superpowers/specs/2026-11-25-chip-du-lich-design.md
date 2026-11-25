@@ -77,7 +77,7 @@ Hành trình **dài, lưu lại** (chủ dự án chọn), không chơi theo ch�
 ### 5.2 Một lần chơi
 
 - 10 câu, 3 lựa chọn, lấy bằng `buildRaceQuestions(...)` theo cấp hiện tại của bé.
-  - Xen kẽ Toán và Tiếng Việt: câu chẵn Toán, câu lẻ Tiếng Việt.
+  - Xen kẽ Toán và Tiếng Việt: câu chẵn Toán, câu lẻ Tiếng Việt. Gọi `buildRaceQuestions` hai lần với `count: 5` rồi xen kẽ; bỏ cờ sao chổi bằng `withComet(false)` (hàm này luôn đặt sao chổi ở câu 2, 5, 8).
   - Không có màn chọn môn: một chạm là chơi.
   - Không dùng sao chổi.
   - *(Quyết định của người viết spec.)*
@@ -86,6 +86,7 @@ Hành trình **dài, lưu lại** (chủ dự án chọn), không chơi theo ch�
   - Sai rồi mới đúng: đi **1 bước**.
   - Chọn sai: ô rung, Chíp động viên, bé chọn lại. Không bao giờ lùi.
   - Một lần chơi đi tối đa 20 bước, nên mỗi lần qua được khoảng 3–5 trạm.
+  - **Bước đi qua trạm** (ví dụ từ ô 3 lên ô 5, trạm ở ô 4): Chíp dừng ở trạm, hiện bưu thiếp, bé chạm "Đi tiếp" thì Chíp đi nốt bước còn lại. Không mất bước. *(Quyết định của người viết spec.)*
 - **Tới trạm:**
   - Chíp dừng, bưu thiếp lật ra giữa màn, hiện ảnh địa danh và tên.
   - Chíp đọc `speech` rồi `fact` (thời gian chờ theo `geographyAnswerPause`).
@@ -127,7 +128,10 @@ Hành trình **dài, lưu lại** (chủ dự án chọn), không chơi theo ch�
 - Điện thoại dọc: bàn cờ ở trên (khoảng 45% chiều cao), bàn trả lời ở dưới.
 - Tablet ngang: bàn cờ bên trái (khoảng 60%), bàn trả lời bên phải; giống tỉ lệ 60/40 của màn đua trên iPad ngang.
 
-Bàn trả lời **dùng lại** widget của đua tên lửa, gồm phím, loa và chuyện rung khi chọn sai. Builder tách ra phần dùng chung nếu cần, nhưng không đổi hành vi của đua tên lửa.
+Bàn trả lời **dùng lại** phần hiển thị của đua tên lửa, nhưng phải tách ra trước:
+- `AnswerDesk` (`part of race_screen.dart`) đọc thẳng `raceControllerProvider`, và có phần riêng của trận đua: đồng hồ năng lượng/bứt tốc, bong bóng sao chổi.
+- Phím và rung khi sai (`AnswerKeys`, `answer_keys.dart`) thì đã độc lập.
+- Builder tách thẻ câu hỏi, nút loa và nhãn phím thành một widget không phụ thuộc controller, rồi cho `AnswerDesk` bọc widget đó. Hành vi đua tên lửa không đổi; các test đua hiện có phải đạt nguyên.
 
 ### 5.4 Sổ tem `/game/postcards`
 
@@ -169,13 +173,18 @@ Phải giữ nguyên các test Góc Chơi hiện có khi công tắc tắt. Ản
 ### 5.6 Dữ liệu
 
 - `GameRepository`:
-  - `Future<int> tripStep()`: đọc `trip.step`, kẹp trong 0..120.
+  - `Future<int> tripStep()`: đọc `trip.step`, kẹp trong 0..120. Sau khi đồng bộ, giá trị lưu có thể lớn hơn 120 (tổng của hai máy); mọi chỗ đọc đều phải kẹp, và **không bao giờ ghi giá trị đã kẹp ngược lại** bằng `_setCounter`.
   - `Future<TripAdvance> advanceTrip(int steps)`: tăng bộ đếm qua `_bumpCounter` (đồng bộ theo máy như các bộ đếm khác), không vượt 120. Kết quả trả về:
     - bước cũ và bước mới;
     - danh sách bưu thiếp mới;
-    - số sao vũ trụ đã cộng (+2 cho mỗi bưu thiếp mới), cộng trong cùng transaction.
+    - số sao vũ trụ đã cộng, cộng trong cùng transaction. `_bumpCounter` không tự mở transaction, nên `advanceTrip` phải tự bọc.
   - `Future<void> recordTripAnswer()`: +1 sao vũ trụ cho câu đúng ngay lần đầu. Builder có thể gộp vào `advanceTrip`.
 - Danh sách trạm: `List<GeoItem> tripStops` lấy từ `geographyLevels.skip(3)`, đặt trong `lib/game/travel/` (engine thuần Dart, không gọi mạng).
+- **Bưu thiếp đến từ máy khác.** Bé chơi trên hai máy lúc offline thì sau khi đồng bộ, vị trí nhảy xa hơn và có bưu thiếp bé chưa được xem lật ra. Mỗi máy giữ một mốc **chỉ lưu trên máy** "đã cho xem tới trạm nào": setting `tripShown.<kidId>`, nằm ngoài danh sách setting được đồng bộ. Nếu vị trí vượt mốc đó:
+  - Góc Chơi hiện chấm "Bưu thiếp mới!" trên thẻ Sổ tem;
+  - mở Sổ tem thì các bưu thiếp đó lật ra lần lượt, rồi mốc được cập nhật.
+
+  Hai máy có thể cùng cho xem (và cùng cộng sao) cho vài bưu thiếp đầu; chấp nhận được. *(Quyết định của người viết spec.)*
 - Lần chơi không lưu vào `race_results`; không ảnh hưởng thống kê và huy hiệu của đua tên lửa.
 - Provider cho Góc Chơi: `tripProgressProvider` gồm vị trí, số bưu thiếp và trạm kế tiếp. Làm mới sau mỗi lần chơi và sau đồng bộ, giống cách làm mới `gameHubProvider` hiện nay.
 
