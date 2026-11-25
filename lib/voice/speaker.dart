@@ -58,6 +58,9 @@ class TtsSpeaker implements MultilingualSpeaker {
       final lang = await tts.setLanguage('vi-VN');
       if (lang != 1) return false;
       _language = 'vi-VN';
+      // speak() then completes when the line ends, so screens can wait for
+      // Chíp to finish before the next line stops this one.
+      await tts.awaitSpeakCompletion(true);
       await tts.setSpeechRate(0.45);
       await tts.setPitch(1.1);
       return true;

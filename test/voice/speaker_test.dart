@@ -61,6 +61,16 @@ void main() {
     expect(calls.indexOf('stop'), lessThan(calls.indexOf('speak')));
   });
 
+  test('speak waits for the end of the line', () async {
+    final args = <String, Object?>{};
+    mock((c) async {
+      args[c.method] = c.arguments;
+      return 1;
+    });
+    await TtsSpeaker().speak('xin chào');
+    expect(args['awaitSpeakCompletion'], true);
+  });
+
   test('no Vietnamese voice (setLanguage returns 0) makes it a no-op',
       () async {
     mock((c) async => c.method == 'setLanguage' ? 0 : 1);

@@ -18,6 +18,7 @@ import '../../vietnamese/vietnamese_generator.dart';
 import '../../vietnamese/vietnamese_level.dart';
 import '../../vietnamese/vietnamese_question.dart';
 import '../../voice/speaker.dart';
+import '../../voice/speech_wait.dart';
 
 const _contentMaxWidth = 560.0;
 const _tabletPortraitMaxWidth = 720.0;
@@ -63,7 +64,6 @@ class _VietnameseSessionScreenState
     widget.random ?? Random(),
     count: widget.questionCount,
   );
-  Timer? _timer;
   int _index = 0;
   int _firstTry = 0;
   bool _missed = false;
@@ -84,10 +84,25 @@ class _VietnameseSessionScreenState
 
   void _speakCurrent() => _speaker.speak(_questions[_index].speech);
 
+
+  /// The pending move to the next question, if any.
+  SpeechWait? _pending;
+
+  /// Runs [then] once Chíp has finished [speech] (at least [atLeast]).
+  void _wait(Future<void> speech, Duration atLeast, VoidCallback then,
+      {Duration atMost = const Duration(seconds: 8)}) {
+    _pending?.cancel();
+    final wait = _pending =
+        SpeechWait(speech, atLeast: atLeast, atMost: atMost);
+    wait.done.then((_) {
+      if (mounted && identical(wait, _pending)) then();
+    });
+  }
+
   @override
   void dispose() {
     _speaker.stop();
-    _timer?.cancel();
+    _pending?.cancel();
     super.dispose();
   }
 
@@ -112,17 +127,17 @@ class _VietnameseSessionScreenState
       _chip = AppImages.chipJoy;
       _message = 'Đúng rồi!';
     });
-    _speaker.speak(q.celebrationSpeech);
-    _timer?.cancel();
+    final speech = _speaker.speak(q.celebrationSpeech);
+    _pending?.cancel();
     final last = _index == _questions.length - 1;
     if (last) {
       _finished = true;
-      _timer = Timer(_completeDelay, () {
+      _wait(speech, _completeDelay, () {
         if (mounted) widget.onCompleted(_firstTry, _questions.length);
       });
       return;
     }
-    _timer = Timer(_nextDelay, () {
+    _wait(speech, _nextDelay, () {
       if (!mounted) return;
       setState(() {
         _index++;

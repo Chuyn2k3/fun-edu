@@ -113,12 +113,12 @@ void main() {
     expect(geographyAnswerPause('a ' * 200), const Duration(seconds: 8));
   });
 
-  testWidgets('the next question waits until the fact has been read',
+  testWidgets('with an instant voice the next question comes after 1.6 s',
       (t) async {
     _setSize(t, 390, 844);
     final speaker = await _pump(t);
     await _tapChoice(t, _expected[0].correctIndex);
-    await t.pump(_pauseAfter(0) - const Duration(milliseconds: 100));
+    await t.pump(const Duration(milliseconds: 1500));
     expect(speaker.spoken.last, isNot(_expected[1].speech));
     await t.pump(const Duration(milliseconds: 100));
     expect(speaker.spoken.last, _expected[1].speech);

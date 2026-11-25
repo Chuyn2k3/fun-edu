@@ -17,6 +17,7 @@ import '../../ui/widgets/pressable.dart';
 import '../../ui/widgets/session_header.dart';
 import '../../ui/widgets/speech_bubble.dart';
 import '../../voice/speaker.dart';
+import '../../voice/speech_wait.dart';
 
 const _contentMaxWidth = 560.0;
 const _tabletPortraitMaxWidth = 720.0;
@@ -27,15 +28,17 @@ const _minTabletTile = 140.0;
 const _maxTile = 220.0;
 const _gap = 12.0;
 
-/// How long to stay on a right answer so Chíp can finish reading [spoken]
-/// (name + fact). The device voice is slow (rate 0.45) and the next line
-/// stops the current one, so the pause grows with the sentence: about
-/// 320 ms per Vietnamese syllable, 1.6 s at least, 8 s at most.
+/// Estimated time for Chíp to read [spoken] (name + fact) with the slow
+/// device voice: about 320 ms per Vietnamese syllable, 1.6–8 s. Used as the
+/// upper bound of the wait; the screen moves on as soon as the voice ends.
 Duration geographyAnswerPause(String spoken) {
   final syllables = spoken.trim().split(RegExp(r'\s+')).length;
   final ms = (syllables * 320 + 400).clamp(1600, 8000);
   return Duration(milliseconds: ms);
 }
+
+/// Shortest stay on a right answer, even when the voice is off.
+const _minPause = Duration(milliseconds: 1600);
 
 /// Extra time on the last question before the round closes.
 const _completeExtra = Duration(milliseconds: 200);
@@ -67,7 +70,6 @@ class _GeographySessionScreenState
     widget.random ?? Random(),
     count: widget.questionCount,
   );
-  Timer? _timer;
   int _index = 0;
   int _firstTry = 0;
   bool _missed = false;
@@ -86,10 +88,25 @@ class _GeographySessionScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) => _precache(1));
   }
 
+
+  /// The pending move to the next question, if any.
+  SpeechWait? _pending;
+
+  /// Runs [then] once Chíp has finished [speech] (at least [atLeast]).
+  void _wait(Future<void> speech, Duration atLeast, VoidCallback then,
+      {Duration atMost = const Duration(seconds: 8)}) {
+    _pending?.cancel();
+    final wait = _pending =
+        SpeechWait(speech, atLeast: atLeast, atMost: atMost);
+    wait.done.then((_) {
+      if (mounted && identical(wait, _pending)) then();
+    });
+  }
+
   @override
   void dispose() {
     _speaker.stop();
-    _timer?.cancel();
+    _pending?.cancel();
     super.dispose();
   }
 
@@ -127,17 +144,19 @@ class _GeographySessionScreenState
       _message = '${a.name}! ${a.fact}';
     });
     final spoken = '${a.speech}. ${a.fact}';
-    _speaker.speak(spoken);
-    final pause = geographyAnswerPause(spoken);
-    _timer?.cancel();
+    final speech = _speaker.speak(spoken);
+    // Never more than the estimated reading time plus a margin, in case
+    // the voice never reports the end.
+    final cap = geographyAnswerPause(spoken) + const Duration(seconds: 3);
+    _pending?.cancel();
     if (_index == _questions.length - 1) {
       _finished = true;
-      _timer = Timer(pause + _completeExtra, () {
+      _wait(speech, _minPause + _completeExtra, atMost: cap + _completeExtra, () {
         if (mounted) widget.onCompleted(_firstTry, _questions.length);
       });
       return;
     }
-    _timer = Timer(pause, () {
+    _wait(speech, _minPause, atMost: cap, () {
       if (!mounted) return;
       setState(() {
         _index++;
