@@ -115,7 +115,7 @@ Giọng đọc `vi-VN`. Tên nước ngoài đọc theo cách người Việt qu
 - **Sảnh `/kham-pha`** (màn mới): tiêu đề "Đảo Khám phá", nút quay về, 3 thẻ đảo dùng `raisedDecoration` + `Pressable`. Điện thoại: 3 thẻ xếp dọc hoặc 1 + 2; tablet: 3 thẻ một hàng. Rẽ nhánh tablet ngay trong file.
 - **Bản đồ `/subject/dia-ly`**: làm theo `english_map_screen.dart` (9 ô, ô đã qua/đang học bấm được, ô sau khóa).
 - **Màn học**: làm theo `english_session_screen.dart` (đầu màn `SessionHeader`, Chíp + bong bóng lời, khu chọn). Khu chọn là 3 thẻ ảnh ≥ 96 trên điện thoại, ≥ 140 trên tablet; tablet ngang đặt Chíp bên trái, ảnh bên phải như Tiếng Anh.
-- **Trang chủ**: thêm thẻ rộng dưới `_SubjectGrid` ở `home_screen.dart` và `home_tablet.dart`. Phải lọt vào ngân sách chiều cao hiện có (`_fits`, chế độ gọn khi chiều cao an toàn < 700). Nếu không lọt thì thu thẻ rộng ở chế độ gọn chứ không đẩy trang chủ sang cuộn trên iPhone 375×667. Kiểm bằng `tools/shot/home_shot_test.dart`.
+- **Trang chủ**: thêm thẻ rộng dưới `_SubjectGrid` ở `home_screen.dart` và `home_tablet.dart`. Phải lọt vào ngân sách chiều cao hiện có (`_fits`, chế độ gọn khi chiều cao an toàn < 700). Trang chủ điện thoại vốn đã là danh sách cuộn được: trên iPhone 375×667, 4 thẻ môn vẫn phải nằm trọn phía trên thanh điều hướng (test hiện có), còn thẻ khám phá có thể nằm dưới và cuộn tới. Trên iPad ngang, thẻ khám phá là thẻ thứ 5 trong cùng hàng môn, để không đổi ngân sách chiều cao. Kiểm bằng `tools/shot/home_shot_test.dart`.
 
 ### 5.5 Dữ liệu và lưu trữ
 
