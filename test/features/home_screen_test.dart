@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:funedu/explore/explore_flags.dart';
 import 'package:funedu/features/home/home_screen.dart';
+import 'package:funedu/features/home/home_tablet.dart';
 import 'package:funedu/features/home/week_panel.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/profile/avatars.dart';
@@ -52,6 +54,13 @@ Widget _app(
         builder: (_, __) {
           visited.add('/house');
           return const Scaffold(body: Text('house stub'));
+        },
+      ),
+      GoRoute(
+        path: '/kham-pha',
+        builder: (_, __) {
+          visited.add('/kham-pha');
+          return const Scaffold(body: Text('explore stub'));
         },
       ),
       GoRoute(
@@ -111,8 +120,126 @@ void _setSize(WidgetTester tester, double w, double h) {
   addTearDown(tester.view.reset);
 }
 
+List<Override> _exploreOn({int geographyLevel = 3}) => [
+      ..._fakes(),
+      exploreIslandEnabledProvider.overrideWithValue(true),
+      homeSummaryProvider.overrideWith(
+        (ref) async => HomeSummary(
+          totalStars: 12,
+          learnedDaysThisWeek: 3,
+          masteredWriting: 2,
+          geographyLevelIndex: geographyLevel,
+        ),
+      ),
+    ];
+
+final _exploreCard = find.ancestor(
+  of: find.text('Đảo Khám phá'),
+  matching: find.byType(SubjectCard),
+);
+
+void exploreCardTests() {
+  testWidgets('explore card is hidden while the switch is off', (t) async {
+    _setSize(t, 390, 844);
+    await t.pumpWidget(_app(_fakes(), []));
+    await t.pumpAndSettle();
+    expect(find.text('Đảo Khám phá'), findsNothing);
+  });
+
+  testWidgets('phone 390x844: explore card spans the grid and opens the hall',
+      (t) async {
+    _setSize(t, 390, 844);
+    final visited = <String>[];
+    await t.pumpWidget(_app(_exploreOn(), visited));
+    await t.pumpAndSettle();
+    expect(_exploreCard, findsOneWidget);
+    final viet = t.getRect(find.ancestor(
+        of: find.text('Viết'), matching: find.byType(SubjectCard)));
+    final english = t.getRect(find.ancestor(
+        of: find.text('Tiếng Anh'), matching: find.byType(SubjectCard)));
+    final explore = t.getRect(_exploreCard);
+    expect(explore.left, closeTo(viet.left, 0.5));
+    expect(explore.right, closeTo(english.right, 0.5));
+    expect(find.descendant(of: _exploreCard, matching: find.text('4/9')),
+        findsOneWidget);
+    await t.ensureVisible(_exploreCard);
+    await t.pumpAndSettle();
+    await t.tap(_exploreCard);
+    await t.pumpAndSettle();
+    expect(visited, ['/kham-pha']);
+  });
+
+  testWidgets('phone 375x667: subjects still above the nav bar, explore below',
+      (t) async {
+    _setSize(t, 375, 667);
+    await t.pumpWidget(_app(_exploreOn(), []));
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    final nav = t.getRect(find.byType(FloatingNavBar));
+    final english = t.getRect(find.ancestor(
+        of: find.text('Tiếng Anh'), matching: find.byType(SubjectCard)));
+    expect(english.bottom, lessThan(nav.top));
+    await t.ensureVisible(_exploreCard);
+    await t.pumpAndSettle();
+    expect(_exploreCard.hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('a level past the ladder shows 9/9', (t) async {
+    _setSize(t, 390, 844);
+    await t.pumpWidget(_app(_exploreOn(geographyLevel: 12), []));
+    await t.pumpAndSettle();
+    expect(find.descendant(of: _exploreCard, matching: find.text('9/9')),
+        findsOneWidget);
+  });
+
+  testWidgets('iPad landscape 1180x820: five cards in one row, still no scroll',
+      (t) async {
+    _setSize(t, 1180, 820);
+    await t.pumpWidget(_app(_fakes(), []));
+    await t.pumpAndSettle();
+    final scrollsOff = find
+        .descendant(
+            of: find.byType(HomeTabletBody),
+            matching: find.byType(SingleChildScrollView))
+        .evaluate()
+        .length;
+    // A fresh scope: overrides cannot change on a live ProviderScope.
+    await t.pumpWidget(KeyedSubtree(key: UniqueKey(), child: _app(_exploreOn(), [])));
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    final english = t.getRect(find.ancestor(
+        of: find.text('Tiếng Anh'), matching: find.byType(SubjectCard)));
+    final explore = t.getRect(_exploreCard);
+    expect(explore.top, closeTo(english.top, 0.5));
+    expect(
+        find
+            .descendant(
+                of: find.byType(HomeTabletBody),
+                matching: find.byType(SingleChildScrollView))
+            .evaluate()
+            .length,
+        scrollsOff);
+  });
+
+  for (final (size, scale) in const [
+    (Size(820, 1180), 1.0),
+    (Size(1133, 744), 1.3),
+    (Size(390, 844), 2.0),
+  ]) {
+    testWidgets('explore on: no overflow at $size, text $scale', (t) async {
+      t.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+      _setSize(t, size.width, size.height);
+      await t.pumpWidget(_app(_exploreOn(), []));
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+    });
+  }
+}
+
 void main() {
   tabletLayoutTests();
+  exploreCardTests();
 
   for (final size in const [Size(1024, 1366), Size(1366, 1024)]) {
     testWidgets(

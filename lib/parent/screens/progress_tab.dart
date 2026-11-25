@@ -12,6 +12,8 @@ import '../../screen_time/screen_time_service.dart';
 import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../english/english_level.dart';
+import '../../explore/explore_flags.dart';
+import '../../explore/geography_level.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../vietnamese/vietnamese_level.dart';
@@ -51,6 +53,7 @@ class ProgressData {
     required this.mathLevel,
     required this.vietnameseLevel,
     required this.englishLevel,
+    this.geographyLevel = 0,
   });
 
   final int usedMinutes;
@@ -61,6 +64,7 @@ class ProgressData {
   final int? mathLevel;
   final int vietnameseLevel;
   final int englishLevel;
+  final int geographyLevel;
 }
 
 /// Progress of any kid, built straight from the database so it never
@@ -80,6 +84,7 @@ final progressDataProvider =
     mathLevel: await levels.levelOf('toan'),
     vietnameseLevel: await levels.levelOf('tieng-viet') ?? 0,
     englishLevel: await levels.levelOf('tieng-anh') ?? 0,
+    geographyLevel: await levels.levelOf('dia-ly') ?? 0,
   );
 });
 
@@ -139,6 +144,10 @@ class ProgressTab extends ConsumerWidget {
           _VietnameseCard(d.vietnameseLevel),
           const SizedBox(height: 12),
           _EnglishCard(d.englishLevel),
+          if (ref.watch(exploreIslandEnabledProvider)) ...[
+            const SizedBox(height: 12),
+            _GeographyCard(d.geographyLevel),
+          ],
         ],
       ),
     );
@@ -462,6 +471,31 @@ class _EnglishCard extends StatelessWidget {
             ),
           ),
           Text('${l + 1}/${englishLevels.length}', style: _bodyStyle),
+        ],
+      ),
+    );
+  }
+}
+
+class _GeographyCard extends StatelessWidget {
+  const _GeographyCard(this.level);
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = level.clamp(0, geographyLevels.length - 1);
+    return _Card(
+      title: 'Địa lý',
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Đang học: ${geographyLevels[l].title}',
+              style: _bodyStyle,
+            ),
+          ),
+          Text('${l + 1}/${geographyLevels.length}', style: _bodyStyle),
         ],
       ),
     );

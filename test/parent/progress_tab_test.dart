@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/explore/explore_flags.dart';
 import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/parent/parent_unlock.dart';
 import 'package:funedu/parent/screens/parent_home.dart';
+import 'package:funedu/parent/screens/progress_tab.dart';
 import 'package:funedu/profile/avatars.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/progress/level_repository.dart';
@@ -23,6 +25,10 @@ const _labels = {
   'net-thang-dung': 'Nét thẳng đứng',
   'so-1': 'Số 1',
 };
+
+final _progressScroll = find
+    .descendant(of: find.byType(ProgressTab), matching: find.byType(Scrollable))
+    .first;
 
 late AppDatabase db;
 late int na;
@@ -53,7 +59,7 @@ List<Override> _overrides() => [
     ];
 
 Future<void> _pumpParent(WidgetTester t,
-    {Size? size, bool unlocked = false}) async {
+    {Size? size, bool unlocked = false, bool explore = false}) async {
   setSize(t, size?.width ?? 375, size?.height ?? 667);
   final router = GoRouter(routes: [
     GoRoute(path: '/', builder: (_, __) => const Text('trang chủ')),
@@ -62,6 +68,7 @@ Future<void> _pumpParent(WidgetTester t,
   await t.pumpWidget(ProviderScope(
     overrides: [
       ..._overrides(),
+      if (explore) exploreIslandEnabledProvider.overrideWithValue(true),
       if (unlocked)
         parentUnlockedUntilProvider
             .overrideWith((ref) => DateTime.now().add(parentUnlockDuration)),
@@ -222,6 +229,32 @@ void main() {
     expect(find.text('12/12'), findsOneWidget);
     expect(find.text('Đang học: Tiền Việt Nam'), findsOneWidget);
     expect(find.text('Tổng 0 sao'), findsOneWidget);
+  });
+
+  testWidgets('geography card shows once the explore island is on',
+      (tester) async {
+    await _pumpParent(tester, unlocked: true, explore: true);
+    await tester.scrollUntilVisible(find.text('Địa lý'), 200,
+        scrollable: _progressScroll);
+    expect(find.text('Đang học: Cảnh vật quanh em'), findsOneWidget);
+    // Vietnamese and English are at 1/9 too.
+    expect(find.text('1/9'), findsNWidgets(3));
+  });
+
+  testWidgets('geography level past the ladder reads 9/9', (tester) async {
+    await LevelRepository(db, kidId: na).setLevel('dia-ly', 12);
+    await _pumpParent(tester, unlocked: true, explore: true);
+    await tester.scrollUntilVisible(find.text('Địa lý'), 200,
+        scrollable: _progressScroll);
+    expect(find.text('9/9'), findsOneWidget);
+  });
+
+  testWidgets('no geography card while the explore island is off',
+      (tester) async {
+    await _pumpParent(tester, unlocked: true);
+    await tester.scrollUntilVisible(find.text('Tiếng Anh'), 200,
+        scrollable: _progressScroll);
+    expect(find.text('Địa lý'), findsNothing);
   });
 
   testWidgets('tapping In phiếu tập tô opens WorksheetScreen for selected kid',

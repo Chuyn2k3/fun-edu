@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../explore/explore_flags.dart';
+import '../../explore/geography_level.dart';
 import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
@@ -88,6 +90,7 @@ class HomeScreen extends ConsumerWidget {
           loading: loading,
           showSyncChip: showSyncChip,
           banner: showBanner ? const SyncReminderBanner() : null,
+          showExplore: ref.watch(exploreIslandEnabledProvider),
         ),
       ),
     );
@@ -113,9 +116,11 @@ class _HomeBody extends StatelessWidget {
     this.loading = false,
     this.showSyncChip = false,
     this.banner,
+    this.showExplore = false,
   });
 
   final bool loading;
+  final bool showExplore;
   final bool showSyncChip;
   final Widget? banner;
   final PendingReward? reward;
@@ -255,6 +260,8 @@ class _HomeBody extends StatelessWidget {
                     mathLevelIndex: summary.mathLevelIndex,
                     vietnameseLevelIndex: summary.vietnameseLevelIndex,
                     englishLevelIndex: summary.englishLevelIndex,
+                    geographyLevelIndex: summary.geographyLevelIndex,
+                    showExplore: showExplore,
                     compact: compact,
                     gap: compact ? 8 : 12,
                   ),
@@ -332,7 +339,11 @@ class _HomeBody extends StatelessWidget {
         mathLevelIndex: summary.mathLevelIndex,
         vietnameseLevelIndex: summary.vietnameseLevelIndex,
         englishLevelIndex: summary.englishLevelIndex,
-        columns: columns,
+        geographyLevelIndex: summary.geographyLevelIndex,
+        showExplore: showExplore,
+        // Landscape lays the subjects out in one row (4 columns): the
+        // explore card joins that row so the height budget stays the same.
+        columns: showExplore && columns == 4 ? 5 : columns,
         gap: 16,
       ),
     );
@@ -663,6 +674,8 @@ class _SubjectGrid extends StatelessWidget {
     required this.mathLevelIndex,
     required this.vietnameseLevelIndex,
     required this.englishLevelIndex,
+    this.geographyLevelIndex = 0,
+    this.showExplore = false,
     this.columns = 2,
     this.gap = 12,
     this.cardHeight,
@@ -673,6 +686,8 @@ class _SubjectGrid extends StatelessWidget {
   final int mathLevelIndex;
   final int vietnameseLevelIndex;
   final int englishLevelIndex;
+  final int geographyLevelIndex;
+  final bool showExplore;
   final int columns;
   final double gap;
 
@@ -729,6 +744,18 @@ class _SubjectGrid extends StatelessWidget {
         total: englishLevels.length,
         onTap: () => context.push('/subject/tieng-anh'),
       ),
+      if (showExplore)
+        SubjectCard(
+          subject: Subject.diaLy,
+          height: cardHeight,
+          compact: compact,
+          imagePath: AppImages.icKhamPha,
+          title: 'Đảo Khám phá',
+          subtitle: 'Địa lý, Sinh học, Lịch sử',
+          done: geographyLevelIndex.clamp(0, geographyLevels.length - 1) + 1,
+          total: geographyLevels.length,
+          onTap: () => context.push('/kham-pha'),
+        ),
     ];
     return Column(
       children: [
@@ -737,7 +764,8 @@ class _SubjectGrid extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (var j = 0; j < columns; j++) ...[
+              // A short last row shares the full width.
+              for (var j = 0; j < columns && i + j < cards.length; j++) ...[
                 if (j > 0) SizedBox(width: gap),
                 Expanded(child: cards[i + j]),
               ],
