@@ -6,7 +6,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../game/data/badges.dart';
 import '../../game/data/game_repository.dart';
+import '../../explore/explore_flags.dart';
 import '../../game/engine/race_question.dart';
+import '../../game/travel/trip.dart';
+import '../../game/travel/trip_progress.dart';
 import '../../game/scene/rocket_sprite.dart';
 import '../../online/net/network_status.dart';
 import '../../online/online_config.dart';
@@ -119,7 +122,7 @@ class _PhoneHub extends StatelessWidget {
                 children: [
                   _Header(stars: d?.stars),
                   const SizedBox(height: 16),
-                  const SizedBox(height: 280, child: _RaceHero()),
+                  const _GameShelf(heroHeight: 280),
                   const SizedBox(height: 26),
                   const SizedBox(height: 138, child: _SoonRow()),
                   const FriendsRow(bottomGap: 24, topGap: 24),
@@ -137,6 +140,7 @@ class _PhoneHub extends StatelessWidget {
                         Expanded(child: _BadgesEntry(data: d)),
                         const SizedBox(width: 14),
                         Expanded(child: _StickersEntry(data: d)),
+                        const _PostcardsEntry(gap: 14),
                       ],
                     ),
                   ),
@@ -195,8 +199,8 @@ class _TabletHub extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     fill
-                        ? const Expanded(child: _RaceHero())
-                        : const SizedBox(height: 470, child: _RaceHero()),
+                        ? const Expanded(child: _GameShelf())
+                        : const _GameShelf(heroHeight: 470),
                     const SizedBox(height: gap + 8),
                     const SizedBox(height: 176, child: _SoonRow()),
                     const FriendsRow(topGap: gap + 8),
@@ -220,6 +224,7 @@ class _TabletHub extends StatelessWidget {
                           Expanded(child: _BadgesEntry(data: d)),
                           const SizedBox(width: 18),
                           Expanded(child: _StickersEntry(data: d)),
+                          const _PostcardsEntry(gap: 18),
                         ],
                       ),
                     ),
@@ -246,7 +251,7 @@ class _TabletHub extends StatelessWidget {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 420, child: _RaceHero()),
+          const _GameShelf(heroHeight: 420),
           const SizedBox(height: gap + 8),
           const SizedBox(height: 176, child: _SoonRow()),
           const FriendsRow(topGap: gap + 4),
@@ -261,6 +266,7 @@ class _TabletHub extends StatelessWidget {
                 Expanded(child: _BadgesEntry(data: d)),
                 const SizedBox(width: 18),
                 Expanded(child: _StickersEntry(data: d)),
+                const _PostcardsEntry(gap: 18),
               ],
             ),
           ),
@@ -343,6 +349,158 @@ class _Header extends StatelessWidget {
         ),
         CosmicStarsPill(key: const ValueKey('hub-stars'), stars: stars ?? 0),
       ],
+    );
+  }
+}
+
+/// The game shelf: the rocket race alone while the explore island is off;
+/// with it on, the race and "Chíp du lịch" (stacked on phones, side by side
+/// on tablets). More games join as more cards.
+class _GameShelf extends ConsumerWidget {
+  const _GameShelf({this.heroHeight});
+
+  /// Height of the race card; null fills the parent (tablet landscape).
+  final double? heroHeight;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final h = heroHeight;
+    final race = h == null ? const _RaceHero() : SizedBox(height: h, child: const _RaceHero());
+    if (!ref.watch(exploreIslandEnabledProvider)) return race;
+    final travelHeight = context.isTablet ? 180.0 : 150.0;
+    if (h == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Expanded(child: _RaceHero()),
+          const SizedBox(height: 18),
+          SizedBox(height: travelHeight, child: const _TravelHero()),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        race,
+        const SizedBox(height: 14),
+        SizedBox(height: travelHeight, child: const _TravelHero()),
+      ],
+    );
+  }
+}
+
+/// "Chíp du lịch" on the shelf: postcards so far and the next stop.
+class _TravelHero extends ConsumerWidget {
+  const _TravelHero();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = ref.watch(tripProgressProvider).valueOrNull;
+    final tablet = context.isTablet;
+    final next = p?.nextStop;
+    return Pressable(
+      key: const ValueKey('hub-travel'),
+      onTap: () => context.go('/game/travel'),
+      semanticsLabel: 'Chíp du lịch',
+      builder: (pressed) => Container(
+        padding: EdgeInsets.all(tablet ? 18 : 14),
+        decoration: raisedDecoration(
+          accent: Subject.diaLy.color,
+          tint: Subject.diaLy.tint,
+          radius: 32,
+          pressed: pressed,
+        ),
+        child: LayoutBuilder(builder: (context, c) {
+          final art = Image.asset(
+            next?.image ?? AppImages.islandDiaLy,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          );
+          final text = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Chíp du lịch',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: tablet ? 30 : 24,
+                  fontWeight: FontWeight.w900,
+                  color: GameColors.ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${p?.postcards ?? 0}/${tripStops.length} bưu thiếp',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: tablet ? 20 : 16,
+                  fontWeight: FontWeight.w800,
+                  color: Subject.diaLy.color,
+                ),
+              ),
+              if (next != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Trạm tới: ${next.name}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: tablet ? 17 : 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ],
+          );
+          return Row(
+            children: [
+              Image.asset(AppImages.chipJoy,
+                  width: c.maxHeight * 0.8, height: c.maxHeight * 0.8),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: text,
+                ),
+              ),
+              SizedBox(width: c.maxHeight * 0.7, height: c.maxHeight * 0.7, child: art),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// "Sổ tem" beside the badges and stickers while the explore island is on.
+class _PostcardsEntry extends ConsumerWidget {
+  const _PostcardsEntry({required this.gap});
+
+  final double gap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(exploreIslandEnabledProvider)) return const SizedBox.shrink();
+    final p = ref.watch(tripProgressProvider).valueOrNull;
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.only(left: gap),
+        child: _EntryCard(
+          key: const ValueKey('hub-postcards'),
+          image: AppImages.islandDiaLy,
+          title: 'Sổ tem',
+          subtitle: '${p?.postcards ?? 0}/${tripStops.length}',
+          tall: true,
+          count: p?.unseen ?? 0,
+          countKey: const ValueKey('hub-postcards-new'),
+          onTap: () => context.go('/game/postcards'),
+        ),
+      ),
     );
   }
 }
@@ -734,11 +892,14 @@ class _EntryCard extends StatelessWidget {
                         children: [
                           Expanded(child: picture),
                           SizedBox(height: tablet ? 10 : 6),
-                          Text(title,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: titleStyle),
+                          // Narrow tall cards shrink the title, never cut it.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(title,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                style: titleStyle),
+                          ),
                           const SizedBox(height: 2),
                           Text(subtitle,
                               textAlign: TextAlign.center,
