@@ -66,10 +66,13 @@ class _PostcardBookState extends ConsumerState<PostcardBookScreen> {
       return;
     }
     setState(() => _reveal = null);
+    // Read before the awaits: the kid may leave while the mark is written.
+    final db = ref.read(databaseProvider);
+    final revision = ref.read(gameDataRevisionProvider.notifier);
     final kid = (await ref.read(gameRepositoryProvider.future)).kidId;
     if (kid != null) {
-      await markTripShown(ref.read(databaseProvider), kid, step);
-      ref.invalidate(tripProgressProvider);
+      await markTripShown(db, kid, step);
+      revision.state++;
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:funedu/data/app_database.dart';
 import 'package:funedu/features/game/travel_screen.dart';
 import 'package:funedu/game/data/game_repository.dart';
 import 'package:funedu/game/travel/trip.dart';
+import 'package:funedu/game/travel/trip_progress.dart';
 import 'package:funedu/router.dart';
 
 import 'game_test_helpers.dart';
@@ -175,6 +176,64 @@ void main() {
     await _answer(t);
     expect(await _step(t, h), 120);
     expect(await _stars(t, h), before + 1);
+  });
+
+
+  testWidgets('playing never hides postcards earned on another device',
+      (t) async {
+    final h = await bootGame(t, seed: (db, kid) async {
+      await _seedStep(db, kid, 22);
+      await markTripShown(db, kid, 0);
+    });
+    await _open(t);
+    await _answer(t);
+    expect(await _step(t, h), 24);
+    expect(await t.runAsync(() => tripShown(h.db, h.kid)), 0);
+  });
+
+  testWidgets('a postcard seen in the game is not new on the hub', (t) async {
+    final h = await bootGame(t, seed: (db, kid) => _seedStep(db, kid, 2));
+    await _open(t);
+    final c = containerOf(t);
+    // Keep the provider alive like the hub does under the game.
+    final sub = c.listen(tripProgressProvider, (_, __) {});
+    addTearDown(sub.close);
+    await _answer(t);
+    await pumpReal(t, times: 6);
+    expect(await t.runAsync(() => tripShown(h.db, h.kid)), 4);
+    expect((await t.runAsync(() => c.read(tripProgressProvider.future)))!.unseen, 0);
+  });
+
+  testWidgets('leaving right after an answer throws nothing', (t) async {
+    await bootGame(t);
+    await _open(t);
+    await _tapKey(t, _right());
+    await t.tap(find.byKey(const ValueKey('trip-back')));
+    await pumpReal(t, times: 12, step: const Duration(milliseconds: 120));
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('answer keys stay big on iPad landscape', (t) async {
+    await bootGame(t, size: const Size(1180, 820));
+    await _open(t);
+    final key = t.getSize(find.byKey(const ValueKey('race-key-0')));
+    expect(key.height, greaterThanOrEqualTo(80));
+  });
+
+  testWidgets('double tap on Chơi tiếp starts one round', (t) async {
+    final h = await bootGame(t);
+    await _open(t);
+    for (var i = 0; i < 10; i++) {
+      await _answer(t);
+    }
+    final spokenBefore = h.speaker.spoken.length;
+    await t.tap(find.byKey(const ValueKey('trip-again')));
+    await t.tap(find.byKey(const ValueKey('trip-again')), warnIfMissed: false);
+    for (var i = 0; i < 40; i++) {
+      await pumpReal(t, times: 2);
+    }
+    final after = h.speaker.spoken.sublist(spokenBefore);
+    expect(after.length, 1, reason: '$after');
   });
 
   testWidgets('broken stop image shows the name', (t) async {

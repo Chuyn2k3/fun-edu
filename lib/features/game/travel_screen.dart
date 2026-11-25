@@ -66,6 +66,11 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
   late final Speaker _speaker;
   final _scroll = ScrollController();
   bool _disposed = false;
+  bool _starting = false;
+
+  /// Read once: async work that outlives the screen (a write landing after
+  /// the kid left) must not touch `ref`.
+  late final ProviderContainer _c;
 
   RaceQuestion? get _current =>
       _questions.isEmpty ? null : _questions[_index];
@@ -74,6 +79,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
   void initState() {
     super.initState();
     _speaker = ref.read(speakerProvider);
+    _c = ProviderScope.containerOf(context, listen: false);
     _start();
   }
 
@@ -86,16 +92,29 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
     super.dispose();
   }
 
-  Future<GameRepository> get _repo => ref.read(gameRepositoryProvider.future);
+  Future<GameRepository> get _repo => _c.read(gameRepositoryProvider.future);
+
+  void _bumpRevision() => _c.read(gameDataRevisionProvider.notifier).state++;
 
   Future<void> _start() async {
+    // A double tap on "Chơi tiếp" starts one round, not two.
+    if (_starting) return;
+    _starting = true;
+    try {
+      await _load();
+    } finally {
+      _starting = false;
+    }
+  }
+
+  Future<void> _load() async {
     if (_phase != _Phase.loading) {
       setState(() => _phase = _Phase.loading);
       debugTravelQuestion = null;
     }
     final repo = await _repo;
-    final levels = await ref.read(levelRepositoryProvider.future);
-    final progress = await ref.read(progressRepositoryProvider.future);
+    final levels = await _c.read(levelRepositoryProvider.future);
+    final progress = await _c.read(progressRepositoryProvider.future);
     final mathLevel = await levels.levelOf('toan') ?? 0;
     final writingStart = await levels.levelOf('viet') ?? 0;
     final stats = await progress.glyphStats();
@@ -113,7 +132,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
     try {
       await Future.wait(ids.map((id) async {
         try {
-          speech[id] = (await ref.read(glyphProvider(id).future)).spokenName;
+          speech[id] = (await _c.read(glyphProvider(id).future)).spokenName;
         } catch (_) {}
       })).timeout(const Duration(seconds: 2));
     } on TimeoutException catch (_) {}
@@ -124,7 +143,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
       glyphStats: stats,
       writingStartIndex: writingStart,
       speechByGlyph: speech,
-      rng: ref.read(raceRandomProvider),
+      rng: _c.read(raceRandomProvider),
     );
     setState(() {
       _step = step;
@@ -190,7 +209,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
       _roundStars++;
     }
     final advance = await repo.advanceTrip(tripStepsFor(firstTry: firstTry));
-    ref.read(gameDataRevisionProvider.notifier).state++;
+    _bumpRevision();
     if (_disposed) return;
     await _walk(advance);
     if (_disposed) return;
@@ -199,7 +218,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
 
   /// Hops from [a.from] to [a.to], pausing on each stop for its postcard.
   Future<void> _walk(TripAdvance a) async {
-    final db = ref.read(databaseProvider);
+    final db = _c.read(databaseProvider);
     for (final hop in tripHops(a.from, a.to - a.from)) {
       for (var s = 0; s < hop; s++) {
         await Future<void>.delayed(tripHopStep);
@@ -210,8 +229,16 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
       final reached = tripNewStops(_step - hop, _step);
       for (final stop in reached) {
         _roundStops.add(stop);
+        if (_disposed) return;
         final kid = (await _repo).kidId;
-        if (kid != null) await markTripShown(db, kid, _step);
+        // Move the device mark only when it already covers the stop before
+        // this one: postcards earned on another device stay new until the
+        // postcard book reveals them.
+        if (kid != null &&
+            await tripShown(db, kid) >= _step - tripStepsPerStop) {
+          await markTripShown(db, kid, _step);
+          _bumpRevision();
+        }
         if (_disposed) return;
         final done = Completer<void>();
         setState(() {
@@ -287,7 +314,8 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
               ),
               SizedBox(height: tablet ? 16 : 10),
               SizedBox(
-                height: tablet ? (landscape ? 200 : 100) : 76,
+                // Landscape stacks the keys: 3 × 80 + 2 gaps + the key lip.
+                height: tablet ? (landscape ? 282 : 100) : 76,
                 child: AnswerKeys(
                   labelOf: (i, ink) => raceKeyLabel(q, i, ink, tablet),
                   semanticsOf: (i) => raceKeySemantics(q, i),
