@@ -4,12 +4,12 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
+import '../../explore/geography_level.dart';
 import '../../online/sync/device_counters.dart';
 import '../../online/uuid.dart';
 import '../../profile/kid_repository.dart';
 import '../engine/race.dart';
 import '../engine/race_question.dart';
-import '../../explore/geography_level.dart';
 import '../engine/rewards.dart';
 import '../travel/trip.dart';
 import 'badges.dart';
@@ -422,10 +422,13 @@ class GameRepository {
   Future<int> tripStep() async => tripClamp(await _counter(_requireKid(), 'trip.step'));
 
   /// Moves Chíp [steps] forward (no further than the end of the trip) and
-  /// returns the stops reached on the way.
-  Future<TripAdvance> advanceTrip(int steps) {
+  /// returns the stops reached on the way. With [star] (a first-try answer)
+  /// the cosmic star is added in the same transaction, so a crash never
+  /// keeps one without the other.
+  Future<TripAdvance> advanceTrip(int steps, {bool star = false}) {
     final kid = _requireKid();
     return _db.transaction(() async {
+      if (star) await addTripStar();
       final from = tripClamp(await _counter(kid, 'trip.step'));
       final by = min(max(steps, 0), tripLength - from);
       if (by <= 0) return TripAdvance(from: from, to: from, newStops: const []);

@@ -58,6 +58,13 @@ void main() {
     expect(await raw(), greaterThanOrEqualTo(150));
   });
 
+  test('a first-try move adds its star in the same write', () async {
+    final before = await repo.totalStars();
+    final a = await repo.advanceTrip(2, star: true);
+    expect(a.to, 2);
+    expect(await repo.totalStars(), before + 1);
+  });
+
   test('a trip star adds one cosmic star and no race', () async {
     final before = await repo.totalStars();
     expect(await repo.addTripStar(), before + 1);

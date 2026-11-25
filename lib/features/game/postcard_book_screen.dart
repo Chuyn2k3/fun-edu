@@ -28,6 +28,7 @@ class _PostcardBookState extends ConsumerState<PostcardBookScreen> {
   List<GeoItem>? _reveal;
   GeoItem? _big;
   bool _revealChecked = false;
+  int _revealUpTo = 0;
 
   late final Speaker _speaker;
 
@@ -48,6 +49,8 @@ class _PostcardBookState extends ConsumerState<PostcardBookScreen> {
     _revealChecked = true;
     final stops = tripNewStops(p.shown, p.step);
     if (stops.isEmpty) return;
+    // Mark only what this reveal shows, even if a sync moves Chíp meanwhile.
+    _revealUpTo = p.step;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() => _reveal = stops);
@@ -194,7 +197,7 @@ class _PostcardBookState extends ConsumerState<PostcardBookScreen> {
                 buttonKey: const ValueKey('postcard-reveal-next'),
                 button: reveal.length > 1 ? 'Xem tiếp' : 'Dán vào sổ',
                 tablet: tablet,
-                onButton: () => _nextReveal(progress.step),
+                onButton: () => _nextReveal(_revealUpTo),
               )
             else if (big != null)
               _Overlay(

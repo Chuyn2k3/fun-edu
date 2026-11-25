@@ -24,6 +24,7 @@ import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/pressable.dart';
 import '../../voice/speaker.dart';
 import 'answer_keys.dart';
+import 'game_widgets.dart' show CosmicStarsPill;
 import 'race_controller.dart' show raceRandomProvider, spokenNameFromId;
 import 'race_question_card.dart';
 import 'race_screen.dart' show spokenRaceQuestion;
@@ -68,6 +69,11 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
   bool _disposed = false;
   bool _starting = false;
 
+  /// Set when the kid taps back: the walk stops at once, so no postcard is
+  /// counted as seen while the screen closes.
+  bool _leaving = false;
+  bool get _gone => _disposed || _leaving;
+
   /// Read once: async work that outlives the screen (a write landing after
   /// the kid left) must not touch `ref`.
   late final ProviderContainer _c;
@@ -87,6 +93,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
   void dispose() {
     _disposed = true;
     debugTravelQuestion = null;
+    _onContinue();
     _speaker.stop();
     _scroll.dispose();
     super.dispose();
@@ -203,16 +210,27 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
       _wrongKey = null;
       _phase = _Phase.moving;
     });
-    final repo = await _repo;
-    if (firstTry) {
-      await repo.addTripStar();
-      _roundStars++;
+    final TripAdvance advance;
+    try {
+      final repo = await _repo;
+      advance = await repo.advanceTrip(tripStepsFor(firstTry: firstTry),
+          star: firstTry);
+    } catch (e, st) {
+      debugPrint('trip save failed: $e\n$st');
+      if (_gone) return;
+      // Nothing was saved: the kid answers this question again.
+      setState(() {
+        _correctKey = null;
+        _phase = _Phase.asking;
+      });
+      _speaker.speak('Chíp chưa lưu được, bé chọn lại nhé!');
+      return;
     }
-    final advance = await repo.advanceTrip(tripStepsFor(firstTry: firstTry));
+    if (firstTry) _roundStars++;
     _bumpRevision();
-    if (_disposed) return;
+    if (_gone) return;
     await _walk(advance);
-    if (_disposed) return;
+    if (_gone) return;
     _next();
   }
 
@@ -222,14 +240,14 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
     for (final hop in tripHops(a.from, a.to - a.from)) {
       for (var s = 0; s < hop; s++) {
         await Future<void>.delayed(tripHopStep);
-        if (_disposed) return;
+        if (_gone) return;
         setState(() => _step++);
         _follow();
       }
       final reached = tripNewStops(_step - hop, _step);
       for (final stop in reached) {
         _roundStops.add(stop);
-        if (_disposed) return;
+        if (_gone) return;
         final kid = (await _repo).kidId;
         // Move the device mark only when it already covers the stop before
         // this one: postcards earned on another device stay new until the
@@ -239,7 +257,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
           await markTripShown(db, kid, _step);
           _bumpRevision();
         }
-        if (_disposed) return;
+        if (_gone) return;
         final done = Completer<void>();
         setState(() {
           _postcard = stop;
@@ -248,7 +266,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
         });
         _speaker.speak('Chíp tới ${stop.speech} rồi! ${stop.fact}');
         await done.future;
-        if (_disposed) return;
+        if (_gone) return;
         setState(() {
           _postcard = null;
           _phase = _Phase.moving;
@@ -283,6 +301,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
   }
 
   void _leave() {
+    _leaving = true;
     _onContinue();
     context.go('/game');
   }
@@ -295,6 +314,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
 
     final header = _Header(
       postcards: tripPostcards(_step),
+      stars: ref.watch(gameSummaryProvider).valueOrNull?.totalStars,
       onBack: _leave,
       tablet: tablet,
     );
@@ -426,11 +446,13 @@ double _yOf(int step, double height) =>
 class _Header extends StatelessWidget {
   const _Header({
     required this.postcards,
+    required this.stars,
     required this.onBack,
     required this.tablet,
   });
 
   final int postcards;
+  final int? stars;
   final VoidCallback onBack;
   final bool tablet;
 
@@ -489,6 +511,12 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        const SizedBox(width: 8),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: CosmicStarsPill(
+              key: const ValueKey('trip-stars'), stars: stars ?? 0),
         ),
       ],
     );

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/game/data/game_repository.dart';
 import 'package:funedu/game/travel/trip_progress.dart';
 import 'package:funedu/router.dart';
 
@@ -66,6 +67,23 @@ void main() {
     await t.tap(find.byKey(const ValueKey('postcard-reveal-next')));
     await pumpReal(t, times: 6);
     expect(find.byKey(const ValueKey('postcard-reveal')), findsNothing);
+    expect(await t.runAsync(() => tripShown(h.db, h.kid)), 9);
+  });
+
+  testWidgets('a sync during the reveal marks only what was shown',
+      (t) async {
+    final h = await bootGame(t, seed: (db, kid) => _seed(db, kid, step: 9, shown: 4));
+    await _open(t);
+    expect(find.byKey(const ValueKey('postcard-reveal')), findsOneWidget);
+    await t.runAsync(() => h.db.into(h.db.gameCounters).insertOnConflictUpdate(
+        GameCountersCompanion.insert(
+            kidId: h.kid, key: 'trip.step', value: const Value(40))));
+    containerOf(t).read(gameDataRevisionProvider.notifier).state++;
+    await pumpReal(t, times: 4);
+    while (find.byKey(const ValueKey('postcard-reveal-next')).evaluate().isNotEmpty) {
+      await t.tap(find.byKey(const ValueKey('postcard-reveal-next')));
+      await pumpReal(t, times: 4);
+    }
     expect(await t.runAsync(() => tripShown(h.db, h.kid)), 9);
   });
 

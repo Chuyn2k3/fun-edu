@@ -354,8 +354,9 @@ class _Header extends StatelessWidget {
 }
 
 /// The game shelf: the rocket race alone while the explore island is off;
-/// with it on, the race and "Chíp du lịch" (stacked on phones, side by side
-/// on tablets). More games join as more cards.
+/// with it on, the race card and a wide "Chíp du lịch" card below it (side
+/// by side cut the race card's text on tablets). More games join as more
+/// cards.
 class _GameShelf extends ConsumerWidget {
   const _GameShelf({this.heroHeight});
 
@@ -468,7 +469,12 @@ class _TravelHero extends ConsumerWidget {
                   child: text,
                 ),
               ),
-              SizedBox(width: c.maxHeight * 0.7, height: c.maxHeight * 0.7, child: art),
+              // Narrow phones keep the room for the words.
+              if (c.maxWidth >= 420)
+                SizedBox(
+                    width: c.maxHeight * 0.7,
+                    height: c.maxHeight * 0.7,
+                    child: art),
             ],
           );
         }),

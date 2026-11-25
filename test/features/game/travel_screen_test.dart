@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
+import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/features/game/travel_screen.dart';
 import 'package:funedu/game/data/game_repository.dart';
 import 'package:funedu/game/travel/trip.dart';
@@ -57,6 +58,15 @@ class _BrokenGeoBundle extends CachingAssetBundle {
     if (key.contains('/geo-')) throw FlutterError('broken $key');
     return rootBundle.load(key);
   }
+}
+
+/// A repository whose trip writes fail (a full disk).
+class _FailingRepo extends GameRepository {
+  _FailingRepo(super.db, {required super.kidId});
+
+  @override
+  Future<TripAdvance> advanceTrip(int steps, {bool star = false}) =>
+      Future.error(StateError('disk full'));
 }
 
 void main() {
@@ -234,6 +244,47 @@ void main() {
     }
     final after = h.speaker.spoken.sublist(spokenBefore);
     expect(after.length, 1, reason: '$after');
+  });
+
+
+  testWidgets('leaving while Chíp hops does not count the next postcard seen',
+      (t) async {
+    final h = await bootGame(t, seed: (db, kid) => _seedStep(db, kid, 3));
+    await _open(t);
+    await _tapKey(t, _right());
+    await t.tap(find.byKey(const ValueKey('trip-back')));
+    await pumpReal(t, times: 12, step: const Duration(milliseconds: 120));
+    expect(await t.runAsync(() => tripShown(h.db, h.kid)), 0);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('a failed save lets the kid answer again', (t) async {
+    await bootGame(t, extra: [
+      gameRepositoryProvider.overrideWith((ref) async {
+        final kid = await ref.watch(currentKidIdProvider.future);
+        return _FailingRepo(ref.watch(databaseProvider), kidId: kid);
+      }),
+    ]);
+    await _open(t);
+    final q = debugTravelQuestion;
+    await _tapKey(t, _right());
+    await _settleMove(t);
+    expect(debugTravelQuestion, same(q));
+    await _tapKey(t, _right());
+    await _settleMove(t);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('a stored step past the trip opens as finished', (t) async {
+    await bootGame(t, seed: (db, kid) => _seedStep(db, kid, 124));
+    await _open(t);
+    expect(find.byKey(const ValueKey('trip-done')), findsOneWidget);
+  });
+
+  testWidgets('the header shows the cosmic stars', (t) async {
+    await bootGame(t);
+    await _open(t);
+    expect(find.byKey(const ValueKey('trip-stars')), findsOneWidget);
   });
 
   testWidgets('broken stop image shows the name', (t) async {
