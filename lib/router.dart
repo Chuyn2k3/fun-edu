@@ -27,6 +27,7 @@ import 'features/placement/placement_screen.dart';
 import 'features/setup/first_run_screen.dart';
 import 'features/setup/restore_screen.dart';
 import 'features/subject/english_map_screen.dart';
+import 'features/subject/geography_map_screen.dart';
 import 'features/subject/math_map_screen.dart';
 import 'features/subject/vietnamese_map_screen.dart';
 import 'features/subject/writing_map_screen.dart';
@@ -250,6 +251,22 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => buildSmoothTransitionPage(
         key: state.pageKey,
         child: const EnglishMapScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/subject/dia-ly',
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const GeographyMapScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/practice-dia-ly/:levelIndex',
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: PracticeGeographyScreen(
+          int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+        ),
       ),
     ),
     GoRoute(
