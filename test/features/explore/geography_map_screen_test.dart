@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/explore/geography_generator.dart';
 import 'package:funedu/explore/geography_level.dart';
+import 'package:funedu/features/explore/geography_session_screen.dart';
 import 'package:funedu/features/subject/geography_map_screen.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/progress/level_repository.dart';
@@ -72,7 +73,8 @@ void main() {
       final f = find.byKey(ValueKey('geo-choice-${q.correctIndex}'));
       await t.ensureVisible(f);
       await t.tap(f);
-      await t.pump(const Duration(seconds: 2));
+      await t.pump(geographyAnswerPause('${q.answer.speech}. ${q.answer.fact}') +
+          const Duration(milliseconds: 300));
     }
     await t.pumpAndSettle();
   }

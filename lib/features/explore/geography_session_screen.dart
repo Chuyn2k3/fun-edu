@@ -27,9 +27,18 @@ const _minTabletTile = 140.0;
 const _maxTile = 220.0;
 const _gap = 12.0;
 
-/// Delay before the next question once the kid picked the right picture.
-const geographyNextDelay = Duration(milliseconds: 1600);
-const _completeDelay = Duration(milliseconds: 1800);
+/// How long to stay on a right answer so Chíp can finish reading [spoken]
+/// (name + fact). The device voice is slow (rate 0.45) and the next line
+/// stops the current one, so the pause grows with the sentence: about
+/// 320 ms per Vietnamese syllable, 1.6 s at least, 8 s at most.
+Duration geographyAnswerPause(String spoken) {
+  final syllables = spoken.trim().split(RegExp(r'\s+')).length;
+  final ms = (syllables * 320 + 400).clamp(1600, 8000);
+  return Duration(milliseconds: ms);
+}
+
+/// Extra time on the last question before the round closes.
+const _completeExtra = Duration(milliseconds: 200);
 
 /// One geography round: Chíp asks, the kid taps one of three pictures.
 class GeographySessionScreen extends ConsumerStatefulWidget {
@@ -117,16 +126,18 @@ class _GeographySessionScreenState
       _chip = AppImages.chipJoy;
       _message = '${a.name}! ${a.fact}';
     });
-    _speaker.speak('${a.speech}. ${a.fact}');
+    final spoken = '${a.speech}. ${a.fact}';
+    _speaker.speak(spoken);
+    final pause = geographyAnswerPause(spoken);
     _timer?.cancel();
     if (_index == _questions.length - 1) {
       _finished = true;
-      _timer = Timer(_completeDelay, () {
+      _timer = Timer(pause + _completeExtra, () {
         if (mounted) widget.onCompleted(_firstTry, _questions.length);
       });
       return;
     }
-    _timer = Timer(geographyNextDelay, () {
+    _timer = Timer(pause, () {
       if (!mounted) return;
       setState(() {
         _index++;

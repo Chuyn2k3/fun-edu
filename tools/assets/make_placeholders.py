@@ -254,7 +254,7 @@ def main() -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Force overwrite existing files",
+        help="Force overwrite existing avatar and game placeholders (never explore art)",
     )
     args = parser.parse_args()
 
@@ -263,10 +263,12 @@ def main() -> None:
         game_dir=args.game_dir,
         overwrite=args.overwrite,
     )
+    # --overwrite refreshes avatar and game placeholders only: explore art
+    # is real Gemini work once it lands and must never be replaced here.
     created += generate_explore_placeholders(
         explore_dir=args.explore_dir,
         root_dir=REPO_ROOT / "assets/images",
-        overwrite=args.overwrite,
+        overwrite=False,
     )
     print(f"Generated {len(created)} placeholder asset files.")
 

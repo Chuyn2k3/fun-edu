@@ -89,14 +89,41 @@ Future<void> _tapChoice(WidgetTester t, int i) async {
   await t.pump();
 }
 
+Duration _pauseAfter(int i) {
+  final a = _expected[i].answer;
+  return geographyAnswerPause('${a.speech}. ${a.fact}');
+}
+
 Future<void> _answerAll(WidgetTester t, {int from = 0}) async {
   for (var i = from; i < 5; i++) {
     await _tapChoice(t, _expected[i].correctIndex);
-    await t.pump(const Duration(milliseconds: 2000));
+    await t.pump(_pauseAfter(i));
   }
+  await t.pump(const Duration(milliseconds: 300));
 }
 
 void main() {
+  test('the pause after a right answer lets Chíp finish the sentence', () {
+    const short = 'Núi. Cao.';
+    const long = 'Hồ Gươm. Hồ nước ở Hà Nội, giữa hồ có Tháp Rùa.';
+    expect(geographyAnswerPause(short), const Duration(milliseconds: 1600));
+    // ~13 syllables at the slow kid voice: about 4 s, never cut at 1.6 s.
+    expect(geographyAnswerPause(long).inMilliseconds,
+        greaterThanOrEqualTo(4000));
+    expect(geographyAnswerPause('a ' * 200), const Duration(seconds: 8));
+  });
+
+  testWidgets('the next question waits until the fact has been read',
+      (t) async {
+    _setSize(t, 390, 844);
+    final speaker = await _pump(t);
+    await _tapChoice(t, _expected[0].correctIndex);
+    await t.pump(_pauseAfter(0) - const Duration(milliseconds: 100));
+    expect(speaker.spoken.last, isNot(_expected[1].speech));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(speaker.spoken.last, _expected[1].speech);
+  });
+
   testWidgets('wrong then right counts no first-try', (t) async {
     _setSize(t, 390, 844);
     int? first, total;
@@ -141,7 +168,7 @@ void main() {
     final speaker = await _pump(t, onCompleted: (_, __) => calls++);
     await _tapChoice(t, _expected[0].correctIndex);
     await _tapChoice(t, _expected[0].correctIndex);
-    await t.pump(geographyNextDelay);
+    await t.pump(_pauseAfter(0));
     expect(speaker.spoken.last, _expected[1].speech);
     expect(find.text(_expected[1].prompt), findsOneWidget);
     await _answerAll(t, from: 1);
@@ -155,7 +182,7 @@ void main() {
     await _tapChoice(t, _expected[0].correctIndex);
     await _tapChoice(t, (_expected[0].correctIndex + 1) % 3);
     expect(find.textContaining('Thử lại nhé!'), findsNothing);
-    await t.pump(geographyNextDelay);
+    await t.pump(_pauseAfter(0));
   });
 
   testWidgets('broken image shows the name tile', (t) async {

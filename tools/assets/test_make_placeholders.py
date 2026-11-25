@@ -115,3 +115,18 @@ def test_explore_placeholders_generate_and_never_overwrite(tmp_path: Path):
     again = generate_explore_placeholders(explore_dir=explore_dir, root_dir=root_dir)
     assert again == []
     assert marker.read_bytes() == b"real art"
+
+
+def test_overwrite_flag_never_touches_explore_art(tmp_path: Path):
+    explore_dir = tmp_path / "explore"
+    explore_dir.mkdir()
+    marker = explore_dir / "geo-nui.png"
+    marker.write_bytes(b"real art")
+    subprocess.run(
+        [sys.executable, str(SCRIPT), "--overwrite",
+         "--avatar-dir", str(tmp_path / "avatars"),
+         "--game-dir", str(tmp_path / "game"),
+         "--explore-dir", str(explore_dir)],
+        check=True, capture_output=True,
+    )
+    assert marker.read_bytes() == b"real art"
