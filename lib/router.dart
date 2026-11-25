@@ -28,6 +28,7 @@ import 'features/setup/first_run_screen.dart';
 import 'features/setup/restore_screen.dart';
 import 'features/subject/english_map_screen.dart';
 import 'features/subject/geography_map_screen.dart';
+import 'features/explore/explore_hub_screen.dart';
 import 'features/subject/math_map_screen.dart';
 import 'features/subject/vietnamese_map_screen.dart';
 import 'features/subject/writing_map_screen.dart';
@@ -251,6 +252,13 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => buildSmoothTransitionPage(
         key: state.pageKey,
         child: const EnglishMapScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/kham-pha',
+      pageBuilder: (context, state) => buildSmoothTransitionPage(
+        key: state.pageKey,
+        child: const ExploreHubScreen(),
       ),
     ),
     GoRoute(
