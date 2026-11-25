@@ -1,7 +1,7 @@
 # Chíp Chíp — Tình trạng dự án và hướng dẫn tiếp nhận
 
 > **Đọc file này trước tiên** nếu bạn (người hoặc AI) mới tiếp nhận dự án. Nó tóm tắt: app là gì, vì sao làm như vậy, giao diện trông ra sao, code tổ chức thế nào, đã làm tới đâu, còn gì dở, và làm gì tiếp.
-> Cập nhật lần cuối: 2026-11-23, sau khi hoàn thành toàn bộ đợt gia cố online/offline & bảo mật (Tasks 1–12 theo `docs/superpowers/plans/2026-11-23-online-offline-muot.md`). Nhánh làm việc: `chipchip`.
+> Cập nhật lần cuối: 2026-11-25, sau khi làm xong phần code Đảo Khám phá — Địa lý (`docs/superpowers/plans/2026-11-25-dao-kham-pha-dia-ly.md`). Nhánh làm việc: `chipchip`.
 > Khi xong một phần việc, **cập nhật mục 6 (Đã làm), 7 (Còn dở) và 8 (Làm gì tiếp)** của file này.
 
 ---
@@ -175,6 +175,7 @@ assets/glyphs/*.json           # nét mẫu SINH RA (toạ độ [0,1], y hướ
 | Sửa sau review Đua với bạn bè (2026-11-23) | (1) Trạng thái phòng có `seq`, tin online ở sảnh có `v`; app bỏ bản cũ đến muộn (mạng yếu không còn làm trận đã xong quay lại đang đua, chấm bạn bè không đổi sai); (2) mục tiêu độ trễ phòng chốt p99 ≤ 150 ms (100 ms không đạt được với gộp gửi 100 ms); (3) tách `race_screen.dart`, `lobby_client.dart`, `race_friends_card.dart` thành part file (không đổi hành vi); (4) màn đo máy thật một lệnh `flutter run --profile -t tools/perf/online_race_perf_main.dart` + lệnh kiểm tải Oracle trong `docs/perf.md`. **Còn lại cho chủ dự án:** chạy hai phép đo đó trên điện thoại và máy Oracle, ghi số vào `docs/perf.md` | Xong, có test |
 | Rà lỗi Tủ khoe (2026-11-23) | Tắt Tủ khoe giờ gỡ khỏi máy chủ (`DELETE /api/v1/showcase/{kidUuid}`, trước đây bạn bè vẫn xem bản cũ); bật lại / ẩn hiện thành tích học gửi ngay (không chờ 5 phút); tên lửa và vệt lửa lấy từ hồ sơ trò chơi (trước luôn ra cam/lửa); số sticker chỉ đếm sticker (trước đếm huy hiệu); thành tích học đúng của bé được gửi (trước lấy của bé đang chọn); xóa bé thì máy chủ xóa luôn Tủ khoe của bé | Xong, có test |
 | Triển khai máy chủ Oracle & APK Release (2026-11-24) | Đưa toàn bộ backend Spring Boot 3 + PostgreSQL 16 + Caddy lên máy chủ Oracle Cloud Always-Free ARM (4 OCPU, 24GB RAM, IP `152.67.101.215`). Tên miền HTTPS tự động `api-funedu.152.67.101.215.sslip.io` (Let's Encrypt SSL, Actuator Health `UP`). Quy hoạch tài nguyên qua Docker Compose giới hạn FunEdu ≤ 2.1 GB RAM (chừa > 21 GB RAM cho các dịch vụ khác). Cấu hình 2 lớp tường lửa (OCI Security List + OS iptables). Xuất bản Google OAuth Consent Screen sang **In Production** (dự án `BudgetTracker`), hỗ trợ Web/Android/iOS client IDs. Build thành công `app-release.apk` (86 MB) tích hợp sẵn cấu hình online. | Xong 100% |
+| Đảo Khám phá — Địa lý (2026-11-25, code + ảnh tạm, **công tắc tắt**) | Spec `docs/superpowers/specs/2026-11-25-dao-kham-pha-dia-ly-design.md`, kế hoạch `docs/superpowers/plans/2026-11-25-dao-kham-pha-dia-ly.md`. Thẻ rộng "Đảo Khám phá" dưới 4 môn trên trang chủ (iPad ngang: thẻ thứ 5 cùng hàng) → sảnh `/kham-pha` (Địa lý mở; Sinh học, Lịch sử "Sắp có") → bản đồ `/subject/dia-ly` "Khám phá Việt Nam" 9 cấp (cảnh vật, thời tiết, đất nước em, 3 miền, châu Á, châu Âu & Phi, châu Mỹ & Úc; 47 mục, `lib/explore/geography_level.dart`) → màn `/practice-dia-ly/:i`: 5 câu, chọn 1 trong 3 ảnh; cấp 1–3 "Đâu là …?", cấp 4–9 trộn câu đố nghe kể; đúng thì Chíp đọc tên + một câu kể. Cấp lưu `subject_levels` khóa `'dia-ly'` (không đổi schema, đồng bộ sẵn), kẹp 0..8. Màu `Subject.diaLy` `#0E7490`. Ảnh ở `assets/images/explore/` (không nạp sẵn lúc mở app). Góc ba mẹ có thẻ "Địa lý". Chưa vào Bài hôm nay, trận đua, Sưu tập. **Công tắc** `EXPLORE_ISLAND` (`lib/explore/explore_flags.dart`, mặc định tắt; thử: `--dart-define=EXPLORE_ISLAND=true`) | Xong code, có test; chờ ảnh thật + duyệt chữ |
 
 Trạng thái kiểm tra (2026-11-23): `flutter analyze` sạch, **4718 test Dart đạt** (`flutter test`), máy chủ **81 test đạt** (`cd server && ./gradlew test`), **19 test pytest** (`cd tools/glyphs && python3 -m pytest -q`) trên Flutter 3.24.5. **Chủ dự án đang trực tiếp chạy `flutter run --profile` trên máy thật (2026-11-19)** để kiểm tra độ mượt 120fps ProMotion, chuyển đổi giọng song ngữ `vi-VN` / `en-US`, xuất/in PDF offline và bố cục hiển thị.
 
@@ -186,7 +187,10 @@ Trạng thái kiểm tra (2026-11-23): `flutter analyze` sạch, **4718 test Dar
 - **Thu hồi 2 khóa cũ** nằm trong lịch sử git của app cũ (`lib/helper/global.dart` ở các nhánh `main`, `develop`, `new-web`, `deploy-web`, `refactor-code`, `update-ios`, `feature/fun-edu-2.0-phase1`; commit `fc1f937`): khóa OpenAI `sk-91GC3l…` (đã comment) và khóa Google Gemini `AIzaSyBJHVEE…` (**đang dùng** trong code cũ). Thu hồi trên trang quản lý khóa của OpenAI và Google AI Studio; nhánh `chipchip` không chứa khóa nào.
 - Ghi lại nét mẫu thật cho **nét cơ bản và số 0–9** bằng `/dev/recorder` (hiện là **dữ liệu tạm máy sinh**) và thử với bé theo `docs/phase0/stroke-test.md`. **Chữ cái và dấu thanh** đã được chủ dự án duyệt giữ nguyên (2026-11-18).
 
+- **Đảo Khám phá — Địa lý chờ chủ dự án:** (1) duyệt 47 dòng chữ ở `docs/superpowers/specs/assets/dia-ly-noi-dung.md`; (2) sinh 51 ảnh theo câu lệnh ở `docs/phase0/asset-list.md` mục "Đảo Khám phá" (3 ảnh mẫu trước), **ảnh bản đồ chữ S phải có Hoàng Sa và Trường Sa** — kiểm riêng; (3) rồi mới bật `EXPLORE_ISLAND` (đổi `defaultValue` thành `true`). Nghe thử cách giọng máy đọc tên nước ngoài (cột "Cách đọc").
+
 **Điểm biết là chưa hoàn hảo (nhỏ, có thể sửa sau):**
+- `SessionHeader` (thanh đầu màn học, dùng chung mọi môn) tràn 40 px khi cỡ chữ hệ thống ×2.0 trên iPhone 375×667 (có từ trước; test màn Địa lý kiểm ở ×1.3).
 - Hành tinh đích trong trận đua to lên theo từng nấc (không chuyển động mượt); lớp này có blur 12 nhưng chỉ vẽ lại khi lên nấc.
 - File lớn nên tách dần: `collection_screen.dart`, `race_screen.dart`, `room_stage.dart`, `race_scene.dart`, `race_result_screen.dart`.
 - Hết giờ đúng lúc chuyển màn: màn mới có thể hiện thoáng qua trước khi màn ngủ phủ lên. Nếu kiểm tra giờ bị lỗi DB thì mặc định cho chơi (fail open).
@@ -265,10 +269,10 @@ Trạng thái kiểm tra (2026-11-23): `flutter analyze` sạch, **4718 test Dar
    8. **2D Tài khoản gia đình + đồng bộ tiến độ + Bạn đua ĐÃ XONG** (backend Spring Boot + PostgreSQL, đăng nhập Google/Apple, liên kết thiết bị V5, kết bạn V6, sảnh `/ws/lobby`, tủ khoe).
    9. **2E Gói trả phí + máy chủ nhỏ** — mua qua Apple/Google, khôi phục giao dịch, **xác thực giao dịch** phía máy chủ, **thống kê ẩn danh** (tạm để lại); quyết định giá và số cấp miễn phí mỗi môn (**đang mở**).
    - **Việc còn lại của Phase Đua Bạn Bè:** vẽ ảnh 3D thật bằng Gemini cho 12 ảnh đại diện mới (`avatar_4` đến `avatar_15`) và 8 sticker đua mới (hiện đang dùng placeholder/hình vẽ vector đẹp); tính năng micro/giọng nói để lại giai đoạn sau.
-3. **Các tính năng offline tiếp theo sẵn sàng triển khai (sau khi duyệt đợt thử profile):**
-   - **Chữ hoa tập viết:** tạo bộ nét mẫu chữ hoa tiếng Việt A–Z, Ă, Â, Đ... trong `tools/glyphs/letters.py`, tích hợp vào bậc thang luyện viết và bản đồ Viết.
-   - **Vở của bé:** album lưu lại các trang/nét bé đã tô đẹp nhất để bé và ba mẹ cùng xem lại.
-   - **Toán nâng cao:** mở rộng số đếm đến 100, xem đồng hồ (giờ đúng / giờ rưỡi), nhận biết tiền Việt Nam.
+3. **Nội dung mới (chủ dự án chọn 2026-11-25, làm lần lượt):**
+   - **Đảo Khám phá — Địa lý:** xong code (xem mục 6); còn ảnh thật + duyệt chữ rồi bật công tắc. Sau đó Sinh học, Lịch sử dùng lại cùng khung (`lib/explore/`, sảnh `/kham-pha`).
+   - **Trò chơi thứ hai** (Kéo co / Xây tháp / Tàu chở hàng / Bắn bóng bay theo spec gốc §5.2): brainstorm + spec riêng; dùng được câu hỏi Địa lý.
+   - (Chữ hoa, Vở của bé, Toán nâng cao đã xong — xem mục 6.)
    - **Mini-game học tập offline tiếp theo:** Kéo co, Xây tháp, Tàu chở hàng, Bắn bóng bay...
    - Giai đoạn 4: chơi qua mạng, "Bé khám phá" (vòng kín), web ba mẹ (React); giai đoạn 5: đảo Sinh học/Địa lý/Lịch sử.
 

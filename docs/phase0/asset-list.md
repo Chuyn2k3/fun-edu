@@ -116,3 +116,127 @@ Khi vẽ bằng Gemini:
 | `sticker-tease-smoke.png` | Xì khói | Đám mây khói xì poof xám trắng bùng ra tròn xoe như khói ống xả xe đồ chơi |
 | `sticker-party.png` | Pháo hoa tiệc | Ống pháo giấy bung tỏa hoa giấy ngũ sắc và dải ruy băng lấp lánh ăn mừng |
 
+
+## Đảo Khám phá — Địa lý (51 ảnh)
+
+Hiện đang dùng ảnh tạm (vòng tròn xanh có chữ) do `tools/assets/make_placeholders.py` sinh. Ảnh thật ghi đè đúng tên file; script ảnh tạm không bao giờ ghi đè ảnh thật. Thẻ "Đảo Khám phá" chỉ hiện khi bật công tắc `EXPLORE_ISLAND`. Chỉ bật sau khi ảnh thật đã thay hết và chữ đã được duyệt (`docs/superpowers/specs/assets/dia-ly-noi-dung.md`).
+
+**Thứ tự làm:**
+1. Làm **3 ảnh mẫu** trước: `geo-ho-guom`, `geo-vinh-ha-long`, `geo-thap-eiffel`. Xem ba ảnh cạnh nhau. Nếu cùng góc nhìn, cùng kiểu đế, cùng ánh sáng và đúng "đồ chơi" thì làm tiếp phần còn lại trong **cùng cuộc chat** (gửi kèm 3 ảnh mẫu đã chọn làm ảnh tham chiếu).
+2. Mỗi ảnh tạo riêng một lần, khổ vuông 1:1 (1024×1024).
+3. Tách nền và xuất ảnh:
+   ```
+   python3 tools/assets/chroma_key.py <ảnh.png> tools/assets/configs/explore/<tên>.json assets/images/explore
+   ```
+   Riêng `ic-kham-pha` xuất vào `assets/images`. Cấu hình mặc định cắt cả khung 1024×1024. Nếu ảnh có kích thước khác hoặc vật nằm lệch thì sửa `box` trong file `.json`.
+4. Chạy `flutter test test/ui/assets_test.dart` để kiểm tra đủ 3 độ phân giải và có nền trong suốt.
+
+**Đoạn phong cách chung.** Dán vào cuối mọi câu lệnh, giữ nguyên:
+
+> Style: a miniature diorama toy, soft 3D render, cute rounded chunky shapes, smooth matte clay and soft plastic materials, sitting on a small round grassy base with soft rounded edges, three-quarter view from slightly above, centered, filling about 80% of the frame, soft warm studio lighting, gentle soft shadow under the base, bright friendly pastel colors, simple details suitable for a 4-year-old, square 1:1 image, solid flat pure green background #00FF00 everywhere around the object, no text, no letters, no logos, no people, no watermark, no sparkle icon in the corner.
+
+Lưu ý:
+- **Không có người** trong ảnh. Muốn có "người" (bán hàng, chèo thuyền) thì chỉ dùng hình nhân gỗ tròn không mặt.
+- Vật không được có màu xanh lá thuần giống nền, vì script sẽ xóa luôn. Cây cỏ và đế cỏ dùng **xanh lá ngả vàng hoặc xanh rêu** (`olive / sage green`), không dùng `#00FF00`.
+- Gemini hay tự thêm chữ hoặc biển tên. Nếu có thì yêu cầu vẽ lại: "remove all text and signs".
+
+### Sảnh đảo (4 ảnh)
+
+| File | Câu lệnh (dán thêm đoạn phong cách chung) |
+|---|---|
+| `ic-kham-pha.png` (ra `assets/images/`) | A tiny round tropical island with a palm tree, a little globe and a golden compass standing on the sand, turquoise water ring around the island |
+| `island-dia-ly.png` | A tiny island shaped like a small hill with a red flag pole without text, a little rolled paper map and a compass, a small blue river winding down to the sea |
+| `island-sinh-hoc.png` | A tiny island covered with leafy trees, a big friendly flower, a ladybug and a butterfly, a small pond with a frog |
+| `island-lich-su.png` | A tiny island with an ancient stone gate, a bronze drum and an old scroll, soft beige and terracotta colors |
+
+### Cấp 1 — Cảnh vật quanh em
+
+| File | Câu lệnh |
+|---|---|
+| `geo-nui.png` | A tall friendly mountain with layered slopes and a little white cloud touching its rounded peak, small pine trees at the bottom |
+| `geo-song.png` | A gentle blue river winding through soft hills, a tiny wooden boat floating on it |
+| `geo-bien.png` | A cheerful sea scene: turquoise waves with white foam rolling onto a small golden sandy beach, a seashell on the sand |
+| `geo-rung.png` | A small lush forest of round leafy trees in several sage and olive greens, a little bird on a branch and a deer peeking out |
+| `geo-dong-lua.png` | A small rice paddy field in neat rows of young rice plants, water reflecting the sky, a tiny scarecrow without a face |
+| `geo-hang-dong.png` | A rocky hill with a big rounded cave entrance, soft glowing crystals and stalactites inside the cave |
+
+### Cấp 2 — Thời tiết
+
+| File | Câu lệnh |
+|---|---|
+| `geo-nang.png` | A bright smiling sun with rounded rays shining over a little hill with a flower |
+| `geo-mua.png` | A soft grey cloud with big blue raindrops falling on a little hill with a small puddle and an open umbrella |
+| `geo-gio.png` | Swirly wind lines blowing a colorful kite high above a little hill, leaves flying and a tree bending gently |
+| `geo-may.png` | Three fluffy white clouds floating above a little hill, soft and puffy like cotton |
+| `geo-cau-vong.png` | A bright rainbow arching over a little hill, with a small white cloud at each end |
+| `geo-sam-set.png` | A dark rounded storm cloud with a bright yellow zigzag lightning bolt, a tiny house with a warm lit window on the hill below |
+
+### Cấp 3 — Đất nước em
+
+| File | Câu lệnh |
+|---|---|
+| `geo-co-viet-nam.png` | The flag of Vietnam waving on a pole: a red flag with one large yellow five-pointed star in the center, nothing else on the flag |
+| `geo-ban-do-chu-s.png` | A raised toy relief map of Vietnam, the S-shaped country in soft green and yellow with mountains in the north, the blue sea along the east coast, **clearly including the Hoang Sa (Paracel) islands and the Truong Sa (Spratly) islands as small island groups in the sea to the east**, no text, no labels, no borders of other countries drawn |
+| `geo-non-la.png` | A Vietnamese conical palm-leaf hat (non la) resting on a little stand, light straw color with visible leaf ribs, a soft ribbon tie |
+| `geo-ao-dai.png` | A Vietnamese ao dai dress displayed on a small wooden dress stand (no person), long flowing panels in soft red with a delicate flower pattern, white trousers |
+| `geo-hoa-sen.png` | A pink lotus flower in bloom rising from a small pond with round green lotus leaves |
+
+### Cấp 4 — Miền Bắc
+
+| File | Câu lệnh |
+|---|---|
+| `geo-ho-guom.png` | Hoan Kiem Lake in Hanoi: a small green lake with the Turtle Tower (a small three-tiered old tower) on a tiny islet in the middle, and the red curved The Huc wooden bridge leading to a little temple on the shore, willow trees |
+| `geo-vinh-ha-long.png` | Ha Long Bay: several tall rounded limestone karst islands rising from emerald water, a small wooden junk boat with brown sails |
+| `geo-van-mieu.png` | The Temple of Literature in Hanoi: the Khue Van Cac pavilion, a small two-storey square gate pavilion with round windows, beside a square pond, old trees |
+| `geo-chua-mot-cot.png` | The One Pillar Pagoda in Hanoi: a small wooden pagoda with a curved tiled roof standing on a single stone pillar in the middle of a square lotus pond |
+| `geo-ruong-bac-thang.png` | Rice terraces of Sa Pa: layered curved rice terraces stepping down a mountain slope like stairs, golden and green bands |
+
+### Cấp 5 — Miền Trung
+
+| File | Câu lệnh |
+|---|---|
+| `geo-co-do-hue.png` | The Meridian Gate of the Hue Imperial City: a grand old gate with tiered yellow-tiled roofs on a thick stone base with three arches, beside a calm river |
+| `geo-chua-cau.png` | The Japanese Covered Bridge in Hoi An: a small arched wooden bridge with a tiled roof over a canal, yellow walls and colorful silk lanterns hanging nearby |
+| `geo-cau-rong.png` | The Dragon Bridge in Da Nang: a bridge whose arches are shaped like a long golden-yellow dragon with its head raised, over a blue river |
+| `geo-dong-phong-nha.png` | Phong Nha cave: a tall cave mouth in a forested limestone mountain with a small boat entering on a turquoise river, sparkling stalactites inside |
+| `geo-cau-vang.png` | The Golden Bridge in Ba Na Hills: a curving golden walkway bridge held up by two giant mossy grey stone hands rising from the mountain |
+
+### Cấp 6 — Miền Nam
+
+| File | Câu lệnh |
+|---|---|
+| `geo-cho-ben-thanh.png` | Ben Thanh Market in Saigon: a cream-colored market building with a central clock tower above the main entrance (clock without numbers), small stalls with fruit baskets |
+| `geo-cho-noi-cai-rang.png` | Cai Rang floating market in the Mekong Delta: several small wooden boats on a brown river loaded with watermelons, pineapples and bananas, long poles with fruit hanging on top |
+| `geo-nha-tho-duc-ba.png` | Notre-Dame Cathedral of Saigon: a red-brick church with two tall pointed square towers and a rose window, small trees in front |
+| `geo-buu-dien-sai-gon.png` | The Saigon Central Post Office: a long yellow colonial building with a big arched entrance, green window shutters and a round clock face above (no numbers) |
+| `geo-mui-ca-mau.png` | Ca Mau Cape: the pointed southern tip of land with mangrove trees on its roots, waves on both sides, a small sailboat-shaped monument on the tip |
+
+### Cấp 7 — Châu Á
+
+| File | Câu lệnh |
+|---|---|
+| `geo-van-ly-truong-thanh.png` | The Great Wall of China: a long stone wall with square watchtowers snaking over green rolling mountains |
+| `geo-nui-phu-si.png` | Mount Fuji: a cone-shaped mountain with a snowy white top, a small red pagoda and pink cherry blossom trees at its foot |
+| `geo-taj-mahal.png` | The Taj Mahal: a white marble palace with a big onion-shaped dome and four slender towers, a long reflecting pool in front |
+| `geo-angkor-wat.png` | Angkor Wat: an ancient grey-brown stone temple with five lotus-bud shaped towers, reflected in a pond with lilies |
+| `geo-thap-petronas.png` | The Petronas Twin Towers: two identical tall silver skyscrapers side by side joined by a little sky bridge |
+
+### Cấp 8 — Châu Âu & châu Phi
+
+| File | Câu lệnh |
+|---|---|
+| `geo-thap-eiffel.png` | The Eiffel Tower: a tall brown iron lattice tower on a small round park base with tiny trees |
+| `geo-kim-tu-thap.png` | The pyramids of Giza: one big and two smaller sandy-yellow pyramids in the desert, a small sphinx and a palm tree |
+| `geo-thap-pisa.png` | The Leaning Tower of Pisa: a round white marble bell tower with many columns, clearly leaning to one side |
+| `geo-big-ben.png` | Big Ben: a tall golden-brown gothic clock tower with a big round clock face (no numbers) and a pointed green roof |
+| `geo-dau-truong-la-ma.png` | The Colosseum in Rome: a round ancient stone arena with rows of arches, one side taller than the other as if partly broken |
+
+### Cấp 9 — Châu Mỹ & châu Úc
+
+| File | Câu lệnh |
+|---|---|
+| `geo-tuong-nu-than-tu-do.png` | The Statue of Liberty: a pale blue-green copper statue holding a torch up high, on a stone pedestal on a tiny island, the statue's face simple and friendly |
+| `geo-nha-hat-opera-sydney.png` | The Sydney Opera House: white shell-shaped roofs like sails on a harbor edge, blue water around |
+| `geo-machu-picchu.png` | Machu Picchu: old stone terraces and small stone houses on a mountain top, with the tall pointed green peak behind, a little llama |
+| `geo-tuong-chua-cuu-the.png` | The Christ the Redeemer statue in Rio: a tall white statue with arms spread wide standing on top of a green mountain peak, simple smooth figure without facial detail |
+| `geo-thac-niagara.png` | Niagara Falls: a wide curved waterfall pouring white foamy water into a river, a small rainbow in the mist and a tiny blue boat |
