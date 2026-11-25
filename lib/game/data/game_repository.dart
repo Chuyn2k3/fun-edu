@@ -9,7 +9,9 @@ import '../../online/uuid.dart';
 import '../../profile/kid_repository.dart';
 import '../engine/race.dart';
 import '../engine/race_question.dart';
+import '../../explore/geography_level.dart';
 import '../engine/rewards.dart';
+import '../travel/trip.dart';
 import 'badges.dart';
 import 'reward_pool.dart';
 
@@ -415,6 +417,43 @@ class GameRepository {
     });
   }
 
+  /// Chíp's place on the trip, kept within the trip (a synced counter can be
+  /// above it; the stored value is never lowered).
+  Future<int> tripStep() async => tripClamp(await _counter(_requireKid(), 'trip.step'));
+
+  /// Moves Chíp [steps] forward (no further than the end of the trip) and
+  /// returns the stops reached on the way.
+  Future<TripAdvance> advanceTrip(int steps) {
+    final kid = _requireKid();
+    return _db.transaction(() async {
+      final from = tripClamp(await _counter(kid, 'trip.step'));
+      final by = min(max(steps, 0), tripLength - from);
+      if (by <= 0) return TripAdvance(from: from, to: from, newStops: const []);
+      final uuid = await _kidUuid(kid);
+      await _bumpCounter(kid, uuid, 'trip.step', by);
+      final to = from + by;
+      return TripAdvance(from: from, to: to, newStops: tripNewStops(from, to));
+    });
+  }
+
+  /// One cosmic star for a first-try answer on the trip; returns the total.
+  Future<int> addTripStar() {
+    final kid = _requireKid();
+    return _db.transaction(() async {
+      final uuid = await _kidUuid(kid);
+      final before = (await _profile(kid))?.cosmicStars ?? 0;
+      final total = await _addCosmicStars(kid, uuid, before, 1);
+      await _db.into(_db.gameProfile).insertOnConflictUpdate(
+            GameProfileCompanion(
+              kidId: Value(kid),
+              cosmicStars: Value(total),
+              updatedAt: Value(_now()),
+            ),
+          );
+      return total;
+    });
+  }
+
   Future<int> totalStars() async {
     final kid = kidId;
     if (kid == null) return 0;
@@ -629,6 +668,17 @@ class GameRepository {
     }
     return v;
   }
+}
+
+/// One move on Chíp's trip.
+class TripAdvance {
+  const TripAdvance({required this.from, required this.to, required this.newStops});
+
+  final int from;
+  final int to;
+
+  /// Stops reached on the way, in order.
+  final List<GeoItem> newStops;
 }
 
 /// Bumped after every write to a kid's game data (a race recorded, a gift

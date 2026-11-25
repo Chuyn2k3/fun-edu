@@ -79,6 +79,21 @@ void main() {
     expect(level.levelIndex, 6);
   });
 
+  test('trip steps taken offline on two devices add up', () async {
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await sync(phone);
+    await sync(ipad);
+    final ipadId = await _onlyKid(ipad);
+    await GameRepository(phone, kidId: id).advanceTrip(10);
+    await GameRepository(ipad, kidId: ipadId).advanceTrip(8);
+    await sync(phone);
+    await sync(ipad);
+    await sync(phone);
+    expect(await GameRepository(phone, kidId: id).tripStep(), 18);
+    expect(await GameRepository(ipad, kidId: ipadId).tripStep(), 18);
+  });
+
   test('stars earned offline on two devices add up, never lost or doubled',
       () async {
     final id = await KidRepository(phone)
