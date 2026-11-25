@@ -195,6 +195,18 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('speaker button after a right answer repeats the fact',
+      (t) async {
+    _setSize(t, 390, 844);
+    final speaker = await _pump(t);
+    await _tapChoice(t, _expected[0].correctIndex);
+    await t.tap(find.byKey(const ValueKey('geo-speaker')));
+    await t.pump();
+    final a = _expected[0].answer;
+    expect(speaker.spoken.last, '${a.speech}. ${a.fact}');
+    await t.pump(const Duration(seconds: 2));
+  });
+
   testWidgets('speaker button repeats the question', (t) async {
     _setSize(t, 390, 844);
     final speaker = await _pump(t);

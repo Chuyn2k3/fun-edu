@@ -112,6 +112,17 @@ class _GeographySessionScreenState
 
   void _speakCurrent() => _speaker.speak(_questions[_index].speech);
 
+  /// The speaker button: the question, or after a right answer the name
+  /// and fact Chíp is reading (never the question already answered).
+  void _replay() {
+    if (_answered) {
+      final a = _questions[_index].answer;
+      _speaker.speak('${a.speech}. ${a.fact}');
+    } else {
+      _speakCurrent();
+    }
+  }
+
   /// Decodes the pictures of question [i] ahead of time; a broken picture
   /// is ignored here and shown as a name tile on screen.
   void _precache(int i) {
@@ -206,7 +217,7 @@ class _GeographySessionScreenState
           ),
         ),
         const SizedBox(width: 8),
-        _SpeakerButton(tablet: tablet, onTap: _speakCurrent),
+        _SpeakerButton(tablet: tablet, onTap: _replay),
       ],
     );
 

@@ -295,7 +295,7 @@ const List<GeographyLevel> geographyLevels = [
         id: 'cho-noi-cai-rang',
         name: 'Chợ nổi Cái Răng',
         speech: 'Chợ nổi Cái Răng',
-        fact: 'Mọi người mua bán trái cây ngay trên thuyền.',
+        fact: 'Chợ họp ngay trên sông, thuyền nào cũng đầy trái cây.',
         clue: 'Mọi người mua bán trái cây ngay trên thuyền.',
       ),
       GeoItem(

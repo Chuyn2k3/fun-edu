@@ -38,7 +38,7 @@ Bảng này sinh từ code; nếu sửa code thì sinh lại cho khớp.
 | 5. Miền Trung | `dong-phong-nha` | Động Phong Nha | Động Phong Nha | Hang động rất đẹp, đi thuyền vào bên trong núi. | Đi thuyền vào trong lòng núi, thấy đá lấp lánh. |  |
 | 5. Miền Trung | `cau-vang` | Cầu Vàng | Cầu Vàng | Cây cầu màu vàng được hai bàn tay đá nâng lên. | Cây cầu được hai bàn tay khổng lồ nâng lên. |  |
 | 6. Miền Nam | `cho-ben-thanh` | Chợ Bến Thành | Chợ Bến Thành | Khu chợ lớn ở Sài Gòn, có tháp đồng hồ. | Khu chợ lớn ở Sài Gòn, cổng có đồng hồ. |  |
-| 6. Miền Nam | `cho-noi-cai-rang` | Chợ nổi Cái Răng | Chợ nổi Cái Răng | Mọi người mua bán trái cây ngay trên thuyền. | Mọi người mua bán trái cây ngay trên thuyền. |  |
+| 6. Miền Nam | `cho-noi-cai-rang` | Chợ nổi Cái Răng | Chợ nổi Cái Răng | Chợ họp ngay trên sông, thuyền nào cũng đầy trái cây. | Mọi người mua bán trái cây ngay trên thuyền. |  |
 | 6. Miền Nam | `nha-tho-duc-ba` | Nhà thờ Đức Bà | Nhà thờ Đức Bà | Tòa nhà gạch đỏ có hai tháp cao ở Sài Gòn. | Tòa nhà gạch đỏ ở Sài Gòn, có hai tháp cao. |  |
 | 6. Miền Nam | `buu-dien-sai-gon` | Bưu điện Sài Gòn | Bưu điện Sài Gòn | Nơi gửi thư và bưu thiếp, mái vòm thật đẹp. | Nơi mọi người đến gửi thư và bưu thiếp. |  |
 | 6. Miền Nam | `mui-ca-mau` | Mũi Cà Mau | Mũi Cà Mau | Mảnh đất ở tận cùng phía nam của đất nước. | Mảnh đất xa nhất ở phía nam, có rừng đước. |  |

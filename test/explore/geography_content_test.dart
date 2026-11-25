@@ -43,6 +43,7 @@ void main() {
         final name = i.name.toLowerCase();
         expect(i.fact.toLowerCase(), isNot(contains(name)), reason: i.id);
         expect(i.clue.toLowerCase(), isNot(contains(name)), reason: i.id);
+        expect(i.fact, isNot(i.clue), reason: i.id);
       }
     }
   });

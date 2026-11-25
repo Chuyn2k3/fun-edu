@@ -166,7 +166,27 @@ class _IslandCard extends StatelessWidget {
       width: imageSize,
       height: imageSize,
       fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => SizedBox(width: imageSize, height: imageSize),
+      errorBuilder: (_, __, ___) => Container(
+        width: imageSize,
+        height: imageSize,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Subject.diaLy.tint,
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Subject.diaLy.color,
+            ),
+          ),
+        ),
+      ),
     );
     final text = Column(
       crossAxisAlignment:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/features/explore/explore_hub_screen.dart';
@@ -14,10 +15,25 @@ void _setSize(WidgetTester t, double w, double h) {
   });
 }
 
-Future<GoRouter> _pump(WidgetTester t, {double textScale = 1.0}) async {
+/// Every asset loads except the island pictures.
+class _BrokenIslands extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) {
+    if (key.contains('island-')) throw FlutterError('broken $key');
+    return rootBundle.load(key);
+  }
+}
+
+Future<GoRouter> _pump(WidgetTester t,
+    {double textScale = 1.0, AssetBundle? bundle}) async {
   final router = GoRouter(initialLocation: '/kham-pha', routes: [
     GoRoute(path: '/', builder: (_, __) => const Text('home')),
-    GoRoute(path: '/kham-pha', builder: (_, __) => const ExploreHubScreen()),
+    GoRoute(
+        path: '/kham-pha',
+        builder: (_, __) => bundle == null
+            ? const ExploreHubScreen()
+            : DefaultAssetBundle(
+                bundle: bundle, child: const ExploreHubScreen())),
     GoRoute(
         path: '/subject/dia-ly', builder: (_, __) => const Text('bản đồ')),
   ]);
@@ -62,6 +78,17 @@ void main() {
       await t.pump(const Duration(seconds: 5));
     });
   }
+
+  testWidgets('a broken island picture shows the island name', (t) async {
+    _setSize(t, 390, 844);
+    await _pump(t, bundle: _BrokenIslands());
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('island-sinh-hoc')),
+            matching: find.text('Sinh học')),
+        findsNWidgets(2));
+    expect(t.takeException(), isNull);
+  });
 
   for (final (size, scale) in const [
     (Size(375, 667), 2.0),

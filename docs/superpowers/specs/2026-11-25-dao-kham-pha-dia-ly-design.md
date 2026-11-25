@@ -102,7 +102,7 @@ Cấp 1–3 chỉ dùng dạng 1; từ cấp 4 trộn cả hai dạng, khoảng 
 Dạng "ghép ảnh với tên" đã nêu lúc trao đổi **bị bỏ** vì bé 3–6 tuổi chưa đọc được tên; cả hai dạng còn lại đều chọn bằng ảnh, không cần biết chữ.
 
 Luật chung, như Tiếng Anh:
-- Chọn sai: ảnh rung, Chíp động viên và đọc lại câu hỏi; bé chọn tiếp.
+- Chọn sai: ảnh đổi viền cam (giống Tiếng Anh, không rung), Chíp động viên và đọc lại câu hỏi; bé chọn tiếp.
 - Chọn đúng: Chíp vui, đọc tên địa danh rồi đọc câu kể, sau đó sang câu kế.
 - Ba ảnh trong một câu là ba mục khác nhau, cùng cấp; trong 5 câu một lượt không lặp đáp án đúng khi cấp còn đủ mục. Builder quyết cách tránh lặp khi cấp chỉ có 5 mục.
 - Lên/lùi cấp theo `nextLevelIndex` (`lib/math/level_rule.dart`), tính theo số câu đúng ngay lần đầu, giống ba môn kia; chỉ ghi khi bé học đúng cấp hiện tại (giống `PracticeEnglishScreen`).
