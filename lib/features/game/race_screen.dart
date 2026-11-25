@@ -16,7 +16,6 @@ import '../../math/math_question.dart';
 import '../../online/room/room_controller.dart';
 import '../../profile/avatars.dart';
 import '../../profile/kid_repository.dart';
-import '../../stroke/glyph_repository.dart';
 import '../../ui/assets.dart';
 import '../../ui/layout/form_factor.dart';
 import '../../ui/theme/depth.dart';
@@ -26,8 +25,9 @@ import '../../voice/speaker.dart';
 import '../../voice/voice_lines.dart';
 import '../online_race/room_widgets.dart' show StickerImageTile, roomStickerArt;
 import 'answer_keys.dart';
-import 'glyph_view.dart';
 import 'race_controller.dart';
+import 'race_question_card.dart';
+export 'race_question_card.dart' show debugQuestionCardBuilds;
 import 'race_rival.dart';
 import 'race_standings_strip.dart';
 
@@ -36,11 +36,6 @@ part 'race_hud.dart';
 part 'race_online_extras.dart';
 
 const _tryAgain = 'Thử lại nhé!';
-
-/// How many times the question card was built (tests check that Chíp's
-/// steps do not rebuild it).
-@visibleForTesting
-int debugQuestionCardBuilds = 0;
 
 /// What Chíp reads when [q] appears.
 String spokenRaceQuestion(RaceQuestion q) => switch (q) {
