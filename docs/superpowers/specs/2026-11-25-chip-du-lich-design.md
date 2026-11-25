@@ -1,6 +1,6 @@
 # Trò chơi "Chíp du lịch" + sắp lại Góc Chơi (thiết kế)
 
-Ngày: 2026-11-25 · Nhánh: `chipchip` · Trạng thái: chờ chủ dự án duyệt
+Ngày: 2026-11-25 · Nhánh: `chipchip` · Trạng thái: chủ dự án đã duyệt (2026-11-25)
 
 ## 1. Ý định và lý do
 
@@ -91,11 +91,8 @@ Hành trình **dài, lưu lại** (chủ dự án chọn), không chơi theo ch�
   - Chíp dừng, bưu thiếp lật ra giữa màn, hiện ảnh địa danh và tên.
   - Chíp đọc `speech` rồi `fact` (thời gian chờ theo `geographyAnswerPause`).
   - Bé chạm "Đi tiếp" để sang câu sau.
-- **Hết 10 câu:** màn tổng kết hiện các bưu thiếp mới nhận trong lần chơi và số sao vũ trụ nhận được. Có hai nút: "Chơi tiếp" và "Về Góc Chơi".
-- **Sao vũ trụ** (dùng chung với đua tên lửa):
-  - +1 cho mỗi câu đúng ngay lần đầu;
-  - +2 cho mỗi bưu thiếp mới.
-  - *(Quyết định của người viết spec: cùng tiền tệ với Xưởng độ; trò này không có phần thưởng riêng.)*
+- **Hết 10 câu:** màn tổng kết hiện các bưu thiếp mới nhận trong lần chơi và số sao vũ trụ nhận được (bằng số câu đúng ngay lần đầu). Có hai nút: "Chơi tiếp" và "Về Góc Chơi".
+- **Sao vũ trụ** (dùng chung với đua tên lửa; chủ dự án chọn mức ngang đua): +1 cho mỗi câu đúng ngay lần đầu, **tối đa 10 mỗi lần chơi**, kể cả sau khi đi hết hành trình. Bưu thiếp **không** kèm sao (bưu thiếp đã là phần thưởng).
 - **Bỏ ngang giữa chừng:** các bước đã đi vẫn được giữ. Mỗi câu đúng ghi bước ngay, không chờ hết lượt. Không mất gì.
 
 ### 5.3 Màn chơi `/game/travel`
@@ -177,14 +174,14 @@ Phải giữ nguyên các test Góc Chơi hiện có khi công tắc tắt. Ản
   - `Future<TripAdvance> advanceTrip(int steps)`: tăng bộ đếm qua `_bumpCounter` (đồng bộ theo máy như các bộ đếm khác), không vượt 120. Kết quả trả về:
     - bước cũ và bước mới;
     - danh sách bưu thiếp mới;
-    - số sao vũ trụ đã cộng, cộng trong cùng transaction. `_bumpCounter` không tự mở transaction, nên `advanceTrip` phải tự bọc.
+    - (sao vũ trụ cộng riêng theo câu đúng, xem `recordTripAnswer`). `_bumpCounter` không tự mở transaction, nên `advanceTrip` phải tự bọc.
   - `Future<void> recordTripAnswer()`: +1 sao vũ trụ cho câu đúng ngay lần đầu. Builder có thể gộp vào `advanceTrip`.
 - Danh sách trạm: `List<GeoItem> tripStops` lấy từ `geographyLevels.skip(3)`, đặt trong `lib/game/travel/` (engine thuần Dart, không gọi mạng).
 - **Bưu thiếp đến từ máy khác.** Bé chơi trên hai máy lúc offline thì sau khi đồng bộ, vị trí nhảy xa hơn và có bưu thiếp bé chưa được xem lật ra. Mỗi máy giữ một mốc **chỉ lưu trên máy** "đã cho xem tới trạm nào": setting `tripShown.<kidId>`, nằm ngoài danh sách setting được đồng bộ. Nếu vị trí vượt mốc đó:
   - Góc Chơi hiện chấm "Bưu thiếp mới!" trên thẻ Sổ tem;
   - mở Sổ tem thì các bưu thiếp đó lật ra lần lượt, rồi mốc được cập nhật.
 
-  Hai máy có thể cùng cho xem (và cùng cộng sao) cho vài bưu thiếp đầu; chấp nhận được. *(Quyết định của người viết spec.)*
+  Hai máy có thể cùng cho xem vài bưu thiếp đầu; chấp nhận được. *(Quyết định của người viết spec.)*
 - Lần chơi không lưu vào `race_results`; không ảnh hưởng thống kê và huy hiệu của đua tên lửa.
 - Provider cho Góc Chơi: `tripProgressProvider` gồm vị trí, số bưu thiếp và trạm kế tiếp. Làm mới sau mỗi lần chơi và sau đồng bộ, giống cách làm mới `gameHubProvider` hiện nay.
 
