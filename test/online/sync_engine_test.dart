@@ -65,6 +65,20 @@ void main() {
     expect(glyph.completions, 1);
   });
 
+  test('the geography level reaches a second device', () async {
+    final id = await KidRepository(phone)
+        .addKid(nickname: 'Na', avatar: AppImages.chipMain, age: 5);
+    await phone.into(phone.subjectLevels).insert(SubjectLevelsCompanion.insert(
+        kidId: id, subject: 'dia-ly', levelIndex: 6, placedAt: DateTime(2026, 11, 1)));
+
+    await sync(phone);
+    await sync(ipad);
+
+    final level = await ipad.select(ipad.subjectLevels).getSingle();
+    expect(level.subject, 'dia-ly');
+    expect(level.levelIndex, 6);
+  });
+
   test('stars earned offline on two devices add up, never lost or doubled',
       () async {
     final id = await KidRepository(phone)

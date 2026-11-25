@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
 import '../english/english_level.dart';
+import '../explore/geography_level.dart';
 import '../math/level_rule.dart';
 import '../profile/kid_repository.dart';
 import '../math/math_level.dart';
@@ -98,6 +99,23 @@ class LevelRepository {
         await setLevel('tieng-anh', next);
         return next;
       });
+
+  /// Applies the level rule to the geography level and returns the new level.
+  Future<int> recordGeographySession({
+    required int firstTryCorrect,
+    required int total,
+  }) =>
+      _db.transaction(() async {
+        final next = nextLevelIndex(
+          current: (await levelOf('dia-ly') ?? 0)
+              .clamp(0, geographyLevels.length - 1),
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+          levelCount: geographyLevels.length,
+        );
+        await setLevel('dia-ly', next);
+        return next;
+      });
 }
 
 /// Async so callers never see a repository built before the current kid is
@@ -120,6 +138,14 @@ final vietnameseLevelIndexProvider = FutureProvider<int>((ref) async {
 final englishLevelIndexProvider = FutureProvider<int>((ref) async {
   final repo = await ref.watch(levelRepositoryProvider.future);
   return await repo.levelOf('tieng-anh') ?? 0;
+});
+
+/// Kept inside the ladder: a level synced from a newer app version, or a
+/// bad value, never points past the last level.
+final geographyLevelIndexProvider = FutureProvider<int>((ref) async {
+  final repo = await ref.watch(levelRepositoryProvider.future);
+  final stored = await repo.levelOf('dia-ly') ?? 0;
+  return stored.clamp(0, geographyLevels.length - 1);
 });
 
 final isPlacedProvider = FutureProvider<bool>((ref) async {

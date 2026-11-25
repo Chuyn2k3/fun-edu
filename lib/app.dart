@@ -121,6 +121,7 @@ class _AppState extends ConsumerState<App> {
       ref.listen(mathLevelIndexProvider, (_, __) {});
       ref.listen(vietnameseLevelIndexProvider, (_, __) {});
       ref.listen(englishLevelIndexProvider, (_, __) {});
+      ref.listen(geographyLevelIndexProvider, (_, __) {});
     }
     return MaterialApp.router(
       scaffoldMessengerKey: rootScaffoldMessengerKey,

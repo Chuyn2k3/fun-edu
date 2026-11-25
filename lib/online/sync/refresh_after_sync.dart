@@ -12,6 +12,7 @@ void refreshAfterSync(Ref ref) {
   invalidateKidData(ref.invalidate);
   ref.invalidate(vietnameseLevelIndexProvider);
   ref.invalidate(englishLevelIndexProvider);
+  ref.invalidate(geographyLevelIndexProvider);
   ref.invalidate(screenTimeStatusProvider);
   if (ref.exists(collectionSnapshotProvider)) {
     ref.invalidate(collectionSnapshotProvider);
