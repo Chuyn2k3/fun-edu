@@ -97,13 +97,76 @@ keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -sto
 
 ## 5. Triển khai lên máy Oracle
 
-- Bật proxy **Cloudflare** (Full strict) trước tên miền API để ẩn IP gốc và lọc L7/DDoS.
-- Security List / tường lửa Oracle chỉ mở cổng **443** (và SSH từ IP quản trị); PostgreSQL và cổng `8080` chỉ nghe nội bộ Docker network.
-- Lưu trữ dữ liệu PostgreSQL và bản sao lưu trên **Oracle Block Volume đã mã hóa** (encrypted at rest).
-- Sao lưu: `server/deploy/backup.sh` chạy hằng đêm bằng cron (mã hóa AES-256 bằng `BACKUP_PASSPHRASE`, giữ 14 ngày, có thể chép ra ngoài bằng rclone qua `BACKUP_REMOTE`); thử khôi phục mỗi tháng bằng `restore.sh` (vào DB nháp `funedu_restore`). Chi tiết: `server/README.md` mục Backups.
+Máy chủ FunEdu chính thức được triển khai trên máy ảo **Oracle Cloud Always-Free ARM** (4 OCPU, 24 GB RAM, Ampere A1).
 
+### 5.1. Thông tin triển khai thực tế (2026-11-24)
 
-Xem `server/README.md` mục Deploy: `cd server/deploy && cp .env.example .env` (điền đủ), `docker compose up -d --build`. Caddy tự cấp HTTPS cho `API_DOMAIN`.
+- **IP Public VPS:** `152.67.101.215`
+- **Tên miền API (HTTPS):** `api-funedu.152.67.101.215.sslip.io`
+  - Sử dụng dịch vụ DNS động `sslip.io` tự động trỏ về IP công khai của máy chủ mà không cần mua domain.
+  - Web server **Caddy** (`caddy:2-alpine`) tự động lấy và gia hạn chứng chỉ SSL/TLS miễn phí từ Let's Encrypt (hỗ trợ đầy đủ HTTP/2, HTTP/3, TLS 1.3).
+  - Trạng thái kiểm tra trực tiếp: `curl https://api-funedu.152.67.101.215.sslip.io/actuator/health` → `{"status":"UP","groups":["liveness","readiness"]}`.
+
+### 5.2. Quy hoạch tài nguyên & Tách biệt dịch vụ
+Máy chủ 24 GB RAM được quy hoạch bằng Docker Compose resource limits để giữ nguyên **> 21 GB RAM và 3 OCPU** cho các hệ thống khác chạy chung trên cùng máy chủ:
+- Thư mục quy hoạch độc lập: `/opt/funedu` (các dự án sau này nằm ở `/opt/<tên-dự-án>`).
+- Giới hạn RAM bằng Docker Compose:
+  - `db` (PostgreSQL 16 Alpine): tối đa **512 MB RAM**.
+  - `app` (Spring Boot 3.3, Java 21): tối đa **1536 MB RAM** (`deploy.resources.limits.memory: 1536M`).
+  - `caddy` (Reverse Proxy & SSL): tối đa **128 MB RAM**.
+  - Tổng chiếm dụng: chỉ ~2.1 GB RAM tối đa (thực tế vận hành thông thường chỉ ~500 MB RAM).
+
+### 5.3. Tường lửa mạng (2 lớp)
+1. **Oracle Cloud VCN Security List:** Mở Ingress Rules cho `0.0.0.0/0` cổng TCP `80` và `443` (HTTP/HTTPS).
+2. **OS Linux Firewall (`iptables`):**
+   ```bash
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+   sudo netfilter-persistent save 2>/dev/null || sudo iptables-save | sudo tee /etc/iptables/rules.v4
+   ```
+   PostgreSQL (cổng `5432`) và Spring Boot (cổng `8080`) không mở ra ngoài Internet, chỉ giao tiếp nội bộ trong mạng Docker bridge.
+
+### 5.4. Xác thực Google & Apple (Production)
+- Dự án Google Cloud: `BudgetTracker` (Project number `449966543884`), màn hình OAuth Consent Screen đã được **xuất bản công khai (In Production)**, cho phép mọi phụ huynh đăng nhập bằng bất kỳ tài khoản Gmail nào.
+- Các Client ID cấu hình:
+  - **Web Client ID:** `449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com` (truyền vào app qua `GOOGLE_SERVER_CLIENT_ID` và máy chủ qua `GOOGLE_CLIENT_IDS`).
+  - **Android Client ID:** `449966543884-7phjugnavs0jonbfa89s4jdec8k116u1.apps.googleusercontent.com` (gói `com.ibme.funedu`, SHA-1 debug keystore `14:CC:7F:CA:B1:3E:BD:94:87:95:70:E1:89:B5:8F:32:C3:81:6C:CE`).
+  - **iOS Client ID:** `449966543884-q0q898f42tjcs84glebt80ugj5t3otsv.apps.googleusercontent.com` (trong `ios/Runner/Info.plist`).
+- Cấu hình file `/opt/funedu/server/deploy/.env` trên máy chủ:
+  ```ini
+  API_DOMAIN=api-funedu.152.67.101.215.sslip.io
+  DB_USER=funedu
+  DB_PASSWORD=<mật khẩu database bí mật>
+  AUTH_JWT_SECRET=<chuỗi base64 bí mật ký token>
+  GOOGLE_CLIENT_IDS=449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com,449966543884-q0q898f42tjcs84glebt80ugj5t3otsv.apps.googleusercontent.com
+  APPLE_CLIENT_IDS=com.ibme.funedu
+  ```
+
+### 5.5. Lệnh build ứng dụng kết nối trực tiếp
+- **Chạy trực tiếp (Debug/Profile):**
+  ```bash
+  flutter run \
+    --dart-define=FUNEDU_API_URL=https://api-funedu.152.67.101.215.sslip.io \
+    --dart-define=GOOGLE_SERVER_CLIENT_ID=449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com
+  ```
+- **Build APK Release:**
+  ```bash
+  flutter build apk --release \
+    --dart-define=FUNEDU_API_URL=https://api-funedu.152.67.101.215.sslip.io \
+    --dart-define=GOOGLE_SERVER_CLIENT_ID=449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com
+  ```
+  File xuất ra tại: `build/app/outputs/flutter-apk/app-release.apk` (dung lượng ~86 MB).
+- **Build iOS (TestFlight):**
+  ```bash
+  flutter build ipa --release \
+    --dart-define=FUNEDU_API_URL=https://api-funedu.152.67.101.215.sslip.io \
+    --dart-define=GOOGLE_SERVER_CLIENT_ID=449966543884-6jg3kue744oqqf7ati30i35773dljomc.apps.googleusercontent.com
+  ```
+
+### 5.6. Sao lưu & Bảo vệ dữ liệu
+- Dữ liệu PostgreSQL lưu trên volume Docker `db-data`.
+- Sao lưu: `server/deploy/backup.sh` chạy hằng đêm bằng cron (mã hóa AES-256 bằng `BACKUP_PASSPHRASE`, giữ 14 ngày, chép dự phòng qua `BACKUP_REMOTE` nếu cần). Thử khôi phục bằng `restore.sh`.
+- Khi cần gắn thêm tên miền chính thức, có thể bật Cloudflare Full (strict) trước Caddy để ẩn IP gốc và chống DDoS L7.
 
 ## 6. Thiết kế đồng bộ (tóm tắt)
 
