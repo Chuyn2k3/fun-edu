@@ -71,22 +71,33 @@ class SessionHeader extends ConsumerWidget {
               ),
             ),
           ),
+          // Large system text shrinks the progress and the stars to the
+          // row's height instead of overflowing it.
           if (showProgress) ...[
             const SizedBox(width: 8),
             SizedBox(
               width: 48,
-              child: _ProgressBar(step: step!, total: totalSteps!),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: _ProgressBar(step: step!, total: totalSteps!),
+              ),
             ),
           ],
           const SizedBox(width: 8),
-          InfoPill(
-            leading: Image.asset(
-              AppImages.icStar,
-              width: 24,
-              height: 24,
-              fit: BoxFit.contain,
+          Flexible(
+            flex: 0,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: InfoPill(
+                leading: Image.asset(
+                  AppImages.icStar,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                ),
+                label: '$stars',
+              ),
             ),
-            label: '$stars',
           ),
         ],
       ),

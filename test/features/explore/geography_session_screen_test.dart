@@ -204,8 +204,7 @@ void main() {
   });
 
   for (final (size, scale) in const [
-    // x1.3: the shared SessionHeader itself overflows at x2.0 (pre-existing).
-    (Size(375, 667), 1.3),
+    (Size(375, 667), 2.0),
     (Size(390, 844), 1.0),
     (Size(820, 1180), 1.0),
     (Size(1180, 820), 1.0),

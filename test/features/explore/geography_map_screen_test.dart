@@ -101,6 +101,14 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('map fits a small phone at text x2.0', (t) async {
+    _setSize(t, 375, 667);
+    t.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpAt(t, '/subject/dia-ly');
+    expect(t.takeException(), isNull);
+  });
+
   for (final size in const [Size(390, 844), Size(1180, 820)]) {
     testWidgets('map renders all 9 levels at $size', (t) async {
       _setSize(t, size.width, size.height);
