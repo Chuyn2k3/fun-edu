@@ -18,6 +18,7 @@ import 'features/game/race_controller.dart';
 import 'features/game/race_result_screen.dart';
 import 'features/game/race_screen.dart';
 import 'features/game/sticker_album_screen.dart';
+import 'features/game/postcard_book_screen.dart';
 import 'features/game/travel_screen.dart';
 import 'features/game/subject_picker.dart';
 import 'features/home/home_screen.dart';
@@ -110,6 +111,13 @@ final GoRouter appRouter = GoRouter(
           pageBuilder: (context, state) => buildSmoothTransitionPage(
             key: state.pageKey,
             child: const StickerAlbumScreen(),
+          ),
+        ),
+        GoRoute(
+          path: 'postcards',
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            key: state.pageKey,
+            child: const PostcardBookScreen(),
           ),
         ),
         GoRoute(
