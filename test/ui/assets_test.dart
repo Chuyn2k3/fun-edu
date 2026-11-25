@@ -24,6 +24,29 @@ void main() {
     }
   });
 
+  test('explore images are bundled with 2.0x and 3.0x, kept out of the splash precache',
+      () async {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final bundled = manifest.listAssets().toSet();
+    expect(AppImages.geography.length, 47);
+    for (final path in AppImages.explore) {
+      expect(bundled, contains(path), reason: path);
+      final slash = path.lastIndexOf('/');
+      final dir = path.substring(0, slash);
+      final name = path.substring(slash + 1);
+      final variants =
+          manifest.getAssetVariants(path)!.map((v) => v.key).toSet();
+      expect(variants, contains('$dir/2.0x/$name'), reason: path);
+      expect(variants, contains('$dir/3.0x/$name'), reason: path);
+      final bytes = (await rootBundle.load(path)).buffer.asUint8List();
+      expect([4, 6], contains(bytes[25]), reason: path);
+    }
+    for (final path in AppImages.explore) {
+      expect(AppImages.all, isNot(contains(path)), reason: path);
+    }
+    expect(AppImages.all, contains(AppImages.icKhamPha));
+  });
+
   test('game art PNGs have an alpha channel', () async {
     final game = AppImages.all.where((p) => p.startsWith('assets/images/game/'));
     expect(game.length, 46);

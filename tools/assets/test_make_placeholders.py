@@ -92,3 +92,26 @@ def test_cli_execution(tmp_path: Path):
     assert res.returncode == 0
     assert (avatar_dir / "fox.png").exists()
     assert (game_dir / "sticker-party.png").exists()
+
+
+def test_explore_placeholders_generate_and_never_overwrite(tmp_path: Path):
+    from make_placeholders import generate_explore_placeholders, EXPLORE
+
+    explore_dir = tmp_path / "explore"
+    root_dir = tmp_path / "images"
+    generated = generate_explore_placeholders(explore_dir=explore_dir, root_dir=root_dir)
+    assert len(generated) == (len(EXPLORE) + 1) * 3
+    for sub in ["", "2.0x", "3.0x"]:
+        for target in [
+            explore_dir / sub / "geo-nui.png",
+            explore_dir / sub / "island-dia-ly.png",
+            root_dir / sub / "ic-kham-pha.png",
+        ]:
+            assert target.exists(), target
+            with Image.open(target) as img:
+                assert img.mode == "RGBA"
+    marker = explore_dir / "geo-nui.png"
+    marker.write_bytes(b"real art")
+    again = generate_explore_placeholders(explore_dir=explore_dir, root_dir=root_dir)
+    assert again == []
+    assert marker.read_bytes() == b"real art"

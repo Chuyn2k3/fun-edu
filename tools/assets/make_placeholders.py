@@ -47,6 +47,36 @@ TEASE_STICKERS: Dict[str, Tuple[str, str, str]] = {
 PARTY_STICKER = "sticker-party"
 PARTY_CONFIG = ("#FFB300", "#FF6F00", "Pháo hoa")
 
+# Explore island (geography) placeholders: id -> short label. Real art from
+# Gemini replaces these files; the generator never overwrites them.
+EXPLORE: Dict[str, str] = {
+    "island-dia-ly": "Địa lý",
+    "island-sinh-hoc": "Sinh học",
+    "island-lich-su": "Lịch sử",
+    "geo-nui": "Núi", "geo-song": "Sông", "geo-bien": "Biển", "geo-rung": "Rừng",
+    "geo-dong-lua": "Đồng lúa", "geo-hang-dong": "Hang động",
+    "geo-nang": "Nắng", "geo-mua": "Mưa", "geo-gio": "Gió", "geo-may": "Mây",
+    "geo-cau-vong": "Cầu vồng", "geo-sam-set": "Sấm sét",
+    "geo-co-viet-nam": "Cờ", "geo-ban-do-chu-s": "Bản đồ", "geo-non-la": "Nón lá",
+    "geo-ao-dai": "Áo dài", "geo-hoa-sen": "Hoa sen",
+    "geo-ho-guom": "Hồ Gươm", "geo-vinh-ha-long": "Hạ Long", "geo-van-mieu": "Văn Miếu",
+    "geo-chua-mot-cot": "Một Cột", "geo-ruong-bac-thang": "Ruộng",
+    "geo-co-do-hue": "Huế", "geo-chua-cau": "Chùa Cầu", "geo-cau-rong": "Cầu Rồng",
+    "geo-dong-phong-nha": "Phong Nha", "geo-cau-vang": "Cầu Vàng",
+    "geo-cho-ben-thanh": "Bến Thành", "geo-cho-noi-cai-rang": "Chợ nổi",
+    "geo-nha-tho-duc-ba": "Nhà thờ", "geo-buu-dien-sai-gon": "Bưu điện",
+    "geo-mui-ca-mau": "Cà Mau",
+    "geo-van-ly-truong-thanh": "Vạn Lý", "geo-nui-phu-si": "Phú Sĩ",
+    "geo-taj-mahal": "Taj Mahal", "geo-angkor-wat": "Angkor", "geo-thap-petronas": "Petronas",
+    "geo-thap-eiffel": "Eiffel", "geo-kim-tu-thap": "Kim tự tháp", "geo-thap-pisa": "Pisa",
+    "geo-big-ben": "Big Ben", "geo-dau-truong-la-ma": "La Mã",
+    "geo-tuong-nu-than-tu-do": "Tự do", "geo-nha-hat-opera-sydney": "Sydney",
+    "geo-machu-picchu": "Machu", "geo-tuong-chua-cuu-the": "Rio",
+    "geo-thac-niagara": "Niagara",
+}
+EXPLORE_BG = ("#0E7490", "#155E75")
+EXPLORE_ICON = "ic-kham-pha"
+
 SCALES = [(1, 128, ""), (2, 256, "2.0x"), (3, 384, "3.0x")]
 
 
@@ -179,6 +209,28 @@ def generate_placeholders(
     return generated
 
 
+def generate_explore_placeholders(
+    explore_dir: Path,
+    root_dir: Path,
+    overwrite: bool = False,
+) -> List[Path]:
+    """Placeholder badges for the explore island; never overwrites real art."""
+    bg, rim = EXPLORE_BG
+    jobs = [(explore_dir, name, label) for name, label in EXPLORE.items()]
+    jobs.append((root_dir, EXPLORE_ICON, "Khám phá"))
+    generated: List[Path] = []
+    for base, name, label in jobs:
+        for scale, dim, sub in SCALES:
+            target_dir = base / sub if sub else base
+            target_file = target_dir / f"{name}.png"
+            if target_file.exists() and not overwrite:
+                continue
+            target_dir.mkdir(parents=True, exist_ok=True)
+            _draw_badge(dim, bg, rim, label).save(target_file, format="PNG")
+            generated.append(target_file)
+    return generated
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument(
@@ -194,6 +246,12 @@ def main() -> None:
         help="Target directory for game stickers",
     )
     parser.add_argument(
+        "--explore-dir",
+        type=Path,
+        default=REPO_ROOT / "assets/images/explore",
+        help="Target directory for explore island art",
+    )
+    parser.add_argument(
         "--overwrite",
         action="store_true",
         help="Force overwrite existing files",
@@ -203,6 +261,11 @@ def main() -> None:
     created = generate_placeholders(
         avatar_dir=args.avatar_dir,
         game_dir=args.game_dir,
+        overwrite=args.overwrite,
+    )
+    created += generate_explore_placeholders(
+        explore_dir=args.explore_dir,
+        root_dir=REPO_ROOT / "assets/images",
         overwrite=args.overwrite,
     )
     print(f"Generated {len(created)} placeholder asset files.")

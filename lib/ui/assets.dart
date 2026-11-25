@@ -11,6 +11,7 @@ abstract final class AppImages {
   static const icTiengViet = 'assets/images/ic-tieng-viet.png';
   static const icToan = 'assets/images/ic-toan.png';
   static const icTiengAnh = 'assets/images/ic-tieng-anh.png';
+  static const icKhamPha = 'assets/images/ic-kham-pha.png';
   static const icStar = 'assets/images/ic-star.png';
   static const icFlame = 'assets/images/ic-flame.png';
   static const icCrown = 'assets/images/ic-crown.png';
@@ -132,6 +133,7 @@ abstract final class AppImages {
     icTiengViet,
     icToan,
     icTiengAnh,
+    icKhamPha,
     icStar,
     icFlame,
     icCrown,
@@ -194,5 +196,69 @@ abstract final class AppImages {
     stickerTeaseTurtle,
     stickerTeaseSmoke,
     stickerParty,
+  ];
+
+  // Explore island art, under assets/images/explore/. Kept out of [all] so
+  // the splash does not decode ~50 images; screens precache what they show.
+  static const islandDiaLy = 'assets/images/explore/island-dia-ly.png';
+  static const islandSinhHoc = 'assets/images/explore/island-sinh-hoc.png';
+  static const islandLichSu = 'assets/images/explore/island-lich-su.png';
+
+  /// Geography item art by item id.
+  static const Map<String, String> geography = {
+    'nui': 'assets/images/explore/geo-nui.png',
+    'song': 'assets/images/explore/geo-song.png',
+    'bien': 'assets/images/explore/geo-bien.png',
+    'rung': 'assets/images/explore/geo-rung.png',
+    'dong-lua': 'assets/images/explore/geo-dong-lua.png',
+    'hang-dong': 'assets/images/explore/geo-hang-dong.png',
+    'nang': 'assets/images/explore/geo-nang.png',
+    'mua': 'assets/images/explore/geo-mua.png',
+    'gio': 'assets/images/explore/geo-gio.png',
+    'may': 'assets/images/explore/geo-may.png',
+    'cau-vong': 'assets/images/explore/geo-cau-vong.png',
+    'sam-set': 'assets/images/explore/geo-sam-set.png',
+    'co-viet-nam': 'assets/images/explore/geo-co-viet-nam.png',
+    'ban-do-chu-s': 'assets/images/explore/geo-ban-do-chu-s.png',
+    'non-la': 'assets/images/explore/geo-non-la.png',
+    'ao-dai': 'assets/images/explore/geo-ao-dai.png',
+    'hoa-sen': 'assets/images/explore/geo-hoa-sen.png',
+    'ho-guom': 'assets/images/explore/geo-ho-guom.png',
+    'vinh-ha-long': 'assets/images/explore/geo-vinh-ha-long.png',
+    'van-mieu': 'assets/images/explore/geo-van-mieu.png',
+    'chua-mot-cot': 'assets/images/explore/geo-chua-mot-cot.png',
+    'ruong-bac-thang': 'assets/images/explore/geo-ruong-bac-thang.png',
+    'co-do-hue': 'assets/images/explore/geo-co-do-hue.png',
+    'chua-cau': 'assets/images/explore/geo-chua-cau.png',
+    'cau-rong': 'assets/images/explore/geo-cau-rong.png',
+    'dong-phong-nha': 'assets/images/explore/geo-dong-phong-nha.png',
+    'cau-vang': 'assets/images/explore/geo-cau-vang.png',
+    'cho-ben-thanh': 'assets/images/explore/geo-cho-ben-thanh.png',
+    'cho-noi-cai-rang': 'assets/images/explore/geo-cho-noi-cai-rang.png',
+    'nha-tho-duc-ba': 'assets/images/explore/geo-nha-tho-duc-ba.png',
+    'buu-dien-sai-gon': 'assets/images/explore/geo-buu-dien-sai-gon.png',
+    'mui-ca-mau': 'assets/images/explore/geo-mui-ca-mau.png',
+    'van-ly-truong-thanh': 'assets/images/explore/geo-van-ly-truong-thanh.png',
+    'nui-phu-si': 'assets/images/explore/geo-nui-phu-si.png',
+    'taj-mahal': 'assets/images/explore/geo-taj-mahal.png',
+    'angkor-wat': 'assets/images/explore/geo-angkor-wat.png',
+    'thap-petronas': 'assets/images/explore/geo-thap-petronas.png',
+    'thap-eiffel': 'assets/images/explore/geo-thap-eiffel.png',
+    'kim-tu-thap': 'assets/images/explore/geo-kim-tu-thap.png',
+    'thap-pisa': 'assets/images/explore/geo-thap-pisa.png',
+    'big-ben': 'assets/images/explore/geo-big-ben.png',
+    'dau-truong-la-ma': 'assets/images/explore/geo-dau-truong-la-ma.png',
+    'tuong-nu-than-tu-do': 'assets/images/explore/geo-tuong-nu-than-tu-do.png',
+    'nha-hat-opera-sydney': 'assets/images/explore/geo-nha-hat-opera-sydney.png',
+    'machu-picchu': 'assets/images/explore/geo-machu-picchu.png',
+    'tuong-chua-cuu-the': 'assets/images/explore/geo-tuong-chua-cuu-the.png',
+    'thac-niagara': 'assets/images/explore/geo-thac-niagara.png',
+  };
+
+  static final explore = [
+    islandDiaLy,
+    islandSinhHoc,
+    islandLichSu,
+    ...geography.values,
   ];
 }

@@ -18,6 +18,11 @@ void main() {
         greaterThanOrEqualTo(4.5));
   });
 
+  test('geography subject colour carries white text', () {
+    expect(contrastRatio(AppColors.card, Subject.diaLy.color),
+        greaterThanOrEqualTo(4.5));
+  });
+
   test('contrastRatio follows WCAG formula', () {
     expect(contrastRatio(Colors.black, Colors.white), closeTo(21, 0.01));
     expect(contrastRatio(Colors.white, Colors.white), closeTo(1, 0.001));
