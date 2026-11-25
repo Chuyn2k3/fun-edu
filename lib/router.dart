@@ -18,6 +18,7 @@ import 'features/game/race_controller.dart';
 import 'features/game/race_result_screen.dart';
 import 'features/game/race_screen.dart';
 import 'features/game/sticker_album_screen.dart';
+import 'features/game/travel_screen.dart';
 import 'features/game/subject_picker.dart';
 import 'features/home/home_screen.dart';
 import 'features/house/house_screen.dart';
@@ -109,6 +110,14 @@ final GoRouter appRouter = GoRouter(
           pageBuilder: (context, state) => buildSmoothTransitionPage(
             key: state.pageKey,
             child: const StickerAlbumScreen(),
+          ),
+        ),
+        GoRoute(
+          path: 'travel',
+          pageBuilder: (context, state) => buildSmoothTransitionPage(
+            // A new screen per visit: each one starts a fresh round.
+            key: ValueKey(state.pageKey),
+            child: TravelScreen(key: ValueKey(state.pageKey)),
           ),
         ),
         GoRoute(
