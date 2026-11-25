@@ -10,7 +10,6 @@ import 'package:funedu/explore/geography_level.dart';
 import 'package:funedu/features/subject/geography_map_screen.dart';
 import 'package:funedu/profile/kid_repository.dart';
 import 'package:funedu/progress/level_repository.dart';
-import 'package:funedu/progress/progress_repository.dart';
 import 'package:funedu/voice/speaker.dart';
 import 'package:go_router/go_router.dart';
 
