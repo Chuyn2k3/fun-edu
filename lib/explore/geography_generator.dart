@@ -11,6 +11,7 @@ List<GeographyQuestion> generateGeographyQuestions(
   Random random, {
   int count = 5,
 }) {
+  if (level.pairs.isNotEmpty) return _pairQuestions(level, random, count);
   final items = level.items;
   final answers = <GeoItem>[];
   while (answers.length < count) {
@@ -48,5 +49,44 @@ GeographyQuestion _question(
     speech: clue ? answer.clue : 'Đâu là ${answer.speech}?',
     choices: choices,
     correctIndex: choices.indexOf(answer),
+  );
+}
+
+List<GeographyQuestion> _pairQuestions(
+  GeographyLevel level,
+  Random random,
+  int count,
+) {
+  final asked = <PairItem>[];
+  while (asked.length < count) {
+    asked.addAll([...level.pairs]..shuffle(random));
+  }
+  asked.length = count;
+  return [
+    for (var i = 0; i < count; i++) _pairQuestion(level, asked[i], i, random),
+  ];
+}
+
+GeographyQuestion _pairQuestion(
+  GeographyLevel level,
+  PairItem pair,
+  int index,
+  Random random,
+) {
+  final wrong = [
+    for (final p in level.pairs)
+      if (p.answer.id != pair.answer.id && !pair.alsoRight.contains(p.answer.id))
+        p.answer,
+  ]..shuffle(random);
+  final choices = [pair.answer, ...wrong.take(2)]..shuffle(random);
+  return GeographyQuestion(
+    id: '${level.id}-$index-${pair.id}',
+    kind: GeoQuestionKind.pairPick,
+    prompt: pair.question,
+    speech: pair.questionSpeech ?? pair.question,
+    choices: choices,
+    correctIndex: choices.indexOf(pair.answer),
+    focus: pair.ask,
+    fact: pair.fact,
   );
 }

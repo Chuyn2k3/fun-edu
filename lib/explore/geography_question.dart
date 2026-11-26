@@ -7,6 +7,9 @@ enum GeoQuestionKind {
 
   /// Chíp reads a riddle, then three pictures.
   listenClue,
+
+  /// Chíp shows one picture and asks which goes with it.
+  pairPick,
 }
 
 /// One generated question with three distinct picture choices.
@@ -18,6 +21,8 @@ class GeographyQuestion {
     required this.speech,
     required this.choices,
     required this.correctIndex,
+    this.focus,
+    this.fact,
   })  : assert(choices.length == 3),
         assert(correctIndex >= 0 && correctIndex < 3);
 
@@ -33,5 +38,16 @@ class GeographyQuestion {
   final List<GeoItem> choices;
   final int correctIndex;
 
+  /// The picture asked about ([GeoQuestionKind.pairPick] only).
+  final GeoItem? focus;
+
+  /// The pair's fact ([GeoQuestionKind.pairPick] only).
+  final String? fact;
+
   GeoItem get answer => choices[correctIndex];
+
+  /// What Chíp reads after the right answer.
+  String get praise => kind == GeoQuestionKind.pairPick
+      ? '${answer.speech}! $fact'
+      : '${answer.speech}. ${answer.fact}';
 }

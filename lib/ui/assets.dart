@@ -255,6 +255,11 @@ abstract final class AppImages {
     'thac-niagara': 'assets/images/explore/geo-thac-niagara.png',
   };
 
+  /// Every explore item picture by `<prefix>-<id>` (geo-, bio-).
+  static final Map<String, String> exploreArt = {
+    for (final e in geography.entries) 'geo-${e.key}': e.value,
+  };
+
   static final explore = [
     islandDiaLy,
     islandSinhHoc,

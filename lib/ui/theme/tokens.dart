@@ -24,7 +24,8 @@ enum Subject {
   tiengViet(Color(0xFF7C3AED), Color(0xFFF3EDFF)),
   toan(Color(0xFF2563EB), Color(0xFFE8F1FF)),
   tiengAnh(Color(0xFF0F8A5F), Color(0xFFE5F7EF)),
-  diaLy(Color(0xFF0E7490), Color(0xFFE3F4F8));
+  diaLy(Color(0xFF0E7490), Color(0xFFE3F4F8)),
+  sinhHoc(Color(0xFF4D7C0F), Color(0xFFF0F7E2));
 
   const Subject(this.color, this.tint);
 

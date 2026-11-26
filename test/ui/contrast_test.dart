@@ -21,6 +21,8 @@ void main() {
   test('geography subject colour carries white text', () {
     expect(contrastRatio(AppColors.card, Subject.diaLy.color),
         greaterThanOrEqualTo(4.5));
+    expect(contrastRatio(AppColors.card, Subject.sinhHoc.color),
+        greaterThanOrEqualTo(4.5));
   });
 
   test('contrastRatio follows WCAG formula', () {

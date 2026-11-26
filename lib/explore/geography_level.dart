@@ -1,6 +1,7 @@
 import '../ui/assets.dart';
 
-/// One thing the kid learns to recognise on the geography island.
+/// One thing the kid learns to recognise on an explore island (the name
+/// dates from the first island, geography).
 class GeoItem {
   const GeoItem({
     required this.id,
@@ -8,9 +9,13 @@ class GeoItem {
     required this.speech,
     required this.fact,
     required this.clue,
+    this.prefix = 'geo',
   });
 
   final String id;
+
+  /// Picture file prefix of the island: `geo`, `bio`.
+  final String prefix;
 
   /// Name shown on screen.
   final String name;
@@ -24,7 +29,36 @@ class GeoItem {
   /// Riddle for "listen then pick" questions. Never repeats [name].
   final String clue;
 
-  String get image => AppImages.geography[id]!;
+  String get image => AppImages.exploreArt['$prefix-$id']!;
+}
+
+/// A "which goes with it" question: Chíp shows [ask] (a rabbit, an egg) and
+/// asks [question]; the kid picks [answer] (a carrot, a chick) among other
+/// pairs' answers, never one in [alsoRight] (answers that are true too).
+class PairItem {
+  const PairItem({
+    required this.id,
+    required this.ask,
+    required this.answer,
+    required this.question,
+    this.questionSpeech,
+    required this.fact,
+    this.alsoRight = const [],
+  });
+
+  final String id;
+  final GeoItem ask;
+  final GeoItem answer;
+  final String question;
+
+  /// How the voice reads [question], when it differs.
+  final String? questionSpeech;
+
+  /// Line Chíp reads after the right answer. Never repeats the answer name.
+  final String fact;
+
+  /// Ids of other pairs' answers that are also right for this one.
+  final List<String> alsoRight;
 }
 
 /// One rung of the 9-level geography ladder.
@@ -35,6 +69,7 @@ class GeographyLevel {
     required this.subtitle,
     required this.items,
     required this.clues,
+    this.pairs = const [],
   });
 
   final String id;
@@ -44,6 +79,9 @@ class GeographyLevel {
 
   /// Whether this level mixes in "listen to the clue" questions.
   final bool clues;
+
+  /// "Which goes with it" pairs; a level with pairs asks only those.
+  final List<PairItem> pairs;
 }
 
 // All copy below must be approved by the project owner before the island is

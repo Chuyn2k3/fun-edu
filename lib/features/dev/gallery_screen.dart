@@ -34,6 +34,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     Subject.toan: 'Toán',
     Subject.tiengAnh: 'Tiếng Anh',
     Subject.diaLy: 'Địa lý',
+    Subject.sinhHoc: 'Sinh học',
   };
 
   @override
