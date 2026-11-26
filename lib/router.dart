@@ -29,6 +29,7 @@ import 'features/placement/placement_screen.dart';
 import 'features/setup/first_run_screen.dart';
 import 'features/setup/restore_screen.dart';
 import 'features/subject/english_map_screen.dart';
+import 'explore/explore_island.dart';
 import 'features/subject/geography_map_screen.dart';
 import 'features/explore/explore_hub_screen.dart';
 import 'features/subject/math_map_screen.dart';
@@ -278,22 +279,27 @@ final GoRouter appRouter = GoRouter(
         child: const ExploreHubScreen(),
       ),
     ),
-    GoRoute(
-      path: '/subject/dia-ly',
-      pageBuilder: (context, state) => buildSmoothTransitionPage(
-        key: state.pageKey,
-        child: const GeographyMapScreen(),
-      ),
-    ),
-    GoRoute(
-      path: '/practice-dia-ly/:levelIndex',
-      pageBuilder: (context, state) => buildSmoothTransitionPage(
-        key: state.pageKey,
-        child: PracticeGeographyScreen(
-          int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+    // One map and one practice route per explore island:
+    // /subject/dia-ly, /practice-dia-ly/:levelIndex, /subject/sinh-hoc, ...
+    for (final island in exploreIslands) ...[
+      GoRoute(
+        path: '/subject/${island.id}',
+        pageBuilder: (context, state) => buildSmoothTransitionPage(
+          key: state.pageKey,
+          child: ExploreMapScreen(island),
         ),
       ),
-    ),
+      GoRoute(
+        path: '/practice-${island.id}/:levelIndex',
+        pageBuilder: (context, state) => buildSmoothTransitionPage(
+          key: state.pageKey,
+          child: PracticeExploreScreen(
+            island,
+            int.tryParse(state.pathParameters['levelIndex']!) ?? -1,
+          ),
+        ),
+      ),
+    ],
     GoRoute(
       path: '/practice-math/:levelIndex',
       pageBuilder: (context, state) => buildSmoothTransitionPage(

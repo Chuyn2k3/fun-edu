@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../explore/geography_generator.dart';
+import '../../explore/explore_island.dart';
 import '../../explore/geography_level.dart';
 import '../../explore/geography_question.dart';
 import '../../ui/assets.dart';
@@ -26,6 +27,8 @@ const _tabletChipSize = 140.0;
 const _minPhoneTile = 96.0;
 const _minTabletTile = 140.0;
 const _maxTile = 220.0;
+const _phoneFocus = 168.0;
+const _tabletFocus = 240.0;
 const _gap = 12.0;
 
 /// Estimated time for Chíp to read [spoken] (name + fact) with the slow
@@ -44,8 +47,14 @@ const _minPause = Duration(milliseconds: 1600);
 const _completeExtra = Duration(milliseconds: 200);
 
 /// One geography round: Chíp asks, the kid taps one of three pictures.
-class GeographySessionScreen extends ConsumerStatefulWidget {
-  const GeographySessionScreen({
+/// The geography name of the shared session screen.
+typedef GeographySessionScreen = ExploreSessionScreen;
+
+/// One explore round: Chíp asks, the kid taps one of three pictures (or, for
+/// a pair, the picture that goes with the one shown).
+class ExploreSessionScreen extends ConsumerStatefulWidget {
+  const ExploreSessionScreen({
+    this.island = geographyIsland,
     required this.level,
     required this.onCompleted,
     this.questionCount = 5,
@@ -53,18 +62,19 @@ class GeographySessionScreen extends ConsumerStatefulWidget {
     super.key,
   });
 
+  final ExploreIsland island;
   final GeographyLevel level;
   final void Function(int firstTryCorrect, int total) onCompleted;
   final int questionCount;
   final Random? random;
 
   @override
-  ConsumerState<GeographySessionScreen> createState() =>
-      _GeographySessionScreenState();
+  ConsumerState<ExploreSessionScreen> createState() =>
+      _ExploreSessionScreenState();
 }
 
-class _GeographySessionScreenState
-    extends ConsumerState<GeographySessionScreen> {
+class _ExploreSessionScreenState
+    extends ConsumerState<ExploreSessionScreen> {
   late final List<GeographyQuestion> _questions = generateGeographyQuestions(
     widget.level,
     widget.random ?? Random(),
@@ -116,8 +126,7 @@ class _GeographySessionScreenState
   /// and fact Chíp is reading (never the question already answered).
   void _replay() {
     if (_answered) {
-      final a = _questions[_index].answer;
-      _speaker.speak('${a.speech}. ${a.fact}');
+      _speaker.speak(_questions[_index].praise);
     } else {
       _speakCurrent();
     }
@@ -152,9 +161,11 @@ class _GeographySessionScreenState
       _answered = true;
       _wrongPick = null;
       _chip = AppImages.chipJoy;
-      _message = '${a.name}! ${a.fact}';
+      _message = q.kind == GeoQuestionKind.pairPick
+          ? '${a.name}! ${q.fact}'
+          : '${a.name}! ${a.fact}';
     });
-    final spoken = '${a.speech}. ${a.fact}';
+    final spoken = q.praise;
     final speech = _speaker.speak(spoken);
     // Never more than the estimated reading time plus a margin, in case
     // the voice never reports the end.
@@ -217,12 +228,27 @@ class _GeographySessionScreenState
           ),
         ),
         const SizedBox(width: 8),
-        _SpeakerButton(tablet: tablet, onTap: _replay),
+        _SpeakerButton(
+            tablet: tablet, subject: widget.island.subject, onTap: _replay),
       ],
     );
 
+    final subject = widget.island.subject;
+    final focusItem = q.focus;
+    final Widget? focus = focusItem == null
+        ? null
+        : Center(
+            child: _FocusPicture(
+              key: const ValueKey('geo-focus'),
+              item: focusItem,
+              subject: subject,
+              size: tablet ? _tabletFocus : _phoneFocus,
+            ),
+          );
+
     Widget tile(int i, double size) => _PictureTile(
           key: ValueKey('geo-choice-$i'),
+          subject: subject,
           item: q.choices[i],
           size: size,
           correctShown: _answered && i == q.correctIndex,
@@ -240,7 +266,15 @@ class _GeographySessionScreenState
           children: [
             Expanded(
               flex: 3,
-              child: SingleChildScrollView(child: chipRow),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    chipRow,
+                    if (focus != null) ...[const SizedBox(height: 20), focus],
+                  ],
+                ),
+              ),
             ),
             const SizedBox(width: 24),
             Expanded(
@@ -280,6 +314,7 @@ class _GeographySessionScreenState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   chipRow,
+                  if (focus != null) ...[const SizedBox(height: 20), focus],
                   const SizedBox(height: 24),
                   Wrap(
                     alignment: WrapAlignment.center,
@@ -309,9 +344,14 @@ class _GeographySessionScreenState
 }
 
 class _SpeakerButton extends StatelessWidget {
-  const _SpeakerButton({required this.tablet, required this.onTap});
+  const _SpeakerButton({
+    required this.tablet,
+    required this.subject,
+    required this.onTap,
+  });
 
   final bool tablet;
+  final Subject subject;
   final VoidCallback onTap;
 
   @override
@@ -325,13 +365,13 @@ class _SpeakerButton extends StatelessWidget {
         width: size,
         height: size,
         decoration: raisedDecoration(
-          accent: Subject.diaLy.color,
-          tint: Subject.diaLy.tint,
+          accent: subject.color,
+          tint: subject.tint,
           radius: size / 2,
           pressed: pressed,
         ),
         child: Icon(Icons.volume_up_rounded,
-            size: tablet ? 40 : 32, color: Subject.diaLy.color),
+            size: tablet ? 40 : 32, color: subject.color),
       ),
     );
   }
@@ -340,6 +380,7 @@ class _SpeakerButton extends StatelessWidget {
 class _PictureTile extends StatelessWidget {
   const _PictureTile({
     super.key,
+    required this.subject,
     required this.item,
     required this.size,
     required this.correctShown,
@@ -348,6 +389,7 @@ class _PictureTile extends StatelessWidget {
     required this.onTap,
   });
 
+  final Subject subject;
   final GeoItem item;
   final double size;
   final bool correctShown;
@@ -361,8 +403,8 @@ class _PictureTile extends StatelessWidget {
         ? GameColors.correctRing
         : wrongShown
             ? AppColors.primary
-            : Subject.diaLy.color;
-    final tint = wrongShown ? Subject.viet.tint : Subject.diaLy.tint;
+            : subject.color;
+    final tint = wrongShown ? Subject.viet.tint : subject.tint;
     return Pressable(
       onTap: enabled ? onTap : null,
       semanticsLabel: item.name,
@@ -382,7 +424,7 @@ class _PictureTile extends StatelessWidget {
             Image.asset(
               item.image,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => _NameTile(item.name),
+              errorBuilder: (_, __, ___) => _NameTile(item.name, subject: subject),
             ),
             if (correctShown)
               const Align(
@@ -399,15 +441,16 @@ class _PictureTile extends StatelessWidget {
 
 /// Stand-in when a picture fails to load: the kid can still pick it.
 class _NameTile extends StatelessWidget {
-  const _NameTile(this.name);
+  const _NameTile(this.name, {required this.subject});
 
   final String name;
+  final Subject subject;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Subject.diaLy.tint,
+        color: subject.tint,
         borderRadius: BorderRadius.circular(AppRadii.tile),
       ),
       child: Center(
@@ -421,10 +464,47 @@ class _NameTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: Subject.diaLy.color,
+                color: subject.color,
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The picture a pair question asks about, big above the choices.
+class _FocusPicture extends StatelessWidget {
+  const _FocusPicture({
+    super.key,
+    required this.item,
+    required this.subject,
+    required this.size,
+  });
+
+  final GeoItem item;
+  final Subject subject;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: item.name,
+      image: true,
+      child: Container(
+        width: size,
+        height: size,
+        padding: const EdgeInsets.all(10),
+        decoration: raisedDecoration(
+          accent: subject.color,
+          tint: subject.tint,
+          radius: AppRadii.card,
+        ),
+        child: Image.asset(
+          item.image,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => _NameTile(item.name, subject: subject),
         ),
       ),
     );

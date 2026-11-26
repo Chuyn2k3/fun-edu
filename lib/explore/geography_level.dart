@@ -29,7 +29,11 @@ class GeoItem {
   /// Riddle for "listen then pick" questions. Never repeats [name].
   final String clue;
 
-  String get image => AppImages.exploreArt['$prefix-$id']!;
+  /// The picture; an unknown key still gives a path, which fails to load and
+  /// shows the item's name instead.
+  String get image =>
+      AppImages.exploreArt['$prefix-$id'] ??
+      'assets/images/explore/$prefix-$id.png';
 }
 
 /// A "which goes with it" question: Chíp shows [ask] (a rabbit, an egg) and
