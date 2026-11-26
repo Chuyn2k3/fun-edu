@@ -1,0 +1,52 @@
+[
+  {
+    "title": "Chúng tôi thu thập gì",
+    "lines": [
+      "Ứng dụng chỉ lưu những thông tin cần để bé học:",
+      "• Tên gọi ở nhà của bé (không cần tên thật).",
+      "• Ảnh đại diện chọn từ bộ ảnh có sẵn trong ứng dụng.",
+      "• Tuổi của bé.",
+      "• Tiến độ học: bài đã làm, sao, cấp độ, kết quả tập viết.",
+      "• Thời gian bé dùng ứng dụng mỗi ngày.",
+      "• Tên các phần thưởng do ba mẹ tự đặt.",
+      "• Mã ngẫu nhiên của máy, chỉ để biết máy nào đã liên kết với tài khoản.",
+      "• Các nét bé viết (tọa độ từng nét), giữ lại để cải thiện việc chấm bài tập viết. Các nét này chỉ lưu trên máy này."
+    ]
+  },
+  {
+    "title": "Dữ liệu lưu ở đâu",
+    "lines": [
+      "Mặc định toàn bộ dữ liệu chỉ nằm trên máy này và ứng dụng không gửi gì lên mạng.",
+      "Nếu ba mẹ đăng nhập \"Tài khoản gia đình\" (Google hoặc Apple), ứng dụng lưu lên máy chủ của FunEdu: tên gọi ở nhà, ảnh đại diện, tuổi, tiến độ học và trò chơi, phần thưởng, cài đặt giờ chơi, mã ngẫu nhiên của máy để liên kết, và trang vở đẹp nhất của mỗi chữ (nét chữ bé viết), để giữ Vở của bé khi đổi máy; các lần tập khác chỉ ở trên máy. Từ tài khoản Google/Apple, chúng tôi chỉ giữ mã định danh và email của ba mẹ.",
+      "Khi kết bạn qua mã kết bạn theo gia đình do ba mẹ tạo hoặc nhập, gia đình bạn thấy biệt danh đua, ảnh đại diện, tên lửa và Tủ khoe của bé (nếu ba mẹ bật); thấy bé đang mở ứng dụng hay không (chỉ giữ trong bộ nhớ khi mở app, không lưu lịch sử). Không thấy tên thật, email hay ảnh thật.",
+      "Ba mẹ bật hoặc tắt Tủ khoe và mục tiến độ học trong Tủ khoe riêng cho từng bé (mục tiến độ học mặc định tắt). Trong phòng đua và Tủ khoe chỉ có sticker, câu nói nhanh có sẵn và biểu tượng cảm xúc (vỗ tay, trái tim, ngôi sao), hoàn toàn không có chữ tự do.",
+      "Ba mẹ có thể xóa bạn, đăng xuất hoặc xóa tài khoản online bất cứ lúc nào; xóa bạn xóa liên kết giữa hai gia đình ngay lập tức, và xóa tài khoản sẽ xóa vĩnh viễn mọi dữ liệu, mã kết bạn, liên kết bạn bè và Tủ khoe của gia đình trên máy chủ."
+    ]
+  },
+  {
+    "title": "Chúng tôi không làm gì",
+    "lines": [
+      "• Không chia sẻ dữ liệu của bé với bên thứ ba.",
+      "• Không quảng cáo.",
+      "• Không dùng SDK theo dõi hay phân tích hành vi."
+    ]
+  },
+  {
+    "title": "Quyền của ba mẹ",
+    "lines": [
+      "Ba mẹ có thể xem tiến bộ của bé, sửa hoặc xóa hồ sơ từng bé, và xóa toàn bộ dữ liệu bất cứ lúc nào trong Góc ba mẹ (mục Tiến bộ, Hồ sơ và Cài đặt)."
+    ]
+  },
+  {
+    "title": "Căn cứ pháp lý",
+    "lines": [
+      "Chúng tôi xử lý dữ liệu theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân. Dữ liệu của trẻ em chỉ được tạo khi ba mẹ đồng ý."
+    ]
+  },
+  {
+    "title": "Liên hệ",
+    "lines": [
+      "Mọi thắc mắc hoặc yêu cầu về dữ liệu, xin liên hệ: phamdoan060801@gmail.com"
+    ]
+  }
+]

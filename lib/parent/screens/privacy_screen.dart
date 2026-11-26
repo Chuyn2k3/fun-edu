@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/dotted_background.dart';
 
-const _sections = <(String, List<String>)>[
+/// The privacy policy text, also published on the website
+/// (test/website/privacy_export_test.dart writes it for the site).
+const privacySections = <(String, List<String>)>[
   (
     'Chúng tôi thu thập gì',
     [
@@ -95,7 +97,7 @@ class PrivacyScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final (title, lines) in _sections) ...[
+                    for (final (title, lines) in privacySections) ...[
                       Text(
                         title,
                         style: const TextStyle(
