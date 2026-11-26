@@ -1,0 +1,18 @@
+.items { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
+.items .btn { min-width: 64px; font-size: 26px; padding: 6px 14px; }
+.items .btn[aria-pressed='true'] { background: var(--primary); color: #fff; box-shadow: 0 5px 0 #8f3009; }
+.pad-wrap { position: relative; margin: 14px auto 12px; width: min(100%, 520px, 62vh); }
+.pad-wrap canvas {
+  display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: var(--radius-card);
+  box-shadow: var(--shadow); background: #fff; touch-action: none; cursor: crosshair;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.overlay {
+  position: fixed; inset: 0; background: rgba(34, 40, 74, 0.35);
+  display: grid; place-items: center; padding: 16px; z-index: 10;
+}
+.overlay .card { max-width: 420px; width: 100%; text-align: center; }
+.overlay img { width: 120px; height: 120px; object-fit: contain; }
+.overlay .row { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.cta { margin-top: 16px; text-align: center; }
+.cta h3 { font-size: 20px; }
