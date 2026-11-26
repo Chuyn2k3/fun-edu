@@ -209,7 +209,7 @@ class _ExploreSessionScreenState
           if (context.canPop()) {
             context.pop();
           } else {
-            context.go('/subject/dia-ly');
+            context.go('/subject/${widget.island.id}');
           }
         },
       ),

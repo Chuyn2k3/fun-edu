@@ -138,6 +138,49 @@ void main() {
     });
   }
 
+  testWidgets('375x667 x2.0: the pair answers are on screen without scrolling',
+      (t) async {
+    _size(t, 375, 667);
+    t.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+    await _pump(t);
+    for (var i = 0; i < 3; i++) {
+      final r = t.getRect(find.byKey(ValueKey('geo-choice-$i')));
+      expect(r.bottom, lessThanOrEqualTo(667), reason: 'choice $i at $r');
+    }
+  });
+
+  testWidgets('back with no history goes to the island map', (t) async {
+    _size(t, 390, 844);
+    final router = GoRouter(initialLocation: '/practice-thu/0', routes: [
+      GoRoute(
+          path: '/subject/thu', builder: (_, __) => const Text('bản đồ thử')),
+      GoRoute(
+          path: '/subject/dia-ly',
+          builder: (_, __) => const Text('bản đồ địa lý')),
+      GoRoute(
+          path: '/practice-thu/:i',
+          builder: (_, __) => ExploreSessionScreen(
+              island: _island,
+              level: _pairLevel,
+              random: Random(4),
+              onCompleted: (_, __) {})),
+    ]);
+    addTearDown(router.dispose);
+    await t.pumpWidget(ProviderScope(
+      overrides: [
+        speakerProvider.overrideWithValue(_Spy()),
+        homeSummaryProvider.overrideWith((_) async => const HomeSummary(
+            totalStars: 1, learnedDaysThisWeek: 1, masteredWriting: 0)),
+      ],
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await t.pump();
+    await t.tap(find.bySemanticsLabel('Quay lại'));
+    await t.pumpAndSettle();
+    expect(find.text('bản đồ thử'), findsOneWidget);
+  });
+
   testWidgets('routes: geography map title and a past-the-end island level',
       (t) async {
     _size(t, 390, 844);

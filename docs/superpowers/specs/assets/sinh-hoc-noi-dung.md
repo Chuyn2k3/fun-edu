@@ -18,11 +18,11 @@ Bảng sinh từ code; sửa code thì sinh lại.
 | Con vật trong nhà | `vit` | Vịt | Bơi giỏi dưới ao, kêu cạp cạp. | Con vật bơi dưới ao, kêu cạp cạp. |  |
 | Con vật trong nhà | `lon` | Lợn | Kêu ụt ịt, thích ăn no rồi ngủ. | Con vật kêu ụt ịt. |  |
 | Con vật trong nhà | `trau` | Trâu | Giúp bác nông dân cày ruộng. | Con vật có sừng cong, giúp cày ruộng. |  |
-| Con vật trong rừng | `voi` | Voi | Có cái vòi thật dài và đôi tai to. | Con vật to lớn có vòi dài. |  |
-| Con vật trong rừng | `ho` | Hổ | Lông vàng có sọc đen, là chúa sơn lâm. | Con vật lông vàng sọc đen. |  |
-| Con vật trong rừng | `khi` | Khỉ | Leo trèo thật giỏi, thích đu cành cây. | Con vật leo cây giỏi nhất rừng. |  |
-| Con vật trong rừng | `gau` | Gấu | Lông dày, rất thích mật ong. | Con vật lông dày, thích mật ong. |  |
-| Con vật trong rừng | `huou-cao-co` | Hươu cao cổ | Cổ thật dài, ăn lá trên ngọn cây. | Con vật cổ dài nhất rừng. |  |
+| Con vật hoang dã | `voi` | Voi | Có cái vòi thật dài và đôi tai to. | Con vật to lớn có vòi dài. |  |
+| Con vật hoang dã | `ho` | Hổ | Lông vàng có sọc đen, là chúa sơn lâm. | Con vật lông vàng sọc đen. |  |
+| Con vật hoang dã | `khi` | Khỉ | Leo trèo thật giỏi, thích đu cành cây. | Con vật leo cây giỏi nhất rừng. |  |
+| Con vật hoang dã | `gau` | Gấu | Lông dày, rất thích mật ong. | Con vật lông dày, thích mật ong. |  |
+| Con vật hoang dã | `huou-cao-co` | Hươu cao cổ | Cổ thật dài, ăn lá trên ngọn cây. | Con vật cổ dài nhất rừng. |  |
 | Dưới nước | `ca` | Cá | Bơi bằng vây và đuôi, thở dưới nước. | Con vật bơi bằng vây. |  |
 | Dưới nước | `cua` | Cua | Có hai cái càng, bò ngang trên cát. | Con vật bò ngang, có hai càng. |  |
 | Dưới nước | `tom` | Tôm | Có râu dài, bơi lùi rất nhanh. | Con vật có râu dài, bơi lùi. |  |
@@ -31,8 +31,8 @@ Bảng sinh từ code; sửa code thì sinh lại.
 | Trên bầu trời | `chim-se` | Chim sẻ | Nhỏ xíu, nhảy lách chách trên cành cây. | Con chim nhỏ hay nhảy trên cành. |  |
 | Trên bầu trời | `buom` | Bướm | Có đôi cánh nhiều màu sặc sỡ. | Con vật có đôi cánh nhiều màu. |  |
 | Trên bầu trời | `ong` | Ong | Bay vo ve, làm ra mật thật ngọt. | Con vật bay vo ve, làm ra mật. |  |
-| Trên bầu trời | `chuon-chuon` | Chuồn chuồn | Có bốn cánh mỏng, bay thấp là trời mưa. | Con vật có bốn cánh mỏng trong suốt. |  |
-| Trên bầu trời | `co` | Cò | Chân dài, đứng trên đồng lúa tìm mồi. | Con chim chân dài, lông trắng muốt. |  |
+| Trên bầu trời | `chuon-chuon` | Chuồn chuồn | Mắt to tròn, đuôi dài, bay lượn trên mặt ao. | Con vật mắt to, đuôi dài, hay bay trên mặt ao. |  |
+| Trên bầu trời | `co` | Cò | Chân dài, lội ruộng lúa tìm thức ăn. | Con chim chân dài, lông trắng muốt. |  |
 | Cây và hoa | `re-cay` | Rễ cây | Nằm dưới đất, hút nước nuôi cả cái cây. | Phần của cây nằm dưới đất. |  |
 | Cây và hoa | `la-cay` | Lá cây | Màu xanh, đón nắng giúp cây khỏe mạnh. | Phần màu xanh, đón ánh nắng. |  |
 | Cây và hoa | `hoa` | Hoa | Nở thật đẹp, có mùi thơm, ong bướm rất thích. | Phần đẹp nhất của cây, có mùi thơm. |  |
@@ -60,8 +60,10 @@ Bảng sinh từ code; sửa code thì sinh lại.
 | Con gì ăn gì? | Mèo thích ăn gì? | Mèo (`meo`) | Đĩa cá (`dia-ca`) | Mèo rất thích món này, ăn xong lại rửa mặt. |  |  |
 | Con gì ăn gì? | Bò thích ăn gì? | Bò (`bo`) | Bó cỏ (`bo-co`) | Bò nhai thật lâu, nhai cả ngày trên cánh đồng. | ca-rot |  |
 | Con gì ăn gì? | Ong bay đến đâu để lấy mật? | Ong (`ong`) | Hoa (`hoa`) | Ong hút mật ngọt rồi bay về tổ. |  |  |
-| Lớn lên thế nào? | Quả trứng nở ra con gì? | Quả trứng (`trung`) | Gà con (`ga-con`) | Mẹ gà ấp trứng, ít hôm sau con non chui ra. |  |  |
-| Lớn lên thế nào? | Nòng nọc lớn lên thành con gì? | Nòng nọc (`nong-noc`) | Ếch (`ech`) | Mọc chân, rụng đuôi, rồi nhảy lên bờ. |  |  |
+| Lớn lên thế nào? | Quả trứng nở ra con gì? | Quả trứng (`trung`) | Gà con (`ga-con`) | Mẹ gà ấp trứng thật lâu, rồi con non mổ vỏ chui ra. |  |  |
+| Lớn lên thế nào? | Nòng nọc lớn lên thành con gì? | Nòng nọc (`nong-noc`) | Ếch (`ech`) | Mọc thêm chân, đuôi ngắn dần, rồi nhảy lên bờ. |  |  |
 | Lớn lên thế nào? | Sâu lớn lên thành con gì? | Sâu (`sau`) | Bướm (`buom`) | Sâu ngủ trong kén, tỉnh dậy có đôi cánh đẹp. |  |  |
 | Lớn lên thế nào? | Hạt mọc lên thành gì? | Hạt (`hat`) | Cây mầm (`cay-mam`) | Tưới nước mỗi ngày, hạt nhú lên hai lá non. |  |  |
 | Lớn lên thế nào? | Bê con lớn lên thành con gì? | Bê con (`be-con`) | Bò (`bo`) | Bê con uống sữa mẹ, lớn dần thật khỏe. |  |  |
+
+**Cần ba mẹ xem kỹ (cấp 5):** câu hỏi là "thích ăn gì", nhưng vài lựa chọn sai vẫn có thể ăn được thật (khỉ có thể ăn cà rốt, thỏ ăn được hoa, mèo hay gặm cỏ). Nếu thấy dễ gây nhầm, sửa câu hỏi thành "thích ăn **nhất**" hoặc báo AI thêm vào cột "Cũng đúng".

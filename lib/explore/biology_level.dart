@@ -58,7 +58,7 @@ final List<GeographyLevel> biologyLevels = [
   ),
   GeographyLevel(
     id: 'trong-rung',
-    title: 'Con vật trong rừng',
+    title: 'Con vật hoang dã',
     subtitle: 'Voi, hổ, khỉ, gấu…',
     clues: false,
     items: [
@@ -101,9 +101,9 @@ final List<GeographyLevel> biologyLevels = [
           'Con chim nhỏ hay nhảy trên cành.'),
       _buom,
       _ong,
-      _bio('chuon-chuon', 'Chuồn chuồn', 'Có bốn cánh mỏng, bay thấp là trời mưa.',
-          'Con vật có bốn cánh mỏng trong suốt.'),
-      _bio('co', 'Cò', 'Chân dài, đứng trên đồng lúa tìm mồi.',
+      _bio('chuon-chuon', 'Chuồn chuồn', 'Mắt to tròn, đuôi dài, bay lượn trên mặt ao.',
+          'Con vật mắt to, đuôi dài, hay bay trên mặt ao.'),
+      _bio('co', 'Cò', 'Chân dài, lội ruộng lúa tìm thức ăn.',
           'Con chim chân dài, lông trắng muốt.'),
     ],
   ),
@@ -171,7 +171,7 @@ final List<GeographyLevel> biologyLevels = [
         answer: _bio('ga-con', 'Gà con', 'Lông vàng, kêu chiếp chiếp.',
             'Lông vàng, kêu chiếp chiếp.'),
         question: 'Quả trứng nở ra con gì?',
-        fact: 'Mẹ gà ấp trứng, ít hôm sau con non chui ra.',
+        fact: 'Mẹ gà ấp trứng thật lâu, rồi con non mổ vỏ chui ra.',
       ),
       PairItem(
         id: 'nong-noc',
@@ -179,7 +179,7 @@ final List<GeographyLevel> biologyLevels = [
             'Có đuôi, bơi dưới ao.'),
         answer: _bio('ech', 'Ếch', 'Nhảy giỏi, kêu ộp ộp.', 'Kêu ộp ộp.'),
         question: 'Nòng nọc lớn lên thành con gì?',
-        fact: 'Mọc chân, rụng đuôi, rồi nhảy lên bờ.',
+        fact: 'Mọc thêm chân, đuôi ngắn dần, rồi nhảy lên bờ.',
       ),
       PairItem(
         id: 'sau',

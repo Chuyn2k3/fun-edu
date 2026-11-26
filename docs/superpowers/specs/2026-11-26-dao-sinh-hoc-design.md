@@ -98,7 +98,7 @@ Dạng câu: **thêm dạng ghép đôi** (chủ dự án chọn). Phương án 
 | # | id | Tiêu đề | Dạng | Mục |
 |---|---|---|---|---|
 | 1 | `vat-nuoi` | Con vật trong nhà | chọn ảnh | chó, mèo, gà, vịt, lợn, trâu |
-| 2 | `trong-rung` | Con vật trong rừng | chọn ảnh | voi, hổ, khỉ, gấu, hươu cao cổ |
+| 2 | `trong-rung` | Con vật hoang dã | chọn ảnh | voi, hổ, khỉ, gấu, hươu cao cổ |
 | 3 | `duoi-nuoc` | Dưới nước | chọn ảnh | cá, cua, tôm, cá heo, rùa biển |
 | 4 | `bau-troi` | Trên bầu trời | chọn ảnh + đố | chim sẻ, bướm, ong, chuồn chuồn, cò |
 | 5 | `an-gi` | Con gì ăn gì? | ghép đôi | thỏ → cà rốt, khỉ → chuối, mèo → cá, bò → cỏ, ong → hoa |
