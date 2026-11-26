@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/app_database.dart';
 import '../english/english_level.dart';
-import '../explore/geography_level.dart';
+import '../explore/explore_flags.dart';
+import '../explore/explore_island.dart';
 import '../math/level_rule.dart';
 import '../profile/kid_repository.dart';
 import '../math/math_level.dart';
@@ -100,22 +101,31 @@ class LevelRepository {
         return next;
       });
 
+  /// Applies the level rule to [island]'s level and returns the new level.
+  Future<int> recordExploreSession(
+    ExploreIsland island, {
+    required int firstTryCorrect,
+    required int total,
+  }) =>
+      _db.transaction(() async {
+        final count = island.levels.length;
+        final next = nextLevelIndex(
+          current: (await levelOf(island.id) ?? 0).clamp(0, count - 1),
+          firstTryCorrect: firstTryCorrect,
+          total: total,
+          levelCount: count,
+        );
+        await setLevel(island.id, next);
+        return next;
+      });
+
   /// Applies the level rule to the geography level and returns the new level.
   Future<int> recordGeographySession({
     required int firstTryCorrect,
     required int total,
   }) =>
-      _db.transaction(() async {
-        final next = nextLevelIndex(
-          current: (await levelOf('dia-ly') ?? 0)
-              .clamp(0, geographyLevels.length - 1),
-          firstTryCorrect: firstTryCorrect,
-          total: total,
-          levelCount: geographyLevels.length,
-        );
-        await setLevel('dia-ly', next);
-        return next;
-      });
+      recordExploreSession(geographyIsland,
+          firstTryCorrect: firstTryCorrect, total: total);
 }
 
 /// Async so callers never see a repository built before the current kid is
@@ -140,13 +150,21 @@ final englishLevelIndexProvider = FutureProvider<int>((ref) async {
   return await repo.levelOf('tieng-anh') ?? 0;
 });
 
-/// Kept inside the ladder: a level synced from a newer app version, or a
-/// bad value, never points past the last level.
-final geographyLevelIndexProvider = FutureProvider<int>((ref) async {
+/// An island's level by island id, kept inside its ladder: a level synced
+/// from a newer app version, or a bad value, never points past the end.
+final exploreLevelIndexProvider =
+    FutureProvider.family<int, String>((ref, id) async {
   final repo = await ref.watch(levelRepositoryProvider.future);
-  final stored = await repo.levelOf('dia-ly') ?? 0;
-  return stored.clamp(0, geographyLevels.length - 1);
+  final stored = await repo.levelOf(id) ?? 0;
+  var count = 1;
+  for (final i in ref.watch(exploreIslandsProvider)) {
+    if (i.id == id) count = i.levels.length;
+  }
+  return stored.clamp(0, count - 1);
 });
+
+final geographyLevelIndexProvider = FutureProvider<int>(
+    (ref) => ref.watch(exploreLevelIndexProvider(geographyIsland.id).future));
 
 final isPlacedProvider = FutureProvider<bool>((ref) async {
   final repo = await ref.watch(levelRepositoryProvider.future);

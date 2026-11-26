@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../collection/notebook_pages.dart';
 import '../data/app_database.dart';
+import '../explore/explore_flags.dart';
 import '../learning/writing_ladder.dart';
 import '../online/sync/device_counters.dart';
 import '../online/uuid.dart';
@@ -235,6 +236,8 @@ class HomeSummary {
     this.vietnameseLevelIndex = 0,
     this.englishLevelIndex = 0,
     this.geographyLevelIndex = 0,
+    this.exploreDone = 0,
+    this.exploreTotal = 0,
     this.lessonsToday = 0,
     this.learnedWeekdays = const {},
   });
@@ -246,6 +249,11 @@ class HomeSummary {
   final int vietnameseLevelIndex;
   final int englishLevelIndex;
   final int geographyLevelIndex;
+
+  /// Levels reached (current + 1) over all ready explore islands, and their
+  /// level count: the home card's ring.
+  final int exploreDone;
+  final int exploreTotal;
 
   /// Lessons finished today; the home card shows the lesson as done when > 0.
   final int lessonsToday;
@@ -270,6 +278,12 @@ final homeSummaryProvider = FutureProvider<HomeSummary>((ref) async {
   final mastered =
       writingLadder.where((id) => stats[id]?.mastered ?? false).length;
   final weekdays = await repo.learnedWeekdaysThisWeek();
+  var explore = (0, 0);
+  for (final island in ref.watch(exploreIslandsProvider)) {
+    if (!ref.watch(exploreReadyProvider(island.id))) continue;
+    final level = await ref.watch(exploreLevelIndexProvider(island.id).future);
+    explore = (explore.$1 + level + 1, explore.$2 + island.levels.length);
+  }
   return HomeSummary(
     totalStars: await repo.totalStars(),
     learnedDaysThisWeek: weekdays.length,
@@ -279,6 +293,8 @@ final homeSummaryProvider = FutureProvider<HomeSummary>((ref) async {
     vietnameseLevelIndex: await ref.watch(vietnameseLevelIndexProvider.future),
     englishLevelIndex: await ref.watch(englishLevelIndexProvider.future),
     geographyLevelIndex: await ref.watch(geographyLevelIndexProvider.future),
+    exploreDone: explore.$1,
+    exploreTotal: explore.$2,
     lessonsToday: await repo.lessonsCompletedToday(),
   );
 });

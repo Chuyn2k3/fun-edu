@@ -9,6 +9,7 @@ import 'features/online/link_warning_listener.dart';
 import 'features/online/sync_toast_listener.dart';
 import 'features/splash/splash_view.dart';
 import 'profile/kid_repository.dart';
+import 'explore/explore_island.dart';
 import 'progress/level_repository.dart';
 import 'router.dart';
 import 'router_location.dart';
@@ -122,6 +123,9 @@ class _AppState extends ConsumerState<App> {
       ref.listen(vietnameseLevelIndexProvider, (_, __) {});
       ref.listen(englishLevelIndexProvider, (_, __) {});
       ref.listen(geographyLevelIndexProvider, (_, __) {});
+      for (final island in exploreIslands) {
+        ref.listen(exploreLevelIndexProvider(island.id), (_, __) {});
+      }
     }
     return MaterialApp.router(
       scaffoldMessengerKey: rootScaffoldMessengerKey,
