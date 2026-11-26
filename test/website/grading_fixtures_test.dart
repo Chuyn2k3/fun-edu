@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/stroke/geometry.dart';
 import 'package:funedu/stroke/glyph.dart';
 import 'package:funedu/stroke/glyph_session.dart';
-import 'package:funedu/stroke/grader.dart';
 
 const _items = [
   'so-1', 'so-2', 'so-3', 'chu-a', 'chu-o', 'chu-b', 'chu-c', 'chu-e', //

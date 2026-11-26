@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { GlyphSession } from '../src/stroke/session';
-import { gradeConfigFor } from '../src/stroke/grader';
+import { gradeConfigFor, type StrokeResult } from '../src/stroke/grader';
 import { inWindow, parseGlyph, type Stroke } from '../src/stroke/glyph';
 
 type Num = number | 'NaN' | 'Infinity';
@@ -35,7 +35,7 @@ describe('grading matches the app', () => {
     for (const c of f.cases) {
       it(`${f.glyph}: ${c.name}`, () => {
         const session = new GlyphSession(glyph(f.glyph));
-        const got = [];
+        const got: StrokeResult[] = [];
         for (const input of c.inputs) {
           if (session.isComplete) break;
           const stroke: Stroke = input.map(([x, y]) => ({ x: num(x), y: num(y) }));
