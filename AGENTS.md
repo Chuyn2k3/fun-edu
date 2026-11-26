@@ -21,3 +21,4 @@ Quy tắc ngắn (chi tiết trong `docs/PROJECT_STATE.md` mục 3):
 - Xong một phần việc thì cập nhật mục 6–8 trong `docs/PROJECT_STATE.md`.
 - Dữ liệu trò chơi (`lib/game/`, bảng `race_results`, `game_*`) tách khỏi dữ liệu học; engine trò chơi không gọi mạng (phòng đua qua mạng nằm ở `lib/online/`).
 - Ảnh trò chơi mới: nền xanh lá, tách bằng `tools/assets/chroma_key.py`.
+- Website dùng thử ở `website/` (Vite + TypeScript, không framework): `cd website && npm test && npm run build`. Sửa `lib/stroke/` hoặc chính sách quyền riêng tư thì sinh lại dữ liệu chung (xem `website/README.md`). Web không được gọi ra ngoài tên miền của nó.
