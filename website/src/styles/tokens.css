@@ -1,0 +1,28 @@
+/* Colours from lib/ui/theme/tokens.dart — keep in step with the app. */
+:root {
+  --primary: #c8460f;
+  --accent: #e8590c;
+  --background: #fbf5ec;
+  --dot: #eadfcf;
+  --card: #ffffff;
+  --text: #22284a;
+  --text-muted: #5b6385;
+  --correct: #2e9e5b;
+  --wrong: #c8460f;
+  --radius-card: 28px;
+  --radius-tile: 18px;
+  --kid-target: 64px;
+  --shadow: 0 6px 0 #e9dcc9, 0 10px 24px rgba(34, 40, 74, 0.08);
+}
+@font-face {
+  font-family: 'Nunito';
+  font-weight: 700;
+  font-display: swap;
+  src: url('/generated/fonts/nunito-bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-weight: 800 900;
+  font-display: swap;
+  src: url('/generated/fonts/nunito-extrabold.woff2') format('woff2');
+}

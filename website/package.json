@@ -1,0 +1,21 @@
+{
+  "name": "chipchip-website",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/copy-assets.mjs && python3 scripts/prepare-assets.py",
+    "dev": "npm run assets && vite",
+    "build": "npm run assets && tsc --noEmit && vite build && node scripts/check-size.mjs",
+    "preview": "vite preview --port 4173 --strictPort",
+    "test": "vitest run",
+    "e2e": "playwright test --trace off"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
