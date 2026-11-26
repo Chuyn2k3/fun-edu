@@ -240,3 +240,115 @@ Lưu ý:
 | `geo-machu-picchu.png` | Machu Picchu: old stone terraces and small stone houses on a mountain top, with the tall pointed green peak behind, a little llama |
 | `geo-tuong-chua-cuu-the.png` | The Christ the Redeemer statue in Rio: a tall white statue with arms spread wide standing on top of a green mountain peak, simple smooth figure without facial detail |
 | `geo-thac-niagara.png` | Niagara Falls: a wide curved waterfall pouring white foamy water into a river, a small rainbow in the mist and a tiny blue boat |
+
+## Đảo Sinh học (50 ảnh)
+
+Ảnh tạm đã có (`make_placeholders.py`, tiền tố `bio-`). Sinh học chỉ mở cho bé khi bạn duyệt chữ (`docs/superpowers/specs/assets/sinh-hoc-noi-dung.md`), có đủ ảnh thật, và đổi `ready` thành `true` trong `lib/explore/biology_level.dart`.
+
+**Cách làm giống Đảo Khám phá — Địa lý:**
+- Dán **đoạn phong cách chung** ở mục Địa lý vào cuối mọi câu lệnh.
+- Làm trước 3 ảnh mẫu `bio-tho`, `bio-ca-rot`, `bio-trung` trong cùng một cuộc chat. Ưng phong cách thì làm tiếp, gửi kèm ảnh mẫu làm tham chiếu.
+- Tách nền: `python3 tools/assets/chroma_key.py <ảnh.png> tools/assets/configs/explore/bio-<id>.json assets/images/explore`.
+
+**Lưu ý riêng cho Sinh học:**
+- Con vật hiền, mắt to tròn, đứng một mình trên đế cỏ tròn. Không có cảnh săn mồi, không răng nanh nhe ra, không máu.
+- Con vật hay cây có màu xanh lá thì dùng **xanh rêu hoặc xanh lá ngả vàng** (`sage / olive green`), không dùng xanh `#00FF00` như nền.
+- Ảnh cơ thể (cấp 9) vẽ trên **búp bê đồ chơi tròn, không phải người thật**, bộ phận cần hỏi to và rõ, có thể có vòng sáng nhẹ quanh bộ phận đó.
+- Một ảnh dùng cho nhiều cấp. Ví dụ `bio-ca-rot` dùng ở cấp 5 và cấp 8, `bio-buom` ở cấp 4 và cấp 6.
+
+### Cấp 1 — Con vật trong nhà
+
+| File | Câu lệnh |
+|---|---|
+| `bio-cho.png` | A friendly puppy dog sitting and wagging its tail, floppy ears, warm brown fur |
+| `bio-meo.png` | A cute kitten sitting with its tail curled, soft orange and white fur, big round eyes |
+| `bio-ga.png` | A proud rooster standing tall with a red comb and colorful tail feathers |
+| `bio-vit.png` | A plump yellow-white duck standing beside a tiny blue pond |
+| `bio-lon.png` | A round pink piglet with a curly tail, smiling |
+| `bio-trau.png` | A gentle grey water buffalo with curved horns standing on a small rice field patch |
+
+### Cấp 2 — Con vật trong rừng
+
+| File | Câu lệnh |
+|---|---|
+| `bio-voi.png` | A baby elephant with big ears raising its trunk happily |
+| `bio-ho.png` | A cute tiger cub sitting, orange fur with black stripes, gentle face, mouth closed |
+| `bio-khi.png` | A playful monkey hanging from a small branch with one arm |
+| `bio-gau.png` | A chubby brown bear cub sitting and holding a small honey pot |
+| `bio-huou-cao-co.png` | A young giraffe with a very long neck reaching a leafy treetop |
+
+### Cấp 3 — Dưới nước
+
+| File | Câu lệnh |
+|---|---|
+| `bio-ca.png` | A colorful little fish with round fins, on a small wave-shaped base |
+| `bio-cua.png` | A red crab with two big claws walking sideways on a tiny sandy base |
+| `bio-tom.png` | A pink shrimp with long feelers, curved body |
+| `bio-ca-heo.png` | A smiling dolphin jumping out of a small round splash of water |
+| `bio-rua-bien.png` | A sea turtle with a patterned shell swimming above a small coral base |
+
+### Cấp 4 — Trên bầu trời
+
+| File | Câu lệnh |
+|---|---|
+| `bio-chim-se.png` | A little brown sparrow hopping on a short branch |
+| `bio-buom.png` | A butterfly with big colorful wings resting on a small flower |
+| `bio-ong.png` | A cute round bee with yellow and black stripes and tiny wings, smiling |
+| `bio-chuon-chuon.png` | A dragonfly with four thin clear wings resting on a reed |
+| `bio-co.png` | A white egret with long legs and a long neck standing in a small paddy field |
+
+### Cấp 5 — Con gì ăn gì? (ghép đôi)
+
+| File | Câu lệnh |
+|---|---|
+| `bio-tho.png` | A white bunny with long ears sitting, front paws together |
+| `bio-ca-rot.png` | A single fresh orange carrot with leafy green top |
+| `bio-chuoi.png` | A small bunch of ripe yellow bananas |
+| `bio-dia-ca.png` | A round plate with one cooked fish on it, simple and appetizing, no bones visible |
+| `bio-bo.png` | A friendly black and white dairy cow standing |
+| `bio-bo-co.png` | A neat bundle of fresh green grass tied with a straw string (olive green, not neon) |
+| `bio-hoa.png` | A single pink flower in bloom with a short stem and two leaves |
+
+### Cấp 6 — Lớn lên thế nào? (ghép đôi)
+
+| File | Câu lệnh |
+|---|---|
+| `bio-trung.png` | One white egg resting in a small straw nest |
+| `bio-ga-con.png` | A fluffy yellow baby chick standing |
+| `bio-nong-noc.png` | A small dark tadpole with a round head and a tail, in a tiny puddle |
+| `bio-ech.png` | A cheerful frog sitting on a lily pad (olive green) |
+| `bio-sau.png` | A cute caterpillar crawling on a leaf |
+| `bio-hat.png` | Three seeds lying on a little mound of soil |
+| `bio-cay-mam.png` | A tiny seedling with two small leaves growing from a pot of soil |
+| `bio-be-con.png` | A baby calf standing on wobbly legs, black and white patches |
+
+### Cấp 7 — Cây và hoa
+
+| File | Câu lệnh |
+|---|---|
+| `bio-re-cay.png` | A small tree cut in half view showing its roots spreading under the soil, roots highlighted |
+| `bio-la-cay.png` | One big leaf with clear veins |
+| `bio-qua.png` | A small branch holding two round red fruits |
+
+### Cấp 8 — Rau củ quả
+
+| File | Câu lệnh |
+|---|---|
+| `bio-bap-cai.png` | A round green cabbage with curled leaves (sage green) |
+| `bio-ca-chua.png` | Two shiny red tomatoes with green stems |
+| `bio-xoai.png` | A ripe yellow mango |
+| `bio-dua-hau.png` | A watermelon with one slice cut out showing red flesh and black seeds |
+| `bio-bi-ngo.png` | A round orange pumpkin |
+
+### Cấp 9 — Cơ thể em làm gì?
+
+| File | Câu lệnh |
+|---|---|
+| `bio-mat.png` | A round toy doll face with the two big eyes highlighted by a soft glow |
+| `bio-tai.png` | A round toy doll head seen from the side with the ear highlighted by a soft glow |
+| `bio-mui.png` | A round toy doll face with the nose highlighted by a soft glow, a small flower near it |
+| `bio-mieng.png` | A round toy doll face with the smiling mouth highlighted by a soft glow |
+| `bio-tay.png` | A toy doll hand holding a crayon, the hand highlighted by a soft glow |
+| `bio-chan.png` | Two toy doll feet in small shoes taking a step, highlighted by a soft glow |
+
+Ảnh đảo trong sảnh `island-sinh-hoc.png` có câu lệnh ở mục Địa lý.

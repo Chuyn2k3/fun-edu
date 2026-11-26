@@ -1,5 +1,6 @@
 import '../ui/assets.dart';
 import '../ui/theme/tokens.dart';
+import 'biology_level.dart';
 import 'geography_level.dart';
 
 /// One island of "Đảo Khám phá": its levels, colour and where its level is
@@ -48,7 +49,7 @@ const geographyIsland = ExploreIsland(
 );
 
 /// Every island, in hall order.
-final List<ExploreIsland> exploreIslands = [geographyIsland];
+final List<ExploreIsland> exploreIslands = [geographyIsland, biologyIsland];
 
 ExploreIsland? exploreIslandById(String id) {
   for (final i in exploreIslands) {

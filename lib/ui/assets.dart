@@ -255,9 +255,64 @@ abstract final class AppImages {
     'thac-niagara': 'assets/images/explore/geo-thac-niagara.png',
   };
 
+  /// Biology item art by item id (shared items appear once).
+  static const Map<String, String> biology = {
+    'meo': 'assets/images/explore/bio-meo.png',
+    'khi': 'assets/images/explore/bio-khi.png',
+    'ong': 'assets/images/explore/bio-ong.png',
+    'buom': 'assets/images/explore/bio-buom.png',
+    'hoa': 'assets/images/explore/bio-hoa.png',
+    'hat': 'assets/images/explore/bio-hat.png',
+    'ca-rot': 'assets/images/explore/bio-ca-rot.png',
+    'bo': 'assets/images/explore/bio-bo.png',
+    'cho': 'assets/images/explore/bio-cho.png',
+    'ga': 'assets/images/explore/bio-ga.png',
+    'vit': 'assets/images/explore/bio-vit.png',
+    'lon': 'assets/images/explore/bio-lon.png',
+    'trau': 'assets/images/explore/bio-trau.png',
+    'voi': 'assets/images/explore/bio-voi.png',
+    'ho': 'assets/images/explore/bio-ho.png',
+    'gau': 'assets/images/explore/bio-gau.png',
+    'huou-cao-co': 'assets/images/explore/bio-huou-cao-co.png',
+    'ca': 'assets/images/explore/bio-ca.png',
+    'cua': 'assets/images/explore/bio-cua.png',
+    'tom': 'assets/images/explore/bio-tom.png',
+    'ca-heo': 'assets/images/explore/bio-ca-heo.png',
+    'rua-bien': 'assets/images/explore/bio-rua-bien.png',
+    'chim-se': 'assets/images/explore/bio-chim-se.png',
+    'chuon-chuon': 'assets/images/explore/bio-chuon-chuon.png',
+    'co': 'assets/images/explore/bio-co.png',
+    'tho': 'assets/images/explore/bio-tho.png',
+    'chuoi': 'assets/images/explore/bio-chuoi.png',
+    'dia-ca': 'assets/images/explore/bio-dia-ca.png',
+    'bo-co': 'assets/images/explore/bio-bo-co.png',
+    'trung': 'assets/images/explore/bio-trung.png',
+    'ga-con': 'assets/images/explore/bio-ga-con.png',
+    'nong-noc': 'assets/images/explore/bio-nong-noc.png',
+    'ech': 'assets/images/explore/bio-ech.png',
+    'sau': 'assets/images/explore/bio-sau.png',
+    'cay-mam': 'assets/images/explore/bio-cay-mam.png',
+    'be-con': 'assets/images/explore/bio-be-con.png',
+    're-cay': 'assets/images/explore/bio-re-cay.png',
+    'la-cay': 'assets/images/explore/bio-la-cay.png',
+    'qua': 'assets/images/explore/bio-qua.png',
+    'bap-cai': 'assets/images/explore/bio-bap-cai.png',
+    'ca-chua': 'assets/images/explore/bio-ca-chua.png',
+    'xoai': 'assets/images/explore/bio-xoai.png',
+    'dua-hau': 'assets/images/explore/bio-dua-hau.png',
+    'bi-ngo': 'assets/images/explore/bio-bi-ngo.png',
+    'mat': 'assets/images/explore/bio-mat.png',
+    'tai': 'assets/images/explore/bio-tai.png',
+    'mui': 'assets/images/explore/bio-mui.png',
+    'mieng': 'assets/images/explore/bio-mieng.png',
+    'tay': 'assets/images/explore/bio-tay.png',
+    'chan': 'assets/images/explore/bio-chan.png',
+  };
+
   /// Every explore item picture by `<prefix>-<id>` (geo-, bio-).
   static final Map<String, String> exploreArt = {
     for (final e in geography.entries) 'geo-${e.key}': e.value,
+    for (final e in biology.entries) 'bio-${e.key}': e.value,
   };
 
   static final explore = [
@@ -265,5 +320,6 @@ abstract final class AppImages {
     islandSinhHoc,
     islandLichSu,
     ...geography.values,
+    ...biology.values,
   ];
 }

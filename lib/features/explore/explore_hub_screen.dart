@@ -52,16 +52,6 @@ class ExploreHubScreen extends ConsumerWidget {
             tablet: tablet,
             onTap: () => _soon(context),
           ),
-      // Not an island yet: no levels to declare.
-      if (!ref.watch(exploreIslandsProvider).any((i) => i.id == 'sinh-hoc'))
-        _IslandCard(
-          key: const ValueKey('island-sinh-hoc'),
-          image: AppImages.islandSinhHoc,
-          title: 'Sinh học',
-          subtitle: 'Sắp có',
-          tablet: tablet,
-          onTap: () => _soon(context),
-        ),
       _IslandCard(
         key: const ValueKey('island-lich-su'),
         image: AppImages.islandLichSu,
