@@ -1,6 +1,6 @@
 # Website dùng thử ChipChip (thiết kế)
 
-Ngày: 2026-11-26 · Nhánh: `chipchip` · Trạng thái: chờ chủ dự án duyệt
+Ngày: 2026-11-26 · Nhánh: `chipchip` · Trạng thái: chủ dự án đã duyệt (2026-11-26); dev trước, deploy đợt sau
 
 ## 1. Ý định và lý do
 
