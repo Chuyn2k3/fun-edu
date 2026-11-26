@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../explore/explore_flags.dart';
-import '../../explore/geography_level.dart';
 import '../../learning/lesson_item.dart';
 import '../../learning/today_lesson_provider.dart';
 import '../../learning/writing_ladder.dart';
@@ -260,7 +259,8 @@ class _HomeBody extends StatelessWidget {
                     mathLevelIndex: summary.mathLevelIndex,
                     vietnameseLevelIndex: summary.vietnameseLevelIndex,
                     englishLevelIndex: summary.englishLevelIndex,
-                    geographyLevelIndex: summary.geographyLevelIndex,
+                    exploreDone: summary.exploreDone,
+                    exploreTotal: summary.exploreTotal,
                     showExplore: showExplore,
                     compact: compact,
                     gap: compact ? 8 : 12,
@@ -339,7 +339,8 @@ class _HomeBody extends StatelessWidget {
         mathLevelIndex: summary.mathLevelIndex,
         vietnameseLevelIndex: summary.vietnameseLevelIndex,
         englishLevelIndex: summary.englishLevelIndex,
-        geographyLevelIndex: summary.geographyLevelIndex,
+        exploreDone: summary.exploreDone,
+                    exploreTotal: summary.exploreTotal,
         showExplore: showExplore,
         // Landscape lays the subjects out in one row (4 columns): the
         // explore card joins that row so the height budget stays the same.
@@ -674,7 +675,8 @@ class _SubjectGrid extends StatelessWidget {
     required this.mathLevelIndex,
     required this.vietnameseLevelIndex,
     required this.englishLevelIndex,
-    this.geographyLevelIndex = 0,
+    this.exploreDone = 0,
+    this.exploreTotal = 0,
     this.showExplore = false,
     this.columns = 2,
     this.gap = 12,
@@ -686,7 +688,9 @@ class _SubjectGrid extends StatelessWidget {
   final int mathLevelIndex;
   final int vietnameseLevelIndex;
   final int englishLevelIndex;
-  final int geographyLevelIndex;
+  /// Levels reached over the ready explore islands, and their count.
+  final int exploreDone;
+  final int exploreTotal;
   final bool showExplore;
   final int columns;
   final double gap;
@@ -752,8 +756,8 @@ class _SubjectGrid extends StatelessWidget {
           imagePath: AppImages.icKhamPha,
           title: 'Đảo Khám phá',
           subtitle: 'Địa lý, Sinh học, Lịch sử',
-          done: geographyLevelIndex.clamp(0, geographyLevels.length - 1) + 1,
-          total: geographyLevels.length,
+          done: exploreDone.clamp(0, exploreTotal),
+          total: exploreTotal < 1 ? 1 : exploreTotal,
           onTap: () => context.push('/kham-pha'),
         ),
     ];

@@ -120,7 +120,7 @@ void _setSize(WidgetTester tester, double w, double h) {
   addTearDown(tester.view.reset);
 }
 
-List<Override> _exploreOn({int geographyLevel = 3}) => [
+List<Override> _exploreOn({int done = 4, int total = 9}) => [
       ..._fakes(),
       exploreIslandEnabledProvider.overrideWithValue(true),
       homeSummaryProvider.overrideWith(
@@ -128,7 +128,8 @@ List<Override> _exploreOn({int geographyLevel = 3}) => [
           totalStars: 12,
           learnedDaysThisWeek: 3,
           masteredWriting: 2,
-          geographyLevelIndex: geographyLevel,
+          exploreDone: done,
+          exploreTotal: total,
         ),
       ),
     ];
@@ -184,9 +185,17 @@ void exploreCardTests() {
     expect(_exploreCard.hitTestable(), findsOneWidget);
   });
 
-  testWidgets('a level past the ladder shows 9/9', (t) async {
+  testWidgets('two ready islands show their total', (t) async {
     _setSize(t, 390, 844);
-    await t.pumpWidget(_app(_exploreOn(geographyLevel: 12), []));
+    await t.pumpWidget(_app(_exploreOn(done: 6, total: 18), []));
+    await t.pumpAndSettle();
+    expect(find.descendant(of: _exploreCard, matching: find.text('6/18')),
+        findsOneWidget);
+  });
+
+  testWidgets('a full island shows 9/9', (t) async {
+    _setSize(t, 390, 844);
+    await t.pumpWidget(_app(_exploreOn(done: 9), []));
     await t.pumpAndSettle();
     expect(find.descendant(of: _exploreCard, matching: find.text('9/9')),
         findsOneWidget);

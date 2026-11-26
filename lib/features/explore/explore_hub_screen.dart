@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../explore/geography_level.dart';
+import '../../explore/explore_flags.dart';
 import '../../progress/level_repository.dart';
 import '../../ui/assets.dart';
 import '../../ui/feedback/feedback.dart';
@@ -24,27 +24,44 @@ class ExploreHubScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final level = ref.watch(geographyLevelIndexProvider).valueOrNull;
     final tablet = context.isTablet;
 
     final cards = [
-      _IslandCard(
-        key: const ValueKey('island-dia-ly'),
-        image: AppImages.islandDiaLy,
-        title: 'Địa lý',
-        subtitle: 'Khám phá Việt Nam',
-        badge: level == null ? '' : '${level + 1}/${geographyLevels.length}',
-        tablet: tablet,
-        onTap: () => context.push('/subject/dia-ly'),
-      ),
-      _IslandCard(
-        key: const ValueKey('island-sinh-hoc'),
-        image: AppImages.islandSinhHoc,
-        title: 'Sinh học',
-        subtitle: 'Sắp có',
-        tablet: tablet,
-        onTap: () => _soon(context),
-      ),
+      for (final island in ref.watch(exploreIslandsProvider))
+        if (ref.watch(exploreReadyProvider(island.id)))
+          _IslandCard(
+            key: ValueKey('island-${island.id}'),
+            image: island.islandImage,
+            title: island.name,
+            subtitle: island.mapTitle,
+            badge: switch (ref
+                .watch(exploreLevelIndexProvider(island.id))
+                .valueOrNull) {
+              null => '',
+              final l => '${l + 1}/${island.levels.length}',
+            },
+            tablet: tablet,
+            onTap: () => context.push('/subject/${island.id}'),
+          )
+        else
+          _IslandCard(
+            key: ValueKey('island-${island.id}'),
+            image: island.islandImage,
+            title: island.name,
+            subtitle: 'Sắp có',
+            tablet: tablet,
+            onTap: () => _soon(context),
+          ),
+      // Not an island yet: no levels to declare.
+      if (!ref.watch(exploreIslandsProvider).any((i) => i.id == 'sinh-hoc'))
+        _IslandCard(
+          key: const ValueKey('island-sinh-hoc'),
+          image: AppImages.islandSinhHoc,
+          title: 'Sinh học',
+          subtitle: 'Sắp có',
+          tablet: tablet,
+          onTap: () => _soon(context),
+        ),
       _IslandCard(
         key: const ValueKey('island-lich-su'),
         image: AppImages.islandLichSu,

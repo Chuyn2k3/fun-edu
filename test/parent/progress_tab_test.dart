@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:funedu/data/app_database.dart';
 import 'package:funedu/explore/explore_flags.dart';
+import 'package:funedu/explore/explore_island.dart';
+import 'package:funedu/explore/geography_level.dart';
 import 'package:funedu/features/home/home_screen.dart';
 import 'package:funedu/parent/parent_unlock.dart';
 import 'package:funedu/parent/screens/parent_home.dart';
@@ -59,7 +61,10 @@ List<Override> _overrides() => [
     ];
 
 Future<void> _pumpParent(WidgetTester t,
-    {Size? size, bool unlocked = false, bool explore = false}) async {
+    {Size? size,
+    bool unlocked = false,
+    bool explore = false,
+    bool biologyReady = false}) async {
   setSize(t, size?.width ?? 375, size?.height ?? 667);
   final router = GoRouter(routes: [
     GoRoute(path: '/', builder: (_, __) => const Text('trang chủ')),
@@ -69,6 +74,29 @@ Future<void> _pumpParent(WidgetTester t,
     overrides: [
       ..._overrides(),
       if (explore) exploreIslandEnabledProvider.overrideWithValue(true),
+      if (biologyReady) ...[
+        exploreReadyProvider.overrideWith((ref, id) => true),
+        exploreIslandsProvider.overrideWithValue([
+          geographyIsland,
+          ExploreIsland(
+              id: 'sinh-hoc',
+              prefix: 'bio',
+              name: 'Sinh học',
+              mapTitle: 'Khám phá sự sống',
+              subject: Subject.sinhHoc,
+              islandImage: '',
+              levels: [
+                for (final l in geographyIsland.levels)
+                  GeographyLevel(
+                      id: l.id,
+                      title: l.id == 'canh-vat' ? 'Con vật trong nhà' : l.title,
+                      subtitle: l.subtitle,
+                      items: l.items,
+                      clues: l.clues),
+              ],
+              ready: false),
+        ]),
+      ],
       if (unlocked)
         parentUnlockedUntilProvider
             .overrideWith((ref) => DateTime.now().add(parentUnlockDuration)),
@@ -247,6 +275,21 @@ void main() {
     await tester.scrollUntilVisible(find.text('Địa lý'), 200,
         scrollable: _progressScroll);
     expect(find.text('9/9'), findsOneWidget);
+  });
+
+  testWidgets('no biology card while biology is not ready', (tester) async {
+    await _pumpParent(tester, unlocked: true, explore: true);
+    await tester.scrollUntilVisible(find.text('Địa lý'), 200,
+        scrollable: _progressScroll);
+    expect(find.text('Sinh học'), findsNothing);
+  });
+
+  testWidgets('a ready biology island has its own card', (tester) async {
+    await _pumpParent(tester,
+        unlocked: true, explore: true, biologyReady: true);
+    await tester.scrollUntilVisible(find.text('Sinh học'), 200,
+        scrollable: _progressScroll);
+    expect(find.text('Đang học: Con vật trong nhà'), findsOneWidget);
   });
 
   testWidgets('no geography card while the explore island is off',

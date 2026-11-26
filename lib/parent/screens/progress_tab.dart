@@ -13,7 +13,7 @@ import '../../stroke/glyph.dart';
 import '../../stroke/glyph_repository.dart';
 import '../../english/english_level.dart';
 import '../../explore/explore_flags.dart';
-import '../../explore/geography_level.dart';
+import '../../explore/explore_island.dart';
 import '../../ui/theme/depth.dart';
 import '../../ui/theme/tokens.dart';
 import '../../vietnamese/vietnamese_level.dart';
@@ -53,7 +53,7 @@ class ProgressData {
     required this.mathLevel,
     required this.vietnameseLevel,
     required this.englishLevel,
-    this.geographyLevel = 0,
+    this.exploreLevels = const {},
   });
 
   final int usedMinutes;
@@ -64,7 +64,8 @@ class ProgressData {
   final int? mathLevel;
   final int vietnameseLevel;
   final int englishLevel;
-  final int geographyLevel;
+  /// Stored level by explore island id.
+  final Map<String, int> exploreLevels;
 }
 
 /// Progress of any kid, built straight from the database so it never
@@ -84,7 +85,10 @@ final progressDataProvider =
     mathLevel: await levels.levelOf('toan'),
     vietnameseLevel: await levels.levelOf('tieng-viet') ?? 0,
     englishLevel: await levels.levelOf('tieng-anh') ?? 0,
-    geographyLevel: await levels.levelOf('dia-ly') ?? 0,
+    exploreLevels: {
+      for (final island in ref.watch(exploreIslandsProvider))
+        island.id: await levels.levelOf(island.id) ?? 0,
+    },
   );
 });
 
@@ -144,10 +148,12 @@ class ProgressTab extends ConsumerWidget {
           _VietnameseCard(d.vietnameseLevel),
           const SizedBox(height: 12),
           _EnglishCard(d.englishLevel),
-          if (ref.watch(exploreIslandEnabledProvider)) ...[
-            const SizedBox(height: 12),
-            _GeographyCard(d.geographyLevel),
-          ],
+          if (ref.watch(exploreIslandEnabledProvider))
+            for (final island in ref.watch(exploreIslandsProvider))
+              if (ref.watch(exploreReadyProvider(island.id))) ...[
+                const SizedBox(height: 12),
+                _ExploreCard(island, d.exploreLevels[island.id] ?? 0),
+              ],
         ],
       ),
     );
@@ -477,25 +483,27 @@ class _EnglishCard extends StatelessWidget {
   }
 }
 
-class _GeographyCard extends StatelessWidget {
-  const _GeographyCard(this.level);
+class _ExploreCard extends StatelessWidget {
+  const _ExploreCard(this.island, this.level);
 
+  final ExploreIsland island;
   final int level;
 
   @override
   Widget build(BuildContext context) {
-    final l = level.clamp(0, geographyLevels.length - 1);
+    final levels = island.levels;
+    final l = level.clamp(0, levels.length - 1);
     return _Card(
-      title: 'Địa lý',
+      title: island.name,
       child: Row(
         children: [
           Expanded(
             child: Text(
-              'Đang học: ${geographyLevels[l].title}',
+              'Đang học: ${levels[l].title}',
               style: _bodyStyle,
             ),
           ),
-          Text('${l + 1}/${geographyLevels.length}', style: _bodyStyle),
+          Text('${l + 1}/${levels.length}', style: _bodyStyle),
         ],
       ),
     );
