@@ -20,6 +20,7 @@ export function topBar(title: string): HTMLElement {
   sound.addEventListener('click', () => {
     setSoundOn(!getSoundOn());
     if (!getSoundOn()) stopSpeaking();
+    window.dispatchEvent(new Event('chipchip:sound'));
     paint();
   });
   paint();

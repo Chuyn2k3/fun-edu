@@ -12,7 +12,7 @@ body {
 }
 main { max-width: 720px; margin: 0 auto; padding: 16px; }
 h1, h2, h3 { font-weight: 900; line-height: 1.15; margin: 0 0 12px; }
-a { color: var(--primary); }
+a { color: var(--link); }
 .card {
   background: var(--card);
   border-radius: var(--radius-card);
@@ -26,11 +26,11 @@ a { color: var(--primary); }
   font: inherit; font-weight: 900; font-size: 20px; cursor: pointer;
   background: var(--card); color: var(--text);
   box-shadow: 0 5px 0 #e2d4bf; transition: transform 0.08s, box-shadow 0.08s;
-  text-decoration: none;
+  text-decoration: none; touch-action: manipulation;
 }
 .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #e2d4bf; }
 .btn.primary { background: var(--primary); color: #fff; box-shadow: 0 5px 0 #8f3009; }
-.btn[disabled] { opacity: 0.55; cursor: default; }
+.btn[disabled] { color: var(--text-muted); cursor: default; }
 .muted { color: var(--text-muted); }
 .top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .top h1 { flex: 1; font-size: 26px; margin: 0; }

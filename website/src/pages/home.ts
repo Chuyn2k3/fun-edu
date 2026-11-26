@@ -17,7 +17,7 @@ if (TEST && new URLSearchParams(location.search).has('test-store')) {
 
 const store = (label: string, href: string | null) =>
   href
-    ? `<a class="btn primary" data-kid data-store href="${href}" rel="noopener">${label}</a>`
+    ? `<button class="btn primary" data-kid data-store data-href="${href}">${label}</button>`
     : `<button class="btn" data-kid disabled>${label} · Sắp có</button>`;
 
 app.innerHTML = `
@@ -54,10 +54,10 @@ app.innerHTML = `
     <a href="/quyen-rieng-tu.html">Quyền riêng tư</a> · Liên hệ: <a href="mailto:${SITE.contactEmail}">${SITE.contactEmail}</a>
   </footer>`;
 
-// Store links leave the site: an adult answers first.
-for (const a of app.querySelectorAll<HTMLAnchorElement>('a[data-store]')) {
-  a.addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (await askAdult()) location.href = a.href;
+// Store links leave the site: an adult answers first. Buttons, not links, so
+// a long press cannot open the store either.
+for (const b of app.querySelectorAll<HTMLButtonElement>('button[data-store]')) {
+  b.addEventListener('click', async () => {
+    if (await askAdult()) location.href = b.dataset.href!;
   });
 }

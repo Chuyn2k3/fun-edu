@@ -1,6 +1,7 @@
 /* Colours from lib/ui/theme/tokens.dart — keep in step with the app. */
 :root {
   --primary: #c8460f;
+  --link: #9a3a0b;
   --accent: #e8590c;
   --background: #fbf5ec;
   --dot: #eadfcf;

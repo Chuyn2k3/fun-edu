@@ -52,10 +52,14 @@ export function speak(text: string): Promise<void> {
     u.voice = v;
     u.lang = v.lang;
     u.rate = 0.9;
-    u.onend = () => resolve();
-    u.onerror = () => resolve();
-    // Some browsers never fire onend: never hold the game up for long.
-    setTimeout(resolve, 8000);
+    // Some browsers never fire onend: wait about as long as the line takes.
+    const timer = setTimeout(resolve, Math.min(8000, 1200 + text.length * 80));
+    const finish = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    u.onend = finish;
+    u.onerror = finish;
     s.speak(u);
   });
 }

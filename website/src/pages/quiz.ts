@@ -4,6 +4,8 @@ import '../styles/trace.css';
 import '../styles/quiz.css';
 import { downloadCard, img, revealSound, topBar } from '../lib/chrome';
 import { hasVietnameseVoice, speak, stopSpeaking, voicesReady } from '../lib/speech';
+import { getSoundOn } from '../lib/prefs';
+import { quizVoiceOn, withoutLetters } from '../quiz/options';
 import { makeRound, type Q } from '../quiz/generate';
 
 const TEST = import.meta.env.MODE === 'test';
@@ -115,12 +117,19 @@ function finish() {
 }
 
 function newRound() {
-  round = makeRound(Math.random, { voice: hasVietnameseVoice() });
+  round = makeRound(Math.random, { voice: quizVoiceOn(hasVietnameseVoice(), getSoundOn()) });
   index = 0;
   show();
 }
 
 window.addEventListener('pagehide', stopSpeaking);
+// Sound switched off mid-round: no more questions the child cannot hear.
+window.addEventListener('chipchip:sound', () => {
+  if (getSoundOn() || index >= round.length) return;
+  const redoCurrent = round[index].kind === 'letter' && !busy;
+  round = withoutLetters(round, redoCurrent ? index : index + 1, Math.random);
+  if (redoCurrent) show();
+});
 void voicesReady().then(() => {
   revealSound(bar);
   newRound();

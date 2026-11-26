@@ -56,7 +56,9 @@ test('five right answers end the quiz with praise', async ({ page }) => {
 
 test('a store link asks an adult first', async ({ page }) => {
   await page.goto('/?test-store=1', { waitUntil: 'networkidle' });
-  await page.locator('a[data-store]').click();
+  // No real link a child could long-press to open.
+  await expect(page.locator('a[href*="test-store-target"]')).toHaveCount(0);
+  await page.locator('[data-store]').click();
   await expect(page.locator('#gate')).toBeVisible();
   await page.fill('#gate-answer', '1');
   await page.click('#gate-ok');
